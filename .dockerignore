@@ -1,0 +1,10 @@
+**/node_modules
+**/target
+**/dist
+.git
+.superpowers
+docs
+e2e
+tools
+.offline-build
+backend/e9x-app/src/main/resources/static

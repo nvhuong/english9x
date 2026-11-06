@@ -1,0 +1,56 @@
+# E2E / dev overlay:  docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml up --build
+# Adds Mailpit (captures email) and the fake Telegram / Gemini servers, and points the app at them.
+services:
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"   # web UI / API
+      - "1025:1025"   # SMTP
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  fake-telegram:
+    image: node:22-alpine
+    working_dir: /fake
+    command: ["node", "server.mjs"]
+    volumes:
+      - ./fakes/telegram:/fake:ro
+    ports:
+      - "${E9X_FAKE_TELEGRAM_PORT:-8081}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/__health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  fake-gemini:
+    image: node:22-alpine
+    working_dir: /fake
+    command: ["node", "server.mjs"]
+    volumes:
+      - ./fakes/gemini:/fake:ro
+    ports:
+      - "${E9X_FAKE_GEMINI_PORT:-8082}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/__health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    depends_on:
+      mailpit:
+        condition: service_healthy
+      fake-telegram:
+        condition: service_healthy
+      fake-gemini:
+        condition: service_healthy
+    environment:
+      E9X_GEMINI_BASE_URL: http://fake-gemini:8080
+      E9X_GEMINI_API_KEY: fake-key
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: "1025"
+      E9X_TELEGRAM_API_BASE: http://fake-telegram:8080

@@ -1,0 +1,6 @@
+# HTTPS front door. Local/dev: E9X_DOMAIN=localhost gives a Caddy-internal certificate.
+# Production: set E9X_DOMAIN to the public hostname (Let's Encrypt is automatic).
+{$E9X_DOMAIN:localhost} {
+	encode zstd gzip
+	reverse_proxy app:8080
+}

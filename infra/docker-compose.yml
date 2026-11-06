@@ -1,0 +1,116 @@
+# English9x stack.  Dev:  docker compose -f infra/docker-compose.yml up --build
+# Credentials come from env vars (see README); the defaults below are for local use only.
+# P1.3 splits the database login into an owner (migrations) and e9x_app_login (runtime) by
+# setting E9X_FLYWAY_USER/PASSWORD and E9X_DB_USER/PASSWORD - no structural change needed here.
+name: english9x
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-e9x}
+      POSTGRES_USER: ${POSTGRES_USER:-e9x}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-e9x_dev_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  minio:
+    # MinIO no longer publishes images on Docker Hub / Quay; the Chainguard build is the maintained free one.
+    image: chainguard/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-e9x_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-e9x_minio_dev_password}
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      # no curl/wget in the image: speak HTTP through bash's /dev/tcp
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /minio/health/live HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && read -r l <&3 && [[ $$l == *200* ]]"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build:
+      context: ..
+      dockerfile: infra/app.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      E9X_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-e9x}
+      E9X_DB_USER: ${E9X_DB_USER:-${POSTGRES_USER:-e9x}}
+      E9X_DB_PASSWORD: ${E9X_DB_PASSWORD:-${POSTGRES_PASSWORD:-e9x_dev_password}}
+      E9X_FLYWAY_USER: ${E9X_FLYWAY_USER:-${POSTGRES_USER:-e9x}}
+      E9X_FLYWAY_PASSWORD: ${E9X_FLYWAY_PASSWORD:-${POSTGRES_PASSWORD:-e9x_dev_password}}
+      E9X_GEMINI_API_KEY: ${E9X_GEMINI_API_KEY:-}
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      E9X_DOMAIN: ${E9X_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "caddy", "version"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  backup:
+    build:
+      context: backup
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:-e9x}
+      PGUSER: ${POSTGRES_USER:-e9x}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-e9x_dev_password}
+      MINIO_DATA_DIR: /minio-data
+      E9X_BACKUP_RETENTION: ${E9X_BACKUP_RETENTION:-14}
+    volumes:
+      - backups:/backups
+      - miniodata:/minio-data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # healthy once a dump from the past 26h exists (startup run + every 24h)
+      test: ["CMD-SHELL", "find /backups -name 'pg-*.sql.gz' -mmin -1560 | grep -q ."]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  miniodata:
+  caddydata:
+  caddyconfig:
+  backups:
