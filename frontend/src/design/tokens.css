@@ -1,0 +1,150 @@
+/*
+ * Design tokens "Bàn học biên tập" (spec §14). The ONLY place raw colours live.
+ * Components use token utilities (bg-paper, text-ink, border-line ...), never hex or Tailwind palette colours.
+ * Light is the default; dark is `data-theme="dark"` on <html> (set by src/design/theme.ts, pre-paint by public/theme-init.js).
+ * `data-surface="exam"` re-skins a subtree neutral and minimal for the exam room. Contrast pairs are verified numerically
+ * (src/design/tokens.test.ts parses this file): keep the names used there.
+ */
+@import 'tailwindcss';
+@import './fonts.css';
+
+@theme static {
+  --color-*: initial; /* drop Tailwind's default palette: only tokens below exist */
+
+  /* surfaces */
+  --color-paper: #f8f1e3;
+  --color-surface: #fffbf2;
+  --color-sunken: #efe6d2;
+  /* text */
+  --color-ink: #17254a;
+  --color-muted: #4b5470;
+  /* lines: line = decoration, edge = boundaries of controls (>= 3:1) */
+  --color-line: #ddd2ba;
+  --color-edge: #7a715d;
+  /* brand */
+  --color-primary: #1d3461;
+  --color-primary-hover: #12254a;
+  --color-on-primary: #fffbf2;
+  --color-accent: #c2412d;
+  --color-accent-hover: #a63424;
+  --color-on-accent: #ffffff;
+  --color-focus: #c2412d;
+  /* status (fg on its own subtle bg) */
+  --color-success: #1b5e34;
+  --color-success-bg: #dcefd6;
+  --color-warning: #6f4300;
+  --color-warning-bg: #ffe7b3;
+  --color-danger: #9c2217;
+  --color-danger-bg: #fbdcd3;
+  --color-info: #1d3461;
+  --color-info-bg: #dae5f8;
+  /* editorial highlights: tip box (marker yellow) and trap box (coral) */
+  --color-tip: #3d3200;
+  --color-tip-bg: #fff0a3;
+  --color-trap: #6e1f12;
+  --color-trap-bg: #fbdcd3;
+  /* reading-passage highlighter */
+  --color-mark: #17254a;
+  --color-mark-bg: #ffe66d;
+  /* exam clock states */
+  --color-clock-warn: #6f4300;
+  --color-clock-warn-bg: #ffe7b3;
+  --color-clock-danger: #ffffff;
+  --color-clock-danger-bg: #a8271a;
+
+  --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'Lora', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.875rem;
+  --shadow-card: 0 1px 0 var(--color-line), 0 8px 24px -16px rgb(23 37 74 / 0.35);
+  --spacing: 0.25rem;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-paper: #101829;
+  --color-surface: #172139;
+  --color-sunken: #0b1120;
+  --color-ink: #eef0f6;
+  --color-muted: #a9b3cc;
+  --color-line: #2c3857;
+  --color-edge: #8391b3;
+  --color-primary: #9db8f5;
+  --color-primary-hover: #b9ceff;
+  --color-on-primary: #0b1120;
+  --color-accent: #ff8a73;
+  --color-accent-hover: #ffa493;
+  --color-on-accent: #1d0a05;
+  --color-focus: #ffa493;
+  --color-success: #8fd9a6;
+  --color-success-bg: #153524;
+  --color-warning: #ffd27a;
+  --color-warning-bg: #3d2d08;
+  --color-danger: #ffb0a2;
+  --color-danger-bg: #4a1d16;
+  --color-info: #b9ceff;
+  --color-info-bg: #1b2c52;
+  --color-tip: #fff0a3;
+  --color-tip-bg: #3f3711;
+  --color-trap: #ffd3c8;
+  --color-trap-bg: #4a241c;
+  --color-mark: #fff6c2;
+  --color-mark-bg: #5a4c0a;
+  --color-clock-warn: #ffd27a;
+  --color-clock-warn-bg: #3d2d08;
+  --color-clock-danger: #ffffff;
+  --color-clock-danger-bg: #b3301f;
+  --shadow-card: 0 1px 0 var(--color-line), 0 8px 24px -16px rgb(0 0 0 / 0.7);
+}
+
+/* Exam room: neutral, minimal, close to the real computer test. */
+[data-surface='exam'] {
+  --color-paper: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-sunken: #e5e7eb;
+  --color-ink: #111827;
+  --color-muted: #4b5563;
+  --color-line: #d1d5db;
+  --color-edge: #6b7280;
+  --color-primary: #1f3a68;
+  --color-primary-hover: #152b4f;
+  --color-on-primary: #ffffff;
+}
+:root[data-theme='dark'] [data-surface='exam'] {
+  --color-paper: #111318;
+  --color-surface: #1a1d24;
+  --color-sunken: #0b0d11;
+  --color-ink: #f3f4f6;
+  --color-muted: #aab1bd;
+  --color-line: #2d323c;
+  --color-edge: #8b94a5;
+  --color-primary: #9db8f5;
+  --color-primary-hover: #b9ceff;
+  --color-on-primary: #0b0d11;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    -webkit-text-size-adjust: 100%;
+  }
+  body { margin: 0; background: var(--color-paper); color: var(--color-ink); line-height: 1.6; }
+  :focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; border-radius: 2px; }
+  ::selection { background: var(--color-mark-bg); color: var(--color-mark); }
+  .prose-reading { font-family: var(--font-serif); font-size: 1.0625rem; line-height: 1.85; }
+}
+
+/* Reduced motion: no animation or smooth scrolling, transitions collapse to instant. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

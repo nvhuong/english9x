@@ -60,6 +60,23 @@ jobs:
       - run: pnpm -C frontend run test
       - run: pnpm -C frontend run build
 
+  frontend-a11y:
+    name: frontend (storybook axe, serious/critical)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm -C frontend install --frozen-lockfile
+      - run: pnpm -C frontend exec playwright install --with-deps chromium
+      - run: pnpm -C frontend run test:a11y
+
   compose:
     name: compose config
     runs-on: ubuntu-latest

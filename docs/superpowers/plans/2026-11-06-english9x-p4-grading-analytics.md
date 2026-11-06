@@ -44,6 +44,8 @@
 
 **Tests:** `TeacherQueueIT.claimedHiddenFromOthers`, `.expiredClaimReturnsToQueue`, `.bothModeTeacherReplacesPreliminary`, `.deviationRecorded`, `.centerQueueOnlyVisibleToCenterTeachers`.
 
+> **Ghi chú 2026-11-07 (từ vòng sửa P1.10):** route hàng chờ chấm đặt trong `frontend/src/routes/cms/` (không tạo khu riêng): `TEACHER` được cố ý vào cả hai khu CMS và Tổ chức.
+
 ### Task P4.4: kết quả, điểm yếu, gợi ý (W9) — F38
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/analytics/results/**`, migration `V202611160001__item_type_stats.sql`, `frontend/src/features/results/**`, E2E `F38-results-weakness.spec.ts`.

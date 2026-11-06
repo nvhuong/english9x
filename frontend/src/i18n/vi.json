@@ -1,0 +1,153 @@
+{
+  "app": {
+    "name": "English9x",
+    "tagline": "Học và luyện thi IELTS, TOEIC bài bản",
+    "skipToContent": "Bỏ qua, tới nội dung chính",
+    "loading": "Đang tải…",
+    "mainNav": "Điều hướng chính",
+    "areaNav": "Điều hướng khu vực",
+    "footer": "Bàn học biên tập cho người học tiếng Anh"
+  },
+  "area": {
+    "learner": "Học tập",
+    "cms": "Biên soạn",
+    "org": "Tổ chức",
+    "admin": "Quản trị",
+    "exam": "Phòng thi"
+  },
+  "context": {
+    "label": "Ngữ cảnh",
+    "personal": "Cá nhân"
+  },
+  "lang": {
+    "label": "Ngôn ngữ",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "theme": {
+    "label": "Giao diện",
+    "light": "Sáng",
+    "dark": "Tối",
+    "system": "Theo hệ thống"
+  },
+  "backend": {
+    "checking": "Đang kiểm tra máy chủ…",
+    "up": "Máy chủ: hoạt động",
+    "down": "Máy chủ: không kết nối được"
+  },
+  "empty": {
+    "learner": {
+      "title": "Chưa có khoá học nào",
+      "description": "Danh mục khoá học sẽ xuất hiện ở đây khi nội dung được xuất bản."
+    },
+    "cms": {
+      "title": "Chưa có việc cần làm",
+      "description": "Hàng việc biên soạn và duyệt nội dung sẽ xuất hiện ở đây."
+    },
+    "org": {
+      "title": "Chưa có dữ liệu tổ chức",
+      "description": "Suất học, thành viên và lớp học sẽ xuất hiện ở đây."
+    },
+    "admin": {
+      "title": "Chưa có mục quản trị nào",
+      "description": "Các công cụ quản trị hệ thống sẽ xuất hiện ở đây."
+    },
+    "exam": {
+      "title": "Chưa chọn bài thi",
+      "description": "Hãy bắt đầu một bài thi từ trang khoá học của bạn."
+    }
+  },
+  "notFound": {
+    "title": "Không tìm thấy trang",
+    "description": "Đường dẫn này không tồn tại hoặc đã được chuyển đi.",
+    "back": "Về trang chủ"
+  },
+  "denied": {
+    "title": "Bạn chưa có quyền xem trang này",
+    "description": "Tài khoản hiện tại không có vai trò phù hợp. Nếu cần, hãy liên hệ quản trị viên.",
+    "back": "Về trang chủ"
+  },
+  "error": {
+    "title": "Đã có lỗi xảy ra",
+    "description": "Vui lòng tải lại trang. Nếu lỗi lặp lại, hãy báo cho chúng tôi.",
+    "reload": "Tải lại trang"
+  },
+  "preferences": {
+    "title": "Tuỳ chọn hiển thị",
+    "description": "Ngôn ngữ và giao diện được lưu riêng cho trình duyệt này."
+  },
+  "common": {
+    "close": "Đóng",
+    "cancel": "Huỷ",
+    "confirm": "Xác nhận",
+    "save": "Lưu",
+    "retry": "Thử lại",
+    "required": "bắt buộc",
+    "optional": "không bắt buộc",
+    "dismiss": "Tắt thông báo",
+    "notifications": "Thông báo",
+    "selectPlaceholder": "Chọn…"
+  },
+  "table": {
+    "sortedAscending": "Sắp xếp tăng dần",
+    "sortedDescending": "Sắp xếp giảm dần",
+    "sortBy": "Sắp xếp theo {{column}}",
+    "empty": "Không có dòng nào"
+  },
+  "timer": {
+    "label": "Thời gian còn lại",
+    "warn5": "Còn dưới 5 phút",
+    "warn1": "Còn dưới 1 phút",
+    "expired": "Hết giờ"
+  },
+  "audio": {
+    "label": "Bản ghi âm bài nghe",
+    "idle": "Âm thanh chưa phát",
+    "playing": "Đang phát — chỉ phát một lần, không thể tạm dừng hay tua lại",
+    "ended": "Đã phát xong",
+    "start": "Bắt đầu phát",
+    "blocked": "Trình duyệt chặn tự động phát. Bấm nút để bắt đầu.",
+    "volume": "Âm lượng",
+    "progress": "Tiến độ phát"
+  },
+  "recorder": {
+    "label": "Ghi âm bài nói",
+    "micCheck": "Kiểm tra micro",
+    "micCheckHelp": "Hãy nói vài câu và xem thanh mức âm có nhúc nhích không.",
+    "micLevel": "Mức âm micro",
+    "micTest": "Kiểm tra micro",
+    "micOk": "Micro hoạt động tốt",
+    "micDenied": "Chưa được cấp quyền dùng micro. Hãy cho phép micro trong trình duyệt rồi thử lại.",
+    "ready": "Sẵn sàng. Bấm bắt đầu khi bạn muốn nhận câu hỏi.",
+    "begin": "Bắt đầu",
+    "preparing": "Thời gian chuẩn bị",
+    "preparingHelp": "Ghi âm sẽ tự bắt đầu khi hết thời gian chuẩn bị.",
+    "recording": "Đang ghi âm",
+    "recordingHelp": "Ghi âm sẽ tự dừng khi hết giờ.",
+    "stop": "Dừng ghi âm",
+    "uploading": "Đang tải bản ghi lên…",
+    "done": "Đã gửi bản ghi",
+    "error": "Không gửi được bản ghi. Hệ thống sẽ tự thử lại.",
+    "seconds": "{{count}} giây"
+  },
+  "navigator": {
+    "label": "Danh sách câu hỏi",
+    "question": "Câu {{n}}",
+    "answered": "đã trả lời",
+    "unanswered": "chưa trả lời",
+    "flagged": "đã đánh dấu",
+    "current": "câu hiện tại",
+    "legend": "Chú giải"
+  },
+  "highlighter": {
+    "label": "Bài đọc có thể tô sáng",
+    "instructions": "Dùng phím mũi tên trái phải để di chuyển giữa các từ, giữ Shift để chọn nhiều từ, bấm Enter hoặc nút Tô sáng để tô hoặc bỏ tô, Escape để bỏ chọn.",
+    "highlight": "Tô sáng",
+    "clear": "Bỏ tô sáng",
+    "clearAll": "Xoá mọi tô sáng",
+    "toolbar": "Công cụ tô sáng",
+    "selected": "Đã chọn {{count}} từ",
+    "highlighted": "Đã tô sáng",
+    "unhighlighted": "Đã bỏ tô sáng"
+  }
+}
