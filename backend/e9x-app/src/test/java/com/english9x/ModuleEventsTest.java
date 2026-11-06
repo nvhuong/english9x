@@ -17,7 +17,8 @@ class ModuleEventsTest {
             "OrderConfirmed", "billing",
             "OrderRejected", "billing",
             "SeatAssigned", "billing",
-            "SeatRevoked", "billing");
+            "SeatRevoked", "billing",
+            "UserRegistered", "identity");
 
     @Test
     void everyEventIsExposedByItsPublisher() {

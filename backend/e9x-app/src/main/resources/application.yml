@@ -9,6 +9,12 @@ spring:
     url: ${E9X_DB_URL:jdbc:postgresql://localhost:5432/e9x}
     username: ${E9X_DB_USER:e9x_app_login}
     password: ${E9X_DB_PASSWORD}
+  mail:
+    # Account mail over SMTP (Mailpit in E2E). Required: the app refuses to start without a host. No password default.
+    host: ${E9X_SMTP_HOST:}
+    port: ${E9X_SMTP_PORT:587}
+    username: ${E9X_SMTP_USER:}
+    password: ${E9X_SMTP_PASSWORD:}
   flyway:
     # Migrations run as the table owner e9x_owner, never as the runtime login. No default password either.
     user: ${E9X_FLYWAY_USER:e9x_owner}
@@ -43,6 +49,11 @@ app:
     enabled: true   # spec §5.3: false = this instance does not run background jobs (no polling, no worker pool)
 
 e9x:
+  # The public https URL of the site. Emailed links and the Google redirect URI are built from it, never from a request.
+  public-base-url: ${E9X_PUBLIC_BASE_URL:}
+  security:
+    # Content-Security-Policy of the SPA and API (same origin only). Tasks that load media from elsewhere extend it here.
+    csp: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
   jobs:
     poll-interval: 2s
     workers: 2                       # general threads, each claims any job type
@@ -85,7 +96,30 @@ e9x:
   auth:
     access-token-ttl: 15m
     refresh-token-ttl: 30d
-    login-rate-limit: 10/15m
+    login-rate-limit: 10/15m   # failed attempts per IP + email
+    # No default for the signing key: the application refuses to start without E9X_JWT_SECRET (>= 32 bytes).
+    jwt-secret: ${E9X_JWT_SECRET:}
+    issuer: english9x
+    refresh-reuse-grace: 10s    # a refresh token that was rotated < 10 s ago is a benign race (two tabs), not theft
+    resend-rate-limit: 3/1h     # verification mails per IP + email
+    reset-rate-limit: 5/1h      # password-reset requests per IP + email
+    register-rate-limit: ${E9X_AUTH_REGISTER_RATE_LIMIT:20/1h}   # sign-ups per IP
+    verification-ttl: 24h
+    reset-ttl: 1h
+    oauth-code-ttl: 60s         # the one-time code handed to the SPA after Google sign-in
+    bcrypt-cost: 10
+    password-min-length: 8
+    # CIDRs of reverse proxies whose X-Forwarded-For is believed (Caddy). Empty = header ignored.
+    trusted-proxies: ${E9X_AUTH_TRUSTED_PROXIES:}
+    mail-from: ${E9X_MAIL_FROM:English9x <no-reply@english9x.vn>}
+    # Google sign-in is off unless both client-id and client-secret are set.
+    google:
+      client-id: ${E9X_GOOGLE_CLIENT_ID:}
+      client-secret: ${E9X_GOOGLE_CLIENT_SECRET:}
+      authorization-uri: ${E9X_GOOGLE_AUTHORIZATION_URI:https://accounts.google.com/o/oauth2/v2/auth}
+      token-uri: ${E9X_GOOGLE_TOKEN_URI:https://oauth2.googleapis.com/token}
+      jwk-set-uri: ${E9X_GOOGLE_JWK_SET_URI:https://www.googleapis.com/oauth2/v3/certs}
+      issuer: ${E9X_GOOGLE_ISSUER:https://accounts.google.com}
   learning:
     streak:
       min-minutes: 10

@@ -22,6 +22,7 @@ Nguồn: spec §5.3, §10.4, §11, §12 và plan P1.11. Hình dạng bản ghi *
 | `OrderRejected(orderId, String reason)` | `billing` | Quản trị từ chối đơn; `reason` do quản trị nhập. | `notification` |
 | `SeatAssigned(licenseId, userId, List<UUID> courseIds)` | `billing` | `ORG_ADMIN` gán suất cho người dùng với các khoá trong danh sách được phép (§12); entitlement nguồn tổ chức đã tạo. | `notification`, `learning` |
 | `SeatRevoked(licenseId, userId)` | `billing` | Thu hồi suất: entitlement kết thúc ngay, suất trở lại kho. | `notification`, `learning` |
+| `UserRegistered(userId, email, occurredAt)` | `identity` | Tài khoản mới được tạo (đăng ký email + mật khẩu, hoặc lần đầu đăng nhập Google), trong transaction đăng ký. Không mang token xác thực (token chỉ gửi qua email cho chủ hộp thư). Lần đăng ký trùng email không phát event. (P1.4) | `notification` (chào mừng, tuỳ chọn), `analytics` |
 
 "Consumer dự kiến" theo plan các dự án con P2-P6; module thật sự đăng ký listener khi đến task tương ứng.
 

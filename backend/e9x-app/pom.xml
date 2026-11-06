@@ -25,6 +25,22 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
     <dependency>
@@ -93,6 +109,13 @@
         <version>3.5.2</version>
         <configuration>
           <argLine>-XX:+EnableDynamicAgentLoading</argLine>
+          <systemPropertyVariables>
+            <!-- every Spring test needs these (no production defaults exist); tests that exercise auth set their own -->
+            <e9x.auth.jwt-secret>test-only-secret-test-only-secret-0123456789</e9x.auth.jwt-secret>
+            <e9x.public-base-url>https://e9x.test</e9x.public-base-url>
+            <e9x.auth.bcrypt-cost>4</e9x.auth.bcrypt-cost>
+            <spring.mail.host>localhost</spring.mail.host>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
@@ -103,6 +126,13 @@
           <argLine>-XX:+EnableDynamicAgentLoading</argLine>
           <!-- spring-boot repackage runs first; test against the plain classes, not BOOT-INF/classes -->
           <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+          <systemPropertyVariables>
+            <!-- every Spring test needs these (no production defaults exist); tests that exercise auth set their own -->
+            <e9x.auth.jwt-secret>test-only-secret-test-only-secret-0123456789</e9x.auth.jwt-secret>
+            <e9x.public-base-url>https://e9x.test</e9x.public-base-url>
+            <e9x.auth.bcrypt-cost>4</e9x.auth.bcrypt-cost>
+            <spring.mail.host>localhost</spring.mail.host>
+          </systemPropertyVariables>
         </configuration>
         <executions>
           <execution>

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.english9x.support.TestAuth;
 import com.english9x.support.TestPostgres;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,6 +43,7 @@ class ProblemDetailsIT {
     private ResponseEntity<String> send(HttpMethod method, String path, String body) {
         HttpHeaders h = new HttpHeaders();
         h.setContentType(MediaType.APPLICATION_JSON);
+        h.setBearerAuth(TestAuth.accessToken(java.util.UUID.randomUUID())); // /api/** needs a token; the endpoints under test ignore who it is
         return http.exchange(path, method, new HttpEntity<>(body, h), String.class);
     }
 
@@ -62,7 +64,7 @@ class ProblemDetailsIT {
 
     @Test
     void validationErrorsListFields() throws Exception {
-        JsonNode p = problem(send(HttpMethod.POST, "/problem-test/form",
+        JsonNode p = problem(send(HttpMethod.POST, "/api/problem-test/form",
                 "{\"name\":\"\",\"email\":\"not-an-email\",\"rows\":[]}"), 400);
         List<String> fields = new ArrayList<>();
         p.get("errors").forEach(e -> {
@@ -77,7 +79,7 @@ class ProblemDetailsIT {
 
     @Test
     void validationErrorsListRows() throws Exception {
-        JsonNode p = problem(send(HttpMethod.POST, "/problem-test/form",
+        JsonNode p = problem(send(HttpMethod.POST, "/api/problem-test/form",
                 "{\"name\":\"n\",\"email\":\"a@b.vn\",\"rows\":[{\"sku\":\"A\",\"qty\":1},{\"sku\":\"\",\"qty\":0}]}"), 400);
         List<String> seen = new ArrayList<>();
         p.get("errors").forEach(e -> seen.add(e.get("row").asInt() + ":" + e.get("field").asText()));
@@ -87,7 +89,7 @@ class ProblemDetailsIT {
 
     @Test
     void malformedBodyIs400WithoutParserDetails() throws Exception {
-        ResponseEntity<String> r = send(HttpMethod.POST, "/problem-test/form", "{not json");
+        ResponseEntity<String> r = send(HttpMethod.POST, "/api/problem-test/form", "{not json");
         JsonNode p = problem(r, 400);
         assertFalse(r.getBody().contains("Unexpected character"), "no parser internals: " + r.getBody());
         assertEquals(0, p.get("errors").size());
@@ -100,19 +102,19 @@ class ProblemDetailsIT {
 
     @Test
     void explicitNotFoundIs404() throws Exception {
-        problem(send(HttpMethod.GET, "/problem-test/missing", null), 404);
+        problem(send(HttpMethod.GET, "/api/problem-test/missing", null), 404);
     }
 
     @Test
     void wrongMethodIs405() throws Exception {
-        ResponseEntity<String> r = send(HttpMethod.DELETE, "/problem-test/missing", null);
+        ResponseEntity<String> r = send(HttpMethod.DELETE, "/api/problem-test/missing", null);
         problem(r, 405);
         assertNotNull(r.getHeaders().getAllow(), "Allow header is kept");
     }
 
     @Test
     void orgContextDeniedIs403AndLeaksNothing() throws Exception {
-        ResponseEntity<String> r = send(HttpMethod.GET, "/problem-test/denied", null);
+        ResponseEntity<String> r = send(HttpMethod.GET, "/api/problem-test/denied", null);
         problem(r, 403);
         assertFalse(r.getBody().contains("organisation"), "no ids or messages: " + r.getBody());
         assertFalse(r.getBody().matches("(?s).*[0-9a-f]{8}-[0-9a-f]{4}-.*"), "no uuid: " + r.getBody());
@@ -120,14 +122,14 @@ class ProblemDetailsIT {
 
     @Test
     void wrappedOrgContextDeniedIsAlso403() throws Exception {
-        ResponseEntity<String> r = send(HttpMethod.GET, "/problem-test/denied-wrapped", null);
+        ResponseEntity<String> r = send(HttpMethod.GET, "/api/problem-test/denied-wrapped", null);
         problem(r, 403);
         assertFalse(r.getBody().contains("EntityManager"), r.getBody());
     }
 
     @Test
     void unexpectedErrorIs500AndLeaksNoInternals() throws Exception {
-        ResponseEntity<String> r = send(HttpMethod.GET, "/problem-test/boom", null);
+        ResponseEntity<String> r = send(HttpMethod.GET, "/api/problem-test/boom", null);
         JsonNode p = problem(r, 500);
         String body = r.getBody();
         for (String secret : List.of("secret-internal-detail", "jdbc:", "hunter2", "IllegalStateException", "ProblemTestEndpoints", "\tat ")) {
