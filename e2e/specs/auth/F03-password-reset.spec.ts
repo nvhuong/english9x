@@ -42,7 +42,7 @@ test.describe('F03 password reset', () => {
     await expect(phone.getByRole('heading', { level: 1, name: 'Đã đổi mật khẩu' })).toBeVisible();
 
     // the old password is rejected, the new one works
-    await phone.getByRole('link', { name: 'Đăng nhập' }).click();
+    await phone.locator('#main').getByRole('link', { name: 'Đăng nhập' }).click();
     await phone.getByLabel(/^Email/).fill(learner.email);
     await phone.getByLabel(/^Mật khẩu/).fill(learner.password);
     await phone.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
