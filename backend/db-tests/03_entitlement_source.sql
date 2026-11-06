@@ -2,6 +2,7 @@ INSERT INTO users(id,email) VALUES
  ('11111111-0000-0000-0000-000000000001','u1@x.test'),
  ('22222222-0000-0000-0000-000000000002','u2@x.test');
 INSERT INTO exams(code,name) VALUES ('IELTS','IELTS');
+INSERT INTO organizations(id,name,type) VALUES ('a1a1a1a1-0000-0000-0000-00000000000a','A','CENTER');
 INSERT INTO courses(id,owner_org_id,exam_code,code,title,status)
  VALUES ('dddddddd-0000-0000-0000-00000000000d',NULL,'IELTS','E9PUB1','c','PUBLISHED');
 
@@ -18,6 +19,11 @@ BEGIN
     RAISE EXCEPTION 'both sources set should fail';
   EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN
+    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id)
+     VALUES ('11111111-0000-0000-0000-000000000001','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid());
+    RAISE EXCEPTION 'seat entitlement without issuing org should fail';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+  BEGIN
     INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_order_id)
      VALUES ('11111111-0000-0000-0000-000000000001','dddddddd-0000-0000-0000-00000000000d',now(),now(),gen_random_uuid());
     RAISE EXCEPTION 'valid_until <= valid_from should fail';
@@ -26,8 +32,8 @@ END $$;
 
 INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_order_id) VALUES
  ('11111111-0000-0000-0000-000000000001','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid());
-INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id) VALUES
- ('22222222-0000-0000-0000-000000000002','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid());
+INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) VALUES
+ ('22222222-0000-0000-0000-000000000002','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid(),'a1a1a1a1-0000-0000-0000-00000000000a');
 
 SET ROLE e9x_app;
 SELECT set_config('app.user_id','11111111-0000-0000-0000-000000000001',false);

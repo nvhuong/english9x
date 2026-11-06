@@ -7,6 +7,9 @@ INSERT INTO organizations(id,name,type) VALUES
 INSERT INTO org_memberships(org_id,user_id) VALUES
  ('aaaaaaaa-0000-0000-0000-000000000001','11111111-0000-0000-0000-000000000001'),
  ('bbbbbbbb-0000-0000-0000-000000000002','22222222-0000-0000-0000-000000000002');
+-- user 1 is the real ORG_ADMIN of A (the org_admin flag alone no longer authorises writes)
+INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES
+ ('11111111-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001',NULL,'ORG_ADMIN');
 
 SET ROLE e9x_app;
 SELECT set_config('app.user_id','11111111-0000-0000-0000-000000000001',false);

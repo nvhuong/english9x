@@ -46,6 +46,41 @@ CREATE FUNCTION e9x_is_current_org_admin() RETURNS boolean
 GRANT EXECUTE ON FUNCTION e9x_has_role(text, uuid), e9x_org_has_member(uuid, uuid),
   e9x_is_sys_admin(), e9x_is_current_org_admin() TO e9x_app, e9x_grader;
 
+-- Write policies of role_grants / org_memberships (V202611060001 let ANY e9x_is_staff() session write them, i.e. an
+-- AUTHOR or a forged flag could mint themselves SYS_ADMIN and then everything that trusts SYS_ADMIN facts).
+-- Now: English9x side = real SYS_ADMIN (flag AND SYS_ADMIN grant); org side = ORG_ADMIN of exactly the current org
+-- (flag AND ORG_ADMIN grant). A flag alone never authorises these writes. The first SYS_ADMIN is seeded by operations.
+DROP POLICY role_grants_insert ON role_grants;
+DROP POLICY role_grants_update ON role_grants;
+DROP POLICY role_grants_delete ON role_grants;
+DROP POLICY org_memberships_insert ON org_memberships;
+DROP POLICY org_memberships_update ON org_memberships;
+DROP POLICY org_memberships_delete ON org_memberships;
+
+CREATE POLICY role_grants_insert ON role_grants FOR INSERT WITH CHECK (
+  e9x_is_sys_admin() OR (org_id IS NOT NULL AND org_id = e9x_current_org() AND e9x_is_current_org_admin()));
+CREATE POLICY role_grants_update ON role_grants FOR UPDATE USING (
+  e9x_is_sys_admin() OR (org_id IS NOT NULL AND org_id = e9x_current_org() AND e9x_is_current_org_admin()))
+  WITH CHECK (
+  e9x_is_sys_admin() OR (org_id IS NOT NULL AND org_id = e9x_current_org() AND e9x_is_current_org_admin()));
+CREATE POLICY role_grants_delete ON role_grants FOR DELETE USING (
+  e9x_is_sys_admin() OR (org_id IS NOT NULL AND org_id = e9x_current_org() AND e9x_is_current_org_admin()));
+
+CREATE POLICY org_memberships_insert ON org_memberships FOR INSERT WITH CHECK (
+  e9x_is_sys_admin() OR (org_id IS NOT NULL AND org_id = e9x_current_org() AND e9x_is_current_org_admin()));
+CREATE POLICY org_memberships_update ON org_memberships FOR UPDATE USING (
+  e9x_is_sys_admin() OR (org_id IS NOT NULL AND org_id = e9x_current_org() AND e9x_is_current_org_admin()))
+  WITH CHECK (
+  e9x_is_sys_admin() OR (org_id IS NOT NULL AND org_id = e9x_current_org() AND e9x_is_current_org_admin()));
+CREATE POLICY org_memberships_delete ON org_memberships FOR DELETE USING (
+  e9x_is_sys_admin() OR (org_id IS NOT NULL AND org_id = e9x_current_org() AND e9x_is_current_org_admin()));
+
+-- Seat entitlements are issued by one organisation; without this column an admin of A could read and change seats
+-- issued by B for a user who belongs to both.
+ALTER TABLE entitlements ADD COLUMN source_org_id uuid REFERENCES organizations(id);
+ALTER TABLE entitlements ADD CONSTRAINT entitlements_seat_org_ck
+  CHECK (source_seat_id IS NULL OR source_org_id IS NOT NULL);
+
 -- Entitlements. A learner can never write: every INSERT/UPDATE policy needs SYS_ADMIN or ORG_ADMIN facts.
 -- There is deliberately no DELETE policy: revoking ends the entitlement (UPDATE valid_until).
 
@@ -57,21 +92,23 @@ CREATE POLICY entitlements_update_order ON entitlements FOR UPDATE
   USING (source_order_id IS NOT NULL AND e9x_is_sys_admin())
   WITH CHECK (source_order_id IS NOT NULL AND e9x_is_sys_admin());
 
--- P6 seat assignment / revocation: ORG_ADMIN of the current org, for members of that org, seat-sourced rows only.
+-- P5.3 seat assignment / revocation: ORG_ADMIN of the current org, for members of that org, seat rows issued by
+-- that org (source_org_id) only.
 CREATE POLICY entitlements_insert_seat ON entitlements FOR INSERT
-  WITH CHECK (source_seat_id IS NOT NULL AND e9x_is_current_org_admin()
+  WITH CHECK (source_seat_id IS NOT NULL AND source_org_id = e9x_current_org() AND e9x_is_current_org_admin()
               AND e9x_org_has_member(e9x_current_org(), user_id));
 CREATE POLICY entitlements_update_seat ON entitlements FOR UPDATE
-  USING (source_seat_id IS NOT NULL AND e9x_is_current_org_admin()
+  USING (source_seat_id IS NOT NULL AND source_org_id = e9x_current_org() AND e9x_is_current_org_admin()
          AND e9x_org_has_member(e9x_current_org(), user_id))
-  WITH CHECK (source_seat_id IS NOT NULL AND e9x_is_current_org_admin()
+  WITH CHECK (source_seat_id IS NOT NULL AND source_org_id = e9x_current_org() AND e9x_is_current_org_admin()
               AND e9x_org_has_member(e9x_current_org(), user_id));
 
 -- spec §8: ORG_ADMIN / TEACHER of the current org see the seat entitlements of that org's members. Personal
 -- (order-sourced) entitlements of a member stay private to the member and English9x SYS_ADMIN.
--- P6 must narrow this to seats of this org once seat_assignments exists.
+-- Only seats issued by the current org (source_org_id).
 CREATE POLICY entitlements_select_org_staff ON entitlements FOR SELECT USING (
   source_seat_id IS NOT NULL
+  AND source_org_id = e9x_current_org()
   AND e9x_current_org() IS NOT NULL
   AND (e9x_has_role('ORG_ADMIN', e9x_current_org()) OR e9x_has_role('TEACHER', e9x_current_org()))
   AND e9x_org_has_member(e9x_current_org(), user_id));

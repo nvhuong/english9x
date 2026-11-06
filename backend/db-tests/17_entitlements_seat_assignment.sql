@@ -31,16 +31,16 @@ SELECT set_config('app.user_id','a0000000-0000-0000-0000-00000000000a',false),
 DO $$
 DECLARE n int;
 BEGIN
-  INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id)
-   VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now() - interval '1 day',now()+interval '90 days',gen_random_uuid());
+  INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id)
+   VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now() - interval '1 day',now()+interval '90 days',gen_random_uuid(),'a1a1a1a1-0000-0000-0000-00000000000a');
   ASSERT (SELECT count(*) FROM entitlements) = 1, 'the org admin sees the seat entitlement of a member';
   UPDATE entitlements SET valid_until = now() WHERE user_id = 'a0000000-0000-0000-0000-00000000000c';
   GET DIAGNOSTICS n = ROW_COUNT;
   ASSERT n = 1, 'revocation (ending the entitlement) works';
   -- not a member of A: cannot be given a seat by A's admin
   BEGIN
-    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id)
-     VALUES ('a0000000-0000-0000-0000-00000000000d','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid());
+    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id)
+     VALUES ('a0000000-0000-0000-0000-00000000000d','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid(),'a1a1a1a1-0000-0000-0000-00000000000a');
     RAISE EXCEPTION 'seat for a member of another org must fail';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   -- order-sourced rows are not an org admin's to write
@@ -63,8 +63,8 @@ DO $$
 DECLARE n int;
 BEGIN
   BEGIN
-    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id)
-     VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid());
+    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id)
+     VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid(),'b1b1b1b1-0000-0000-0000-00000000000b');
     RAISE EXCEPTION 'B admin must not assign seats to A members';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   UPDATE entitlements SET valid_until = now() + interval '999 days' WHERE user_id = 'a0000000-0000-0000-0000-00000000000c';
@@ -76,8 +76,8 @@ DO $$
 BEGIN
   -- context forged to A, flag on, but the ORG_ADMIN grant is for B only
   BEGIN
-    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id)
-     VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid());
+    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id)
+     VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid(),'a1a1a1a1-0000-0000-0000-00000000000a');
     RAISE EXCEPTION 'forged org context must not authorise seats';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
@@ -87,8 +87,8 @@ SELECT set_config('app.user_id','a0000000-0000-0000-0000-00000000000e',false), s
 DO $$
 BEGIN
   BEGIN
-    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id)
-     VALUES ('a0000000-0000-0000-0000-00000000000e','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid());
+    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id)
+     VALUES ('a0000000-0000-0000-0000-00000000000e','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid(),'a1a1a1a1-0000-0000-0000-00000000000a');
     RAISE EXCEPTION 'teacher must not assign seats';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
@@ -96,8 +96,8 @@ SELECT set_config('app.user_id','a0000000-0000-0000-0000-00000000000c',false), s
 DO $$
 BEGIN
   BEGIN
-    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id)
-     VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '365 days',gen_random_uuid());
+    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id)
+     VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '365 days',gen_random_uuid(),'a1a1a1a1-0000-0000-0000-00000000000a');
     RAISE EXCEPTION 'learner with a forged org_admin flag must not grant themselves a seat';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;

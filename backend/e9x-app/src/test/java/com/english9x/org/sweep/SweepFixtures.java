@@ -2,6 +2,8 @@ package com.english9x.org.sweep;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -31,26 +33,44 @@ public final class SweepFixtures {
         su.update("insert into questions(owner_org_id,exam_code,content,answer_key,status) values (?,'IELTS','{}','{}','DRAFT')", orgB);
         su.update("insert into exam_attempts(user_id,owner_org_id,test_version_id,status) values (?,?,gen_random_uuid(),'IN_PROGRESS')", userB, orgB);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userB, orgB);
+        su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
+                + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
+                userB, orgB, orgB);
     }
 
+    /** Ids of org B that org A may not see, plus everything the catalog walk could not classify or find. */
+    public record Catalog(List<UUID> ids, List<String> problems) {}
+
+    /** Tables whose foreign ids are seeded explicitly above (they carry no tenant column of their own). */
+    private static final Set<String> EXPLICIT = Set.of("users", "organizations");
+
     /**
-     * Every id that belongs to org B and that org A may not see: all rows of any public table that carries an
-     * {@code id uuid} and an {@code owner_org_id} / {@code org_id} equal to B, or a {@code user_id} of a user who
-     * belongs only to B, plus B itself. Tables added by later tasks are found by this catalog query automatically.
+     * Walks every public table that has an {@code id uuid}. A table must be either explicit ({@code users},
+     * {@code organizations}), listed in {@code exemptTables} with a reason, or tenant-linked by
+     * {@code owner_org_id} / {@code org_id} / {@code source_org_id} / {@code user_id}; a tenant-linked table must
+     * hold at least one row of org B. Anything else is a problem, so a table or endpoint added by a later task cannot
+     * be silently skipped: its author must seed a foreign row here or write down why it is exempt.
      */
-    public List<UUID> foreignIds() {
+    public Catalog foreignIds(Map<String, String> exemptTables) {
         List<UUID> ids = new ArrayList<>(List.of(orgB, userB));
+        List<String> problems = new ArrayList<>();
         List<String> tables = su.queryForList("""
                 select c.table_name from information_schema.columns c
-                 where c.table_schema = 'public' and c.column_name = 'id' and c.data_type = 'uuid'
+                  join information_schema.tables t on t.table_schema = c.table_schema and t.table_name = c.table_name
+                 where c.table_schema = 'public' and t.table_type = 'BASE TABLE'
+                   and c.column_name = 'id' and c.data_type = 'uuid'
                    and c.table_name <> 'flyway_schema_history'
+                 order by 1
                 """, String.class);
         for (String t : tables) {
+            if (EXPLICIT.contains(t) || exemptTables.containsKey(t)) {
+                continue;
+            }
             List<String> cols = su.queryForList(
                     "select column_name from information_schema.columns where table_schema='public' and table_name=?", String.class, t);
             List<String> conds = new ArrayList<>();
             List<Object> args = new ArrayList<>();
-            for (String col : List.of("owner_org_id", "org_id")) {
+            for (String col : List.of("owner_org_id", "org_id", "source_org_id")) {
                 if (cols.contains(col)) {
                     conds.add(col + " = ?");
                     args.add(orgB);
@@ -61,11 +81,15 @@ public final class SweepFixtures {
                 args.add(orgB);
             }
             if (conds.isEmpty()) {
+                problems.add("table " + t + " has an id but no owner_org_id/org_id/source_org_id/user_id: classify it or list it in the exempt tables with a reason");
                 continue;
             }
-            String sql = "select id from \"" + t + "\" where " + String.join(" or ", conds);
-            ids.addAll(su.queryForList(sql, UUID.class, args.toArray()));
+            List<UUID> rows = su.queryForList("select id from \"" + t + "\" where " + String.join(" or ", conds), UUID.class, args.toArray());
+            if (rows.isEmpty()) {
+                problems.add("table " + t + " has no row belonging to org B: seed one in SweepFixtures so endpoints over it are really swept");
+            }
+            ids.addAll(rows);
         }
-        return ids.stream().distinct().toList();
+        return new Catalog(ids.stream().distinct().toList(), problems);
     }
 }

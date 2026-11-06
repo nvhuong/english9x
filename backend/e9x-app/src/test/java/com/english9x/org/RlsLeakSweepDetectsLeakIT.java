@@ -50,7 +50,9 @@ class RlsLeakSweepDetectsLeakIT {
     @Test
     void sweepFailsWhenAnEndpointLeaks() throws Exception {
         String openApi = http.getForObject("/v3/api-docs", String.class);
-        ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, FIXTURES.foreignIds(), Map.of(), (template, path) -> {
+        ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, FIXTURES.foreignIds(Map.of()).ids(), Map.of(),
+                Map.of("/sweep/classes/{classId}/members/{userId}",
+                        List.of(Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userB))), (template, path) -> {
             HttpHeaders h = new HttpHeaders();
             h.add("X-Test-User", FIXTURES.userA.toString());
             h.add("X-Test-Org", FIXTURES.orgA.toString());

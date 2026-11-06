@@ -49,6 +49,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 ### Task P1.4: identity (W1) — F01, F02, F03
 
+> **Ghi chú 2026-11-07 (từ P1.3):** tra cứu đăng nhập theo email phải đi qua một hàm `SECURITY DEFINER` hẹp (chỉ trả những cột cần thiết cho đúng một email), không mở policy SELECT rộng trên `users`.
+
 **Files:** `backend/e9x-app/src/main/java/com/english9x/identity/{api,internal}/**`, migration `V202611070001__identity_auth.sql` (`auth_identities`, `refresh_tokens`, `email_verifications`, `password_resets`), frontend `frontend/src/features/auth/**`, E2E `e2e/specs/auth/F01-register-verify.spec.ts`, `F02-google-login.spec.ts`, `F03-password-reset.spec.ts`.
 
 **Interfaces (Produces):**
@@ -61,6 +63,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 **Tests:** `RegistrationIT.unverifiedUserCannotCheckout` (khoá cờ `emailVerified` dùng ở P5), `LoginRateLimitIT.blocksAfterConfiguredAttempts` (`e9x.auth.login-rate-limit`), `RefreshRotationIT.reusedRefreshTokenRevokesFamily`, `PasswordResetIT.oldPasswordAndTokensRejected`, `GoogleLoginIT.linksExistingEmail`. E2E như ma trận F01–F03.
 
 ### Task P1.5: org + ngữ cảnh (W2) — F04, F05, F06, F07, F08
+
+> **Ghi chú 2026-11-07 (từ P1.3):** mọi grant vai trò trong một tổ chức phải đi kèm một dòng `org_memberships` cho cùng người dùng và tổ chức, nếu không `RlsSessionConfigurer` từ chối ngữ cảnh (`OrgContextDeniedException`). Chỉ SYS_ADMIN thật (cờ + grant) hoặc ORG_ADMIN thật của chính tổ chức đó được ghi `role_grants`/`org_memberships`; cờ đơn lẻ không đủ.
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/org/**`, migration `V202611080001__org_invitations.sql` (`invitations`, `join_codes`), frontend `frontend/src/features/org/**`, `frontend/src/app/ContextSwitcher.tsx`, E2E F04–F08.
 
@@ -84,6 +88,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 **Tests:** `ReviewServiceIT.authorCannotApproveOwnVersion`, `.changesRequestedReturnsToDraftWithComment`, `.approveBlockedByUnpublishedDependency`, `.bundleApprovesAllOrNothing`, `.publishedVersionIsImmutable` (UPDATE bị trigger chặn).
 
 ### Task P1.7: Hàng đợi nền (W1)
+
+> **Ghi chú 2026-11-07 (từ P1.3):** quyết định của controller: ngữ cảnh worker là một login role riêng `e9x_worker_login` với pool nhỏ riêng, chỉ các handler của `platform.jobs` dùng, không bao giờ truy cập được từ HTTP, không có GUC `app.system`, quyền hạn hẹp nhất có thể. Việc không có ngữ cảnh người dùng khiến job thấy 0 dòng; không giải quyết bằng cờ.
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/platform/jobs/**`, migration `V202611070002__jobs.sql`.
 
@@ -116,6 +122,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 **Tests:** Vitest cho từng component; Storybook test-runner + axe (không có vi phạm serious/critical); E2E F58 quét axe 8 màn chính và đổi ngôn ngữ.
 
 ### Task P1.11: OpenAPI, lỗi RFC 7807, hợp đồng event (W1)
+
+> **Ghi chú 2026-11-07 (từ P1.3):** `gen-api` (sinh client từ OpenAPI) phải chạy ứng dụng với `E9X_OPENAPI_ENABLED=true`; `/v3/api-docs` mặc định tắt.
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/platform/web/ProblemDetailsAdvice.java`, `backend/e9x-app/src/main/java/com/english9x/*/api/events/*.java`, `frontend/scripts/gen-api.mjs`, `docs/superpowers/design/events.md`.
 

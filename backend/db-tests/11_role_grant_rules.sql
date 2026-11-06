@@ -2,10 +2,19 @@ INSERT INTO users(id,email) VALUES ('11111111-0000-0000-0000-000000000001','u1@x
 INSERT INTO organizations(id,name,type) VALUES
  ('aaaaaaaa-0000-0000-0000-000000000001','Center A','CENTER'),
  ('ffffffff-0000-0000-0000-00000000000f','Enterprise E','ENTERPRISE');
+-- actors: a real SYS_ADMIN (staff side) and a real ORG_ADMIN of A and E (org side); flags alone no longer authorise
+INSERT INTO users(id,email) VALUES
+ ('33333333-0000-0000-0000-000000000003','sys@x.test'),
+ ('44444444-0000-0000-0000-000000000004','orgadmin@x.test');
+INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES
+ ('33333333-0000-0000-0000-000000000003',NULL,NULL,'SYS_ADMIN'),
+ ('44444444-0000-0000-0000-000000000004','aaaaaaaa-0000-0000-0000-000000000001',NULL,'ORG_ADMIN'),
+ ('44444444-0000-0000-0000-000000000004','ffffffff-0000-0000-0000-00000000000f',NULL,'ORG_ADMIN');
 
 -- staff in English9x context (cannot see organizations through RLS)
 SET ROLE e9x_app;
 SELECT set_config('app.org_id','',false);
+SELECT set_config('app.user_id','33333333-0000-0000-0000-000000000003',false);
 SELECT set_config('app.e9x_staff','on',false);
 DO $$
 DECLARE r text;
@@ -48,6 +57,7 @@ BEGIN
 END $$;
 
 -- org admin of A cannot mint an org-scoped SYS_ADMIN
+SELECT set_config('app.user_id','44444444-0000-0000-0000-000000000004',false);
 SELECT set_config('app.e9x_staff','',false);
 SELECT set_config('app.org_id','aaaaaaaa-0000-0000-0000-000000000001',false);
 SELECT set_config('app.org_admin','on',false);

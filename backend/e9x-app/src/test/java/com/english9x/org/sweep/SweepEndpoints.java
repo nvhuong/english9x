@@ -74,6 +74,26 @@ public final class SweepEndpoints {
         }
     }
 
+    /** Two path parameters: the class is read through RLS, so a foreign class is 404 whoever the member is. */
+    @RestController
+    @Profile("rls-sweep")
+    static class MemberController {
+        private final JdbcTemplate jdbc;
+
+        MemberController(JdbcTemplate jdbc) {
+            this.jdbc = jdbc;
+        }
+
+        @GetMapping("/sweep/classes/{classId}/members/{userId}")
+        @Transactional(readOnly = true)
+        String get(@PathVariable UUID classId, @PathVariable UUID userId) {
+            jdbc.queryForList("select name from classes where id = ?", String.class, classId).stream()
+                    .findFirst()
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            return userId.toString();
+        }
+    }
+
     /** Deliberately leaky: reads the same table over a superuser connection, i.e. past RLS. */
     @RestController
     @Profile("rls-sweep-leak")

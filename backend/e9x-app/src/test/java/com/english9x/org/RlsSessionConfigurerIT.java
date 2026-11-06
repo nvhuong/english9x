@@ -40,6 +40,7 @@ class RlsSessionConfigurerIT {
     static final UUID AUTHOR = UUID.randomUUID();
     static final UUID SYS_ADMIN = UUID.randomUUID();
     static final UUID OUTSIDER = UUID.randomUUID();
+    static final UUID AUTHOR_MEMBER = UUID.randomUUID();
     static final UUID CLASS_A = UUID.randomUUID();
     static final UUID CLASS_B = UUID.randomUUID();
 
@@ -61,7 +62,7 @@ class RlsSessionConfigurerIT {
     static void fixtures(@Autowired JdbcTemplate ignoredToForceMigration) {
         JdbcTemplate su = new JdbcTemplate(TestPostgres.superuser(DB));
         su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER')", ORG_A, ORG_B);
-        for (UUID u : List.of(LEARNER_A, ADMIN_A, ADMIN_A_IN_B_AS_MEMBER, LEARNER_B, AUTHOR, SYS_ADMIN, OUTSIDER)) {
+        for (UUID u : List.of(LEARNER_A, ADMIN_A, ADMIN_A_IN_B_AS_MEMBER, LEARNER_B, AUTHOR, SYS_ADMIN, OUTSIDER, AUTHOR_MEMBER)) {
             su.update("insert into users(id,email) values (?,?)", u, u + "@x.test");
         }
         for (Object[] m : new Object[][] {
@@ -75,6 +76,9 @@ class RlsSessionConfigurerIT {
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", ADMIN_A_IN_B_AS_MEMBER, ORG_A);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,null,'IELTS','AUTHOR')", AUTHOR);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,null,null,'SYS_ADMIN')", SYS_ADMIN);
+        // an English9x AUTHOR who is also a plain member of org A
+        su.update("insert into org_memberships(org_id,user_id) values (?,?)", ORG_A, AUTHOR_MEMBER);
+        su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,null,'IELTS','AUTHOR')", AUTHOR_MEMBER);
         su.update("insert into classes(id,owner_org_id,name) values (?,?,'A'),(?,?,'B')", CLASS_A, ORG_A, CLASS_B, ORG_B);
     }
 
@@ -136,6 +140,42 @@ class RlsSessionConfigurerIT {
         assertEquals("", inTx(ADMIN_A, null, this::settings).get("staff"), "an ORG_ADMIN is not English9x staff");
         // an English9x role does not carry into an organisation context (and the author is no member of one)
         assertThrows(RuntimeException.class, () -> inTx(AUTHOR, ORG_A, this::settings));
+    }
+
+    @Test
+    void anEnglish9xRoleDoesNotCarryIntoAnOrgContextEvenForAMember() {
+        assertEquals("on", inTx(AUTHOR_MEMBER, null, this::settings).get("staff"));
+        Map<String, String> inOrg = inTx(AUTHOR_MEMBER, ORG_A, this::settings);
+        assertEquals(ORG_A.toString(), inOrg.get("org_id"));
+        assertEquals("", inOrg.get("staff"), "AUTHOR acting inside an org is not English9x staff");
+        assertEquals("", inOrg.get("org_admin"));
+    }
+
+    @Test
+    void rebindingInsideALiveTransactionIsRefused() {
+        TransactionTemplate tx = new TransactionTemplate(tm);
+        try (var outer = CurrentContextHolder.bind(ADMIN_A_IN_B_AS_MEMBER, ORG_A)) {
+            tx.execute(st -> {
+                // same binding: harmless
+                try (var same = CurrentContextHolder.bind(ADMIN_A_IN_B_AS_MEMBER, ORG_A)) {
+                    assertEquals(ORG_A.toString(), settings().get("org_id"));
+                }
+                // another org: RLS and isOrgAdmin() would still say A while orgId() said B
+                assertThrows(IllegalStateException.class, () -> CurrentContextHolder.bind(ADMIN_A_IN_B_AS_MEMBER, ORG_B));
+                assertThrows(IllegalStateException.class, () -> CurrentContextHolder.bind(LEARNER_A, ORG_A));
+                assertEquals(ORG_A, CurrentContextHolder.current().orElseThrow().orgId().orElseThrow());
+                return null;
+            });
+        }
+        // a transaction begun with no context cannot acquire one midway either
+        tx.execute(st -> {
+            assertThrows(IllegalStateException.class, () -> CurrentContextHolder.bind(LEARNER_A, ORG_A));
+            return null;
+        });
+        // outside a transaction, rebinding is fine
+        try (var a = CurrentContextHolder.bind(LEARNER_A, ORG_A); var b = CurrentContextHolder.bind(LEARNER_B, ORG_B)) {
+            assertEquals(ORG_B, CurrentContextHolder.current().orElseThrow().orgId().orElseThrow());
+        }
     }
 
     @Test

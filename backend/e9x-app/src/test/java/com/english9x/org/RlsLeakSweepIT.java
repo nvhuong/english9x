@@ -40,6 +40,15 @@ class RlsLeakSweepIT {
     /** Path templates that legitimately answer other organisations' ids, each with its reason. None yet. */
     static final Map<String, String> EXEMPT = Map.of();
 
+    /** Tables with an id that carry no tenant data to sweep, each with its reason. None yet. */
+    static final Map<String, String> EXEMPT_TABLES = Map.of();
+
+    /** Typed fixtures for templates with several path parameters: every slot filled with a foreign id of its kind. */
+    static Map<String, List<Map<String, UUID>>> typedFixtures() {
+        return Map.of("/sweep/classes/{classId}/members/{userId}",
+                List.of(Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userB)));
+    }
+
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
         TestPostgres.connect(registry, DB);
@@ -70,12 +79,16 @@ class RlsLeakSweepIT {
         // a 404 for every foreign id means nothing unless the same endpoint answers 200 for the caller's own org
         assertEquals(200, getAsOrgA("/sweep/classes/" + FIXTURES.classA), "positive control");
         String openApi = http.getForObject("/v3/api-docs", String.class);
-        List<UUID> foreign = FIXTURES.foreignIds();
-        assertTrue(foreign.contains(FIXTURES.classB) && foreign.size() >= 6, "foreign ids found by catalog: " + foreign);
+        assertEquals(200, getAsOrgA("/sweep/classes/" + FIXTURES.classA + "/members/" + FIXTURES.userA), "positive control, two parameters");
+        SweepFixtures.Catalog catalog = FIXTURES.foreignIds(EXEMPT_TABLES);
+        assertEquals(List.of(), catalog.problems(), "every table with an id must have a foreign row or a reason");
+        List<UUID> foreign = catalog.ids();
+        assertTrue(foreign.contains(FIXTURES.classB) && foreign.size() >= 7, "foreign ids found by catalog: " + foreign);
 
-        ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, foreign, EXEMPT, (template, path) -> getAsOrgA(path));
+        ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, foreign, EXEMPT, typedFixtures(), (template, path) -> getAsOrgA(path));
 
         assertTrue(r.visited().contains("/sweep/classes/{id}"), "the sweep must reach the test endpoint, visited " + r.visited());
+        assertTrue(r.visited().contains("/sweep/classes/{classId}/members/{userId}"), "multi-parameter endpoint swept: " + r.visited());
         assertFalse(r.visited().isEmpty(), "a sweep that visits nothing proves nothing");
         assertEquals(List.of(), r.unsweepable());
         assertEquals(List.of(), r.leaks());

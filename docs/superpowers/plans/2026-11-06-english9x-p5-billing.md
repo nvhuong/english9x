@@ -38,6 +38,8 @@
 
 ### Task P5.3: gói suất tổ chức + gán suất (W5) — F42, F43
 
+> **Ghi chú 2026-11-07 (từ P1.3):** quyền học theo suất cần FK tới `seat_assignments`, kiểm tra khoá thuộc `org_license_courses` của giấy phép và kiểm tra sức chứa (số suất). Hiện ORG_ADMIN có thể chèn dòng suất tuỳ ý (`source_seat_id` chưa có FK, cột `entitlements.source_org_id` đã có và RLS buộc bằng tổ chức hiện tại) cho thành viên tổ chức mình; DB chưa chặn được vượt sức chứa. Thu hồi = UPDATE `valid_until`.
+
 **Files:** `backend/e9x-app/src/main/java/com/english9x/billing/license/**`, migration `V202611120003__org_licenses.sql` (`org_licenses`, `org_license_courses`, `seat_assignments`), `frontend/src/features/org/licenses/**`, `frontend/src/features/admin/OrgLicensesPage.tsx`, E2E `F42-org-license.spec.ts`, `F43-seat-assign-revoke.spec.ts`.
 
 **Interfaces:**
