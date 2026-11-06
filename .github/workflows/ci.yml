@@ -1,0 +1,82 @@
+name: ci
+
+on:
+  push:
+    branches: [release/v1, "task/**"]
+  pull_request:
+
+# Repository variable E9X_E2E_GATE=strict (set at wave W10) makes the E2E coverage gate blocking.
+env:
+  E9X_E2E_GATE: ${{ vars.E9X_E2E_GATE }}
+
+jobs:
+  backend:
+    name: backend (build, unit, IT)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      # Docker is preinstalled on ubuntu-latest; the ITs use Testcontainers (postgres:16).
+      - run: mvn -B verify
+        working-directory: backend
+
+  db-tests:
+    name: database RLS tests
+    runs-on: ubuntu-latest
+    container: postgres:16
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/test-db.sh
+
+  fakes:
+    name: fakes (gemini, telegram)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test 'infra/fakes/**/*.test.mjs'
+
+  frontend:
+    name: frontend (lint, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm -C frontend install --frozen-lockfile
+      - run: pnpm -C frontend run lint
+      - run: pnpm -C frontend run test
+      - run: pnpm -C frontend run build
+
+  compose:
+    name: compose config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f infra/docker-compose.yml config -q
+      - run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml config -q
+
+  # E2E coverage gate (F01-F58). Selftest and manifest validity always block; only incomplete coverage
+  # is tolerated ("coverage-progress") until W10, when repository variable E9X_E2E_GATE=strict
+  # (passed through the workflow-level env) makes it blocking. Same logic as ./scripts/verify.sh.
+  coverage-progress:
+    name: e2e coverage gate (coverage-progress)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: ./scripts/e2e-gate.sh
