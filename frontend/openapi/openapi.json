@@ -1,0 +1,102 @@
+{
+  "components" : {
+    "schemas" : {
+      "Pong" : {
+        "properties" : {
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Problem" : {
+        "description" : "RFC 7807 problem details; errors[] lists invalid fields/rows, empty otherwise",
+        "properties" : {
+          "detail" : {
+            "description" : "Explanation for this occurrence; never contains internals",
+            "type" : "string"
+          },
+          "errors" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProblemError"
+            },
+            "type" : "array"
+          },
+          "instance" : {
+            "description" : "Request path",
+            "type" : "string"
+          },
+          "status" : {
+            "description" : "HTTP status code",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "description" : "Short summary, stable per type",
+            "type" : "string"
+          },
+          "type" : {
+            "description" : "URN identifying the problem class, e.g. urn:e9x:problem:validation-failed",
+            "type" : "string"
+          }
+        }
+      },
+      "ProblemError" : {
+        "properties" : {
+          "code" : {
+            "description" : "Machine-readable constraint code, e.g. NotBlank",
+            "type" : "string"
+          },
+          "field" : {
+            "description" : "Path of the offending value in the request, e.g. rows[1].sku",
+            "type" : "string"
+          },
+          "message" : {
+            "description" : "Human-readable message",
+            "type" : "string"
+          },
+          "row" : {
+            "description" : "Zero-based index of the offending list element, null when not row-specific",
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }
+      }
+    }
+  },
+  "info" : {
+    "title" : "OpenAPI definition",
+    "version" : "v0"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/v1/platform/ping" : {
+      "get" : {
+        "operationId" : "ping",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Pong"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "platform-controller" ]
+      }
+    }
+  }
+}
