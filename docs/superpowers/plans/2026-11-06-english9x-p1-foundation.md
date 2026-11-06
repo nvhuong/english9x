@@ -43,6 +43,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 **Interfaces:** Produces `CurrentContext` (`UUID userId()`, `Optional<UUID> orgId()`, `boolean isEnglish9xStaff()`, `boolean isOrgAdmin()`); ứng dụng kết nối bằng role `e9x_app` (Flyway chạy bằng role chủ `e9x_owner`). `RlsSessionConfigurer` đặt thêm `app.e9x_staff = 'on'` chỉ khi người dùng có vai trò English9x (AUTHOR/REVIEWER/TEACHER/SYS_ADMIN với `org_id` NULL) **và** ngữ cảnh là "Cá nhân"/English9x, và `app.org_admin = 'on'` khi người dùng là ORG_ADMIN của tổ chức trong ngữ cảnh (theo các ruling của L1d: ghi nội dung English9x, ghi thành viên/quyền, duyệt kho chung đều cần các cờ này). Module chấm dùng role `e9x_grader` và phải đặt `app.org_id` của lượt thi.
 
+**Ghi chú từ review wave cục bộ:** `e9x_app` là NOLOGIN — tạo role đăng nhập `e9x_app_login` kế thừa `e9x_app`; thêm test `PooledConnectionFlagsIT.nextTransactionCarriesNoFlags` (cờ `app.e9x_staff`/`app.org_admin`/`app.org_id` đặt bằng `set_config(..., true)` không rò sang transaction kế tiếp trên cùng kết nối pool); bảng `entitlements` cần thêm policy INSERT/UPDATE cho luồng xác nhận đơn (P5) và gán suất (P6), và policy SELECT cho ORG_ADMIN/TEACHER xem tiến trình học viên trong tổ chức (spec §8).
+
 **Tests:** `RlsIT` chạy lại kịch bản `backend/db-tests/*.sql` qua Flyway + Testcontainers; `RlsLeakSweepIT.everyGetEndpointRejectsForeignOrgIds` — liệt kê mọi endpoint GET có `{id}` từ OpenAPI, gọi bằng người tổ chức A với ID tổ chức B, mong đợi 403/404 (Review Focus #1).
 
 ### Task P1.4: identity (W1) — F01, F02, F03
@@ -53,6 +55,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 - `POST /api/auth/register {email, password, displayName, consent:true}` → 201; gửi email xác thực.
 - `POST /api/auth/verify-email {token}`; `POST /api/auth/login {email, password}` → `{accessToken, refreshToken}`; `POST /api/auth/refresh {refreshToken}` (xoay vòng, token cũ vô hiệu); `POST /api/auth/password-reset/request {email}`; `POST /api/auth/password-reset/confirm {token, newPassword}` (thu hồi mọi refresh token); `GET /api/auth/oauth2/google` (Spring OAuth2 client; E2E dùng IdP giả lập).
 - `identity.api.UserDirectory#findById(UUID)`, event `UserRegistered`.
+
+**Bắt buộc thêm (hoãn từ wave cục bộ):** bật RLS cho `users` — SELECT: chính mình, hoặc cùng tổ chức trong ngữ cảnh hiện tại, hoặc staff; UPDATE: chính mình; INSERT chỉ qua luồng đăng ký (cờ `app.registration='on'`). Cập nhật test `RLS enabled on all tables` của L1d (bỏ `users` khỏi allowlist).
 
 **Tests:** `RegistrationIT.unverifiedUserCannotCheckout` (khoá cờ `emailVerified` dùng ở P5), `LoginRateLimitIT.blocksAfterConfiguredAttempts` (`e9x.auth.login-rate-limit`), `RefreshRotationIT.reusedRefreshTokenRevokesFamily`, `PasswordResetIT.oldPasswordAndTokensRejected`, `GoogleLoginIT.linksExistingEmail`. E2E như ma trận F01–F03.
 
