@@ -29,10 +29,18 @@ docker compose -f infra/docker-compose.yml up --build -d     # app, postgres, mi
 open https://localhost                                       # Caddy internal certificate (accept it, or curl -k)
 curl -k https://localhost/actuator/health
 
-# dev / E2E overlay: + mailpit (UI :8025, SMTP :1025), fake-telegram (:8081), fake-gemini (:8082); override with E9X_FAKE_TELEGRAM_PORT / E9X_FAKE_GEMINI_PORT
+# dev / E2E overlay: + mailpit (UI :8025; the app sends SMTP on the Compose network), fake-telegram (:8081), fake-gemini (:8082); override with
+# E9X_MAILPIT_PORT / E9X_FAKE_TELEGRAM_PORT / E9X_FAKE_GEMINI_PORT. The overlay also turns on Spring profile `e2e` (POST /api/test/seed/*).
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml up --build -d
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml down -v
 ```
+Run the Playwright suite against the real stack with one command (clean database every run, always torn down, needs host ports 80/443 free):
+```bash
+./scripts/e2e.sh                          # everything; extra arguments go to Playwright, e.g. specs/_smoke.spec.ts or -g "language"
+./scripts/e2e.sh --keep specs/common      # leave the stack up to debug (https://localhost, Mailpit UI), then: ./scripts/e2e.sh --down
+```
+Videos and traces land in `e2e/test-results`, the HTML report in `e2e/playwright-report`. It is not part of `verify.sh` (too slow); CI runs it as the non-blocking job `e2e`.
+
 The default credentials in `infra/docker-compose.yml` are for local use only. In production set
 `POSTGRES_PASSWORD`, `E9X_FLYWAY_PASSWORD` (role `e9x_owner`, migrations), `E9X_DB_PASSWORD` (role `e9x_app_login`, the app), `E9X_WORKER_DB_PASSWORD` (role `e9x_worker_login`, background jobs), `MINIO_ROOT_PASSWORD`, `E9X_DOMAIN` (public host name), `E9X_GEMINI_API_KEY` in the environment
 or a git-ignored `.env`. Application settings (spec §15.1) are keys in `backend/e9x-app/src/main/resources/application.yml`
