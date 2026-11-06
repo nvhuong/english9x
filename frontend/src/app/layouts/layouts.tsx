@@ -4,6 +4,7 @@ import { cn } from '../../design';
 import { AREA_ROLES, type Area } from '../areas';
 import { AppFooter } from '../components/AppFooter';
 import { AppHeader, SkipLink } from '../components/AppHeader';
+import { VerifyEmailBanner } from '../../features/auth/VerifyEmailBanner';
 import { RequireRole } from '../guards/RequireRole';
 import { useAreaNav } from '../nav';
 
@@ -44,6 +45,7 @@ export function LearnerLayout() {
     <div className="flex min-h-screen flex-col bg-paper">
       <SkipLink />
       <AppHeader area="learner" />
+      <VerifyEmailBanner />
       <div className="mx-auto w-full max-w-6xl px-4 pt-3">
         <NavItems area="learner" />
       </div>

@@ -19,6 +19,7 @@
     "test:a11y": "node scripts/storybook-a11y.mjs"
   },
   "dependencies": {
+    "@hookform/resolvers": "^7.0.3",
     "@radix-ui/react-dialog": "^1.3.1",
     "@radix-ui/react-select": "^2.4.1",
     "@radix-ui/react-slot": "^1.5.0",
@@ -29,8 +30,10 @@
     "openapi-fetch": "^0.17.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hook-form": "^7.91.0",
     "react-i18next": "^17.1.13",
     "react-router-dom": "^7.18.5",
+    "zod": "^4.6.7",
     "zustand": "^5.1.0"
   },
   "devDependencies": {

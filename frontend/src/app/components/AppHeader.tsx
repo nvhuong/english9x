@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink } from 'react-router-dom';
 import { cn } from '../../design';
 import { AREAS, AREA_PATH, AREA_ROLES, type Area } from '../areas';
+import { AuthMenu } from '../../features/auth/AuthMenu';
 import { useContextStore } from '../stores/context';
 import { hasRole, useRoleStore } from '../stores/roles';
 import { LanguageSwitch } from './LanguageSwitch';
@@ -60,6 +61,7 @@ export function AppHeader({ area, dense }: { area: Area; dense?: boolean }) {
           <ContextLabel />
           <LanguageSwitch />
           <ThemeSwitch />
+          <AuthMenu />
         </div>
       </div>
     </header>
