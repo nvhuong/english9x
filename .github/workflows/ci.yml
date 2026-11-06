@@ -33,7 +33,7 @@ jobs:
       - run: bash scripts/test-db.sh
 
   fakes:
-    name: fakes (gemini, telegram)
+    name: fakes (gemini, telegram, oidc)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

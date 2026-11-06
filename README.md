@@ -29,8 +29,8 @@ docker compose -f infra/docker-compose.yml up --build -d     # app, postgres, mi
 open https://localhost                                       # Caddy internal certificate (accept it, or curl -k)
 curl -k https://localhost/actuator/health
 
-# dev / E2E overlay: + mailpit (UI :8025; the app sends SMTP on the Compose network), fake-telegram (:8081), fake-gemini (:8082); override with
-# E9X_MAILPIT_PORT / E9X_FAKE_TELEGRAM_PORT / E9X_FAKE_GEMINI_PORT. The overlay also turns on Spring profile `e2e` (POST /api/test/seed/*).
+# dev / E2E overlay: + mailpit (UI :8025; the app sends SMTP on the Compose network), fake-telegram (:8081), fake-gemini (:8082), fake-oidc (:8083, a fake "Google"); override with
+# E9X_MAILPIT_PORT / E9X_FAKE_TELEGRAM_PORT / E9X_FAKE_GEMINI_PORT / E9X_FAKE_OIDC_PORT. Needs E9X_JWT_SECRET and E9X_E2E_SEED_SECRET (scripts/e2e.sh generates both). The overlay also turns on Spring profile `e2e` (POST /api/test/seed/*).
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml up --build -d
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml down -v
 ```
@@ -51,6 +51,8 @@ Flyway migrates as `e9x_owner` (owns every table); the app runs as `e9x_app_logi
 cannot bypass RLS (startup fails otherwise). `infra/postgres/init/01-roles.sh` creates both roles on the first start of an empty
 volume (it is idempotent: on an existing volume run it by hand with `E9X_OWNER_PASSWORD` / `E9X_APP_PASSWORD` / `E9X_WORKER_PASSWORD` to rotate).
 `application.yml` has no default for `E9X_DB_PASSWORD` / `E9X_FLYWAY_PASSWORD`; the app refuses to start without them.
+Identity (P1.4) adds settings that also have **no default and stop the app from starting when missing**: `E9X_JWT_SECRET` (access-token signing key, at least 32 bytes: `openssl rand -hex 32`), `E9X_PUBLIC_BASE_URL` (the compose file derives it from `E9X_DOMAIN`; emailed links and the Google redirect URI are built from it, never from a request) and `E9X_SMTP_HOST` (+ `E9X_SMTP_PORT`, `E9X_SMTP_USER`, `E9X_SMTP_PASSWORD`, `E9X_MAIL_FROM`; real SMTP usually also needs `SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true` and `..._STARTTLS_ENABLE=true`). Google sign-in is optional: set `E9X_GOOGLE_CLIENT_ID` and `E9X_GOOGLE_CLIENT_SECRET` (redirect URI `https://<domain>/api/auth/oauth2/callback/google`); without them the button is hidden and the route answers 404.
+`E9X_AUTH_TRUSTED_PROXIES` lists the CIDRs of the reverse proxy whose `X-Forwarded-For` the login rate limit believes (the compose file trusts the private Docker ranges, where only Caddy can reach the app); empty means the header is ignored.
 Background jobs (`platform.jobs`, spec §5.3) run over a separate small pool as `e9x_worker_login` (member of `e9x_worker`, no BYPASSRLS,
 grants on the `jobs` table only; the pool is not a `DataSource` bean and is unreachable from HTTP). `E9X_WORKER_DB_PASSWORD` has no default
 in `application.yml`; an instance with `app.worker.enabled=true` refuses to start without it (`false` = no polling, no worker pool).
