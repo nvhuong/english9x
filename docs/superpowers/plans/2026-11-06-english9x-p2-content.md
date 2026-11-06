@@ -74,6 +74,8 @@
 
 **Tests:** `TemplateGeneratorTest.templateColumnsMatchSchema` (mỗi dạng câu), `RowParserTest.reportsRowAndColumn` ("dòng 37: thiếu đáp án"), `ImportJobIT.anyErrorCreatesNothing`, `.successCreatesDraftBundle`, `.missingMediaFileReported`, `.overRowLimitRejected`.
 
+> **Ghi chú 2026-11-07 (từ P1.7, vòng sửa 1):** `{jobId}` trả cho client là `import_jobs.id` (bảng của P2.7), không phải `jobs.id`: role `e9x_app` không đọc được `jobs`. Handler `excel_import` cập nhật `import_jobs` (tiến độ/lỗi) và dùng `JobExecutor#onExhausted` để đánh dấu import thất bại khi hết thử lại.
+
 ### Task P2.8: CMS UI (W5) — F06 (phần UI), F09, F10
 
 **Files:** `frontend/src/features/cms/{workqueue,question-bank,question-form,preview}/**`, `frontend/src/routes/cms/*.routes.ts`, E2E `F10-preview-as-learner.spec.ts` (+ phần UI của F06, F09).

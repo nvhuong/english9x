@@ -1,8 +1,9 @@
 # English9x stack.  Dev:  docker compose -f infra/docker-compose.yml up --build
 # Credentials come from env vars (see README); the defaults below are for local use only.
 # Database logins (P1.3): POSTGRES_USER is the bootstrap superuser (backup only); Flyway connects as the
-# table owner e9x_owner; the running app connects as e9x_app_login, which owns nothing and is subject to RLS.
-# Both roles are created by infra/postgres/init/01-roles.sh on first start.
+# table owner e9x_owner; the running app connects as e9x_app_login, which owns nothing and is subject to RLS; the
+# background-job worker (P1.7) has its own small pool as e9x_worker_login (jobs table only, also subject to RLS).
+# The roles are created by infra/postgres/init/01-roles.sh on first start.
 name: english9x
 
 services:
@@ -14,6 +15,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-e9x_dev_password}
       E9X_OWNER_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}
       E9X_APP_PASSWORD: ${E9X_DB_PASSWORD:-e9x_app_dev_password}
+      E9X_WORKER_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres/init/01-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
@@ -58,6 +60,9 @@ services:
       E9X_DB_PASSWORD: ${E9X_DB_PASSWORD:-e9x_app_dev_password}
       E9X_FLYWAY_USER: e9x_owner
       E9X_FLYWAY_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}
+      # app.worker.enabled (default true): this instance also runs background jobs, over its own pool as this login
+      E9X_WORKER_DB_USER: e9x_worker_login
+      E9X_WORKER_DB_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
       E9X_GEMINI_API_KEY: ${E9X_GEMINI_API_KEY:-}
       LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
     healthcheck:

@@ -45,6 +45,12 @@ public final class SweepFixtures {
     private static final Set<String> EXPLICIT = Set.of("users", "organizations");
 
     /**
+     * Infrastructure tables that hold no tenant data a request can reach: `jobs` (P1.7) grants the request role
+     * INSERT only, no SELECT, and only the worker login reads it, so no endpoint can return a foreign row.
+     */
+    private static final Set<String> INFRASTRUCTURE = Set.of("jobs");
+
+    /**
      * Walks every public table that has an {@code id uuid}. A table must be either explicit ({@code users},
      * {@code organizations}), listed in {@code exemptTables} with a reason, or tenant-linked by
      * {@code owner_org_id} / {@code org_id} / {@code source_org_id} / {@code user_id}; a tenant-linked table must
@@ -63,7 +69,7 @@ public final class SweepFixtures {
                  order by 1
                 """, String.class);
         for (String t : tables) {
-            if (EXPLICIT.contains(t) || exemptTables.containsKey(t)) {
+            if (EXPLICIT.contains(t) || INFRASTRUCTURE.contains(t) || exemptTables.containsKey(t)) {
                 continue;
             }
             List<String> cols = su.queryForList(

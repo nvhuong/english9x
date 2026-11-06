@@ -53,6 +53,8 @@
 
 **Tests:** `ExamAttemptIT.offlineAnswerSyncedWithinGraceAccepted`, `.offlineAnswerAfterGraceRejected`, `ExamAttemptIT.secondStartReturnsExisting`, `.responseRejectedAfterSectionEnd`, `.resumeBeyondLimitSubmitsInterrupted`, `ConcurrentSubmitIT.learnerAndJobSubmitConcurrentlyYieldsOneResult` (Review Focus #2), `AudioOnceIT.secondFetchGone`, `ExamDtoIT.noAnswerKeyInAnyResponse`, `AttemptSubmittedEventIT.publishedOnce`.
 
+> **Ghi chú 2026-11-07 (từ P1.7, vòng sửa 1):** handler `auto_submit_attempt` chạy với `CurrentContextHolder.bind(userId, orgId)` từ payload. Nếu thành viên đã rời tổ chức thì việc bind/transaction ném `OrgContextDeniedException`; handler phải xử lý để lượt thi vẫn được nộp (ví dụ chuyển sang ngữ cảnh cá nhân hoặc đường nộp hệ thống đã được cấp quyền riêng), không để job FAILED im lặng. Dùng `JobExecutor#onExhausted` để đặt trạng thái cuối khi hết thử lại. `auto_submit_attempt` nằm trong `e9x.jobs.priority-types` (có luồng riêng). Cần bean `Clock` (đã có ở `platform.time`).
+
 ### Task P3.4: phòng thi UI (W7) — F25, F26, F27, F28, F29, F32
 
 **Files:** `frontend/src/features/exam/**` (`ExamRoom`, `SectionTimer` (đếm theo `endsAt` − lệch đồng hồ `serverNow`), `ReadingSplitView`, `ListeningPlayer` (không có điều khiển tua/dừng), `WritingEditor` (đếm từ, `spellcheck=false`), `SpeakingRecorder` (kiểm micro, đếm ngược chuẩn bị, ghi đúng thời lượng, upload + thử lại), `QuestionNavigator`, `SaveStatus`, `offlineQueue.ts` (IndexedDB)), renderer cho 12 `InteractionKind`, E2E F25–F29, F32.

@@ -56,6 +56,11 @@ public final class CurrentContextHolder {
         };
     }
 
+    /** Drops whatever binding the thread holds. For infrastructure that reuses threads (the job worker), not for request code. */
+    public static void clear() {
+        CURRENT.remove();
+    }
+
     public static Optional<Binding> current() {
         return Optional.ofNullable(CURRENT.get());
     }
