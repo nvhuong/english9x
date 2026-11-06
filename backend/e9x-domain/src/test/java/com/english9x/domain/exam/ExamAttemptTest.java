@@ -1,0 +1,114 @@
+package com.english9x.domain.exam;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+
+public class ExamAttemptTest {
+    private static final Instant T0 = Instant.parse("2026-11-06T08:00:00Z");
+    private static final SectionPlan LISTENING = new SectionPlan("listening", Duration.ofMinutes(30));
+    private static final SectionPlan READING = new SectionPlan("reading", Duration.ofMinutes(60));
+
+    private static Instant at(long minutes) {
+        return T0.plus(Duration.ofMinutes(minutes));
+    }
+
+    private static ExamAttempt start(int maxResumes) {
+        return ExamAttempt.start("a1", List.of(LISTENING, READING), maxResumes, T0);
+    }
+
+    @Test
+    public void startsInFirstSection() {
+        ExamAttempt a = start(2);
+        assertEquals(Optional.of(LISTENING), a.currentSection(at(1)));
+        assertEquals(at(30), a.currentSectionEndsAt(at(1)));
+        assertEquals(AttemptStatus.IN_PROGRESS, a.status());
+        assertEquals(0, a.resumeCount());
+        assertFalse(a.interrupted());
+    }
+
+    @Test
+    public void autoAdvancesWhenSectionTimeUp() {
+        ExamAttempt a = start(2);
+        assertEquals(Optional.of(READING), a.currentSection(at(31)));
+        assertEquals(at(90), a.currentSectionEndsAt(at(31)));
+        assertTrue(a.canAnswer("reading", at(31)));
+        assertFalse(a.canAnswer("listening", at(31)));
+    }
+
+    @Test
+    public void autoSubmitsWhenLastSectionTimeUp() {
+        ExamAttempt a = start(2);
+        assertEquals(Optional.empty(), a.currentSection(at(91)));
+        assertEquals(AttemptStatus.SUBMITTED, a.status());
+        assertEquals(Optional.of(SubmitReason.TIME_UP), a.submitReason());
+        assertEquals(Optional.of(at(90)), a.submittedAt());
+        assertThrows(IllegalStateException.class, () -> a.currentSectionEndsAt(at(92)));
+        assertFalse(a.canAnswer("reading", at(92)));
+    }
+
+    @Test
+    public void finishEarlyMovesToNextSection() {
+        ExamAttempt a = start(2);
+        a.finishSectionEarly(at(10));
+        assertEquals(Optional.of(READING), a.currentSection(at(11)));
+        assertEquals(at(70), a.currentSectionEndsAt(at(11)));
+        a.finishSectionEarly(at(20));
+        assertEquals(AttemptStatus.SUBMITTED, a.status());
+        assertEquals(Optional.of(SubmitReason.LEARNER), a.submitReason());
+    }
+
+    @Test
+    public void cannotAnswerPreviousSection() {
+        ExamAttempt a = start(2);
+        assertTrue(a.canAnswer("listening", at(5)));
+        assertFalse(a.canAnswer("reading", at(5)));
+        a.finishSectionEarly(at(10));
+        assertFalse(a.canAnswer("listening", at(11)));
+    }
+
+    @Test
+    public void resumeWithinLimitContinues() {
+        ExamAttempt a = start(2);
+        assertEquals(ResumeOutcome.CONTINUED, a.resume(at(5)));
+        assertEquals(ResumeOutcome.CONTINUED, a.resume(at(6)));
+        assertEquals(2, a.resumeCount());
+        assertEquals(AttemptStatus.IN_PROGRESS, a.status());
+        assertFalse(a.interrupted());
+    }
+
+    @Test
+    public void resumeBeyondLimitAutoSubmitsInterrupted() {
+        ExamAttempt a = start(2);
+        a.resume(at(1));
+        a.resume(at(2));
+        assertEquals(ResumeOutcome.AUTO_SUBMITTED, a.resume(at(3)));
+        assertEquals(AttemptStatus.SUBMITTED, a.status());
+        assertTrue(a.interrupted());
+        assertEquals(Optional.of(SubmitReason.RESUME_LIMIT), a.submitReason());
+        assertEquals(Optional.of(at(3)), a.submittedAt());
+    }
+
+    @Test
+    public void submitIsIdempotent() {
+        ExamAttempt a = start(2);
+        assertTrue(a.submit(at(5), SubmitReason.LEARNER));
+        assertFalse(a.submit(at(6), SubmitReason.TIME_UP));
+        assertEquals(Optional.of(SubmitReason.LEARNER), a.submitReason());
+        assertEquals(Optional.of(at(5)), a.submittedAt());
+    }
+
+    @Test
+    public void resumeAfterSubmitRejected() {
+        ExamAttempt a = start(2);
+        a.submit(at(5), SubmitReason.LEARNER);
+        assertThrows(IllegalStateException.class, () -> a.resume(at(6)));
+    }
+}
