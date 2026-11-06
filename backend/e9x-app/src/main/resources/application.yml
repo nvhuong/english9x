@@ -4,13 +4,15 @@ spring:
   application:
     name: english9x
   datasource:
+    # Runtime login: e9x_app_login (member of e9x_app) owns nothing and is subject to Row-Level Security.
+    # The password has no default on purpose: the app refuses to start without E9X_DB_PASSWORD.
     url: ${E9X_DB_URL:jdbc:postgresql://localhost:5432/e9x}
-    username: ${E9X_DB_USER:e9x}
-    password: ${E9X_DB_PASSWORD:e9x}
+    username: ${E9X_DB_USER:e9x_app_login}
+    password: ${E9X_DB_PASSWORD}
   flyway:
-    # Migrations may run as a different (owner) role than the application; P1.3 sets these.
-    user: ${E9X_FLYWAY_USER:${E9X_DB_USER:e9x}}
-    password: ${E9X_FLYWAY_PASSWORD:${E9X_DB_PASSWORD:e9x}}
+    # Migrations run as the table owner e9x_owner, never as the runtime login. No default password either.
+    user: ${E9X_FLYWAY_USER:e9x_owner}
+    password: ${E9X_FLYWAY_PASSWORD}
   jpa:
     open-in-view: false
     hibernate:
@@ -19,6 +21,12 @@ spring:
 server:
   port: 8080
   shutdown: graceful
+
+springdoc:
+  api-docs:
+    enabled: ${E9X_OPENAPI_ENABLED:false}   # /v3/api-docs; off in production, on in the RLS leak sweep test
+  swagger-ui:
+    enabled: false
 
 management:
   endpoints:
