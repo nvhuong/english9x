@@ -75,10 +75,14 @@ public final class ExamAttempt {
         if (now == null) {
             throw new IllegalArgumentException("now is required");
         }
+        sync(now);
+        if (status == AttemptStatus.SUBMITTED) {
+            return ResumeOutcome.AUTO_SUBMITTED; // deadline passed while away
+        }
         resumeCount++;
         if (resumeCount > maxResumes) {
             interrupted = true;
-            submit(now, SubmitReason.RESUME_LIMIT);
+            doSubmit(now, SubmitReason.RESUME_LIMIT);
             return ResumeOutcome.AUTO_SUBMITTED;
         }
         return ResumeOutcome.CONTINUED;
@@ -89,6 +93,11 @@ public final class ExamAttempt {
         if (now == null || reason == null) {
             throw new IllegalArgumentException("now and reason are required");
         }
+        sync(now);
+        return doSubmit(now, reason);
+    }
+
+    private boolean doSubmit(Instant now, SubmitReason reason) {
         if (status == AttemptStatus.SUBMITTED) {
             return false;
         }
@@ -135,7 +144,7 @@ public final class ExamAttempt {
         while (status == AttemptStatus.IN_PROGRESS && !now.isBefore(sectionEnd())) {
             Instant end = sectionEnd();
             if (sectionIndex == sections.size() - 1) {
-                submit(end, SubmitReason.TIME_UP);
+                doSubmit(end, SubmitReason.TIME_UP);
             } else {
                 sectionIndex++;
                 sectionStartedAt = end;

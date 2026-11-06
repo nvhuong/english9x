@@ -111,4 +111,58 @@ public class ExamAttemptTest {
         a.submit(at(5), SubmitReason.LEARNER);
         assertThrows(IllegalStateException.class, () -> a.resume(at(6)));
     }
+
+    @Test
+    public void canAnswerFalseExactlyAtSectionEnd() {
+        ExamAttempt a = start(2);
+        assertTrue(a.canAnswer("listening", at(30).minusMillis(1)));
+        assertFalse(a.canAnswer("listening", at(30)));
+        assertTrue(a.canAnswer("reading", at(30)));
+    }
+
+    @Test
+    public void longGapSkipsSeveralSectionsAndSubmitsAtDeadline() {
+        ExamAttempt a = ExamAttempt.start("a2", List.of(LISTENING, READING,
+                new SectionPlan("writing", Duration.ofMinutes(20))), 2, T0);
+        assertEquals(Optional.empty(), a.currentSection(at(1000)));
+        assertEquals(AttemptStatus.SUBMITTED, a.status());
+        assertEquals(Optional.of(SubmitReason.TIME_UP), a.submitReason());
+        assertEquals(Optional.of(at(110)), a.submittedAt());
+    }
+
+    @Test
+    public void finishEarlyAfterSectionTimedOutDoesNotSkipTwo() {
+        ExamAttempt a = start(2);
+        a.finishSectionEarly(at(35));
+        assertEquals(AttemptStatus.IN_PROGRESS, a.status());
+        assertEquals(Optional.of(READING), a.currentSection(at(36)));
+        assertEquals(at(90), a.currentSectionEndsAt(at(36)));
+    }
+
+    @Test
+    public void resumeAfterDeadlineAutoSubmitsTimeUpNotInterrupted() {
+        ExamAttempt a = start(2);
+        assertEquals(ResumeOutcome.AUTO_SUBMITTED, a.resume(at(200)));
+        assertEquals(Optional.of(SubmitReason.TIME_UP), a.submitReason());
+        assertFalse(a.interrupted());
+        assertEquals(0, a.resumeCount());
+        assertEquals(Optional.of(at(90)), a.submittedAt());
+    }
+
+    @Test
+    public void resumeOverLimitAfterDeadlineIsTimeUpNotInterrupted() {
+        ExamAttempt a = start(0);
+        assertEquals(ResumeOutcome.AUTO_SUBMITTED, a.resume(at(200)));
+        assertEquals(Optional.of(SubmitReason.TIME_UP), a.submitReason());
+        assertFalse(a.interrupted());
+        assertEquals(0, a.resumeCount());
+    }
+
+    @Test
+    public void learnerSubmitAfterDeadlineRecordsTimeUp() {
+        ExamAttempt a = start(2);
+        assertFalse(a.submit(at(100), SubmitReason.LEARNER));
+        assertEquals(Optional.of(SubmitReason.TIME_UP), a.submitReason());
+        assertEquals(Optional.of(at(90)), a.submittedAt());
+    }
 }
