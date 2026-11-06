@@ -4,6 +4,7 @@ INSERT INTO questions(owner_org_id,exam_code,content,answer_key,status)
 
 SET ROLE e9x_app;
 SELECT set_config('app.org_id','',false);
+SELECT set_config('app.e9x_staff','on',false);
 DO $$
 BEGIN
   BEGIN
@@ -19,6 +20,7 @@ END $$;
 RESET ROLE;
 SET ROLE e9x_grader;
 SELECT set_config('app.org_id','',false);
+SELECT set_config('app.e9x_staff','on',false);
 DO $$
 BEGIN
   -- grader reads answer_key (RLS still applies; english9x rows match NULL org)

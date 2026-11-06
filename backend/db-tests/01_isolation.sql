@@ -6,6 +6,7 @@ INSERT INTO exams(code,name) VALUES ('IELTS','IELTS');
 INSERT INTO classes(owner_org_id,name) VALUES
  ('aaaaaaaa-0000-0000-0000-000000000001','class-A'),
  ('bbbbbbbb-0000-0000-0000-000000000002','class-B');
+SELECT set_config('app.e9x_staff','on',false);
 INSERT INTO courses(owner_org_id,exam_code,code,title,status,shared_status) VALUES
  (NULL,'IELTS','E9PUB1','e9 published','PUBLISHED','NONE'),
  (NULL,'IELTS','E9DRF1','e9 draft','DRAFT','NONE'),
@@ -13,6 +14,8 @@ INSERT INTO courses(owner_org_id,exam_code,code,title,status,shared_status) VALU
  ('bbbbbbbb-0000-0000-0000-000000000002','IELTS','BDRAF1','b draft','DRAFT','NONE'),
  ('bbbbbbbb-0000-0000-0000-000000000002','IELTS','BPRIV1','b published private','PUBLISHED','NONE'),
  ('aaaaaaaa-0000-0000-0000-000000000001','IELTS','ADRAF1','a draft','DRAFT','NONE');
+
+SELECT set_config('app.e9x_staff','',false);
 
 SET ROLE e9x_app;
 SELECT set_config('app.org_id','aaaaaaaa-0000-0000-0000-000000000001',false);
