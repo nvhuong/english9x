@@ -4,7 +4,7 @@ Nguồn: spec §5.3, §10.4, §11, §12 và plan P1.11. Hình dạng bản ghi *
 
 ## Quy ước chung
 
-- Mỗi event là một `record` trong `com.english9x.<module>.api.events`, một file một record. Gói đó là named interface `events` của module phát hành (`package-info.java` với `@NamedInterface("events")`), nên module khác chỉ cần phụ thuộc vào `<module>::events`, không chạm `internal`. `ModuleEventsTest` và `EventConsumerContractTest` giữ điều này.
+- Mỗi event là một `record` trong `com.english9x.<module>.api.events`, một file một record. Gói đó là named interface `events` của module phát hành (`package-info.java` với `@NamedInterface("events")`), nên module khác chỉ cần phụ thuộc vào `<module>::events`, không chạm `internal`. `ModuleEventsTest` kiểm tra phía phát hành (mọi event nằm trong named interface `events` của module phát hành). Phía consumer sẽ được `ModularityTest` kiểm tra khi P4.1 thêm listener thật đầu tiên (Modulith không đưa test class vào mô hình module).
 - Phát bằng `ApplicationEventPublisher` **trong transaction** của nghiệp vụ gây ra nó. Spring Modulith ghi event vào bảng publication (event publication registry) cùng transaction; listener chạy **sau commit**.
 - Nghe bằng `@ApplicationModuleListener` (bất đồng bộ, transaction riêng, sau commit). Giao **ít nhất một lần**: listener chưa hoàn tất khi tiến trình dừng sẽ được phát lại, nên **mọi consumer phải idempotent** (khoá tự nhiên là id trong event).
 - Thứ tự giữa các event khác nhau không được bảo đảm. Event không mang bí mật, đáp án hay dữ liệu cá nhân ngoài id; consumer đọc dữ liệu bằng API của module phát hành.

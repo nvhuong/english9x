@@ -32,7 +32,7 @@ describe('ApiClientGenTest', () => {
 
 export async function ping(): Promise<string | undefined> {
   const client = createApiClient('http://localhost:8080');
-  const { data, error } = await client.GET('/api/v1/platform/ping');
+  const { data, error } = await client.GET('/api/platform/ping');
   const status: string | undefined = data?.status;                 // typed response body
   const problem: components['schemas']['Problem'] | undefined = error; // typed RFC 7807 error body
   void problem;

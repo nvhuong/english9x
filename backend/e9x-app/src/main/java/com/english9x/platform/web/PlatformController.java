@@ -11,7 +11,7 @@ class PlatformController {
     @Schema(name = "Pong")
     record Pong(String status) {}
 
-    @GetMapping(value = "/api/v1/platform/ping", produces = "application/json")
+    @GetMapping(value = "/api/platform/ping", produces = "application/json")
     Pong ping() {
         return new Pong("ok");
     }

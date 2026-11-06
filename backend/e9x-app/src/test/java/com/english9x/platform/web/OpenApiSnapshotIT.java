@@ -54,7 +54,7 @@ class OpenApiSnapshotIT {
     @Test
     void committedSnapshotMatchesTheRunningApp() throws Exception {
         String live = normalise(http.getForObject("/v3/api-docs", String.class));
-        assertTrue(live.contains("/api/v1/platform/ping") && live.contains("\"Problem\""), "spec is the real one: " + live);
+        assertTrue(live.contains("/api/platform/ping") && live.contains("\"Problem\""), "spec is the real one: " + live);
         if (Boolean.getBoolean("e9x.openapi.update")) {
             Files.createDirectories(SNAPSHOT.getParent());
             Files.writeString(SNAPSHOT, live);
