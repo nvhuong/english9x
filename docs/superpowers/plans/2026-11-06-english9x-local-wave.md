@@ -30,7 +30,7 @@
 
 ---
 
-### Task L0: Khung repo, harness offline, gate E2E (đã làm bởi điều phối viên)
+### Task 1: (L0) Khung repo, harness offline, gate E2E (đã làm bởi điều phối viên)
 
 **Files:** `backend/pom.xml`, `backend/e9x-domain/pom.xml`, `tools/offline-junit/**`, `scripts/test-domain.sh`, `scripts/test-db.sh`, `scripts/check-e2e-coverage.mjs`, `e2e/features.json`, `.gitignore`
 
@@ -39,7 +39,7 @@
 
 ---
 
-### Task L1a: Chấm câu khách quan, quy đổi điểm, chính sách chấm (P4.1 + P4.3 phần domain)
+### Task 2: (L1a) Chấm câu khách quan, quy đổi điểm, chính sách chấm (P4.1 + P4.3 phần domain)
 
 **Files:**
 - Create: `backend/e9x-domain/src/main/java/com/english9x/domain/scoring/{InteractionKind,Answer,AnswerKey,ItemResult,ItemScorer,ObjectiveScorers,ScoreConverter,TableConverter,Toeic,Ielts}.java`
@@ -92,7 +92,7 @@
 
 ---
 
-### Task L1b: VietQR, nội dung chuyển khoản, đơn, gói, quyền học, suất (P5 phần domain)
+### Task 3: (L1b) VietQR, nội dung chuyển khoản, đơn, gói, quyền học, suất (P5 phần domain)
 
 **Files:**
 - Create: `backend/e9x-domain/src/main/java/com/english9x/domain/billing/{Crc16Ccitt,VietQrRequest,VietQr,TransferNote,Codes,OrderStatus,Order,Plan,PlanSelection,EntitlementSource,Entitlement,Entitlements,AccessPolicy,SeatPool}.java`
@@ -127,7 +127,7 @@
 
 ---
 
-### Task L1c: Luật mở khoá, kiểm tra chương, chuỗi ngày, thời gian học, vòng đời lượt thi (P3 + P4.5 phần domain)
+### Task 4: (L1c) Luật mở khoá, kiểm tra chương, chuỗi ngày, thời gian học, vòng đời lượt thi (P3 + P4.5 phần domain)
 
 **Files:**
 - Create: `backend/e9x-domain/src/main/java/com/english9x/domain/learning/{UnlockRule,LessonKind,LessonRef,ChapterRef,LessonStatus,UnlockPolicy,ChapterTestAttempts,DailyActivity,Streaks,StudyTime}.java`
@@ -165,7 +165,7 @@
 
 ---
 
-### Task L1d: Schema nền + RLS + test PostgreSQL (P1.3 phần SQL)
+### Task 5: (L1d) Schema nền + RLS + test PostgreSQL (P1.3 phần SQL)
 
 **Files:**
 - Create: `backend/e9x-app/src/main/resources/db/migration/V202611060001__org_baseline.sql`
@@ -196,7 +196,7 @@
 
 ---
 
-### Task L2: Review toàn nhánh (reviewer độc lập)
+### Task 6: (L2) Review toàn nhánh (reviewer độc lập)
 
 - [ ] Reviewer chưa tham gia L1a–L1d đọc spec + plan + diff, chạy `./scripts/test-domain.sh`, `./scripts/test-db.sh`, `node scripts/check-e2e-coverage.mjs`, báo lỗi theo mức độ.
 - [ ] Sửa các lỗi Critical/Important, chạy lại toàn bộ.
