@@ -4,6 +4,8 @@
 #   2. fakes      node --test            (fake Gemini / fake Telegram behaviour)
 #   3. frontend   pnpm lint, test, build
 #   4. e2e gate   node scripts/check-e2e-coverage.mjs
+#   (opt-in) E9X_A11Y=1  also runs the Storybook axe scan (needs Playwright Chromium: `pnpm -C frontend exec playwright install chromium`);
+#            CI always runs it as its own job, `frontend-a11y`.
 #
 # The E2E coverage gate is allowed to be incomplete until wave W10: by default it is reported as
 # "coverage-progress" and does not fail the run. A broken manifest is always a failure.
@@ -26,6 +28,10 @@ pnpm -C frontend install --frozen-lockfile
 pnpm -C frontend run lint
 pnpm -C frontend run test
 pnpm -C frontend run build
+if [ "${E9X_A11Y:-0}" = "1" ]; then
+  step "frontend: storybook axe (serious/critical)"
+  pnpm -C frontend run test:a11y
+fi
 
 step "e2e coverage gate"
 ./scripts/e2e-gate.sh

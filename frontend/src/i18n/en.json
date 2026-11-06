@@ -1,0 +1,153 @@
+{
+  "app": {
+    "name": "English9x",
+    "tagline": "Learn and prepare for IELTS and TOEIC, properly",
+    "skipToContent": "Skip to main content",
+    "loading": "Loading…",
+    "mainNav": "Main navigation",
+    "areaNav": "Area navigation",
+    "footer": "An editorial study desk for English learners"
+  },
+  "area": {
+    "learner": "Study",
+    "cms": "Authoring",
+    "org": "Organisation",
+    "admin": "Administration",
+    "exam": "Exam room"
+  },
+  "context": {
+    "label": "Context",
+    "personal": "Personal"
+  },
+  "lang": {
+    "label": "Language",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "theme": {
+    "label": "Appearance",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "Match system"
+  },
+  "backend": {
+    "checking": "Checking the server…",
+    "up": "Server: up",
+    "down": "Server: unreachable"
+  },
+  "empty": {
+    "learner": {
+      "title": "No courses yet",
+      "description": "The course catalogue will appear here once content is published."
+    },
+    "cms": {
+      "title": "Nothing to work on",
+      "description": "Your authoring and review queue will appear here."
+    },
+    "org": {
+      "title": "No organisation data yet",
+      "description": "Seats, members and classes will appear here."
+    },
+    "admin": {
+      "title": "No admin tools yet",
+      "description": "System administration tools will appear here."
+    },
+    "exam": {
+      "title": "No exam selected",
+      "description": "Start an exam from your course page."
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This address does not exist or has moved.",
+    "back": "Back to home"
+  },
+  "denied": {
+    "title": "You do not have access to this page",
+    "description": "Your account has no suitable role. Contact an administrator if you need access.",
+    "back": "Back to home"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "description": "Please reload the page. If it keeps happening, let us know.",
+    "reload": "Reload page"
+  },
+  "preferences": {
+    "title": "Display preferences",
+    "description": "Language and appearance are saved for this browser only."
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "retry": "Try again",
+    "required": "required",
+    "optional": "optional",
+    "dismiss": "Dismiss notification",
+    "notifications": "Notifications",
+    "selectPlaceholder": "Select…"
+  },
+  "table": {
+    "sortedAscending": "Sorted ascending",
+    "sortedDescending": "Sorted descending",
+    "sortBy": "Sort by {{column}}",
+    "empty": "No rows"
+  },
+  "timer": {
+    "label": "Time remaining",
+    "warn5": "Less than 5 minutes left",
+    "warn1": "Less than 1 minute left",
+    "expired": "Time is up"
+  },
+  "audio": {
+    "label": "Listening recording",
+    "idle": "Audio has not started",
+    "playing": "Playing — plays once only; it cannot be paused or rewound",
+    "ended": "Playback finished",
+    "start": "Start playback",
+    "blocked": "Your browser blocked autoplay. Press the button to start.",
+    "volume": "Volume",
+    "progress": "Playback progress"
+  },
+  "recorder": {
+    "label": "Speaking recorder",
+    "micCheck": "Microphone check",
+    "micCheckHelp": "Say a few words and watch whether the level bar moves.",
+    "micLevel": "Microphone level",
+    "micTest": "Test microphone",
+    "micOk": "Microphone works",
+    "micDenied": "Microphone access was not granted. Allow it in your browser, then try again.",
+    "ready": "Ready. Press begin when you want to receive the question.",
+    "begin": "Begin",
+    "preparing": "Preparation time",
+    "preparingHelp": "Recording starts automatically when preparation ends.",
+    "recording": "Recording",
+    "recordingHelp": "Recording stops automatically when time is up.",
+    "stop": "Stop recording",
+    "uploading": "Uploading your recording…",
+    "done": "Recording submitted",
+    "error": "Could not upload the recording. We will retry automatically.",
+    "seconds": "{{count}} s"
+  },
+  "navigator": {
+    "label": "Question list",
+    "question": "Question {{n}}",
+    "answered": "answered",
+    "unanswered": "unanswered",
+    "flagged": "flagged",
+    "current": "current question",
+    "legend": "Legend"
+  },
+  "highlighter": {
+    "label": "Highlightable passage",
+    "instructions": "Use the left and right arrow keys to move between words, hold Shift to select several, press Enter or the Highlight button to toggle highlighting, Escape to clear the selection.",
+    "highlight": "Highlight",
+    "clear": "Remove highlight",
+    "clearAll": "Clear all highlights",
+    "toolbar": "Highlight tools",
+    "selected": "{{count}} words selected",
+    "highlighted": "Highlighted",
+    "unhighlighted": "Highlight removed"
+  }
+}

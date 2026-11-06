@@ -13,3 +13,4 @@ backend/e9x-app/src/main/resources/static/*
 !backend/e9x-app/src/main/resources/static/.gitkeep
 .env
 .tmp-api-gen-*/
+storybook-static/

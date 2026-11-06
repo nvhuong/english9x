@@ -136,6 +136,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 **Tests:** Vitest cho từng component; Storybook test-runner + axe (không có vi phạm serious/critical); E2E F58 quét axe 8 màn chính và đổi ngôn ngữ.
 
+> **Ghi chú 2026-11-07 (P1.10):** router dùng chung nằm ở `frontend/src/app/router.tsx` (không phải `frontend/src/router.tsx`); các task sau chỉ thêm `frontend/src/routes/<khu>/*.routes.ts` với `<khu>` ∈ `learner | cms | org | admin | exam` (xuất `defineRoutes([...])`, trang nên `lazy`). Chuỗi giao diện chung ở `frontend/src/i18n/{vi,en}.json`; task sau thêm chuỗi riêng bằng cặp `frontend/src/i18n/ns/<tính-năng>.vi.json` + `.en.json` (tự nạp thành namespace `<tính-năng>`), không sửa `vi.json`/`en.json` để tránh xung đột. Storybook axe chạy bằng `pnpm -C frontend run test:a11y` (cần Chromium của Playwright), là job CI riêng `frontend-a11y`; `verify.sh` chỉ chạy khi `E9X_A11Y=1`. Spec E2E F58 **chưa** có trong task này (xem ghi chú ở P1.12).
+
 ### Task P1.11: OpenAPI, lỗi RFC 7807, hợp đồng event (W1)
 
 > **Ghi chú 2026-11-07 (từ P1.3):** `gen-api` (sinh client từ OpenAPI) phải chạy ứng dụng với `E9X_OPENAPI_ENABLED=true`; `/v3/api-docs` mặc định tắt.
@@ -159,3 +161,5 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 **Interfaces:** `seed.learnerWithPlan({courses})`, `seed.publishedToeicTest()`, `seed.publishedIeltsTest({variant:'AC'|'GT'})`, `seed.center({teachers, learners})`, `mailpit.lastEmailTo(email)`, `telegram.messagesFor(chatId)`, `gemini.setScenario('ok'|'error500'|'badSchema')`.
 
 **Tests:** `e2e/specs/_smoke.spec.ts` (app lên, trang chủ hiển thị); gate `node scripts/check-e2e-coverage.mjs` báo tiến độ.
+
+> **Ghi chú 2026-11-07 (từ P1.10):** `e2e/specs/common/F58-i18n-a11y.spec.ts` (quét axe 8 màn chính + đổi ngôn ngữ) được tạo cùng hạ tầng E2E này (P1.12), không nằm trong P1.10, vì 8 màn chính chưa tồn tại và gate E2E phải giữ trung thực. Spec bắt đầu với các màn đã có (trang chủ học viên, 4 khu ở trạng thái trống, tuỳ chọn hiển thị) và được mở rộng khi mỗi màn chính xuất hiện (P2/P3/P4); hoàn tất ở W10. Phần axe cho từng component đã chạy ở Storybook (`pnpm -C frontend run test:a11y`).
