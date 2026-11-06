@@ -165,4 +165,82 @@ public class ExamAttemptTest {
         assertEquals(Optional.of(SubmitReason.TIME_UP), a.submitReason());
         assertEquals(Optional.of(at(90)), a.submittedAt());
     }
+
+    private static final Duration GRACE = Duration.ofMinutes(2);
+
+    @Test
+    public void startedAtIsAttemptStart() {
+        ExamAttempt a = start(2);
+        assertEquals(T0, a.startedAt());
+        a.currentSection(at(45));
+        assertEquals(T0, a.startedAt());
+    }
+
+    @Test
+    public void lateSyncWithinGraceAfterTimeUpIsAccepted() {
+        ExamAttempt a = start(2);
+        Instant answered = at(90).minusSeconds(3);
+        assertTrue(a.acceptsAnswer("reading", answered, at(90).plusSeconds(30), GRACE));
+        assertEquals(AttemptStatus.SUBMITTED, a.status());
+        assertEquals(Optional.of(SubmitReason.TIME_UP), a.submitReason());
+        assertFalse(a.canAnswer("reading", at(90).plusSeconds(30)));
+    }
+
+    @Test
+    public void lateSyncAfterGraceIsRejected() {
+        ExamAttempt a = start(2);
+        Instant answered = at(90).minusSeconds(3);
+        assertFalse(a.acceptsAnswer("reading", answered, at(93), GRACE));
+        assertFalse(a.acceptsAnswer("reading", answered, at(92), GRACE), "grace end is exclusive");
+    }
+
+    @Test
+    public void answerRecordedAfterSectionEndIsRejected() {
+        ExamAttempt a = start(2);
+        assertFalse(a.acceptsAnswer("reading", at(90).plusSeconds(1), at(90).plusSeconds(30), GRACE));
+        assertFalse(a.acceptsAnswer("reading", at(90), at(90).plusSeconds(30), GRACE), "end is exclusive");
+        assertFalse(a.acceptsAnswer("listening", at(30), at(30).plusSeconds(10), GRACE));
+        assertTrue(a.acceptsAnswer("listening", at(30).minusSeconds(1), at(30).plusSeconds(10), GRACE));
+    }
+
+    @Test
+    public void answerAfterEarlyFinishIsRejected() {
+        ExamAttempt a = start(2);
+        a.finishSectionEarly(at(10));
+        assertFalse(a.acceptsAnswer("listening", at(11), at(11), GRACE));
+        assertTrue(a.acceptsAnswer("listening", at(9), at(11), GRACE));
+        assertFalse(a.acceptsAnswer("listening", at(9), at(12), GRACE));
+        assertTrue(a.acceptsAnswer("reading", at(11), at(11), GRACE));
+        assertFalse(a.acceptsAnswer("reading", at(9), at(11), GRACE), "before the section started");
+    }
+
+    @Test
+    public void answerAfterLearnerSubmitIsRejected() {
+        ExamAttempt a = start(2);
+        a.finishSectionEarly(at(10));
+        a.submit(at(20), SubmitReason.LEARNER);
+        assertTrue(a.acceptsAnswer("reading", at(19), at(21), GRACE));
+        assertFalse(a.acceptsAnswer("reading", at(20), at(21), GRACE));
+    }
+
+    @Test
+    public void acceptsAnswerRejectsUnknownOrUnstartedSectionsAndFutureAnswers() {
+        ExamAttempt a = start(2);
+        assertFalse(a.acceptsAnswer("writing", at(5), at(5), GRACE));
+        assertFalse(a.acceptsAnswer("reading", at(5), at(5), GRACE), "not started yet");
+        assertFalse(a.acceptsAnswer("listening", at(6), at(5), GRACE), "answeredAt after now");
+        assertTrue(a.acceptsAnswer("listening", at(5), at(5), GRACE));
+        assertFalse(a.acceptsAnswer("listening", T0.minusSeconds(1), at(5), GRACE), "before attempt start");
+    }
+
+    @Test
+    public void acceptsAnswerValidatesArguments() {
+        ExamAttempt a = start(2);
+        assertThrows(IllegalArgumentException.class, () -> a.acceptsAnswer(null, at(1), at(1), GRACE));
+        assertThrows(IllegalArgumentException.class, () -> a.acceptsAnswer("listening", null, at(1), GRACE));
+        assertThrows(IllegalArgumentException.class, () -> a.acceptsAnswer("listening", at(1), null, GRACE));
+        assertThrows(IllegalArgumentException.class, () -> a.acceptsAnswer("listening", at(1), at(1), null));
+        assertThrows(IllegalArgumentException.class,
+                () -> a.acceptsAnswer("listening", at(1), at(1), Duration.ofSeconds(-1)));
+    }
 }

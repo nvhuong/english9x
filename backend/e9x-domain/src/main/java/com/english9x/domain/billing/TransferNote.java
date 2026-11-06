@@ -10,6 +10,12 @@ public final class TransferNote {
     private TransferNote() {}
 
     public static String build(String orderCode, List<String> courseCodes, int maxLength) {
+        if (!Codes.isValidOrderCode(orderCode)) {
+            throw new IllegalArgumentException("invalid order code: " + orderCode);
+        }
+        if (courseCodes == null) {
+            throw new IllegalArgumentException("courseCodes must not be null");
+        }
         StringBuilder full = new StringBuilder(PREFIX).append(' ').append(clean(orderCode));
         String orderOnly = full.toString();
         for (String c : courseCodes) {
