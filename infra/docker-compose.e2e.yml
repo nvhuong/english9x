@@ -1,11 +1,13 @@
 # E2E / dev overlay:  docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml up --build
-# Adds Mailpit (captures email) and the fake Telegram / Gemini servers, and points the app at them.
+# Adds Mailpit (captures email) and the fake Telegram / Gemini servers, points the app at them and activates the
+# Spring profile `e2e` (the test-data API POST /api/test/seed/*, which does not exist without it).
+# Normally driven by scripts/e2e.sh (project name e9x-e2e, clean database, always torn down with `down -v`).
+# Host ports are overridable: E9X_MAILPIT_PORT (8025), E9X_FAKE_TELEGRAM_PORT (8081), E9X_FAKE_GEMINI_PORT (8082).
 services:
   mailpit:
     image: axllent/mailpit:v1.33.0@sha256:9b3a463be15354c0f0eba91697d80e3e0d8a5623ef0e627cacc836bc17fd5231
     ports:
-      - "8025:8025"   # web UI / API
-      - "1025:1025"   # SMTP
+      - "${E9X_MAILPIT_PORT:-8025}:8025"   # web UI / API (the app reaches SMTP on the Compose network, mailpit:1025)
     healthcheck:
       test: ["CMD", "/mailpit", "readyz"]
       interval: 5s
@@ -49,6 +51,7 @@ services:
       fake-gemini:
         condition: service_healthy
     environment:
+      SPRING_PROFILES_ACTIVE: e2e
       E9X_GEMINI_BASE_URL: http://fake-gemini:8080
       E9X_GEMINI_API_KEY: fake-key
       SPRING_MAIL_HOST: mailpit
