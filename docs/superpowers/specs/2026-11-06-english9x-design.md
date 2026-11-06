@@ -321,6 +321,32 @@ Kênh: trong app (luôn bật), email, Telegram. `notification_prefs` theo (ngư
 - **Sao lưu:** hằng ngày, giữ 14 bản; tài liệu khôi phục được thử trong CI bằng một bản sao lưu mẫu.
 - **Giám sát:** log JSON, endpoint health, trang quản trị theo dõi job lỗi, chi phí Gemini theo ngày, độ lệch AI–GV.
 
+### 15.1 Thông số tự đặt (giả định, đều cấu hình được)
+Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **chưa được chủ dự án quyết định**. Mỗi giá trị là một khoá cấu hình (`application.yml` / biến môi trường); quản trị đổi được những khoá có ghi "Quản trị".
+
+| Khoá cấu hình | Mặc định (giả định) | Ý nghĩa | Đổi ở |
+|---|---|---|---|
+| `e9x.grading.ai.per-user-daily-limit` | `0` = **không giới hạn** | Gói không giới hạn lượt chấm (quyết định của chủ dự án). Chỉ là công tắc khẩn cấp nếu bị lạm dụng; mặc định tắt | Quản trị |
+| `e9x.grading.ai.retry-delays` | `30s,2m,10m` | Thời gian chờ giữa các lần thử lại khi Gemini lỗi | Cấu hình |
+| `e9x.grading.ai.schema-retry` | `1` | Số lần thử lại khi Gemini trả JSON sai schema | Cấu hình |
+| `e9x.grading.claim-timeout` | `24h` | Hạn giáo viên giữ bài đã nhận | Quản trị |
+| `e9x.exam.default-max-resumes` | `2` | N lần quay lại mặc định khi đề không đặt riêng | Quản trị |
+| `e9x.exam.autosave-interval` | `5s` | Chu kỳ tự lưu đáp án | Cấu hình |
+| `e9x.billing.order-expiry` | `7d` | Đơn chờ quá hạn thì `EXPIRED` | Quản trị |
+| `e9x.billing.transfer-note-max-length` | `50` | Độ dài tối đa nội dung chuyển khoản | Cấu hình |
+| `e9x.billing.expiry-reminder` | `7d` | Báo trước khi gói hết hạn | Quản trị |
+| `e9x.content.import.max-rows` | `2000` | Số dòng tối đa mỗi lô Excel | Quản trị |
+| `e9x.content.import.max-media-size` | `500MB` | Dung lượng ZIP media tối đa mỗi lô | Quản trị |
+| `e9x.media.url-ttl` | `10m` | Hạn của link media | Cấu hình |
+| `e9x.auth.access-token-ttl` | `15m` | Hạn access token | Cấu hình |
+| `e9x.auth.refresh-token-ttl` | `30d` | Hạn refresh token | Cấu hình |
+| `e9x.auth.login-rate-limit` | `10/15m` | Giới hạn đăng nhập sai theo IP + email | Cấu hình |
+| `e9x.learning.streak.min-minutes` | `10` | Số phút học để tính một ngày trong chuỗi | Quản trị |
+| `e9x.learning.heartbeat-interval` | `30s` | Chu kỳ gửi tín hiệu đang học | Cấu hình |
+| `e9x.learning.idle-timeout` | `2m` | Không tương tác quá thời gian này thì ngừng tính giờ | Cấu hình |
+| `e9x.notification.session-reminder` | `1h` | Nhắc trước buổi học | Quản trị |
+| `e9x.backup.retention` | `14` | Số bản sao lưu giữ lại | Cấu hình |
+
 ---
 
 ## 16. Kiểm thử
@@ -429,7 +455,7 @@ Playwright chạy trên Docker Compose với database sạch, `mailpit`, `fake-t
 
 | Rủi ro / phụ thuộc | Cách xử lý |
 |---|---|
-| Chi phí Gemini không có hạn mức theo người (gói không giới hạn lượt chấm) | Theo dõi chi phí theo ngày; giới hạn kỹ thuật chống lạm dụng: tối đa 20 bài W/S chấm AI mỗi người mỗi ngày (cấu hình được) |
+| Chi phí Gemini không có hạn mức theo người (gói không giới hạn lượt chấm) | Giữ đúng quyết định: không giới hạn lượt chấm. Theo dõi chi phí theo ngày và theo người, cảnh báo quản trị khi vượt ngưỡng chi phí cấu hình; công tắc khẩn cấp `e9x.grading.ai.per-user-daily-limit` mặc định `0` (tắt) |
 | Độ chính xác chấm AI | Skill chấm có bài mẫu theo band; đo độ lệch AI–GV; chế độ "Cả hai" cho đề quan trọng |
 | Bảng quy đổi không chính thức | Ghi "điểm dự đoán"; bảng có duyệt và phiên bản |
 | Format kỳ thi thay đổi | Dạng câu và cấu trúc là dữ liệu cấu hình có phiên bản |
