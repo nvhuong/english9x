@@ -1,0 +1,7 @@
+target/
+build/
+node_modules/
+.offline-build/
+*.log
+.DS_Store
+.idea/

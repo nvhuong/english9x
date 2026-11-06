@@ -1,0 +1,295 @@
+{
+  "source": "docs/superpowers/specs/2026-11-06-english9x-design.md#16.2",
+  "features": [
+    {
+      "id": "F01",
+      "title": "Đăng ký email + xác thực",
+      "spec": "e2e/specs/auth/F01-register-verify.spec.ts"
+    },
+    {
+      "id": "F02",
+      "title": "Đăng nhập Google",
+      "spec": "e2e/specs/auth/F02-google-login.spec.ts"
+    },
+    {
+      "id": "F03",
+      "title": "Quên mật khẩu",
+      "spec": "e2e/specs/auth/F03-password-reset.spec.ts"
+    },
+    {
+      "id": "F04",
+      "title": "Mời tài khoản nội bộ",
+      "spec": "e2e/specs/org/F04-invite-staff.spec.ts"
+    },
+    {
+      "id": "F05",
+      "title": "Tạo tổ chức",
+      "spec": "e2e/specs/org/F05-create-organization.spec.ts"
+    },
+    {
+      "id": "F06",
+      "title": "Phân quyền theo kỳ thi",
+      "spec": "e2e/specs/org/F06-exam-scoped-roles.spec.ts"
+    },
+    {
+      "id": "F07",
+      "title": "Chuyển ngữ cảnh",
+      "spec": "e2e/specs/org/F07-context-switch.spec.ts"
+    },
+    {
+      "id": "F08",
+      "title": "Cách ly dữ liệu",
+      "spec": "e2e/specs/org/F08-data-isolation.spec.ts"
+    },
+    {
+      "id": "F09",
+      "title": "Soạn câu hỏi theo form",
+      "spec": "e2e/specs/cms/F09-question-forms.spec.ts"
+    },
+    {
+      "id": "F10",
+      "title": "Xem trước như học viên",
+      "spec": "e2e/specs/cms/F10-preview-as-learner.spec.ts"
+    },
+    {
+      "id": "F11",
+      "title": "Import Excel",
+      "spec": "e2e/specs/cms/F11-excel-import.spec.ts"
+    },
+    {
+      "id": "F12",
+      "title": "Media",
+      "spec": "e2e/specs/cms/F12-media.spec.ts"
+    },
+    {
+      "id": "F13",
+      "title": "Dựng đề",
+      "spec": "e2e/specs/cms/F13-test-builder.spec.ts"
+    },
+    {
+      "id": "F14",
+      "title": "Bài phương pháp",
+      "spec": "e2e/specs/cms/F14-strategy-lesson.spec.ts"
+    },
+    {
+      "id": "F15",
+      "title": "Bảng quy đổi",
+      "spec": "e2e/specs/cms/F15-score-tables.spec.ts"
+    },
+    {
+      "id": "F16",
+      "title": "Skill chấm",
+      "spec": "e2e/specs/cms/F16-grading-skill.spec.ts"
+    },
+    {
+      "id": "F17",
+      "title": "Luồng duyệt",
+      "spec": "e2e/specs/cms/F17-review-workflow.spec.ts"
+    },
+    {
+      "id": "F18",
+      "title": "Phiên bản",
+      "spec": "e2e/specs/cms/F18-versioning.spec.ts"
+    },
+    {
+      "id": "F19",
+      "title": "Dựng khoá + luật mở khoá",
+      "spec": "e2e/specs/learning/F19-course-unlock-rules.spec.ts"
+    },
+    {
+      "id": "F20",
+      "title": "Danh mục cho khách",
+      "spec": "e2e/specs/learning/F20-guest-catalog.spec.ts"
+    },
+    {
+      "id": "F21",
+      "title": "Kho chung",
+      "spec": "e2e/specs/b2b/F21-shared-catalog.spec.ts"
+    },
+    {
+      "id": "F22",
+      "title": "Học bài + luyện tập",
+      "spec": "e2e/specs/learning/F22-lesson-practice.spec.ts"
+    },
+    {
+      "id": "F23",
+      "title": "Kiểm tra chương",
+      "spec": "e2e/specs/learning/F23-chapter-test.spec.ts"
+    },
+    {
+      "id": "F24",
+      "title": "Tiến trình theo gói",
+      "spec": "e2e/specs/learning/F24-progress-by-plan.spec.ts"
+    },
+    {
+      "id": "F25",
+      "title": "Thi thử TOEIC",
+      "spec": "e2e/specs/exam/F25-toeic-full-test.spec.ts"
+    },
+    {
+      "id": "F26",
+      "title": "Thi thử IELTS",
+      "spec": "e2e/specs/exam/F26-ielts-full-test.spec.ts"
+    },
+    {
+      "id": "F27",
+      "title": "Audio một lần",
+      "spec": "e2e/specs/exam/F27-audio-once.spec.ts"
+    },
+    {
+      "id": "F28",
+      "title": "Lưu đáp án/offline",
+      "spec": "e2e/specs/exam/F28-autosave-offline.spec.ts"
+    },
+    {
+      "id": "F29",
+      "title": "Quay lại N lần",
+      "spec": "e2e/specs/exam/F29-resume-limit.spec.ts"
+    },
+    {
+      "id": "F30",
+      "title": "Hết giờ",
+      "spec": "e2e/specs/exam/F30-time-up.spec.ts"
+    },
+    {
+      "id": "F31",
+      "title": "Nộp idempotent",
+      "spec": "e2e/specs/exam/F31-idempotent-submit.spec.ts"
+    },
+    {
+      "id": "F32",
+      "title": "Ghi âm Speaking",
+      "spec": "e2e/specs/exam/F32-speaking-recorder.spec.ts"
+    },
+    {
+      "id": "F33",
+      "title": "Chấm tự động",
+      "spec": "e2e/specs/grading/F33-auto-scoring.spec.ts"
+    },
+    {
+      "id": "F34",
+      "title": "Chấm AI",
+      "spec": "e2e/specs/grading/F34-ai-grading.spec.ts"
+    },
+    {
+      "id": "F35",
+      "title": "Hàng chờ giáo viên",
+      "spec": "e2e/specs/grading/F35-teacher-queue.spec.ts"
+    },
+    {
+      "id": "F36",
+      "title": "Chế độ Cả hai",
+      "spec": "e2e/specs/grading/F36-both-mode.spec.ts"
+    },
+    {
+      "id": "F37",
+      "title": "Gemini lỗi",
+      "spec": "e2e/specs/grading/F37-gemini-failure.spec.ts"
+    },
+    {
+      "id": "F38",
+      "title": "Kết quả + điểm yếu",
+      "spec": "e2e/specs/grading/F38-results-weakness.spec.ts"
+    },
+    {
+      "id": "F39",
+      "title": "Gói B2C",
+      "spec": "e2e/specs/billing/F39-b2c-plan.spec.ts"
+    },
+    {
+      "id": "F40",
+      "title": "Đơn VietQR",
+      "spec": "e2e/specs/billing/F40-vietqr-order.spec.ts"
+    },
+    {
+      "id": "F41",
+      "title": "Quyền học",
+      "spec": "e2e/specs/billing/F41-entitlement-access.spec.ts"
+    },
+    {
+      "id": "F42",
+      "title": "Gói suất tổ chức",
+      "spec": "e2e/specs/billing/F42-org-license.spec.ts"
+    },
+    {
+      "id": "F43",
+      "title": "Gán/thu hồi suất",
+      "spec": "e2e/specs/billing/F43-seat-assign-revoke.spec.ts"
+    },
+    {
+      "id": "F44",
+      "title": "Thành viên",
+      "spec": "e2e/specs/b2b/F44-members.spec.ts"
+    },
+    {
+      "id": "F45",
+      "title": "Lớp/nhóm",
+      "spec": "e2e/specs/b2b/F45-classes.spec.ts"
+    },
+    {
+      "id": "F46",
+      "title": "Giao bài",
+      "spec": "e2e/specs/b2b/F46-assignments.spec.ts"
+    },
+    {
+      "id": "F47",
+      "title": "Lịch học",
+      "spec": "e2e/specs/b2b/F47-schedule.spec.ts"
+    },
+    {
+      "id": "F48",
+      "title": "Điểm danh",
+      "spec": "e2e/specs/b2b/F48-attendance.spec.ts"
+    },
+    {
+      "id": "F49",
+      "title": "Báo cáo + Excel",
+      "spec": "e2e/specs/b2b/F49-reports-excel.spec.ts"
+    },
+    {
+      "id": "F50",
+      "title": "Cấu hình chấm trung tâm",
+      "spec": "e2e/specs/b2b/F50-center-grading-config.spec.ts"
+    },
+    {
+      "id": "F51",
+      "title": "Nội dung riêng trung tâm",
+      "spec": "e2e/specs/b2b/F51-center-content.spec.ts"
+    },
+    {
+      "id": "F52",
+      "title": "Thông báo trong app",
+      "spec": "e2e/specs/notify/F52-in-app.spec.ts"
+    },
+    {
+      "id": "F53",
+      "title": "Email",
+      "spec": "e2e/specs/notify/F53-email.spec.ts"
+    },
+    {
+      "id": "F54",
+      "title": "Telegram",
+      "spec": "e2e/specs/notify/F54-telegram.spec.ts"
+    },
+    {
+      "id": "F55",
+      "title": "Tuỳ chọn kênh",
+      "spec": "e2e/specs/notify/F55-channel-prefs.spec.ts"
+    },
+    {
+      "id": "F56",
+      "title": "Giám sát AI",
+      "spec": "e2e/specs/admin/F56-ai-monitoring.spec.ts"
+    },
+    {
+      "id": "F57",
+      "title": "Nhật ký",
+      "spec": "e2e/specs/admin/F57-audit-log.spec.ts"
+    },
+    {
+      "id": "F58",
+      "title": "Song ngữ + truy cập",
+      "spec": "e2e/specs/common/F58-i18n-a11y.spec.ts"
+    }
+  ]
+}
