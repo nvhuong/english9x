@@ -28,24 +28,6 @@ pnpm -C frontend run test
 pnpm -C frontend run build
 
 step "e2e coverage gate"
-gate_json="$(node scripts/check-e2e-coverage.mjs --json || true)"
-summary="$(printf '%s' "$gate_json" | node -e '
-  const r = JSON.parse(require("fs").readFileSync(0, "utf8"));
-  console.log([r.covered, r.total, (r.manifestProblems || []).length].join(" "));
-')"
-read -r covered total problems <<<"$summary"
-if [ "$problems" != "0" ]; then
-  node scripts/check-e2e-coverage.mjs || true
-  echo "FAIL: e2e/features.json is invalid ($problems problem(s))" >&2
-  exit 1
-fi
-if [ "$covered" = "$total" ]; then
-  echo "E2E coverage gate: PASS ($covered/$total)"
-elif [ "${E9X_E2E_GATE:-}" = "strict" ]; then
-  echo "E2E coverage gate: FAIL ($covered/$total) [E9X_E2E_GATE=strict]" >&2
-  exit 1
-else
-  echo "E2E coverage gate: coverage-progress $covered/$total (allowed to be incomplete until W10; E9X_E2E_GATE=strict enforces)"
-fi
+./scripts/e2e-gate.sh
 
 printf '\nverify.sh: OK\n'

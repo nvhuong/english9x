@@ -68,16 +68,15 @@ jobs:
       - run: docker compose -f infra/docker-compose.yml config -q
       - run: docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml config -q
 
-  # E2E coverage gate (F01-F58). Allowed to fail during W0-W9 ("coverage-progress");
-  # blocking once the repository variable E9X_E2E_GATE is "strict" (W10).
+  # E2E coverage gate (F01-F58). Selftest and manifest validity always block; only incomplete coverage
+  # is tolerated ("coverage-progress") until W10, when repository variable E9X_E2E_GATE=strict
+  # (passed through the workflow-level env) makes it blocking. Same logic as ./scripts/verify.sh.
   coverage-progress:
     name: e2e coverage gate (coverage-progress)
     runs-on: ubuntu-latest
-    continue-on-error: ${{ vars.E9X_E2E_GATE != 'strict' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: node scripts/check-e2e-coverage.selftest.mjs
-      - run: node scripts/check-e2e-coverage.mjs
+      - run: ./scripts/e2e-gate.sh
