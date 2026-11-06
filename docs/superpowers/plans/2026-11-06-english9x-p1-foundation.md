@@ -41,7 +41,7 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 - Create: `backend/e9x-app/src/main/java/com/english9x/org/internal/RlsSessionConfigurer.java` (đặt `set_config('app.org_id', ?, true)`, `app.user_id` ở đầu mỗi transaction qua `TransactionSynchronization` / `DataSource` wrapper)
 - Create: `backend/e9x-app/src/test/java/com/english9x/org/RlsIT.java`, `backend/e9x-app/src/test/java/com/english9x/org/RlsLeakSweepIT.java`
 
-**Interfaces:** Produces `CurrentContext` (`UUID userId()`, `Optional<UUID> orgId()`); ứng dụng kết nối bằng role `e9x_app` (Flyway chạy bằng role chủ `e9x_owner`).
+**Interfaces:** Produces `CurrentContext` (`UUID userId()`, `Optional<UUID> orgId()`, `boolean isEnglish9xStaff()`, `boolean isOrgAdmin()`); ứng dụng kết nối bằng role `e9x_app` (Flyway chạy bằng role chủ `e9x_owner`). `RlsSessionConfigurer` đặt thêm `app.e9x_staff = 'on'` chỉ khi người dùng có vai trò English9x (AUTHOR/REVIEWER/TEACHER/SYS_ADMIN với `org_id` NULL) **và** ngữ cảnh là "Cá nhân"/English9x, và `app.org_admin = 'on'` khi người dùng là ORG_ADMIN của tổ chức trong ngữ cảnh (theo các ruling của L1d: ghi nội dung English9x, ghi thành viên/quyền, duyệt kho chung đều cần các cờ này). Module chấm dùng role `e9x_grader` và phải đặt `app.org_id` của lượt thi.
 
 **Tests:** `RlsIT` chạy lại kịch bản `backend/db-tests/*.sql` qua Flyway + Testcontainers; `RlsLeakSweepIT.everyGetEndpointRejectsForeignOrgIds` — liệt kê mọi endpoint GET có `{id}` từ OpenAPI, gọi bằng người tổ chức A với ID tổ chức B, mong đợi 403/404 (Review Focus #1).
 

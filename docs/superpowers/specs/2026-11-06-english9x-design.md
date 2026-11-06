@@ -346,6 +346,11 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.learning.idle-timeout` | `2m` | Không tương tác quá thời gian này thì ngừng tính giờ | Cấu hình |
 | `e9x.notification.session-reminder` | `1h` | Nhắc trước buổi học | Quản trị |
 | `e9x.backup.retention` | `14` | Số bản sao lưu giữ lại | Cấu hình |
+| `e9x.grading.ai.daily-cost-alert` | `500000` (VND/ngày) | Ngưỡng chi phí Gemini mỗi ngày để cảnh báo quản trị (chỉ cảnh báo, không chặn) | Quản trị |
+| `e9x.gemini.model` | `gemini-2.5-flash` | Model dùng để chấm | Cấu hình |
+| `e9x.gemini.timeout` | `60s` | Thời gian chờ mỗi lần gọi | Cấu hình |
+| `e9x.gemini.price-per-1k-input` / `-output` | theo bảng giá hiện hành | Dùng để ước tính chi phí hiển thị | Cấu hình |
+| `e9x.content.media.max-upload-size` | `200MB` | Dung lượng tối đa một file media | Cấu hình |
 
 ---
 
