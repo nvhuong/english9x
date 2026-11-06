@@ -35,9 +35,12 @@ class JdbcJobQueue implements JobQueue {
     @Override
     public UUID enqueue(String type, JsonNode payload, Instant runAt) {
         JobTypes.validate(type);
-        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
-            throw new IllegalTransactionStateException(
-                    "JobQueue.enqueue needs the caller's transaction: a job must exist only if the caller commits");
+        // A transaction on ANOTHER resource (e.g. the worker pool's, inside a handler) would not make the insert atomic
+        // with it: require one bound to the primary connection this template inserts through.
+        if (!TransactionSynchronizationManager.isActualTransactionActive()
+                || !TransactionSynchronizationManager.hasResource(jdbc.getDataSource())) {
+            throw new IllegalTransactionStateException("JobQueue.enqueue needs a transaction on the application's primary "
+                    + "database connection: a job must exist only if the caller commits (a worker-role transaction does not count)");
         }
         String json;
         try {

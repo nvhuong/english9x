@@ -33,12 +33,25 @@ class JobTestSupport {
         final List<Integer> attempts = new CopyOnWriteArrayList<>();
         final List<Integer> contextVisibleRows = new CopyOnWriteArrayList<>();
         volatile long sleepMillis;
+        final List<String> exhausted = new CopyOnWriteArrayList<>();
+        final List<String> statusAtExhaustion = new CopyOnWriteArrayList<>();
+        final List<Boolean> bindingSeen = new CopyOnWriteArrayList<>();
+        final List<Integer> workerSeen = new CopyOnWriteArrayList<>();
+        final AtomicInteger started = new AtomicInteger();
+        volatile java.util.concurrent.CountDownLatch gate = new java.util.concurrent.CountDownLatch(1);
 
         void reset() {
             runs.clear();
             attempts.clear();
             contextVisibleRows.clear();
             sleepMillis = 0;
+            exhausted.clear();
+            statusAtExhaustion.clear();
+            bindingSeen.clear();
+            workerSeen.clear();
+            started.set(0);
+            gate.countDown();
+            gate = new java.util.concurrent.CountDownLatch(1);
         }
 
         void record(Job job) {
@@ -81,6 +94,51 @@ class JobTestSupport {
     @Bean
     JobTestHandlers.LongFailureHandler longFailureHandler() {
         return new JobTestHandlers.LongFailureHandler();
+    }
+
+    @Bean
+    JobTestHandlers.ExhaustHandler exhaustHandler(Recorder r, com.english9x.platform.jobs.api.WorkerJdbc w) {
+        return new JobTestHandlers.ExhaustHandler(r, w);
+    }
+
+    @Bean
+    JobTestHandlers.ExhaustThrowsHandler exhaustThrowsHandler(Recorder r) {
+        return new JobTestHandlers.ExhaustThrowsHandler(r);
+    }
+
+    @Bean
+    JobTestHandlers.StackOverflowHandler stackOverflowHandler() {
+        return new JobTestHandlers.StackOverflowHandler();
+    }
+
+    @Bean
+    JobTestHandlers.InterruptHandler interruptHandler() {
+        return new JobTestHandlers.InterruptHandler();
+    }
+
+    @Bean
+    JobTestHandlers.BlockHandler blockHandler(Recorder r) {
+        return new JobTestHandlers.BlockHandler(r);
+    }
+
+    @Bean
+    JobTestHandlers.PrioHandler prioHandler() {
+        return new JobTestHandlers.PrioHandler();
+    }
+
+    @Bean
+    JobTestHandlers.WorkerJdbcHandler workerJdbcHandler(Recorder r, com.english9x.platform.jobs.api.WorkerJdbc w) {
+        return new JobTestHandlers.WorkerJdbcHandler(r, w);
+    }
+
+    @Bean
+    JobTestHandlers.LeakHandler leakHandler() {
+        return new JobTestHandlers.LeakHandler();
+    }
+
+    @Bean
+    JobTestHandlers.ProbeHandler probeHandler(Recorder r) {
+        return new JobTestHandlers.ProbeHandler(r);
     }
 
     @Bean

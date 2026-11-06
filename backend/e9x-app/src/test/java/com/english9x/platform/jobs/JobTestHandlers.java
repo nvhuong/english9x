@@ -97,4 +97,110 @@ final class JobTestHandlers {
             return JobResult.success();
         }
     }
+
+    @TestComponent
+    @JobHandler("test_exhaust")
+    record ExhaustHandler(Recorder recorder, com.english9x.platform.jobs.api.WorkerJdbc worker) implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) {
+            return JobResult.failure("nope");
+        }
+
+        @Override
+        public void onExhausted(Job job, String reason) {
+            recorder.exhausted.add(reason);
+            recorder.statusAtExhaustion.add(worker.jdbc().queryForObject("select status from jobs where id = ?", String.class, job.id()));
+        }
+    }
+
+    @TestComponent
+    @JobHandler("test_exhaust_throws")
+    record ExhaustThrowsHandler(Recorder recorder) implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) {
+            return JobResult.failure("nope");
+        }
+
+        @Override
+        public void onExhausted(Job job, String reason) {
+            recorder.exhausted.add(reason);
+            throw new IllegalStateException("callback failed " + JobTestSupport.SECRET);
+        }
+    }
+
+    @TestComponent
+    @JobHandler("test_soe")
+    record StackOverflowHandler() implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) {
+            return recurse(0);
+        }
+
+        private static JobResult recurse(int n) {
+            return recurse(n + 1);
+        }
+    }
+
+    /** Returns with the thread's interrupt flag still set. */
+    @TestComponent
+    @JobHandler("test_interrupt")
+    record InterruptHandler() implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) {
+            Thread.currentThread().interrupt();
+            return JobResult.success();
+        }
+    }
+
+    /** Blocks until the test opens the recorder's gate. */
+    @TestComponent
+    @JobHandler("test_block")
+    record BlockHandler(Recorder recorder) implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) throws Exception {
+            recorder.started.incrementAndGet();
+            recorder.gate.await();
+            return JobResult.success();
+        }
+    }
+
+    @TestComponent
+    @JobHandler("test_prio")
+    record PrioHandler() implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) {
+            return JobResult.success();
+        }
+    }
+
+    @TestComponent
+    @JobHandler("test_workerjdbc")
+    record WorkerJdbcHandler(Recorder recorder, com.english9x.platform.jobs.api.WorkerJdbc worker) implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) {
+            recorder.workerSeen.add(worker.jdbc().queryForObject("select count(*) from jobs", Integer.class));
+            return JobResult.success();
+        }
+    }
+
+    /** Binds a user context and never closes the scope. */
+    @TestComponent
+    @JobHandler("test_leak")
+    record LeakHandler() implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) {
+            CurrentContextHolder.bind(UUID.randomUUID(), UUID.randomUUID());
+            return JobResult.success();
+        }
+    }
+
+    @TestComponent
+    @JobHandler("test_probe")
+    record ProbeHandler(Recorder recorder) implements JobExecutor {
+        @Override
+        public JobResult handle(Job job) {
+            recorder.bindingSeen.add(CurrentContextHolder.current().isPresent());
+            return JobResult.success();
+        }
+    }
 }

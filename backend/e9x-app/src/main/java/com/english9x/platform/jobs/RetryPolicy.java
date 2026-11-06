@@ -44,6 +44,20 @@ class RetryPolicy {
         return parse("built-in default", BUILT_IN_DEFAULT);
     }
 
+    /** How long a handler's lease keeps being renewed: {@code e9x.jobs.<type>.max-run}, then {@code e9x.jobs.max-run}, then 30m. */
+    Duration maxRun(String type) {
+        for (String key : new String[] {"e9x.jobs." + type + ".max-run", "e9x.jobs.max-run"}) {
+            if (environment.containsProperty(key)) {
+                try {
+                    return DurationStyle.detectAndParse(environment.getProperty(key, "").trim());
+                } catch (RuntimeException e) {
+                    throw new IllegalArgumentException("invalid duration in " + key, e);
+                }
+            }
+        }
+        return Duration.ofMinutes(30);
+    }
+
     /** First attempt plus one per retry delay. */
     int maxAttempts(String type) {
         return 1 + delays(type).size();

@@ -56,6 +56,10 @@ import org.springframework.transaction.support.TransactionTemplate;
             "e9x.jobs.test_noretry.retry-delays=",
             "e9x.jobs.test_throws.retry-delays=1s",
             "e9x.jobs.test_long_failure.retry-delays=",
+            "e9x.jobs.test_exhaust.retry-delays=",
+            "e9x.jobs.test_exhaust_throws.retry-delays=",
+            "e9x.jobs.test_soe.retry-delays=",
+            "e9x.jobs.heartbeat-interval=100ms",
             "logging.level.com.english9x.platform.jobs=DEBUG"
         })
 @org.springframework.context.annotation.Import(JobTestSupport.class)
@@ -89,6 +93,7 @@ class JobQueueIT {
 
     @BeforeEach
     void clean() {
+        com.english9x.org.api.CurrentContextHolder.clear();
         su.update("delete from jobs");
         recorder.reset();
         clock.set(T0);
@@ -376,6 +381,161 @@ class JobQueueIT {
         su.update("delete from users");
     }
 
+
+    // ---------------------------------------------------------------- fix round 1
+
+    Instant lockedUntil(UUID id) {
+        return instant(su.queryForObject("select locked_until from jobs where id = ?", Object.class, id));
+    }
+
+    static void await(java.util.function.BooleanSupplier cond, String what) throws Exception {
+        long end = System.currentTimeMillis() + 10_000;
+        while (!cond.getAsBoolean()) {
+            if (System.currentTimeMillis() > end) {
+                throw new AssertionError("timed out waiting for " + what);
+            }
+            Thread.sleep(20);
+        }
+    }
+
+    @Test
+    void aRunLongerThanTheLeaseKeepsItAliveWithHeartbeatsAndEndsSucceeded() throws Exception {
+        UUID id = enqueue("test_block", "{}", T0);
+        ExecutorService ex = Executors.newFixedThreadPool(2);
+        try {
+            Future<Boolean> run = ex.submit(() -> worker().pollOnce());
+            await(() -> recorder.started.get() == 1, "handler start");
+            clock.advance(Duration.ofMinutes(11)); // past the 10m lease
+            await(() -> lockedUntil(id).isAfter(clock.instant()), "heartbeat renewal");
+
+            assertFalse(ex.submit(() -> worker().pollOnce()).get(10, TimeUnit.SECONDS), "a live heartbeat keeps others away");
+            assertEquals(1, recorder.started.get());
+
+            recorder.gate.countDown();
+            assertTrue(run.get(10, TimeUnit.SECONDS));
+            Map<String, Object> r = row(id);
+            assertEquals("SUCCEEDED", r.get("status"));
+            assertEquals(1, r.get("attempts"));
+        } finally {
+            recorder.gate.countDown();
+            ex.shutdownNow();
+        }
+    }
+
+    @Test
+    void pastMaxRunTheHeartbeatStopsAndTheJobBecomesReclaimable(org.springframework.boot.test.system.CapturedOutput output) throws Exception {
+        UUID id = enqueue("test_block", "{}", T0);
+        ExecutorService ex = Executors.newFixedThreadPool(2);
+        try {
+            Future<Boolean> run = ex.submit(() -> worker().pollOnce());
+            await(() -> recorder.started.get() == 1, "handler start");
+            clock.advance(Duration.ofMinutes(31)); // past the default 30m max-run
+            await(() -> output.getAll().contains("max-run"), "max-run warning");
+
+            Future<Boolean> second = ex.submit(() -> worker().pollOnce());
+            await(() -> recorder.started.get() == 2, "re-claim after the heartbeat stopped");
+            assertEquals(2, row(id).get("attempts"));
+            assertTrue(output.getAll().contains("expired lease"), "taking over an expired lease is logged");
+
+            recorder.gate.countDown();
+            assertTrue(second.get(10, TimeUnit.SECONDS));
+            assertTrue(run.get(10, TimeUnit.SECONDS));
+            assertEquals("SUCCEEDED", row(id).get("status"));
+        } finally {
+            recorder.gate.countDown();
+            ex.shutdownNow();
+        }
+    }
+
+    @Test
+    void enqueueIsRefusedInsideAWorkerRoleTransaction() {
+        var workerTm = new org.springframework.jdbc.datasource.DataSourceTransactionManager(TestPostgres.worker(DB));
+        assertThrows(IllegalTransactionStateException.class, () -> new TransactionTemplate(workerTm)
+                .executeWithoutResult(s -> queue.enqueue("test_ok", mapper.createObjectNode(), T0)));
+        assertEquals(0, su.queryForObject("select count(*) from jobs", Integer.class));
+        enqueue("test_ok", "{}", T0);
+        assertEquals(1, su.queryForObject("select count(*) from jobs", Integer.class), "the primary transaction still works");
+    }
+
+    @Test
+    void onExhaustedRunsBeforeTheJobIsMarkedFailed() {
+        UUID id = enqueue("test_exhaust", "{}", T0);
+        assertTrue(worker().pollOnce());
+        assertEquals(List.of("nope"), recorder.exhausted);
+        assertEquals(List.of("RUNNING"), recorder.statusAtExhaustion, "called before the FAILED transition");
+        assertEquals("FAILED", row(id).get("status"));
+    }
+
+    @Test
+    void onExhaustedRunsWhenTheLeaseExpiredAfterTheLastAttempt() {
+        UUID id = enqueue("test_exhaust", "{}", T0);
+        store().claim(clock.instant()).orElseThrow(); // crash
+        clock.advance(Duration.ofMinutes(10));
+        assertTrue(worker().pollOnce());
+        assertEquals(1, recorder.exhausted.size());
+        assertTrue(recorder.exhausted.get(0).contains("lease"), recorder.exhausted.get(0));
+        assertEquals("FAILED", row(id).get("status"));
+    }
+
+    @Test
+    void aThrowingOnExhaustedCallbackDoesNotStopTheFailedTransition(org.springframework.boot.test.system.CapturedOutput output) {
+        UUID id = enqueue("test_exhaust_throws", "{\"secret\":\"" + SECRET + "\"}", T0);
+        assertTrue(worker().pollOnce());
+        assertEquals("FAILED", row(id).get("status"));
+        assertEquals(1, recorder.exhausted.size());
+        assertFalse(worker().pollOnce(), "no spin");
+        assertFalse(output.getAll().contains(SECRET), "exception messages are not logged");
+    }
+
+    @Test
+    void aStackOverflowInAHandlerIsAJobFailure() {
+        UUID id = enqueue("test_soe", "{}", T0);
+        assertTrue(worker().pollOnce());
+        Map<String, Object> r = row(id);
+        assertEquals("FAILED", r.get("status"), "not left RUNNING");
+        assertEquals("java.lang.StackOverflowError", r.get("last_error"));
+    }
+
+    @Test
+    void aHandlerLeavingTheInterruptFlagSetDoesNotLeakIt() {
+        UUID a = enqueue("test_interrupt", "{}", T0);
+        UUID b = enqueue("test_ok", "{}", T0);
+        assertTrue(worker().pollOnce());
+        assertFalse(Thread.currentThread().isInterrupted(), "flag cleared between jobs");
+        assertTrue(worker().pollOnce());
+        assertEquals("SUCCEEDED", row(a).get("status"));
+        assertEquals("SUCCEEDED", row(b).get("status"));
+    }
+
+    @Test
+    void priorityTypesAreClaimedByADedicatedFilterAndOthersAreSkipped() {
+        UUID other = enqueue("test_ok", "{}", T0);
+        UUID prio = enqueue("test_prio", "{}", T0.plusSeconds(5));
+        clock.advance(Duration.ofSeconds(10));
+        ClaimedJob c = store().claim(clock.instant(), java.util.Set.of("test_prio")).orElseThrow();
+        assertEquals(prio, c.job().id(), "the older general job is skipped by a priority-only claim");
+        assertEquals("QUEUED", row(other).get("status"));
+    }
+
+    @Test
+    void aLeakedUserBindingDoesNotReachTheNextJob(org.springframework.boot.test.system.CapturedOutput output) {
+        enqueue("test_leak", "{}", T0);
+        enqueue("test_probe", "{}", T0.plusSeconds(1));
+        clock.advance(Duration.ofSeconds(2));
+        assertTrue(worker().pollOnce());
+        assertTrue(worker().pollOnce());
+        assertEquals(List.of(false), recorder.bindingSeen, "the next job starts with no binding");
+        assertTrue(output.getAll().contains("left a user/org context bound"), "the leak is reported");
+        assertTrue(com.english9x.org.api.CurrentContextHolder.current().isEmpty());
+    }
+
+    @Test
+    void workerJdbcWorksInsideARunningJob() {
+        enqueue("test_workerjdbc", "{}", T0);
+        assertTrue(worker().pollOnce());
+        assertEquals(List.of(1), recorder.workerSeen);
+    }
+
     // ---------------------------------------------------------------- app.worker.enabled=false
 
     @Nested
@@ -394,6 +554,9 @@ class JobQueueIT {
             assertEquals(0, disabledCtx.getBeanNamesForType(JobWorker.class).length, "no worker bean");
             assertEquals(0, disabledCtx.getBeanNamesForType(WorkerDatabase.class).length, "no worker connection pool");
             assertEquals(0, disabledCtx.getBeanNamesForType(JobStore.class).length);
+            // a handler bean that injects WorkerJdbc still starts; the bean refuses to be used
+            assertEquals(1, disabledCtx.getBeanNamesForType(JobTestHandlers.WorkerJdbcHandler.class).length);
+            assertThrows(IllegalStateException.class, () -> disabledCtx.getBean(com.english9x.platform.jobs.api.WorkerJdbc.class).jdbc());
 
             disabledClock.set(T0.plusSeconds(5));
             UUID id = new TransactionTemplate(disabledTm).execute(s -> disabledQueue.enqueue("test_ok", mapper.createObjectNode(), T0));

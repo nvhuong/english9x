@@ -45,8 +45,11 @@ app:
 e9x:
   jobs:
     poll-interval: 2s
-    workers: 2                       # threads, so a slow ai_grade cannot hold up auto_submit_attempt
-    lease: 10m                       # a claimed job is invisible to others this long; see JobStore
+    workers: 2                       # general threads, each claims any job type
+    priority-types: auto_submit_attempt  # claimed by 1 extra dedicated thread (general threads claim them too), so a burst of ai_grade jobs cannot delay them
+    lease: 10m                       # a claim is valid this long without a heartbeat; see JobStore
+    heartbeat-interval: 0s           # 0 = lease / 3; renews the lease of a running job
+    max-run: 30m                     # the heartbeat stops after this; override per type with e9x.jobs.<type>.max-run
     default-retry-delays: 30s,2m,10m # a type without its own e9x.jobs.<type>.retry-delays; ai_grade uses e9x.grading.ai.retry-delays
     # The worker's own small pool, as e9x_worker_login (member of e9x_worker, jobs table only). Not the primary
     # DataSource, never reachable from HTTP. The password has no default: a worker instance refuses to start without it.
@@ -54,7 +57,7 @@ e9x:
       url: ${E9X_WORKER_DB_URL:${E9X_DB_URL:jdbc:postgresql://localhost:5432/e9x}}
       username: ${E9X_WORKER_DB_USER:e9x_worker_login}
       password: ${E9X_WORKER_DB_PASSWORD}
-      maximum-pool-size: 3
+      maximum-pool-size: 4
 
   grading:
     ai:

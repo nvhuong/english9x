@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -18,26 +19,34 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * LIMIT 1)} marks the row RUNNING with a lease ({@code locked_until}) and a fresh {@code lease_token}, and commits.
  * No transaction is held while the handler runs, so a slow handler never holds a lock or a connection.
  *
- * <p><b>Leases.</b> A RUNNING job whose lease has passed is claimable again; that is how a crashed worker's job comes
- * back, and the lost run counts as an attempt (so a job that kills its worker cannot loop forever). There is no
- * heartbeat: the lease ({@code e9x.jobs.lease}, default 10 minutes) is far above the longest handler the spec plans
- * (a 60 s Gemini call, an Excel import of at most 2000 rows). A handler that nevertheless outruns its lease is
- * detected, not silent: its late result is fenced off by the lease token (the update matches no row), the worker logs
- * a warning, and the newer run owns the job. Handlers must be idempotent either way.
+ * <p><b>Leases and heartbeat.</b> A RUNNING job whose lease has passed is claimable again; that is how a crashed
+ * worker's job comes back, and the lost run counts as an attempt (so a job that kills its worker cannot loop forever).
+ * While a handler runs, the worker renews the lease every {@code e9x.jobs.heartbeat-interval} (default lease/3) by
+ * lease token, so a slow but live handler is not re-claimed. The renewal stops after {@code e9x.jobs.<type>.max-run}
+ * (default 30 minutes, WARN logged), so a hung handler eventually becomes reclaimable. A second concurrent run is
+ * therefore still possible after a max-run overrun or a lost heartbeat; the late result of the older run is fenced off
+ * by the lease token (the update matches no row) and logged. Handlers must be idempotent.
  */
 class JobStore {
 
     static final int MAX_ERROR_LENGTH = 500;
 
     private static final String CLAIM = """
-            UPDATE jobs
-               SET status = 'RUNNING', attempts = attempts + 1, locked_until = ?, lease_token = ?, updated_at = ?
-             WHERE id = (SELECT id FROM jobs
-                          WHERE (status = 'QUEUED' AND run_at <= ?) OR (status = 'RUNNING' AND locked_until <= ?)
-                          ORDER BY run_at, created_at
-                          LIMIT 1
-                          FOR UPDATE SKIP LOCKED)
-            RETURNING id, type, payload::text AS payload, attempts, created_at
+            WITH c AS (SELECT id, status AS prev_status FROM jobs
+                        WHERE ((status = 'QUEUED' AND run_at <= ?) OR (status = 'RUNNING' AND locked_until <= ?))
+                          AND (cardinality(?::text[]) = 0 OR type = ANY(?::text[]))
+                        ORDER BY run_at, created_at
+                        LIMIT 1
+                        FOR UPDATE SKIP LOCKED)
+            UPDATE jobs j
+               SET status = 'RUNNING', attempts = j.attempts + 1, locked_until = ?, lease_token = ?, updated_at = ?
+              FROM c
+             WHERE j.id = c.id
+            RETURNING j.id, j.type, j.payload::text AS payload, j.attempts, j.created_at, c.prev_status
+            """;
+    private static final String RENEW = """
+            UPDATE jobs SET locked_until = ?, updated_at = ?
+             WHERE id = ? AND lease_token = ? AND status = 'RUNNING'
             """;
     private static final String SUCCEED = """
             UPDATE jobs SET status = 'SUCCEEDED', locked_until = NULL, lease_token = NULL, finished_at = ?, updated_at = ?
@@ -66,8 +75,14 @@ class JobStore {
     }
 
     Optional<ClaimedJob> claim(Instant now) {
+        return claim(now, Set.of());
+    }
+
+    /** @param onlyTypes job types to claim; empty means any type */
+    Optional<ClaimedJob> claim(Instant now, Set<String> onlyTypes) {
         UUID token = UUID.randomUUID();
         Timestamp nowTs = Timestamp.from(now);
+        String[] types = onlyTypes.toArray(new String[0]);
         List<ClaimedJob> rows = jdbc.query(
                 CLAIM,
                 (rs, i) -> {
@@ -78,14 +93,19 @@ class JobStore {
                                 mapper.readTree(rs.getString("payload")),
                                 rs.getInt("attempts"),
                                 rs.getTimestamp("created_at").toInstant());
-                        return new ClaimedJob(job, token);
+                        return new ClaimedJob(job, token, "RUNNING".equals(rs.getString("prev_status")));
                     } catch (JsonProcessingException e) {
                         // never include e.getMessage(): it quotes the payload
                         throw new IllegalStateException("stored payload is not valid JSON (" + e.getClass().getSimpleName() + ")");
                     }
                 },
-                Timestamp.from(now.plus(lease)), token, nowTs, nowTs, nowTs);
+                nowTs, nowTs, types, types, Timestamp.from(now.plus(lease)), token, nowTs);
         return rows.stream().findFirst();
+    }
+
+    /** Heartbeat: pushes the lease of a running job out by one lease from {@code now}. @return false when the lease was lost */
+    boolean renew(ClaimedJob c, Instant now) {
+        return jdbc.update(RENEW, Timestamp.from(now.plus(lease)), Timestamp.from(now), c.job().id(), c.leaseToken()) == 1;
     }
 
     /** @return false when the lease was lost (another claim took the job): the result is discarded */

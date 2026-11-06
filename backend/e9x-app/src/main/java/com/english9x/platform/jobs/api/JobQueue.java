@@ -14,6 +14,10 @@ public interface JobQueue {
      * transaction ({@link org.springframework.transaction.IllegalTransactionStateException} otherwise): a job that
      * outlives a rolled-back caller would act on state that never existed.
      *
+     * <p>The transaction must be bound to the application's primary database connection; a transaction on any other
+     * resource (the worker role's, in a handler) is refused. Writes through {@link WorkerJdbc} and enqueueing are
+     * therefore NOT atomic with each other: a handler orders them deliberately and stays idempotent (there is no outbox).
+     *
      * <p>The payload may hold user data. It is readable only by the worker role and is never logged; do not put
      * secrets in it.
      *
