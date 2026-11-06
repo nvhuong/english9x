@@ -49,6 +49,9 @@ CREATE TABLE role_grants (
   org_id uuid REFERENCES organizations(id),
   exam_code text,
   role text NOT NULL CHECK (role IN ('LEARNER','AUTHOR','REVIEWER','TEACHER','ORG_ADMIN','SYS_ADMIN')),
+  -- spec §4: SYS_ADMIN is English9x-only; exam = NULL only for ORG_ADMIN / SYS_ADMIN / LEARNER
+  CONSTRAINT role_grants_sys_admin_global_ck CHECK (role <> 'SYS_ADMIN' OR org_id IS NULL),
+  CONSTRAINT role_grants_exam_scope_ck CHECK (exam_code IS NOT NULL OR role IN ('ORG_ADMIN','SYS_ADMIN','LEARNER')),
   CONSTRAINT role_grants_scope_uq UNIQUE NULLS NOT DISTINCT (user_id, org_id, exam_code, role)
 );
 
@@ -125,7 +128,13 @@ CREATE POLICY courses_select ON courses FOR SELECT USING (
   (owner_org_id IS NULL AND status = 'PUBLISHED')
   OR owner_org_id = e9x_current_org()
   OR (shared_status = 'APPROVED' AND status = 'PUBLISHED')
-  OR (owner_org_id IS NULL AND e9x_is_staff()));
+  OR (owner_org_id IS NULL AND e9x_is_staff())
+  OR (e9x_is_staff() AND shared_status IN ('PENDING','APPROVED')));
+-- English9x staff review the shared catalog (any owner) without an org context.
+-- The approval trigger below still guards the transition to APPROVED.
+CREATE POLICY courses_staff_review ON courses FOR UPDATE
+  USING (e9x_is_staff() AND shared_status IN ('PENDING','APPROVED'))
+  WITH CHECK (e9x_is_staff());
 CREATE POLICY courses_insert ON courses FOR INSERT
   WITH CHECK ((owner_org_id IS NULL AND e9x_is_staff()) OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()));
 CREATE POLICY courses_update ON courses FOR UPDATE
@@ -134,9 +143,19 @@ CREATE POLICY courses_update ON courses FOR UPDATE
 CREATE POLICY courses_delete ON courses FOR DELETE
   USING ((owner_org_id IS NULL AND e9x_is_staff()) OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()));
 
-CREATE POLICY questions_all ON questions FOR ALL
+CREATE POLICY questions_select ON questions FOR SELECT USING (
+  (owner_org_id IS NULL AND (status = 'PUBLISHED' OR e9x_is_staff()))
+  OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()));
+CREATE POLICY questions_insert ON questions FOR INSERT
+  WITH CHECK ((owner_org_id IS NULL AND e9x_is_staff()) OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()));
+CREATE POLICY questions_update ON questions FOR UPDATE
   USING ((owner_org_id IS NULL AND e9x_is_staff()) OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()))
   WITH CHECK ((owner_org_id IS NULL AND e9x_is_staff()) OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()));
+CREATE POLICY questions_delete ON questions FOR DELETE
+  USING ((owner_org_id IS NULL AND e9x_is_staff()) OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()));
+-- Grader (backend scoring) additionally reads published keys and its current org's keys.
+CREATE POLICY questions_grader_select ON questions FOR SELECT TO e9x_grader USING (
+  status = 'PUBLISHED' OR owner_org_id = e9x_current_org());
 
 CREATE POLICY classes_all ON classes FOR ALL
   USING (owner_org_id = e9x_current_org())
@@ -146,10 +165,12 @@ CREATE POLICY exam_attempts_select ON exam_attempts FOR SELECT USING (
   user_id = e9x_current_user()
   OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()));
 CREATE POLICY exam_attempts_insert ON exam_attempts FOR INSERT
-  WITH CHECK (user_id = e9x_current_user());
+  WITH CHECK (user_id = e9x_current_user()
+              AND (owner_org_id IS NULL OR owner_org_id = e9x_current_org()));
 CREATE POLICY exam_attempts_update ON exam_attempts FOR UPDATE
   USING (user_id = e9x_current_user())
-  WITH CHECK (user_id = e9x_current_user());
+  WITH CHECK (user_id = e9x_current_user()
+              AND (owner_org_id IS NULL OR owner_org_id = e9x_current_org()));
 
 CREATE POLICY entitlements_select ON entitlements FOR SELECT
   USING (user_id = e9x_current_user());
@@ -190,6 +211,22 @@ END $$;
 CREATE TRIGGER courses_shared_approval_guard
   BEFORE INSERT OR UPDATE ON courses
   FOR EACH ROW EXECUTE FUNCTION courses_guard_shared_approval();
+
+-- spec §4: an ENTERPRISE org has no AUTHOR / REVIEWER / TEACHER.
+-- SECURITY DEFINER so the org type is read regardless of the caller's RLS view of organizations.
+CREATE FUNCTION role_grants_guard_enterprise() RETURNS trigger
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public AS $$
+BEGIN
+  IF NEW.org_id IS NOT NULL
+     AND NEW.role IN ('AUTHOR','REVIEWER','TEACHER')
+     AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = NEW.org_id AND o.type = 'ENTERPRISE') THEN
+    RAISE EXCEPTION 'ENTERPRISE organizations cannot grant role %', NEW.role USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER role_grants_enterprise_guard
+  BEFORE INSERT OR UPDATE ON role_grants
+  FOR EACH ROW EXECUTE FUNCTION role_grants_guard_enterprise();
 
 -- Privileges
 GRANT SELECT, INSERT, UPDATE, DELETE ON

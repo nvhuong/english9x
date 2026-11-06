@@ -35,7 +35,7 @@ END $$;
 SELECT set_config('app.org_id','aaaaaaaa-0000-0000-0000-000000000001',false);
 SELECT set_config('app.org_admin','on',false);
 INSERT INTO org_memberships(org_id,user_id) VALUES ('aaaaaaaa-0000-0000-0000-000000000001','22222222-0000-0000-0000-000000000002');
-INSERT INTO role_grants(user_id,org_id,role) VALUES ('22222222-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','TEACHER');
+INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES ('22222222-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-000000000001','IELTS','TEACHER');
 DO $$
 BEGIN
   BEGIN
@@ -43,7 +43,7 @@ BEGIN
     RAISE EXCEPTION 'org admin of A must not add member to B';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN
-    INSERT INTO role_grants(user_id,org_id,role) VALUES ('11111111-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002','TEACHER');
+    INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES ('11111111-0000-0000-0000-000000000001','bbbbbbbb-0000-0000-0000-000000000002','IELTS','TEACHER');
     RAISE EXCEPTION 'org admin of A must not grant role in B';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN
