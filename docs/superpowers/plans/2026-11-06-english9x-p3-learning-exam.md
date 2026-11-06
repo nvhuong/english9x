@@ -43,7 +43,7 @@
 **Interfaces:**
 - `POST /api/exam/attempts {testVersionId}` → 201 `{attemptId, sections, currentSection, endsAt, serverNow}`; 409 khi đã có lượt IN_PROGRESS (index L1d) → trả lượt đó.
 - `POST /api/exam/attempts/{id}/resume` → gọi `ExamAttempt.resume(now)`; `AUTO_SUBMITTED` → 409 kèm kết quả nộp.
-- `PUT /api/exam/attempts/{id}/responses/{questionId} {answer}` → 204; 409 nếu `!canAnswer(section, now)`. Upsert theo khoá chính.
+- `PUT /api/exam/attempts/{id}/responses/{questionId} {answer, answeredAt}` → 204; 409 nếu `!acceptsAnswer(section, answeredAt, now, e9x.exam.late-sync-grace)` (domain, ruling của review wave cục bộ: đáp án ghi offline trước khi hết giờ phần được nhận nếu đồng bộ trong thời gian ân hạn). Upsert theo khoá chính; bản có `answeredAt` mới hơn thắng.
 - `POST /api/exam/attempts/{id}/sections/{sectionId}/finish`; `POST /api/exam/attempts/{id}/submit` (idempotent: lần 2 trả 200 cùng kết quả).
 - `GET /api/exam/attempts/{id}/audio/{mediaId}` → URL ký một lần; lần 2 → 410 (ghi `audio_plays`).
 - `POST /api/exam/attempts/{id}/recordings/{questionId}` (multipart webm/opus, chỉ trong cửa sổ thời gian part Speaking + 10 giây dung sai upload).
@@ -51,7 +51,7 @@
 - Mọi thay đổi trạng thái: tải aggregate, gọi domain với `now` từ `Clock` bean, lưu với `@Version`; xung đột → thử lại 1 lần.
 - `AttemptSubmitted` phát sau commit (Spring Modulith event publication).
 
-**Tests:** `ExamAttemptIT.secondStartReturnsExisting`, `.responseRejectedAfterSectionEnd`, `.resumeBeyondLimitSubmitsInterrupted`, `ConcurrentSubmitIT.learnerAndJobSubmitConcurrentlyYieldsOneResult` (Review Focus #2), `AudioOnceIT.secondFetchGone`, `ExamDtoIT.noAnswerKeyInAnyResponse`, `AttemptSubmittedEventIT.publishedOnce`.
+**Tests:** `ExamAttemptIT.offlineAnswerSyncedWithinGraceAccepted`, `.offlineAnswerAfterGraceRejected`, `ExamAttemptIT.secondStartReturnsExisting`, `.responseRejectedAfterSectionEnd`, `.resumeBeyondLimitSubmitsInterrupted`, `ConcurrentSubmitIT.learnerAndJobSubmitConcurrentlyYieldsOneResult` (Review Focus #2), `AudioOnceIT.secondFetchGone`, `ExamDtoIT.noAnswerKeyInAnyResponse`, `AttemptSubmittedEventIT.publishedOnce`.
 
 ### Task P3.4: phòng thi UI (W7) — F25, F26, F27, F28, F29, F32
 

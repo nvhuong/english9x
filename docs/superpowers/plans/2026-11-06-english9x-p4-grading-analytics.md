@@ -16,7 +16,7 @@
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/grading/auto/**`, migration `V202611130003__scores.sql` (`scores`), E2E `F33-auto-scoring.spec.ts`.
 
-**Interfaces:** `@ApplicationModuleListener on AttemptSubmitted` → đọc đáp án (role `e9x_grader`, đặt `app.org_id` của lượt thi — ghi chú từ L1d), chấm từng câu bằng `ObjectiveScorers.forKind`, cộng raw theo kỹ năng, quy đổi bằng `catalog.api.ScoreTables#resolve` (lưu `score_table_version_id`), TOEIC tổng `Toeic.total`, IELTS overall `Ielts.overall` khi đủ 4 kỹ năng; câu W/S chuyển sang P4.2/P4.3; phát `AttemptScored` khi mọi kỹ năng có điểm hiển thị.
+**Interfaces:** `@ApplicationModuleListener on AttemptSubmitted` → đọc đáp án (role `e9x_grader`, đặt `app.org_id` của lượt thi; policy grader cho đọc câu PUBLISHED của English9x và câu của tổ chức đó — ruling review wave cục bộ). Raw là tổng điểm có thể lẻ (chấm một phần); `TableConverter` làm tròn xuống với dung sai 1e-9, chấm từng câu bằng `ObjectiveScorers.forKind`, cộng raw theo kỹ năng, quy đổi bằng `catalog.api.ScoreTables#resolve` (lưu `score_table_version_id`), TOEIC tổng `Toeic.total`, IELTS overall `Ielts.overall` khi đủ 4 kỹ năng; câu W/S chuyển sang P4.2/P4.3; phát `AttemptScored` khi mọi kỹ năng có điểm hiển thị.
 
 **Tests:** `AutoGradingIT.toeicScoresWithTestOverrideTable`, `.ieltsListeningReadingBands`, `.interruptedAttemptScoredAndFlagged`, `.scoreTableVersionRecorded`, `.idempotentOnDuplicateEvent`.
 
@@ -38,7 +38,7 @@
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/grading/teacher/**`, migration `V202611150001__grading_queue.sql` (`grading_queue_items`, `teacher_reviews`), job `release_expired_claim`, `frontend/src/features/teacher/{QueuePage,GradingPage}.tsx`, E2E `F35-teacher-queue.spec.ts`, `F36-both-mode.spec.ts`.
 
-**Interfaces:** khi chính sách là `TEACHER`/`BOTH` → tạo mục hàng chờ theo (kỳ thi, bên chấm: tổ chức nếu trung tâm chọn GV của mình, ngược lại English9x); `GET /api/teacher/queue?exam=`; `POST /api/teacher/queue/{id}/claim` (dùng `GradingQueueItem.claim`, khoá lạc quan); `POST /api/teacher/queue/{id}/review {criteria: {code: score}, comment}` → điểm GV, `OfficialScore.select` quyết định hiển thị; lưu độ lệch AI–GV; `POST /api/admin/queue/{id}/reassign {teacherId}`; job trả bài quá `e9x.grading.claim-timeout`.
+**Interfaces:** khi chính sách là `TEACHER`/`BOTH` → tạo mục hàng chờ theo (kỳ thi, bên chấm: tổ chức nếu trung tâm chọn GV của mình, ngược lại English9x); `GET /api/teacher/queue?exam=`; `POST /api/teacher/queue/{id}/claim` (dùng `GradingQueueItem.claim`, khoá lạc quan); `POST /api/teacher/queue/{id}/review {criteria: {code: score}, comment}` → điểm GV, `OfficialScore.select` quyết định hiển thị (điểm GV luôn là chính thức khi có, kể cả khi chế độ là AI và bài được chuyển cho GV vì AI lỗi); lưu độ lệch AI–GV; `POST /api/admin/queue/{id}/reassign {teacherId}`; job trả bài quá `e9x.grading.claim-timeout`.
 
 **Tests:** `TeacherQueueIT.claimedHiddenFromOthers`, `.expiredClaimReturnsToQueue`, `.bothModeTeacherReplacesPreliminary`, `.deviationRecorded`, `.centerQueueOnlyVisibleToCenterTeachers`.
 
