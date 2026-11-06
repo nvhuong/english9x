@@ -163,3 +163,5 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 **Tests:** `e2e/specs/_smoke.spec.ts` (app lên, trang chủ hiển thị); gate `node scripts/check-e2e-coverage.mjs` báo tiến độ.
 
 > **Ghi chú 2026-11-07 (từ P1.10):** `e2e/specs/common/F58-i18n-a11y.spec.ts` (quét axe 8 màn chính + đổi ngôn ngữ) được tạo cùng hạ tầng E2E này (P1.12), không nằm trong P1.10, vì 8 màn chính chưa tồn tại và gate E2E phải giữ trung thực. Spec bắt đầu với các màn đã có (trang chủ học viên, 4 khu ở trạng thái trống, tuỳ chọn hiển thị) và được mở rộng khi mỗi màn chính xuất hiện (P2/P3/P4); hoàn tất ở W10. Phần axe cho từng component đã chạy ở Storybook (`pnpm -C frontend run test:a11y`).
+
+> **Ghi chú 2026-11-07 (từ vòng sửa P1.10):** P1.12 phụ trách SPA fallback của ứng dụng Spring: chuyển các GET deep link không phải API (ví dụ `/cms`, `/preferences`) về `index.html`, kèm một IT; `/api/**` và `/actuator/**` vẫn phải trả 404 thật. Hiện P1.10 chỉ chạy đúng khi điều hướng trong ứng dụng.

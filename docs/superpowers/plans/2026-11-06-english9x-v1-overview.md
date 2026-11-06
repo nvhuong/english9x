@@ -71,7 +71,7 @@
 | W9 | P4.4 kết quả + điểm yếu + gợi ý · P4.5 tiến trình theo gói + giám sát AI · P6.4 báo cáo + Excel · P6.5 cấu hình chấm trung tâm + nội dung riêng + kho chung | W8 |
 | W10 | Hoàn tất E2E F01–F58 · k6 50 người · review toàn nhánh · PR `release/v1 → main` | W9 |
 
-Các task trong một wave không sửa chung file. File dùng chung (`pom.xml` gốc, `frontend/src/router.tsx`, `e2e/features.json`) chỉ sửa ở P1.1/P1.10/P1.12; task sau thêm route/feature bằng file đăng ký riêng (`frontend/src/routes/<khu>/*.routes.ts` được nạp tự động; `e2e/specs/**`).
+Các task trong một wave không sửa chung file. File dùng chung (`pom.xml` gốc, `frontend/src/app/router.tsx`, `e2e/features.json`) chỉ sửa ở P1.1/P1.10/P1.12; task sau thêm route/feature bằng file đăng ký riêng (`frontend/src/routes/<khu>/*.routes.ts` được nạp tự động; `e2e/specs/**`).
 
 ## Ma trận F01–F58 → task → spec E2E
 

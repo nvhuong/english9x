@@ -28,16 +28,39 @@ export function useCtxKey(...parts: unknown[]): QueryKey {
 }
 
 /**
- * Change context safely: store first (new requests carry the new header and key), then cancel and drop every
- * context-scoped query that belongs to a DIFFERENT context. Because keys include the context, a late response
- * from the old context can only ever land under the old key, which no longer exists / is never read.
+ * Key for data that does NOT depend on the context (public catalogue, etc.): `['public', ...parts]`.
+ * Only these survive a context switch. Every other key is treated as context-scoped and dropped.
+ */
+export function publicKey(...parts: unknown[]): QueryKey {
+  return ['public', ...parts];
+}
+
+const isCurrentCtx = (key: QueryKey, orgId: string | null) => key[0] === 'ctx' && key[1] === scope(orgId);
+const isPublic = (key: QueryKey) => key[0] === 'public';
+
+/**
+ * Change context safely. Default-deny: the store changes first (new requests carry the new header and key), then EVERY query
+ * is cancelled and removed except `['public', ...]` ones and ones already keyed to the new context. A late response of a
+ * cancelled/removed query cannot write into the cache. This does not depend on callers remembering to use {@link ctxKey}
+ * (an ESLint rule, e9x/query-key-helper, also requires the helpers).
  */
 export async function switchContext(queryClient: QueryClient, orgId: string | null): Promise<void> {
   if (useContextStore.getState().orgId === orgId) return;
   useContextStore.setState({ orgId });
-  const stale = {
-    predicate: (q: { queryKey: QueryKey }) => q.queryKey[0] === 'ctx' && q.queryKey[1] !== scope(orgId),
-  };
+  const stale = { predicate: (q: { queryKey: QueryKey }) => !isPublic(q.queryKey) && !isCurrentCtx(q.queryKey, orgId) };
   await queryClient.cancelQueries(stale);
   queryClient.removeQueries(stale);
+}
+
+/**
+ * Runtime guard for writes that bypass fetching, e.g. a mutation's onSuccess calling setQueryData with a key captured in the
+ * OLD context: a cache entry created for another context's `ctx` key is removed immediately. (Fetched results cannot land
+ * because switchContext removed those queries.) Called by makeQueryClient.
+ */
+export function guardContextWrites(queryClient: QueryClient): () => void {
+  return queryClient.getQueryCache().subscribe((event) => {
+    if (event.type !== 'added') return;
+    const key = event.query.queryKey;
+    if (key[0] === 'ctx' && !isCurrentCtx(key, useContextStore.getState().orgId)) queryClient.getQueryCache().remove(event.query);
+  });
 }

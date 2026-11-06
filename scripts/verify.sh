@@ -31,6 +31,8 @@ pnpm -C frontend run build
 if [ "${E9X_A11Y:-0}" = "1" ]; then
   step "frontend: storybook axe (serious/critical)"
   pnpm -C frontend run test:a11y
+else
+  echo "frontend: storybook axe scan SKIPPED (set E9X_A11Y=1 to run it here; CI job frontend-a11y always runs it)"
 fi
 
 step "e2e coverage gate"
