@@ -332,6 +332,7 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.grading.claim-timeout` | `24h` | Hạn giáo viên giữ bài đã nhận | Quản trị |
 | `e9x.exam.default-max-resumes` | `2` | N lần quay lại mặc định khi đề không đặt riêng | Quản trị |
 | `e9x.exam.autosave-interval` | `5s` | Chu kỳ tự lưu đáp án | Cấu hình |
+| `e9x.exam.late-sync-grace` | `2m` | Thời gian tối đa sau khi hết giờ phần thi để đồng bộ đáp án đã ghi offline trước giờ kết thúc | Cấu hình |
 | `e9x.billing.order-expiry` | `7d` | Đơn chờ quá hạn thì `EXPIRED` | Quản trị |
 | `e9x.billing.transfer-note-max-length` | `50` | Độ dài tối đa nội dung chuyển khoản | Cấu hình |
 | `e9x.billing.expiry-reminder` | `7d` | Báo trước khi gói hết hạn | Quản trị |

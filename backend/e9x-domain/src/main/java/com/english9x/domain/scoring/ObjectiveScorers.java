@@ -1,10 +1,12 @@
 package com.english9x.domain.scoring;
 
+import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 
 /** Deterministic scorers for auto-scored interaction kinds. */
 public final class ObjectiveScorers {
@@ -17,10 +19,10 @@ public final class ObjectiveScorers {
             throw new IllegalArgumentException("kind must not be null");
         }
         return switch (kind) {
-            case MCQ_SINGLE, GAP_SELECT, LABEL_DIAGRAM -> single(UnaryOperator.identity());
-            case TRUE_FALSE_NG -> single(ObjectiveScorers::canonicalTrueFalse);
-            case YES_NO_NG -> single(ObjectiveScorers::canonicalYesNo);
-            case MCQ_MULTI -> ObjectiveScorers::scoreMulti;
+            case MCQ_SINGLE, GAP_SELECT, LABEL_DIAGRAM -> single(kind, UnaryOperator.identity());
+            case TRUE_FALSE_NG -> single(kind, ObjectiveScorers::canonicalTrueFalse);
+            case YES_NO_NG -> single(kind, ObjectiveScorers::canonicalYesNo);
+            case MCQ_MULTI -> (key, answer) -> scoreMulti(requireOneSlot(kind, key), answer);
             case MATCHING -> ObjectiveScorers::scoreMatching;
             case ORDERING -> ObjectiveScorers::scoreOrdering;
             case GAP_TYPED, SHORT_ANSWER -> ObjectiveScorers::scoreTyped;
@@ -29,9 +31,17 @@ public final class ObjectiveScorers {
         };
     }
 
-    /** Trim, collapse whitespace, lower-case, drop trailing . , ; : ! ? */
+    private static final Pattern WHITESPACE = Pattern.compile("(?U)\\s+");
+
+    /**
+     * NFKC, straighten curly quotes, collapse any Unicode whitespace (incl. NBSP) to one space, trim,
+     * lower-case, drop trailing . , ; : ! ?
+     */
     static String normalize(String s) {
-        String t = s.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+        String t = Normalizer.normalize(s, Normalizer.Form.NFKC)
+                .replace('\u2019', '\'').replace('\u2018', '\'')
+                .replace('\u201C', '"').replace('\u201D', '"');
+        t = WHITESPACE.matcher(t).replaceAll(" ").strip().toLowerCase(Locale.ROOT);
         int end = t.length();
         while (end > 0 && ".,;:!?".indexOf(t.charAt(end - 1)) >= 0) {
             end--;
@@ -74,8 +84,20 @@ public final class ObjectiveScorers {
         return variants.stream().anyMatch(v -> canon.apply(normalize(v)).equals(g));
     }
 
-    private static ItemScorer single(UnaryOperator<String> canon) {
+    /** Kinds whose key is a single slot (MCQ_MULTI: one slot listing every correct option). */
+    private static AnswerKey requireOneSlot(InteractionKind kind, AnswerKey key) {
+        if (key == null) {
+            throw new IllegalArgumentException("key must not be null");
+        }
+        if (key.slots().size() != 1) {
+            throw new IllegalArgumentException(kind + " requires exactly one key slot, got " + key.slots().size());
+        }
+        return key;
+    }
+
+    private static ItemScorer single(InteractionKind kind, UnaryOperator<String> canon) {
         return (key, answer) -> {
+            requireOneSlot(kind, key);
             if (isBlank(answer) || answer.values().size() != 1) {
                 return result(key, 0);
             }

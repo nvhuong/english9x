@@ -12,11 +12,14 @@ public final class OfficialScore {
         if (mode == null || ai == null || teacher == null) {
             throw new IllegalArgumentException("arguments must not be null");
         }
+        // A teacher score, when present, is OFFICIAL in every mode.
+        if (teacher.isPresent()) {
+            return teacher.map(s -> new DisplayedScore(s, ScoreKind.OFFICIAL));
+        }
         return switch (mode) {
             case AI -> ai.map(s -> new DisplayedScore(s, ScoreKind.OFFICIAL));
-            case TEACHER -> teacher.map(s -> new DisplayedScore(s, ScoreKind.OFFICIAL));
-            case BOTH -> teacher.map(s -> new DisplayedScore(s, ScoreKind.OFFICIAL))
-                    .or(() -> ai.map(s -> new DisplayedScore(s, ScoreKind.PRELIMINARY)));
+            case BOTH -> ai.map(s -> new DisplayedScore(s, ScoreKind.PRELIMINARY));
+            case TEACHER -> Optional.empty();
         };
     }
 }

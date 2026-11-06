@@ -1,5 +1,6 @@
 package com.english9x.domain.exam;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +11,9 @@ public final class ExamAttempt {
     private final List<SectionPlan> sections;
     private final int maxResumes;
     private int sectionIndex;
-    private Instant sectionStartedAt;
+    /** Actual window of each section: start when it began, end when it timed out or was finished. */
+    private final Instant[] sectionStarts;
+    private final Instant[] sectionEnds;
     private int resumeCount;
     private boolean interrupted;
     private AttemptStatus status = AttemptStatus.IN_PROGRESS;
@@ -21,7 +24,9 @@ public final class ExamAttempt {
         this.id = id;
         this.sections = sections;
         this.maxResumes = maxResumes;
-        this.sectionStartedAt = now;
+        this.sectionStarts = new Instant[sections.size()];
+        this.sectionEnds = new Instant[sections.size()];
+        this.sectionStarts[0] = now;
     }
 
     public static ExamAttempt start(String id, List<SectionPlan> sections, int maxResumes, Instant now) {
@@ -34,6 +39,10 @@ public final class ExamAttempt {
 
     public String id() {
         return id;
+    }
+
+    public Instant startedAt() {
+        return sectionStarts[0];
     }
 
     /** Current section, advancing past expired sections; empty once submitted. */
@@ -60,14 +69,42 @@ public final class ExamAttempt {
         if (sectionIndex == sections.size() - 1) {
             submit(now, SubmitReason.LEARNER);
         } else {
-            sectionIndex++;
-            sectionStartedAt = now;
+            advance(now);
         }
     }
 
     public boolean canAnswer(String sectionId, Instant now) {
         sync(now);
         return status == AttemptStatus.IN_PROGRESS && sections.get(sectionIndex).id().equals(sectionId);
+    }
+
+    /**
+     * Whether an answer recorded offline at {@code answeredAt} and synced at {@code now} counts:
+     * the section belongs to this attempt, {@code answeredAt} lies in the section's actual window
+     * [start, end) (end = when it timed out or was finished early), {@code answeredAt <= now}, and
+     * {@code now < end + grace}. Still true after a TIME_UP auto-submit for answers recorded in time.
+     */
+    public boolean acceptsAnswer(String sectionId, Instant answeredAt, Instant now, Duration grace) {
+        if (sectionId == null || answeredAt == null || now == null || grace == null || grace.isNegative()) {
+            throw new IllegalArgumentException("sectionId, answeredAt, now and a non-negative grace are required");
+        }
+        sync(now);
+        int i = indexOf(sectionId);
+        if (i < 0 || sectionStarts[i] == null || answeredAt.isAfter(now)) {
+            return false;
+        }
+        Instant start = sectionStarts[i];
+        Instant end = sectionEnds[i] != null ? sectionEnds[i] : sectionEnd();
+        return !answeredAt.isBefore(start) && answeredAt.isBefore(end) && now.isBefore(end.plus(grace));
+    }
+
+    private int indexOf(String sectionId) {
+        for (int i = 0; i < sections.size(); i++) {
+            if (sections.get(i).id().equals(sectionId)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public ResumeOutcome resume(Instant now) {
@@ -101,6 +138,9 @@ public final class ExamAttempt {
         if (status == AttemptStatus.SUBMITTED) {
             return false;
         }
+        if (sectionEnds[sectionIndex] == null) {
+            sectionEnds[sectionIndex] = now;
+        }
         status = AttemptStatus.SUBMITTED;
         submitReason = reason;
         submittedAt = now;
@@ -128,7 +168,13 @@ public final class ExamAttempt {
     }
 
     private Instant sectionEnd() {
-        return sectionStartedAt.plus(sections.get(sectionIndex).duration());
+        return sectionStarts[sectionIndex].plus(sections.get(sectionIndex).duration());
+    }
+
+    private void advance(Instant at) {
+        sectionEnds[sectionIndex] = at;
+        sectionIndex++;
+        sectionStarts[sectionIndex] = at;
     }
 
     private void requireInProgress() {
@@ -146,8 +192,7 @@ public final class ExamAttempt {
             if (sectionIndex == sections.size() - 1) {
                 doSubmit(end, SubmitReason.TIME_UP);
             } else {
-                sectionIndex++;
-                sectionStartedAt = end;
+                advance(end);
             }
         }
     }

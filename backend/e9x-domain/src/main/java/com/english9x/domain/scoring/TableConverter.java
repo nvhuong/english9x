@@ -32,11 +32,19 @@ public final class TableConverter implements ScoreConverter {
         return new TableConverter(values);
     }
 
+    /** Tolerance for floating-point error when flooring a fractional raw score. */
+    private static final double FLOOR_EPSILON = 1e-9;
+
+    /** Floors {@code raw} (with a small tolerance) and looks it up; the floored value must be in 0..max. */
     @Override
     public double convert(double raw) {
-        if (raw != Math.rint(raw) || raw < 0 || raw > scaled.length - 1) {
+        if (Double.isNaN(raw) || Double.isInfinite(raw)) {
+            throw new IllegalArgumentException("raw score must be finite: " + raw);
+        }
+        double floored = Math.floor(raw + FLOOR_EPSILON);
+        if (floored < 0 || floored > scaled.length - 1) {
             throw new IllegalArgumentException("raw score out of range 0.." + (scaled.length - 1) + ": " + raw);
         }
-        return scaled[(int) raw];
+        return scaled[(int) floored];
     }
 }

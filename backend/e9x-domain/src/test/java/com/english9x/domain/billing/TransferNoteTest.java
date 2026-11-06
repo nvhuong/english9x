@@ -26,4 +26,14 @@ public class TransferNoteTest {
     public void rejectsWhenEvenOrderCodeTooLong() {
         assertThrows(IllegalArgumentException.class, () -> TransferNote.build("D2611A", List.of("IELW01"), 5));
     }
+
+    @Test
+    public void rejectsEmptyOrInvalidOrderCode() {
+        assertThrows(IllegalArgumentException.class, () -> TransferNote.build("", List.of("IELW01"), 50));
+        assertThrows(IllegalArgumentException.class, () -> TransferNote.build(null, List.of("IELW01"), 50));
+        assertThrows(IllegalArgumentException.class, () -> TransferNote.build("D2611", List.of("IELW01"), 50));
+        assertThrows(IllegalArgumentException.class, () -> TransferNote.build("D2611AB", List.of("IELW01"), 50));
+        assertThrows(IllegalArgumentException.class, () -> TransferNote.build("D-2611", List.of("IELW01"), 50));
+        assertThrows(IllegalArgumentException.class, () -> TransferNote.build("d2611a", List.of("IELW01"), 50));
+    }
 }
