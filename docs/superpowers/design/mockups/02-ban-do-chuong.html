@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bản đồ chương — English9x (mockup)</title>
+<meta name="description" content="Tiến độ khoá học dạng bản đồ chương">
+<style>
+@font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 400; font-display: swap; src: url('../../../../frontend/public/fonts/be-vietnam-pro-vietnamese-400-normal.woff2') format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+@font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 400; font-display: swap; src: url('../../../../frontend/public/fonts/be-vietnam-pro-latin-400-normal.woff2') format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 500; font-display: swap; src: url('../../../../frontend/public/fonts/be-vietnam-pro-vietnamese-500-normal.woff2') format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+@font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 500; font-display: swap; src: url('../../../../frontend/public/fonts/be-vietnam-pro-latin-500-normal.woff2') format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 600; font-display: swap; src: url('../../../../frontend/public/fonts/be-vietnam-pro-vietnamese-600-normal.woff2') format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+@font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 600; font-display: swap; src: url('../../../../frontend/public/fonts/be-vietnam-pro-latin-600-normal.woff2') format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 700; font-display: swap; src: url('../../../../frontend/public/fonts/be-vietnam-pro-vietnamese-700-normal.woff2') format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+@font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 700; font-display: swap; src: url('../../../../frontend/public/fonts/be-vietnam-pro-latin-700-normal.woff2') format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('../../../../frontend/public/fonts/lora-vietnamese-wght-normal.woff2') format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('../../../../frontend/public/fonts/lora-latin-wght-normal.woff2') format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+@font-face { font-family: 'Lora'; font-style: italic; font-weight: 400 700; font-display: swap; src: url('../../../../frontend/public/fonts/lora-vietnamese-wght-italic.woff2') format('woff2'); unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB; }
+@font-face { font-family: 'Lora'; font-style: italic; font-weight: 400 700; font-display: swap; src: url('../../../../frontend/public/fonts/lora-latin-wght-italic.woff2') format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+:root{--paper:#f8f1e3;--surface:#fffbf2;--sunken:#efe6d2;--ink:#17254a;--muted:#4b5470;--line:#ddd2ba;--edge:#7a715d;
+--primary:#1d3461;--primary-hover:#12254a;--on-primary:#fffbf2;--accent:#c2412d;--accent-hover:#a63424;--on-accent:#ffffff;--focus:#c2412d;
+--success:#1b5e34;--success-bg:#dcefd6;--warning:#6f4300;--warning-bg:#ffe7b3;--danger:#9c2217;--danger-bg:#fbdcd3;--info:#1d3461;--info-bg:#dae5f8;
+--tip:#3d3200;--tip-bg:#fff0a3;--trap:#6e1f12;--trap-bg:#fbdcd3;--mark:#17254a;--mark-bg:#ffe66d;--clock-warn:#6f4300;--clock-warn-bg:#ffe7b3;--clock-danger:#ffffff;--clock-danger-bg:#a8271a;color-scheme:light}
+:root[data-theme=dark]{--paper:#101829;--surface:#172139;--sunken:#0b1120;--ink:#eef0f6;--muted:#a9b3cc;--line:#2c3857;--edge:#8391b3;
+--primary:#9db8f5;--primary-hover:#b9ceff;--on-primary:#0b1120;--accent:#ff8a73;--accent-hover:#ffa493;--on-accent:#1d0a05;--focus:#ffa493;
+--success:#8fd9a6;--success-bg:#153524;--warning:#ffd27a;--warning-bg:#3d2d08;--danger:#ffb0a2;--danger-bg:#4a1d16;--info:#b9ceff;--info-bg:#1b2c52;
+--tip:#fff0a3;--tip-bg:#3f3711;--trap:#ffd3c8;--trap-bg:#4a241c;--mark:#fff6c2;--mark-bg:#5a4c0a;--clock-warn:#ffd27a;--clock-warn-bg:#3d2d08;--clock-danger:#ffffff;--clock-danger-bg:#b3301f;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#101829;--surface:#172139;--sunken:#0b1120;--ink:#eef0f6;--muted:#a9b3cc;--line:#2c3857;--edge:#8391b3;
+--primary:#9db8f5;--primary-hover:#b9ceff;--on-primary:#0b1120;--accent:#ff8a73;--accent-hover:#ffa493;--on-accent:#1d0a05;--focus:#ffa493;
+--success:#8fd9a6;--success-bg:#153524;--warning:#ffd27a;--warning-bg:#3d2d08;--danger:#ffb0a2;--danger-bg:#4a1d16;--info:#b9ceff;--info-bg:#1b2c52;
+--tip:#fff0a3;--tip-bg:#3f3711;--trap:#ffd3c8;--trap-bg:#4a241c;--mark:#fff6c2;--mark-bg:#5a4c0a;--clock-warn:#ffd27a;--clock-warn-bg:#3d2d08;--clock-danger:#ffffff;--clock-danger-bg:#b3301f;color-scheme:dark}}
+[data-surface=exam]{--paper:#f3f4f6;--surface:#ffffff;--sunken:#e5e7eb;--ink:#111827;--muted:#4b5563;--line:#d1d5db;--edge:#6b7280;--primary:#1f3a68;--primary-hover:#152b4f;--on-primary:#ffffff;}
+:root[data-theme=dark] [data-surface=exam]{--paper:#111318;--surface:#1a1d24;--sunken:#0b0d11;--ink:#f3f4f6;--muted:#aab1bd;--line:#2d323c;--edge:#8b94a5;--primary:#9db8f5;--primary-hover:#b9ceff;--on-primary:#0b0d11;}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) [data-surface=exam]{--paper:#111318;--surface:#1a1d24;--sunken:#0b0d11;--ink:#f3f4f6;--muted:#aab1bd;--line:#2d323c;--edge:#8b94a5;--primary:#9db8f5;--primary-hover:#b9ceff;--on-primary:#0b0d11;}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.6 'Be Vietnam Pro',system-ui,sans-serif}
+h1,h2,h3{margin:0;line-height:1.2}
+a{color:var(--primary)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.serif{font-family:'Lora',Georgia,serif}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:8px;top:-60px;background:var(--primary);color:var(--on-primary);padding:8px 14px;border-radius:6px;z-index:9}
+.skip:focus{top:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid transparent;font:600 15px 'Be Vietnam Pro',sans-serif;background:var(--primary);color:var(--on-primary);text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--primary-hover)}
+.btn.accent{background:var(--accent);color:var(--on-accent)}.btn.accent:hover{background:var(--accent-hover)}
+.btn.secondary{background:var(--surface);color:var(--ink);border-color:var(--edge)}.btn.secondary:hover{background:var(--sunken)}
+.btn.danger{background:var(--danger-bg);color:var(--danger);border-color:var(--danger)}
+.btn.sm{min-height:32px;padding:0 12px;font-size:14px}
+.badge{display:inline-flex;align-items:center;gap:4px;border:1px solid;border-radius:999px;padding:1px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.b-info{background:var(--info-bg);color:var(--info);border-color:var(--info)}.b-ok{background:var(--success-bg);color:var(--success);border-color:var(--success)}
+.b-warn{background:var(--warning-bg);color:var(--warning);border-color:var(--warning)}.b-bad{background:var(--danger-bg);color:var(--danger);border-color:var(--danger)}
+.b-neutral{background:var(--sunken);color:var(--ink);border-color:var(--edge)}
+.tools{display:flex;gap:6px;align-items:center}
+.tools button{min-height:32px;min-width:32px;border-radius:6px;border:1px solid var(--edge);background:var(--surface);color:var(--ink);font:600 13px 'Be Vietnam Pro',sans-serif;cursor:pointer;padding:0 8px}
+.tools button[aria-pressed=true]{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+.note{max-width:1180px;margin:0 auto;padding:6px 16px;font-size:12px;color:var(--muted);text-align:center}
+
+
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.brand{font:700 26px 'Lora',serif;color:var(--primary);text-decoration:none}.brand b{color:var(--accent)}
+.crumb{font-size:14px;color:var(--muted)}.crumb a{color:var(--muted)}
+.top .tools{margin-left:auto}
+main{max-width:1180px;margin:0 auto;padding:24px 16px 56px;display:grid;grid-template-columns:1fr 320px;gap:28px}
+h1{font:700 clamp(26px,4vw,38px)/1.15 'Lora',serif;margin:6px 0 6px}
+.sub{color:var(--muted);margin:0 0 18px}
+.map{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;position:relative;overflow:hidden}
+.map svg{width:100%;height:auto;display:block}
+.map .ground{fill:var(--sunken)}
+.path-base{stroke:var(--line);stroke-width:14;fill:none;stroke-linecap:round}
+.path-done{stroke:var(--primary);stroke-width:14;fill:none;stroke-linecap:round}
+.path-dash{stroke:var(--surface);stroke-width:2;fill:none;stroke-dasharray:2 10;stroke-linecap:round}
+.st-done{fill:var(--primary)}.st-now{fill:var(--accent)}.st-lock{fill:var(--surface);stroke:var(--edge);stroke-width:3}
+.st-t{font:700 16px 'Be Vietnam Pro';fill:var(--on-primary);text-anchor:middle}
+.st-t.now{fill:var(--on-accent);font-size:20px}
+.st-t.lock{fill:var(--muted)}
+.lbl{font:700 15px 'Lora',serif;fill:var(--ink)}.lbl2{font:400 12.5px 'Be Vietnam Pro';fill:var(--muted)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:12px 4px 2px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+aside .box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+aside h2{font:700 14px 'Be Vietnam Pro';letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.next{border-left:6px solid var(--accent)}
+.next h3{font:700 20px/1.3 'Lora',serif;margin:2px 0 8px}
+.streak{display:flex;gap:6px;margin:10px 0 4px}
+.streak span{flex:1;height:34px;border-radius:6px;background:var(--sunken);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--muted)}
+.streak span.on{background:var(--accent);color:var(--on-accent)}
+.big{font:700 40px/1 'Lora',serif}
+.ch{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ch li{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.ch .n{font:700 22px 'Lora',serif;color:var(--primary)}
+.ch strong{display:block;font-size:15px}.ch small{color:var(--muted)}
+.ch li[aria-current=step]{border-color:var(--accent);box-shadow:inset 4px 0 0 var(--accent)}
+main>*{min-width:0}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+@media(max-width:560px){.map svg{min-width:560px}.map{overflow-x:auto}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Bỏ qua, tới nội dung chính</a>
+
+<header class="top"><div class="top-in"><a class="brand" href="#">English<b>9x</b></a>
+<nav class="crumb" aria-label="Đường dẫn"><a href="#">Khoá của tôi</a> › IELTS Academic: từ nền tảng đến 6.5</nav><div class="tools" role="group" aria-label="Giao diện"><button type="button" data-theme-set="light" aria-pressed="true">Sáng</button><button type="button" data-theme-set="dark" aria-pressed="false">Tối</button></div></div></header>
+<main id="main" tabindex="-1">
+<div>
+<p style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);margin:0">Bản đồ chương</p>
+<h1>Bạn đã đi được 3 trên 8 chặng</h1>
+<p class="sub">Qua bài kiểm tra chương với ít nhất 70% để mở chặng kế tiếp. Có thể ôn lại chặng cũ bất cứ lúc nào.</p>
+<div class="map"><svg viewBox="0 0 760 580" role="img" aria-label="Bản đồ 8 chương: 3 chương đã hoàn thành, đang ở chương 4, 4 chương chưa mở" focusable="false"><rect class="ground" x="0" y="0" width="760" height="580" rx="12" opacity=".55"/><path class="path-base" d="M110 520 C190 520 220 430 300 430 S 450 480 520 470 S 690 420 650 330 S 560 240 470 230 S 330 190 250 170 S 90 150 120 80 S 300 40 400 60"/><path class="path-done" d="M110 520 C190 520 220 430 300 430 S 450 480 520 470 S 690 420 650 330"/><path class="path-dash" d="M110 520 C190 520 220 430 300 430 S 450 480 520 470 S 690 420 650 330 S 560 240 470 230 S 330 190 250 170 S 90 150 120 80 S 300 40 400 60"/><circle class="st-done" cx="110" cy="520" r="24"/><text class="st-t done" x="110" y="526">1</text><text class="lbl" x="110" y="480" text-anchor="middle">Nền tảng phát âm</text><text class="lbl2" x="110" y="496" text-anchor="middle">9/9 bài · 92%</text><circle class="st-done" cx="300" cy="430" r="24"/><text class="st-t done" x="300" y="436">2</text><text class="lbl" x="300" y="390" text-anchor="middle">Nghe: nắm ý chính</text><text class="lbl2" x="300" y="406" text-anchor="middle">12/12 bài · 85%</text><circle class="st-done" cx="520" cy="470" r="24"/><text class="st-t done" x="520" y="476">3</text><text class="lbl" x="520" y="430" text-anchor="middle">Reading: tìm thông tin</text><text class="lbl2" x="520" y="446" text-anchor="middle">10/10 bài · 78%</text><circle class="st-now" cx="650" cy="330" r="30"/><text class="st-t now" x="650" y="336">4</text><text class="lbl" x="650" y="274" text-anchor="middle">Đúng / Sai / Không có</text><text class="lbl2" x="650" y="290" text-anchor="middle">5/11 bài</text><circle class="st-lock" cx="470" cy="230" r="24"/><text class="st-t lock" x="470" y="236">5</text><text class="lbl" x="470" y="282" text-anchor="middle">Ghép tiêu đề đoạn văn</text><circle class="st-lock" cx="250" cy="170" r="24"/><text class="st-t lock" x="250" y="176">6</text><text class="lbl" x="250" y="222" text-anchor="middle">Writing Task 1</text><circle class="st-lock" cx="120" cy="80" r="24"/><text class="st-t lock" x="120" y="86">7</text><text class="lbl" x="120" y="132" text-anchor="middle">Speaking Part 1</text><circle class="st-lock" cx="400" cy="60" r="24"/><text class="st-t lock" x="400" y="66">8</text><text class="lbl" x="400" y="112" text-anchor="middle">Kiểm tra giữa khoá</text><text class="lbl2" x="685" y="336" text-anchor="start" style="font-weight:700;fill:var(--accent)">Bạn ở đây</text></svg>
+<div class="legend"><span><i style="background:var(--primary)"></i>Đã hoàn thành</span><span><i style="background:var(--accent)"></i>Đang học</span><span><i style="border:2px solid var(--edge);background:var(--surface)"></i>Chưa mở</span></div></div>
+<h2 class="serif" style="font-size:22px;margin:26px 0 10px">Danh sách chương</h2>
+<ol class="ch"><li><span class="n">1</span><div><strong>Nền tảng phát âm</strong><small>Hoàn thành · 92%</small></div></li><li><span class="n">2</span><div><strong>Nghe: nắm ý chính</strong><small>Hoàn thành · 85%</small></div></li><li><span class="n">3</span><div><strong>Reading: tìm thông tin</strong><small>Hoàn thành · 78%</small></div></li><li aria-current="step"><span class="n">4</span><div><strong>Đúng / Sai / Không có</strong><small>Đang học · 5/11 bài</small></div><a class="btn sm accent" href="#">Học tiếp</a></li><li><span class="n">5</span><div><strong>Ghép tiêu đề đoạn văn</strong><small>Mở khi đạt 70% bài kiểm tra chương 4</small></div></li></ol>
+</div>
+<aside aria-label="Hôm nay">
+<section class="box next" aria-labelledby="h-next"><h2 id="h-next">Việc tiếp theo</h2><h3>Bài 6 · Bẫy “Không có thông tin”</h3><p style="margin:0 0 12px;color:var(--muted)">Khoảng 12 phút · có 6 câu luyện tập</p><a class="btn accent" href="#">Học tiếp bài này</a></section>
+<section class="box" aria-labelledby="h-streak"><h2 id="h-streak">Chuỗi ngày học</h2><div class="big">12 <span style="font:400 15px 'Be Vietnam Pro';color:var(--muted)">ngày liên tiếp</span></div>
+<div class="streak" role="img" aria-label="7 ngày gần nhất: học 5 ngày, nghỉ 2 ngày"><span class="on">T2</span><span class="on">T3</span><span>T4</span><span class="on">T5</span><span class="on">T6</span><span>T7</span><span class="on">CN</span></div></section>
+<section class="box" aria-labelledby="h-goal"><h2 id="h-goal">Mục tiêu tuần này</h2>
+<p style="margin:0 0 6px"><strong>4 / 5</strong> bài học · <strong>1 / 1</strong> bài kiểm tra chương</p>
+<div style="height:8px;border-radius:99px;background:var(--sunken);overflow:hidden" role="progressbar" aria-label="Mục tiêu tuần" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"><i style="display:block;height:100%;width:80%;background:var(--primary)"></i></div></section>
+</aside>
+</main>
+
+
+<script>
+(function(){var r=document.documentElement;document.addEventListener('click',function(e){var b=e.target.closest('[data-theme-set]');if(!b)return;r.setAttribute('data-theme',b.getAttribute('data-theme-set'));
+document.querySelectorAll('[data-theme-set]').forEach(function(x){x.setAttribute('aria-pressed',String(x===b))});});
+var q=new URLSearchParams(location.search).get('theme');if(q==='dark'||q==='light'){r.setAttribute('data-theme',q);}
+})();
+</script>
+
+</body>
+</html>
