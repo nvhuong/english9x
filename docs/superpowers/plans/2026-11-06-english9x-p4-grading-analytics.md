@@ -14,6 +14,8 @@
 
 ### Task P4.1: chấm tự động + quy đổi (W6) — F33, F25/F26 (điểm), F15 (áp dụng bảng)
 
+> **Ghi chú 2026-11-07 (từ P1.11):** listener đầu tiên (`@ApplicationModuleListener` trên `AttemptSubmitted`) chính là thứ chứng minh quy tắc liên module (`exam::events`) qua `ModularityTest`; P1.11 chỉ kiểm tra phía phát hành. P4.1 phải nối persistence của `spring-modulith-events` (bảng `event_publication`, spec §6), vì giao ít nhất một lần mới chỉ được ghi trong `docs/superpowers/design/events.md`.
+
 **Files:** `backend/e9x-app/src/main/java/com/english9x/grading/auto/**`, migration `V202611130003__scores.sql` (`scores`), E2E `F33-auto-scoring.spec.ts`.
 
 **Interfaces:** `@ApplicationModuleListener on AttemptSubmitted` → đọc đáp án (role `e9x_grader`, đặt `app.org_id` của lượt thi; policy grader cho đọc câu PUBLISHED của English9x và câu của tổ chức đó — ruling review wave cục bộ). Raw là tổng điểm có thể lẻ (chấm một phần); `TableConverter` làm tròn xuống với dung sai 1e-9, chấm từng câu bằng `ObjectiveScorers.forKind`, cộng raw theo kỹ năng, quy đổi bằng `catalog.api.ScoreTables#resolve` (lưu `score_table_version_id`), TOEIC tổng `Toeic.total`, IELTS overall `Ielts.overall` khi đủ 4 kỹ năng; câu W/S chuyển sang P4.2/P4.3; phát `AttemptScored` khi mọi kỹ năng có điểm hiển thị.

@@ -49,6 +49,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 ### Task P1.4: identity (W1) — F01, F02, F03
 
+> **Ghi chú 2026-11-07 (từ P1.11):** 401/403 của Spring Security (entry point, access-denied handler, lỗi ném từ filter trước MVC) phải render cùng `application/problem+json` như `ProblemDetailsAdvice` (`type`, `title`, `status`, `detail`, `errors[]`, không lộ chi tiết nội bộ).
+
 > **Ghi chú 2026-11-07 (từ P1.3):** tra cứu đăng nhập theo email phải đi qua một hàm `SECURITY DEFINER` hẹp (chỉ trả những cột cần thiết cho đúng một email), không mở policy SELECT rộng trên `users`.
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/identity/{api,internal}/**`, migration `V202611070001__identity_auth.sql` (`auth_identities`, `refresh_tokens`, `email_verifications`, `password_resets`), frontend `frontend/src/features/auth/**`, E2E `e2e/specs/auth/F01-register-verify.spec.ts`, `F02-google-login.spec.ts`, `F03-password-reset.spec.ts`.
