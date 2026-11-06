@@ -65,6 +65,11 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 ### Task P1.5: org + ngữ cảnh (W2) — F04, F05, F06, F07, F08
 
 > **Ghi chú 2026-11-07 (từ P1.3):** mọi grant vai trò trong một tổ chức phải đi kèm một dòng `org_memberships` cho cùng người dùng và tổ chức, nếu không `RlsSessionConfigurer` từ chối ngữ cảnh (`OrgContextDeniedException`). Chỉ SYS_ADMIN thật (cờ + grant) hoặc ORG_ADMIN thật của chính tổ chức đó được ghi `role_grants`/`org_memberships`; cờ đơn lẻ không đủ.
+>
+> **Bắt buộc xử lý trong P1.5 (phát hiện khi review P1.3):**
+> - `organizations` chưa có policy INSERT và SYS_ADMIN không thấy tổ chức mình không thuộc về: bước đầu của F05 và `POST /api/admin/organizations` đang bị chặn. Thêm policy cho SYS_ADMIN thật.
+> - Chấp nhận lời mời và mã tham gia chưa có đường ghi: người được mời không có cờ nên bị từ chối ở `role_grants`/`org_memberships`. Cần hàm `SECURITY DEFINER` hẹp, kiểm tra token rồi mới ghi đúng vai trò trong lời mời.
+> - Fixture kiểu trong leak sweep phải có thêm ca cha thuộc tổ chức mình + con thuộc tổ chức khác; sửa Javadoc và controller mẫu trong `SweepEndpoints`/`RlsLeakSweepIT`.
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/org/**`, migration `V202611080001__org_invitations.sql` (`invitations`, `join_codes`), frontend `frontend/src/features/org/**`, `frontend/src/app/ContextSwitcher.tsx`, E2E F04–F08.
 
