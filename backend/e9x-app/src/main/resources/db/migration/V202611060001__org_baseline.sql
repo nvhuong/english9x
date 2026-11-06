@@ -15,6 +15,7 @@ CREATE FUNCTION e9x_current_org() RETURNS uuid
 CREATE FUNCTION e9x_current_user() RETURNS uuid
   LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('app.user_id', true), '')::uuid $$;
 
+-- Trusted-setter model: app.e9x_staff / app.org_admin are set only by server code; RLS is defense in depth.
 CREATE FUNCTION e9x_is_staff() RETURNS boolean
   LANGUAGE sql STABLE AS $$ SELECT coalesce(current_setting('app.e9x_staff', true), '') = 'on' $$;
 CREATE FUNCTION e9x_is_org_admin() RETURNS boolean
@@ -123,7 +124,8 @@ CREATE POLICY organizations_select ON organizations FOR SELECT USING (
 CREATE POLICY courses_select ON courses FOR SELECT USING (
   (owner_org_id IS NULL AND status = 'PUBLISHED')
   OR owner_org_id = e9x_current_org()
-  OR (shared_status = 'APPROVED' AND status = 'PUBLISHED'));
+  OR (shared_status = 'APPROVED' AND status = 'PUBLISHED')
+  OR (owner_org_id IS NULL AND e9x_is_staff()));
 CREATE POLICY courses_insert ON courses FOR INSERT
   WITH CHECK ((owner_org_id IS NULL AND e9x_is_staff()) OR (owner_org_id IS NOT NULL AND owner_org_id = e9x_current_org()));
 CREATE POLICY courses_update ON courses FOR UPDATE
