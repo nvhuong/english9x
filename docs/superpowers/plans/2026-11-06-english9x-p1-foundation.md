@@ -51,6 +51,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 > **Ghi chú 2026-11-07 (từ P1.11):** 401/403 của Spring Security (entry point, access-denied handler, lỗi ném từ filter trước MVC) phải render cùng `application/problem+json` như `ProblemDetailsAdvice` (`type`, `title`, `status`, `detail`, `errors[]`, không lộ chi tiết nội bộ).
 
+> **Ghi chú 2026-11-07 (P1.4 đã làm, xem `.superpowers/sdd/.../task-P1.4-report.md`):** (1) mọi thao tác trước khi có người dùng (đăng ký, tra cứu đăng nhập, xác thực, đặt lại, refresh, Google) đi qua các hàm `SECURITY DEFINER` hẹp `auth_*` trong `V202611070001__identity_auth.sql`; `e9x_app` không có quyền bảng nào trên `refresh_tokens`/`email_verifications`/`password_resets` và không INSERT/DELETE được `users`. Tạo tài khoản là hàm `auth_create_user` (không dùng cờ GUC `app.registration`). (2) Task sau xác thực thế nào: gửi `Authorization: Bearer <accessToken>`; filter đặt `CurrentContextHolder` cho người dùng (ngữ cảnh cá nhân), request có header `X-Org-Context` bị từ chối 403 cho tới khi **P1.5** thay đoạn đó bằng kiểm tra thành viên (`platform.security.CurrentContextFilter`). Endpoint công khai mới phải thêm vào danh sách `PUBLIC_POST/PUBLIC_GET` của `SecurityConfiguration` kèm test; mọi thứ khác dưới `/api/**` mặc định cần token. (3) E2E: `seed.verifiedLearner()`, `auth.loginAs(page, user)`, `auth.registerLearner(page, user)`; seed API cần header `X-E2E-Seed-Secret` (do `scripts/e2e.sh` tạo). (4) Chặn mua gói khi chưa xác thực: gọi `identity.api.UserDirectory#requireVerified(userId)` (xem ghi chú ở P5.1).
+
 > **Ghi chú 2026-11-07 (từ P1.3):** tra cứu đăng nhập theo email phải đi qua một hàm `SECURITY DEFINER` hẹp (chỉ trả những cột cần thiết cho đúng một email), không mở policy SELECT rộng trên `users`.
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/identity/{api,internal}/**`, migration `V202611070001__identity_auth.sql` (`auth_identities`, `refresh_tokens`, `email_verifications`, `password_resets`), frontend `frontend/src/features/auth/**`, E2E `e2e/specs/auth/F01-register-verify.spec.ts`, `F02-google-login.spec.ts`, `F03-password-reset.spec.ts`.
@@ -113,6 +115,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 > - Xếp hàng job định kỳ (expire_orders…) và dọn job cũ chưa làm: P1.7 chỉ có hàng đợi; worker hiện chỉ có SELECT/UPDATE (cột bookkeeping) trên `jobs`, chưa có INSERT/DELETE.
 
 ### Task P1.8: notification (W2) — F52, F53, F54, F55
+
+> **Ghi chú 2026-11-07 (từ P1.4):** thư tài khoản (xác thực email, đã có tài khoản, đặt lại mật khẩu) hiện do `identity.internal.SmtpAuthMailer` gửi qua `spring-mail` (SMTP; Mailpit khi E2E), vì module notification chưa tồn tại. Có thể chuyển sang notification sau: thay `AuthMailer` bằng một `NotificationChannel` email, giữ nguyên nội dung và ba quy tắc (gửi sau commit, lỗi gửi không làm hỏng đăng ký, link dựng từ `e9x.public-base-url`, token không vào log). Thư bảo mật (đặt lại mật khẩu, xác thực) **không** được tắt theo tuỳ chọn thông báo của người dùng.
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/notification/**`, migration `V202611080003__notifications.sql`, frontend `frontend/src/features/notifications/**`, E2E `e2e/specs/notify/F52…F55`.
 

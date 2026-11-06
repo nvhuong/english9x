@@ -24,6 +24,8 @@
 
 **Tests:** `OrderServiceIT.rejectsMoreCoursesThanPlan`, `.unverifiedEmailCannotOrder`, `.priceLockedAtOrderTime`, `.orderCodesUnique`, `EntitlementGateIT.expiredDeniesNewLessonButAllowsHistory`, `.attemptInProgressSurvivesExpiry`, `ExpireOrdersJobIT.pendingOrderExpiresAfterConfiguredTtl`.
 
+> **Ghi chú 2026-11-07 (từ P1.4):** `OrderService` (POST /api/orders) **phải gọi `identity.api.UserDirectory#requireVerified(userId)`** trước khi tạo đơn; khi chưa xác thực email nó ném `EmailNotVerifiedException` (403 `urn:e9x:problem:email-not-verified`). P1.4 chỉ kiểm thử được cái guard (`RegistrationIT.unverifiedUserCannotCheckout`) vì chưa có thanh toán. **Việc còn lại của P5 (đánh dấu pending như F58):** (a) `OrderServiceIT.unverifiedEmailCannotOrder` dùng đúng guard này; (b) kịch bản F01 "chưa xác thực thì không mua được gói" qua giao diện thanh toán thật phải được thêm vào `e2e/specs/auth/F01-register-verify.spec.ts` (hiện spec chỉ khẳng định guard qua seed API `/api/test/seed/require-verified` và biểu ngữ "email chưa xác thực"; đầu spec có ghi chú "WHAT THIS SPEC CANNOT DO YET"); (c) thay `seed.learnerWithPlan` (còn `NotImplementedError`) bằng seed thật.
+
 > **Ghi chú 2026-11-07 (từ P1.7, vòng sửa 1):** P5.1 sở hữu việc lên lịch định kỳ (job lặp) đầu tiên: `expire_orders`, `expire_entitlements`, `plan_expiry_reminder`, `release_expired_claim` (P1.7 chỉ có hàng đợi; worker hiện không có INSERT/DELETE trên `jobs`). Cần: cột/khoá `dedupe_key` để hai instance không xếp trùng cùng một lần chạy, chính sách giữ/dọn payload và job đã xong (payload có thể chứa dữ liệu người dùng), và migration cấp quyền hẹp cho `e9x_worker` (GRANT + POLICY) cho phần dữ liệu các handler này đụng tới.
 
 ### Task P5.2: VietQR + xác nhận thủ công (W4) — F40

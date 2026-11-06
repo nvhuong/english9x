@@ -1,9 +1,8 @@
 // Harness self-check (not a feature): every helper is exercised against the REAL fake containers, so a broken
 // helper fails here instead of inside F01-F58. Names starting with "_" are never counted by the coverage gate.
 import { acquireGeminiLock } from '../helpers/gemini';
-import { env, json } from '../helpers/env';
+import { env, json, request } from '../helpers/env';
 import { NotImplementedError } from '../fixtures/notImplemented';
-import { loginAs, registerLearner } from '../fixtures/auth';
 import { paidOrder } from '../fixtures/billing';
 import { publishedQuestion } from '../fixtures/content';
 import { switchContext } from '../fixtures/org';
@@ -129,14 +128,34 @@ test.describe('seed API and not-yet-built fixtures', () => {
     expect(await seed.ping()).toEqual({ status: 'ok', seedLogin: 'e9x_owner' });
   });
 
+  test('the seed API refuses a request without the shared secret', async () => {
+    for (const headers of [{}, { 'x-e2e-seed-secret': 'wrong' }]) {
+      const r = await request(`${env.baseURL}/api/test/seed/ping`, { method: 'POST', headers });
+      expect(r.status).toBe(403);
+    }
+  });
+
+  test('seed.verifiedLearner makes a person who can sign in; verified:false leaves the mailbox unconfirmed', async ({ seed, uniqueEmail }) => {
+    const ok = await seed.verifiedLearner({ email: uniqueEmail('seed-ok') });
+    expect(ok.verified).toBe(true);
+    expect(await seed.userInfo(ok.email)).toMatchObject({ count: 1, hasPassword: true, emailVerified: true, identities: 0 });
+    const login = await json<{ accessToken: string }>(`${env.baseURL}/api/auth/login`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: ok.email, password: ok.password }),
+    });
+    expect(login.accessToken.split('.')).toHaveLength(3);
+    expect(await seed.requireVerified(ok.userId)).toBe(200);
+
+    const pending = await seed.verifiedLearner({ email: uniqueEmail('seed-pending'), verified: false });
+    expect(await seed.userInfo(pending.email)).toMatchObject({ emailVerified: false });
+    expect(await seed.requireVerified(pending.userId)).toBe(403);
+  });
+
   test('seed functions of unbuilt modules throw a clear error instead of faking data', async ({ seed, page }) => {
     const calls: Array<[string, () => unknown, RegExp]> = [
       ['seed.learnerWithPlan', () => seed.learnerWithPlan({ courses: ['ielts-ac'] }), /seed\.learnerWithPlan is not implemented until P5\.1/],
       ['seed.publishedToeicTest', () => seed.publishedToeicTest(), /not implemented until P2\.6/],
       ['seed.publishedIeltsTest', () => seed.publishedIeltsTest({ variant: 'AC' }), /not implemented until P2\.6/],
       ['seed.center', () => seed.center({ teachers: 1, learners: 2 }), /not implemented until P1\.5/],
-      ['auth.loginAs', () => loginAs(page, { email: 'x', password: 'y' }), /not implemented until P1\.4/],
-      ['auth.registerLearner', () => registerLearner('x', 'y'), /not implemented until P1\.4/],
       ['org.switchContext', () => switchContext(page, null), /not implemented until P1\.5/],
       ['content.publishedQuestion', () => publishedQuestion('mcq'), /not implemented until P2\.3/],
       ['billing.paidOrder', () => paidOrder('x', 'y'), /not implemented until P5\.2/],

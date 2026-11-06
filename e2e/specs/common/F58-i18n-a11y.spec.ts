@@ -8,7 +8,8 @@
 // !! from the W10 completion criteria. Do not delete the pending list to make it look done.
 //
 // Scanned today (reachable without signing in): learner home, display preferences, exam area (empty state), the
-// access-denied screen as shown for /cms, /org and /admin, and the not-found screen. The empty states of cms / org /
+// access-denied screen as shown for /cms, /org and /admin, the not-found screen, and (P1.4) the sign-in family: login,
+// register, forgot password, reset password (with a token) and the verify-email failure screen. The empty states of cms / org /
 // admin themselves need a signed-in role (P1.4/P1.5) and join SCREENS then. Component-level axe runs in Storybook
 // (`pnpm -C frontend run test:a11y`); this spec covers the assembled screens in the real app behind Caddy.
 import AxeBuilder from '@axe-core/playwright';
@@ -25,6 +26,12 @@ const SCREENS: Screen[] = [
   { name: 'access denied (/org)', path: '/org', heading: { vi: /Bạn chưa có quyền xem trang này/, en: /You do not have access to this page/ } },
   { name: 'access denied (/admin)', path: '/admin', heading: { vi: /Bạn chưa có quyền xem trang này/, en: /You do not have access to this page/ } },
   { name: 'not found', path: '/khong-ton-tai', heading: { vi: /Không tìm thấy trang/, en: /Page not found/ } },
+  // P1.4 identity screens
+  { name: 'sign in', path: '/login', heading: { vi: /^Đăng nhập$/, en: /^Sign in$/ } },
+  { name: 'sign up', path: '/register', heading: { vi: /^Tạo tài khoản$/, en: /^Create an account$/ } },
+  { name: 'forgot password', path: '/forgot-password', heading: { vi: /^Quên mật khẩu$/, en: /^Forgot your password$/ } },
+  { name: 'reset password', path: '/reset-password?token=axe-scan-token', heading: { vi: /^Đặt mật khẩu mới$/, en: /^Choose a new password$/ } },
+  { name: 'verify email (broken link)', path: '/verify-email', heading: { vi: /^Không xác thực được$/, en: /^Could not verify$/ } },
 ];
 
 // The 8 main screens of the design mockups (docs/superpowers/design/mockups/01..08) and the task that builds each.

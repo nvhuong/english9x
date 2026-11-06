@@ -2,6 +2,7 @@ import { test as base, expect } from '@playwright/test';
 import { acquireGeminiLock, gemini as geminiHelper } from '../helpers/gemini';
 import { mailpit } from '../helpers/mailpit';
 import { telegram } from '../helpers/telegram';
+import { loginAs, registerLearner } from './auth';
 import { seed } from './seed';
 
 /**
@@ -10,7 +11,8 @@ import { seed } from './seed';
  *  - mailpit / telegram: polling helpers for the fake containers. For telegram use telegram.uniqueChatId().
  *  - gemini: the fake Gemini has ONE global scenario. Asking for this fixture serialises you against every other test
  *    that asks for it (cross-process lock) and resets the fake (scenario 'ok', no recorded requests) before and after.
- *  - seed: test-data factory (POST /api/test/seed/*).
+ *  - seed: test-data factory (POST /api/test/seed/*, with the shared secret header).
+ *  - auth: loginAs(page, user) and registerLearner(page, user) drive the real sign-in / sign-up screens.
  */
 export const test = base.extend<{
   uniqueEmail: (label?: string) => string;
@@ -18,11 +20,13 @@ export const test = base.extend<{
   telegram: typeof telegram;
   gemini: typeof geminiHelper;
   seed: typeof seed;
+  auth: { loginAs: typeof loginAs; registerLearner: typeof registerLearner };
 }>({
   uniqueEmail: async ({}, use) => { await use((label) => mailpit.uniqueEmail(label)); },
   mailpit: async ({}, use) => { await use(mailpit); },
   telegram: async ({}, use) => { await use(telegram); },
   seed: async ({}, use) => { await use(seed); },
+  auth: async ({}, use) => { await use({ loginAs, registerLearner }); },
   gemini: async ({}, use) => {
     const release = await acquireGeminiLock();
     try {
