@@ -1,7 +1,8 @@
 # English9x stack.  Dev:  docker compose -f infra/docker-compose.yml up --build
 # Credentials come from env vars (see README); the defaults below are for local use only.
-# P1.3 splits the database login into an owner (migrations) and e9x_app_login (runtime) by
-# setting E9X_FLYWAY_USER/PASSWORD and E9X_DB_USER/PASSWORD - no structural change needed here.
+# Database logins (P1.3): POSTGRES_USER is the bootstrap superuser (backup only); Flyway connects as the
+# table owner e9x_owner; the running app connects as e9x_app_login, which owns nothing and is subject to RLS.
+# Both roles are created by infra/postgres/init/01-roles.sh on first start.
 name: english9x
 
 services:
@@ -11,8 +12,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-e9x}
       POSTGRES_USER: ${POSTGRES_USER:-e9x}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-e9x_dev_password}
+      E9X_OWNER_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}
+      E9X_APP_PASSWORD: ${E9X_DB_PASSWORD:-e9x_app_dev_password}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./postgres/init/01-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -50,10 +54,10 @@ services:
         condition: service_healthy
     environment:
       E9X_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-e9x}
-      E9X_DB_USER: ${E9X_DB_USER:-${POSTGRES_USER:-e9x}}
-      E9X_DB_PASSWORD: ${E9X_DB_PASSWORD:-${POSTGRES_PASSWORD:-e9x_dev_password}}
-      E9X_FLYWAY_USER: ${E9X_FLYWAY_USER:-${POSTGRES_USER:-e9x}}
-      E9X_FLYWAY_PASSWORD: ${E9X_FLYWAY_PASSWORD:-${POSTGRES_PASSWORD:-e9x_dev_password}}
+      E9X_DB_USER: e9x_app_login
+      E9X_DB_PASSWORD: ${E9X_DB_PASSWORD:-e9x_app_dev_password}
+      E9X_FLYWAY_USER: e9x_owner
+      E9X_FLYWAY_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}
       E9X_GEMINI_API_KEY: ${E9X_GEMINI_API_KEY:-}
       LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
     healthcheck:

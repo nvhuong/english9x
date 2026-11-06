@@ -34,9 +34,17 @@ docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml up --
 docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml down -v
 ```
 The default credentials in `infra/docker-compose.yml` are for local use only. In production set
-`POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD`, `E9X_DOMAIN` (public host name), `E9X_GEMINI_API_KEY` in the environment
+`POSTGRES_PASSWORD`, `E9X_FLYWAY_PASSWORD` (role `e9x_owner`, migrations), `E9X_DB_PASSWORD` (role `e9x_app_login`, the app), `MINIO_ROOT_PASSWORD`, `E9X_DOMAIN` (public host name), `E9X_GEMINI_API_KEY` in the environment
 or a git-ignored `.env`. Application settings (spec §15.1) are keys in `backend/e9x-app/src/main/resources/application.yml`
 and can be overridden by environment variables.
+
+## Database roles (Row-Level Security)
+Flyway migrates as `e9x_owner` (owns every table); the app runs as `e9x_app_login`, which inherits `e9x_app`, owns nothing and
+cannot bypass RLS (startup fails otherwise). `infra/postgres/init/01-roles.sh` creates both roles on the first start of an empty
+volume (it is idempotent: on an existing volume run it by hand with `E9X_OWNER_PASSWORD` / `E9X_APP_PASSWORD` to rotate).
+`application.yml` has no default for `E9X_DB_PASSWORD` / `E9X_FLYWAY_PASSWORD`; the app refuses to start without them.
+Every transaction sets `app.user_id` / `app.org_id` / `app.e9x_staff` / `app.org_admin` with `set_config(..., true)` from the bound
+`CurrentContextHolder` (`org.api`); with no context RLS returns no rows. `/v3/api-docs` is off unless `E9X_OPENAPI_ENABLED=true`.
 
 ## Fakes
 - Fake Gemini: `POST /v1beta/models/{model}:generateContent`; choose the response with `POST /__scenario {"scenario":"ok|error500|badSchema"}`; inspect calls at `GET /__requests`.
