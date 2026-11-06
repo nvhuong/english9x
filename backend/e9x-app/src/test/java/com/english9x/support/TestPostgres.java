@@ -24,6 +24,8 @@ public final class TestPostgres {
     public static final String OWNER_PASSWORD = "owner-test-only";
     public static final String APP_LOGIN = "e9x_app_login";
     public static final String APP_PASSWORD = "app-test-only";
+    public static final String WORKER_LOGIN = "e9x_worker_login";
+    public static final String WORKER_PASSWORD = "worker-test-only";
 
     private static final PostgreSQLContainer<?> CONTAINER = start();
 
@@ -35,6 +37,9 @@ public final class TestPostgres {
                 .withDatabaseName("bootstrap")
                 .withEnv("E9X_OWNER_PASSWORD", OWNER_PASSWORD)
                 .withEnv("E9X_APP_PASSWORD", APP_PASSWORD)
+                .withEnv("E9X_WORKER_PASSWORD", WORKER_PASSWORD)
+                // Spring caches many application contexts (each holds a pool) for the whole test JVM
+                .withCommand("postgres", "-c", "max_connections=500")
                 .withCopyFileToContainer(
                         MountableFile.forHostPath(script, 0755), "/docker-entrypoint-initdb.d/01-roles.sh");
         c.start(); // stopped by Testcontainers' Ryuk when the JVM exits
@@ -74,12 +79,26 @@ public final class TestPostgres {
         return new DriverManagerDataSource(jdbcUrl(database), OWNER, OWNER_PASSWORD);
     }
 
-    /** Points the application at the database: runtime = e9x_app_login, Flyway = e9x_owner. */
+    public static DataSource worker(String database) {
+        return new DriverManagerDataSource(jdbcUrl(database), WORKER_LOGIN, WORKER_PASSWORD);
+    }
+
+    public static DataSource app(String database) {
+        return new DriverManagerDataSource(jdbcUrl(database), APP_LOGIN, APP_PASSWORD);
+    }
+
+    /**
+     * Points the application at the database: runtime = e9x_app_login, Flyway = e9x_owner, background jobs =
+     * e9x_worker_login.
+     */
     public static void connect(DynamicPropertyRegistry registry, String database) {
         registry.add("spring.datasource.url", () -> jdbcUrl(database));
         registry.add("spring.datasource.username", () -> APP_LOGIN);
         registry.add("spring.datasource.password", () -> APP_PASSWORD);
         registry.add("spring.flyway.user", () -> OWNER);
         registry.add("spring.flyway.password", () -> OWNER_PASSWORD);
+        registry.add("e9x.jobs.worker-datasource.url", () -> jdbcUrl(database));
+        registry.add("e9x.jobs.worker-datasource.username", () -> WORKER_LOGIN);
+        registry.add("e9x.jobs.worker-datasource.password", () -> WORKER_PASSWORD);
     }
 }

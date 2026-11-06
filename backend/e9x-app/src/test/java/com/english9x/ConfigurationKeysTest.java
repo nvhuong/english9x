@@ -62,6 +62,18 @@ class ConfigurationKeysTest {
     }
 
     @Test
+    void jobQueueKeysExistAndAiGradeKeepsASingleSourceOfRetryDelays() throws Exception {
+        PropertySource<?> p = load();
+        assertEquals("2s", String.valueOf(p.getProperty("e9x.jobs.poll-interval")));
+        assertEquals("10m", String.valueOf(p.getProperty("e9x.jobs.lease")));
+        assertEquals("30s,2m,10m", String.valueOf(p.getProperty("e9x.jobs.default-retry-delays")));
+        assertEquals(false, p.containsProperty("e9x.jobs.ai_grade.retry-delays"),
+                "ai_grade resolves to e9x.grading.ai.retry-delays; its value must not be duplicated");
+        assertEquals("${E9X_WORKER_DB_PASSWORD}", String.valueOf(p.getProperty("e9x.jobs.worker-datasource.password")),
+                "no default password for the worker login");
+    }
+
+    @Test
     void workerFlagExists() throws Exception {
         assertEquals("true", String.valueOf(load().getProperty("app.worker.enabled")));
     }

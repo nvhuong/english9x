@@ -104,6 +104,13 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 **Tests:** `JobQueueIT.twoWorkersNeverTakeSameJob`, `.retriesWithConfiguredDelays`, `.marksFailedAfterLastRetry`, `.disabledWorkerDoesNotPoll`.
 
+> **Ghi chú 2026-11-07 (P1.7 đã làm; việc cho P1.8, P3.3 và các handler sau):**
+> - API công khai ở `com.english9x.platform.jobs.api` (named interface `api`): `JobQueue`, `Job`, `JobResult`, `@JobHandler("type")` + `JobExecutor#handle(Job)`, `WorkerJdbc`. `enqueue` **bắt buộc có transaction của người gọi** (job chỉ tồn tại nếu người gọi commit; không có transaction thì `IllegalTransactionStateException`); role `e9x_app` chỉ có quyền INSERT dòng QUEUED, không đọc được `jobs`.
+> - Handler chạy trên luồng worker, **không có request, transaction hay ngữ cảnh người dùng**. Cần góc nhìn RLS của một người dùng (vd. job chấm bài thi, auto_submit_attempt): ghi `userId`/`orgId` vào payload lúc enqueue (mã server đáng tin cậy ghi), rồi trong handler `CurrentContextHolder.bind(userId, orgId)` và chạy `@Transactional` trên transaction manager chính (login `e9x_app_login`, RLS áp dụng như một request). Không có cờ hệ thống `app.system`. Muốn xem dữ liệu **không** theo người dùng (expire_orders, expire_entitlements, plan_expiry_reminder): migration của handler đó cấp quyền hẹp (GRANT + POLICY `TO e9x_worker`) và handler dùng `WorkerJdbc` (login `e9x_worker_login`, chỉ gọi được trong lúc chạy job). Mặc định worker chỉ thấy bảng `jobs`.
+> - Job được chạy **ít nhất một lần**: lease hết hạn (worker chết, hoặc chạy quá `e9x.jobs.lease`, mặc định 10 phút, không heartbeat) thì job được nhận lại và lần chạy bị mất vẫn tính là một lần thử; kết quả muộn của lần cũ bị chặn bằng `lease_token`. Handler phải idempotent. Lỗi lưu `last_error` chỉ là tên lớp ngoại lệ (hoặc lý do handler tự đặt trong `JobResult.failure`, tối đa 500 ký tự, **không đưa nội dung payload vào**). Không log payload.
+> - Độ trễ thử lại: `e9x.jobs.<type>.retry-delays`; `ai_grade` dùng `e9x.grading.ai.retry-delays` (§15.1, không nhân đôi giá trị); loại khác dùng `e9x.jobs.default-retry-delays`. Retry = số lần thử sau lần đầu; hết thì FAILED. Loại chưa có handler: FAILED ngay với "no handler registered".
+> - Xếp hàng job định kỳ (expire_orders…) và dọn job cũ chưa làm: P1.7 chỉ có hàng đợi; worker hiện chỉ có SELECT/UPDATE (cột bookkeeping) trên `jobs`, chưa có INSERT/DELETE.
+
 ### Task P1.8: notification (W2) — F52, F53, F54, F55
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/notification/**`, migration `V202611080003__notifications.sql`, frontend `frontend/src/features/notifications/**`, E2E `e2e/specs/notify/F52…F55`.
