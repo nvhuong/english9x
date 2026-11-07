@@ -156,4 +156,51 @@ class AuditApiIT extends OrgIT {
         assertTrue(names.contains(action), names.toString());
         assertEquals(names.stream().sorted().toList(), names, "sorted");
     }
+
+    @Test
+    void theInvitedAddressIsReadFromTheInvitationAndSurvivesItsErasureAsAPlaceholder() {
+        UUID s = sysAdmin();
+        UUID a = org("CENTER");
+        String invitee = email("readtime");
+        Res sent = post("/api/orgs/" + a + "/invitations", java.util.Map.of("email", invitee, "roles", List.of(role("LEARNER", null))), s, null);
+        assertEquals(201, sent.status(), sent.raw());
+        String id = sent.body().path("id").asText();
+        assertEquals(1, su.queryForObject("select count(*) from audit_log where action = 'invitation.send' and target_id = ?", Integer.class, id));
+        assertEquals(0, su.queryForObject("select count(*) from audit_log where lower(row_to_json(audit_log)::text) like ?", Integer.class, "%" + invitee.toLowerCase() + "%"), "nothing stored");
+
+        JsonNode item = get("/api/admin/audit-log?action=invitation.send&targetId=" + id, s, null).body().path("items").get(0);
+        assertEquals(invitee, item.path("invitedEmail").asText(), "the address is read from the invitation while it exists");
+        assertEquals(204, call(org.springframework.http.HttpMethod.DELETE, "/api/orgs/" + a + "/invitations/" + id, null, s, null).status());
+        item = get("/api/admin/audit-log?action=invitation.revoke&targetId=" + id, s, null).body().path("items").get(0);
+        assertEquals(invitee, item.path("invitedEmail").asText(), "a revoked invitation is still an invitation");
+
+        // the erasure path (P6.5) removes the invitation; the log keeps its row and shows a neutral placeholder
+        su.update("delete from invitations where id = ?::uuid", id);
+        Res after = get("/api/admin/audit-log?targetId=" + id, s, null);
+        assertEquals(200, after.status(), after.raw());
+        assertEquals(2, after.body().path("items").size());
+        for (JsonNode n : after.body().path("items")) {
+            assertTrue(n.path("invitedEmail").isNull() || n.path("invitedEmail").isMissingNode(), n.toString());
+        }
+        assertFalse(after.raw().toLowerCase().contains(invitee.toLowerCase()));
+        // other targets never get an address
+        row(user("o"), null, marker(), "user", id, "{}", Instant.now());
+        for (JsonNode n : get("/api/admin/audit-log?targetType=user&targetId=" + id, s, null).body().path("items")) {
+            assertTrue(n.path("invitedEmail").isNull() || n.path("invitedEmail").isMissingNode());
+        }
+    }
+
+    @Test
+    void craftedFilterValuesAreRefusedWith400NotAServerError() {
+        UUID s = sysAdmin();
+        for (String q : List.of(
+                "from=%2B999999-01-01T00:00:00Z", "to=%2B294277-01-01T00:00:00Z", "from=%2B1000000000-01-01T00:00:00Z",
+                "from=-999999999-01-01T00:00:00Z", "to=0000-01-01T00:00:00Z", "from=1800-01-01T00:00:00Z", "to=2201-01-01T00:00:00Z",
+                "targetId=%00", "action=a%00b", "actor=%00", "targetType=x%00")) {
+            Res r = getAsWritten("/api/admin/audit-log?" + q, s);
+            assertEquals(400, r.status(), q + " -> " + r.raw());
+            assertEquals("urn:e9x:problem:validation-failed", r.problemType(), q);
+        }
+        assertEquals(200, getAsWritten("/api/admin/audit-log?from=2020-01-01T00:00:00Z&to=2100-01-01T00:00:00Z", s).status(), "a sane range still works");
+    }
 }

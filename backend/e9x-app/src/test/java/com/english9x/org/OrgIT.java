@@ -141,6 +141,19 @@ public abstract class OrgIT {
         return call(HttpMethod.GET, path, null, asUser, inOrg);
     }
 
+    /** GET with the query string sent exactly as written: {@link #get} lets the client encode it, so "%00" would arrive as the text "%00". */
+    protected Res getAsWritten(String pathAndQuery, UUID asUser) {
+        HttpHeaders h = new HttpHeaders();
+        h.setBearerAuth(TestAuth.accessToken(asUser));
+        ResponseEntity<String> r = http.exchange(java.net.URI.create(http.getRootUri() + pathAndQuery), HttpMethod.GET, new HttpEntity<>(null, h), String.class);
+        try {
+            String raw = r.getBody() == null ? "" : r.getBody();
+            return new Res(r.getStatusCode().value(), raw.trim().startsWith("{") ? JSON.readTree(raw) : JSON.createObjectNode(), r.getHeaders(), raw);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     protected Res post(String path, Object body, UUID asUser, UUID inOrg) {
         return call(HttpMethod.POST, path, body, asUser, inOrg);
     }

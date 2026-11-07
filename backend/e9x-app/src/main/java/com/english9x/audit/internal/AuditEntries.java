@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-/** What may be written to the audit log: the shape of names and the content of {@code detail}. Pure, so it is unit-tested alone. */
+/** What may be written to the audit log: the shape of names and the content of {@code detail}. Pure, so {@code AuditEntriesTest} covers it without a database. */
 final class AuditEntries {
 
     private static final Pattern NAME = Pattern.compile("[a-z][a-z0-9]*([.-][a-z0-9]+)*");

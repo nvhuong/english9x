@@ -70,8 +70,12 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "invitedEmail" : {
+            "description" : "For a record about an invitation: the invited address, read from the invitation now (the log does not keep it, so that erasing the invitation erases it); null once the invitation is gone",
+            "type" : "string"
+          },
           "orgId" : {
-            "description" : "The context the actor was in; null = personal / English9x",
+            "description" : "The context the actor was in; null = English9x (for the actor kind OPERATOR: outside the application)",
             "format" : "uuid",
             "type" : "string"
           },

@@ -535,9 +535,11 @@ export interface components {
             };
             /** Format: uuid */
             id: string;
+            /** @description For a record about an invitation: the invited address, read from the invitation now (the log does not keep it, so that erasing the invitation erases it); null once the invitation is gone */
+            invitedEmail?: string;
             /**
              * Format: uuid
-             * @description The context the actor was in; null = personal / English9x
+             * @description The context the actor was in; null = English9x (for the actor kind OPERATOR: outside the application)
              */
             orgId?: string;
             orgName?: string;

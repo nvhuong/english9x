@@ -984,4 +984,29 @@ class ReviewServiceIT {
         assertEquals(before + 2, su.queryForObject("select count(*) from audit_log where action like 'review.%' and actor_id in (?, ?, ?)", Long.class, DUAL_A, REVIEWER_A, AUTHOR_A),
                 "only the two submits are on record");
     }
+
+    @Test
+    void aReviewActionFailsWhenItsRecordCannotBeWritten() {
+        UUID it = item(ORG_D, "IELTS", AUTHOR_D, "DRAFT");
+        UUID pending = submitted(AUTHOR_D, ORG_D, it);
+        UUID m1 = item(ORG_D, "IELTS", AUTHOR_D, "DRAFT");
+        UUID bundlePending = as(AUTHOR_D, ORG_D, () -> reviews.submit(new BundleRef(List.of(ref(m1)))));
+        UUID fresh = item(ORG_D, "IELTS", AUTHOR_D, "DRAFT");
+        UUID m2 = item(ORG_D, "IELTS", AUTHOR_D, "DRAFT");
+        su.execute("revoke insert on audit_log from e9x_app");
+        try {
+            assertThrows(RuntimeException.class, () -> as(AUTHOR_D, ORG_D, () -> reviews.submit(ref(fresh))));
+            assertThrows(RuntimeException.class, () -> as(AUTHOR_D, ORG_D, () -> reviews.submit(new BundleRef(List.of(ref(m2))))));
+            assertThrows(RuntimeException.class, () -> asDo(REVIEWER_D, ORG_D, () -> reviews.approve(pending)));
+            assertThrows(RuntimeException.class, () -> asDo(REVIEWER_D, ORG_D, () -> reviews.requestChanges(pending, "x")));
+            assertThrows(RuntimeException.class, () -> asDo(REVIEWER_D, ORG_D, () -> reviews.approveBundle(bundlePending)));
+            assertThrows(RuntimeException.class, () -> asDo(REVIEWER_D, ORG_D, () -> reviews.requestBundleChanges(bundlePending, "x")));
+        } finally {
+            su.execute("grant insert (action, target_type, target_id, detail) on audit_log to e9x_app");
+        }
+        assertEquals("IN_REVIEW", reviewStatus(pending), "the decision was rolled back with the failed record");
+        assertEquals(Set.of("IN_REVIEW"), Set.copyOf(reviewIdsOfBundle(bundlePending).stream().map(ReviewServiceIT::reviewStatus).toList()));
+        assertEquals("DRAFT", status(fresh), "a refused submit left the version a draft");
+        assertEquals("DRAFT", status(m2));
+    }
 }

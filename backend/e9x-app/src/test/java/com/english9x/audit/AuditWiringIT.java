@@ -124,7 +124,7 @@ class AuditWiringIT extends OrgIT {
         assertEquals(sys.toString(), sent.path("actor_id").asText());
         assertEquals("invitation", sent.path("target_type").asText());
         assertEquals(a.toString(), sent.path("detail").path("orgId").asText());
-        assertEquals(invitee, sent.path("detail").path("email").asText(), "the address, as the brief lists it, stored the way the invitation stores it");
+        assertFalse(sent.path("detail").has("email"), "the invited address is personal data and the log cannot erase it: it is read through the invitation instead");
         assertEquals(List.of("LEARNER"), texts(sent.path("detail").path("roles")));
         assertEquals(0, sent.path("detail").path("superseded").asInt());
 
@@ -164,7 +164,7 @@ class AuditWiringIT extends OrgIT {
         assertEquals(204, call(HttpMethod.DELETE, "/api/orgs/" + a + "/invitations/" + id3, null, sys, null).status());
         JsonNode revoked = one("action = 'invitation.revoke' and target_id = ?", id3);
         assertEquals(sys.toString(), revoked.path("actor_id").asText());
-        assertEquals(invitee3, revoked.path("detail").path("email").asText());
+        assertFalse(revoked.path("detail").has("email"), "the invited address is not kept in the log");
         assertEquals(a.toString(), revoked.path("detail").path("orgId").asText());
         // revoking again, or something that is not there: refused, nothing recorded
         assertEquals(404, call(HttpMethod.DELETE, "/api/orgs/" + a + "/invitations/" + id3, null, sys, null).status());
@@ -188,6 +188,12 @@ class AuditWiringIT extends OrgIT {
         assertEquals(404, post("/api/invitations/" + "A".repeat(43) + "/accept", null, person, null).status());
         assertEquals(403, post("/api/orgs/" + a + "/invitations", Map.of("email", email("x"), "roles", List.of(role("LEARNER", null))), user("outsider"), null).status());
         assertEquals(afterSend, count("action like 'invitation.%'"));
+
+        // no invited address anywhere in the log, in any column, in any case (erasing the invitation must erase it from the screen)
+        for (String address : List.of(invitee, invitee2, invitee3, invitee4, invitee5)) {
+            assertEquals(0, count("lower(row_to_json(audit_log)::text) like ?", "%" + address.toLowerCase() + "%"), "the log holds no copy of " + address);
+        }
+        assertEquals(0, count("action like 'invitation.%' and jsonb_exists(detail, 'email')"), "no invitation record carries an email key");
 
         // no token, digest or secret in any record: the whole table, as text
         for (String t : List.of(first, token, token2, token3, token5)) {
@@ -225,5 +231,39 @@ class AuditWiringIT extends OrgIT {
             su.execute("grant insert (action, target_type, target_id, detail) on audit_log to e9x_app");
         }
         assertEquals(201, post("/api/admin/organizations", Map.of("name", name, "type", "CENTER"), sys, null).status());
+    }
+
+    @Test
+    void roleChangeRevokeAndAcceptFailWhenTheirRecordCannotBeWritten() {
+        UUID sys = sysAdmin();
+        UUID a = org("CENTER");
+        UUID admin = orgAdmin(a);
+        UUID member = user("recmember");
+        grant(member, a, null, "LEARNER");
+        String invitee = email("recaccept");
+        post("/api/orgs/" + a + "/invitations", Map.of("email", invitee, "roles", List.of(role("LEARNER", null))), sys, null);
+        String token = TestAuth.SMTP.await(invitee).linkParam("token");
+        UUID person = user(invitee, true);
+        String revokee = email("recrevoke");
+        String revokeId = post("/api/orgs/" + a + "/invitations", Map.of("email", revokee, "roles", List.of(role("LEARNER", null))), sys, null).body().path("id").asText();
+
+        su.execute("revoke insert on audit_log from e9x_app");
+        try {
+            assertEquals(500, call(HttpMethod.PUT, "/api/orgs/" + a + "/role-grants",
+                    Map.of("userId", member, "roles", List.of(role("LEARNER", null), role("AUTHOR", "IELTS"))), admin, a).status());
+            assertEquals(0, su.queryForObject("select count(*) from role_grants where user_id = ? and role = 'AUTHOR'", Integer.class, member), "the role change was rolled back");
+
+            assertEquals(500, call(HttpMethod.DELETE, "/api/orgs/" + a + "/invitations/" + revokeId, null, sys, null).status());
+            assertEquals(0, su.queryForObject("select count(*) from invitations where id = ?::uuid and revoked_at is not null", Integer.class, revokeId), "the revocation was rolled back");
+
+            assertEquals(500, post("/api/invitations/" + token + "/accept", null, person, null).status());
+            assertEquals(0, su.queryForObject("select count(*) from invitations where email = ? and accepted_at is not null", Integer.class, invitee), "the acceptance was rolled back");
+            assertEquals(0, su.queryForObject("select count(*) from org_memberships where org_id = ? and user_id = ?", Integer.class, a, person), "and so was the membership it would have created");
+        } finally {
+            su.execute("grant insert (action, target_type, target_id, detail) on audit_log to e9x_app");
+        }
+        // with the log writable again, the same actions go through
+        assertEquals(204, call(HttpMethod.DELETE, "/api/orgs/" + a + "/invitations/" + revokeId, null, sys, null).status());
+        assertEquals(200, post("/api/invitations/" + token + "/accept", null, person, null).status());
     }
 }

@@ -226,12 +226,12 @@ class OrgRepository {
         }
     }
 
-    record Revoked(String email, List<RoleSpec> roles) {}
+    record Revoked(List<RoleSpec> roles) {}
 
     /** Revokes a pending invitation of that scope and says what it was; empty when there is none (or it is not the caller's to see). */
     Optional<Revoked> revoke(UUID invitationId, UUID orgId, Instant now) {
-        return jdbc.query("update invitations set revoked_at = ? where id = ? and org_id is not distinct from ? and accepted_at is null and revoked_at is null and expires_at > ? returning email, grants::text as grants",
-                (rs, n) -> new Revoked(rs.getString("email"), parseGrants(rs.getString("grants"))),
+        return jdbc.query("update invitations set revoked_at = ? where id = ? and org_id is not distinct from ? and accepted_at is null and revoked_at is null and expires_at > ? returning grants::text as grants",
+                (rs, n) -> new Revoked(parseGrants(rs.getString("grants"))),
                 ts(now), invitationId, orgId, ts(now)).stream().findFirst();
     }
 

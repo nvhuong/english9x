@@ -86,10 +86,10 @@ class InvitationService {
         String token = InviteTokens.newToken();
         Instant expires = now.plus(props.invitationTtl());
         UUID id = repo.insertInvitation(orgId, email, roles, InviteTokens.hash(token), inviter, expires);
-        // The address is the one personal datum this record keeps (it names who was invited); never the token or its digest.
+        // No address here: it is personal data of someone who may never register, and the log cannot erase it. The log names the invitation
+        // (target) and the audit screen reads the address from the invitation while it exists. Never the token or its digest either.
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("orgId", orgId == null ? null : orgId.toString());
-        detail.put("email", email);
         detail.put("roles", roles.stream().map(RoleRules::label).toList());
         detail.put("superseded", superseded);
         audit.record("invitation.send", "invitation", id, detail);
@@ -121,7 +121,6 @@ class InvitationService {
         OrgRepository.Revoked revoked = repo.revoke(invitationId, orgId, clock.instant()).orElseThrow(OrgProblems::notFound);
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("orgId", orgId == null ? null : orgId.toString());
-        detail.put("email", revoked.email());
         detail.put("roles", revoked.roles().stream().map(RoleRules::label).toList());
         audit.record("invitation.revoke", "invitation", invitationId, detail);
     }
