@@ -13,6 +13,14 @@ import org.springframework.mock.env.MockEnvironment;
 class RetryPolicyTest {
 
     @Test
+    void aMaxRunMustBeAPositiveDuration() {
+        assertThrows(IllegalArgumentException.class, () -> new RetryPolicy(new MockEnvironment().withProperty("e9x.jobs.max-run", "soon")).maxRun("x"));
+        assertThrows(IllegalArgumentException.class, () -> new RetryPolicy(new MockEnvironment().withProperty("e9x.jobs.max-run", "0s")).maxRun("x"));
+        assertThrows(IllegalArgumentException.class, () -> new RetryPolicy(new MockEnvironment().withProperty("e9x.jobs.x.max-run", "-1m")).maxRun("x"));
+        assertEquals(Duration.ofMinutes(5), new RetryPolicy(new MockEnvironment().withProperty("e9x.jobs.x.max-run", "5m")).maxRun("x"));
+    }
+
+    @Test
     void aTypeSpecificKeyWins() {
         RetryPolicy p = new RetryPolicy(new MockEnvironment().withProperty("e9x.jobs.excel_import.retry-delays", "5s,1m"));
         assertEquals(List.of(Duration.ofSeconds(5), Duration.ofMinutes(1)), p.delays("excel_import"));

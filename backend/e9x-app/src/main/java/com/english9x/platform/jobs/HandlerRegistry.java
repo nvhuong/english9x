@@ -17,6 +17,7 @@ class HandlerRegistry {
     private final Map<String, JobExecutor> byType = new HashMap<>();
 
     HandlerRegistry(ApplicationContext context, RetryPolicy retryPolicy) {
+        retryPolicy.maxRun("any"); // fail now on a malformed e9x.jobs.max-run, not one poll later
         Map<String, String> beanOfType = new HashMap<>();
         for (Map.Entry<String, Object> e : context.getBeansWithAnnotation(JobHandler.class).entrySet()) {
             String bean = e.getKey();
@@ -32,6 +33,7 @@ class HandlerRegistry {
                         + "' and '" + bean + "'");
             }
             retryPolicy.delays(type); // fail now on a malformed e9x.jobs.<type>.retry-delays
+            retryPolicy.maxRun(type); // and e9x.jobs.<type>.max-run
             byType.put(type, executor);
         }
     }

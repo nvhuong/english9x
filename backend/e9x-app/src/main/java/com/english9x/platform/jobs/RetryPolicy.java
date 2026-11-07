@@ -48,11 +48,16 @@ class RetryPolicy {
     Duration maxRun(String type) {
         for (String key : new String[] {"e9x.jobs." + type + ".max-run", "e9x.jobs.max-run"}) {
             if (environment.containsProperty(key)) {
+                Duration maxRun;
                 try {
-                    return DurationStyle.detectAndParse(environment.getProperty(key, "").trim());
+                    maxRun = DurationStyle.detectAndParse(environment.getProperty(key, "").trim());
                 } catch (RuntimeException e) {
                     throw new IllegalArgumentException("invalid duration in " + key, e);
                 }
+                if (maxRun.isNegative() || maxRun.isZero()) {
+                    throw new IllegalArgumentException("must be positive: " + key);
+                }
+                return maxRun;
             }
         }
         return Duration.ofMinutes(30);
