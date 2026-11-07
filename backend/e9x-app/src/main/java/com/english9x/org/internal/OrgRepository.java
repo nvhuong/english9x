@@ -159,7 +159,7 @@ class OrgRepository {
     }
 
     void retirePending(UUID orgId, String email, Instant now) {
-        jdbc.update("update invitations set revoked_at = ? where org_id is not distinct from ? and email = ? and accepted_at is null and revoked_at is null",
+        jdbc.update("update invitations set revoked_at = ? where org_id is not distinct from ? and email = lower(?) and accepted_at is null and revoked_at is null",
                 ts(now), orgId, email);
     }
 
@@ -178,7 +178,7 @@ class OrgRepository {
             throw new IllegalStateException(e);
         }
         return jdbc.queryForObject(
-                "insert into invitations(org_id, email, grants, token_hash, invited_by, expires_at) values (?, ?, ?::jsonb, ?, ?, ?) returning id",
+                "insert into invitations(org_id, email, grants, token_hash, invited_by, expires_at) values (?, lower(?), ?::jsonb, ?, ?, ?) returning id",
                 UUID.class, orgId, email, json, tokenHash, invitedBy, ts(expires));
     }
 

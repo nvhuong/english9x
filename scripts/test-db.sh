@@ -29,6 +29,20 @@ for t in $(ls "$ROOT"/backend/db-tests/*.sql 2>/dev/null | sort); do
   else echo "FAIL $(basename "$t")"; echo "$out" | sed 's/^/     /'; fail=$((fail+1)); fi
   "${PSQL[@]}" -d postgres -c "DROP DATABASE t_tmp" >/dev/null
 done
+echo "== operator script: grant-sys-admin.sql"
+"${PSQL[@]}" -d postgres -c "CREATE DATABASE t_tmp TEMPLATE e9x_test" >/dev/null
+opfail=0
+op() { "${PSQL[@]}" -d t_tmp "$@"; }
+op -c "INSERT INTO users(email, email_verified_at) VALUES ('boss@example.test', now()), ('newbie@example.test', NULL)" >/dev/null
+if op -v email=Boss@Example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/null 2>&1 \
+   && [ "$(op -Atc "SELECT count(*) FROM role_grants g JOIN users u ON u.id = g.user_id WHERE u.email = 'boss@example.test' AND g.role = 'SYS_ADMIN' AND g.org_id IS NULL")" = "1" ] \
+   && op -v email=boss@example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/null 2>&1 \
+   && [ "$(op -Atc "SELECT count(*) FROM role_grants WHERE role = 'SYS_ADMIN'")" = "1" ]; then echo "PASS grant-sys-admin grants a verified account once (idempotent, case-insensitive)"; else echo "FAIL grant-sys-admin on a verified account"; opfail=1; fi
+if op -v email=newbie@example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/null 2>&1 || op -v email=nobody@example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/null 2>&1; then
+  echo "FAIL grant-sys-admin accepted an unverified or unknown account"; opfail=1
+elif [ "$(op -Atc "SELECT count(*) FROM role_grants WHERE role = 'SYS_ADMIN'")" = "1" ]; then echo "PASS grant-sys-admin refuses unverified and unknown accounts"; else echo "FAIL grant-sys-admin wrote a grant despite refusing"; opfail=1; fi
+"${PSQL[@]}" -d postgres -c "DROP DATABASE t_tmp" >/dev/null
+[ "$opfail" = "0" ] && pass=$((pass+2)) || fail=$((fail+1))
 echo
 echo "DB tests: $((pass+fail)), passed: $pass, failed: $fail"
 [ $((pass+fail)) -gt 0 ] || { echo "No DB tests found."; exit 2; }
