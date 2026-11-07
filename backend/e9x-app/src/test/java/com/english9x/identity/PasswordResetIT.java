@@ -117,7 +117,7 @@ class PasswordResetIT extends IdentityIT {
     @Test
     void aGoogleOnlyAccountCanSetAPasswordThroughReset() {
         String email = uniqueEmail();
-        su.update("insert into users(email, email_verified_at) values (?, now())", email);
+        su.update("insert into users(email, email_verified_at, consent_at) values (?, now(), now())", email); // a Google account past its consent step
         SmtpSink.Mail mail = requestReset(email, 0);
         assertEquals(204, confirm(mail.linkParam("token"), NEW_PASSWORD).status());
         assertEquals(200, login(email, NEW_PASSWORD).status());

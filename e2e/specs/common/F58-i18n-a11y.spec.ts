@@ -9,12 +9,14 @@
 //
 // Scanned today (reachable without signing in): learner home, display preferences, exam area (empty state), the
 // access-denied screen as shown for /cms, /org and /admin, the not-found screen, and (P1.4) the sign-in family: login,
-// register, forgot password, reset password (with a token) and the verify-email failure screen. The empty states of cms / org /
+// register, forgot password, reset password (with a token), the verify-email failure screen, and the two steps of a Google
+// sign-in that take a real session to reach (consent, "you are already signed in"). The empty states of cms / org /
 // admin themselves need a signed-in role (P1.4/P1.5) and join SCREENS then. Component-level axe runs in Storybook
 // (`pnpm -C frontend run test:a11y`); this spec covers the assembled screens in the real app behind Caddy.
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures';
+import { chooseGoogleAccount } from '../../helpers/google';
 
 interface Screen { name: string; path: string; heading: { vi: RegExp; en: RegExp } }
 
@@ -67,6 +69,40 @@ async function scan(page: Page) {
 test.beforeEach(() => {
   test.info().annotations.push({ type: 'F58 pending main screens', description: PENDING_MAIN_SCREENS.join('; ') });
 });
+
+const GOOGLE_STEP_HEADINGS = {
+  consent: { vi: 'Còn một bước nữa', en: 'One more step' },
+  replace: { vi: 'Bạn đang đăng nhập', en: 'You are already signed in' },
+} as const;
+
+for (const lang of ['vi', 'en'] as const) {
+  for (const theme of THEMES) {
+    test(`F58 axe: Google consent step in ${lang}, ${theme} mode`, async ({ page, uniqueEmail }) => {
+      await useStored(page, { theme, lang });
+      await page.goto('/api/auth/oauth2/google');
+      await chooseGoogleAccount(page, { email: uniqueEmail('f58-consent') });
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(GOOGLE_STEP_HEADINGS.consent[lang]);
+      await expect(page.getByRole('checkbox')).toBeVisible();
+      await expect(page.locator('html')).toHaveAttribute('lang', lang);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await scan(page);
+    });
+
+    test(`F58 axe: Google step for someone already signed in, ${lang}, ${theme} mode`, async ({ page, auth, seed, uniqueEmail }) => {
+      const learner = await seed.verifiedLearner({ email: uniqueEmail('f58-replace') });
+      await auth.loginAs(page, learner); // the sign-in screens are in Vietnamese here; the language is stored afterwards
+      await page.evaluate((v) => {
+        localStorage.setItem('e9x.theme', v.theme);
+        localStorage.setItem('e9x.lang', v.lang);
+      }, { theme, lang });
+      await page.goto('/login/google?code=' + 'A'.repeat(43));
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(GOOGLE_STEP_HEADINGS.replace[lang]);
+      await expect(page.locator('html')).toHaveAttribute('lang', lang);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await scan(page);
+    });
+  }
+}
 
 for (const screen of SCREENS) {
   for (const theme of THEMES) {

@@ -9,7 +9,7 @@ export interface SeededCenter {
   teachers: Array<{ email: string; password: string }>;
   learners: Array<{ email: string; password: string }>;
 }
-export interface UserInfo { count: number; userId?: string; hasPassword?: boolean; emailVerified?: boolean; identities?: number }
+export interface UserInfo { count: number; userId?: string; hasPassword?: boolean; emailVerified?: boolean; hasConsent?: boolean; displayName?: string | null; identities?: number }
 
 const seedHeaders = (): Record<string, string> => ({ 'content-type': 'application/json', 'x-e2e-seed-secret': env.seedSecret });
 
@@ -38,7 +38,7 @@ export const seed = {
   verifiedLearner: (opts: { email?: string; password?: string; displayName?: string; verified?: boolean; locale?: 'vi' | 'en' } = {}) =>
     post<{ userId: string; email: string; password: string; verified: boolean }>('learner', opts).then((r): SeededLearner => r),
 
-  /** What the database holds for an address: number of accounts, whether it has a password, verified, linked identities. */
+  /** What the database holds for an address: number of accounts, whether it has a password, verified, consent, name, linked identities. */
   userInfo: (email: string) => post<UserInfo>('user-info', { email }),
 
   /**
