@@ -30,7 +30,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  *       sent after the commit. It is single use (the accept function locks the row) and expires after
  *       {@code e9x.org.invitation-ttl}.
  *   <li>The answer to an invitation never says whether the address already has an account.
- *   <li>A newer invitation to the same address and organisation retires the older pending one.
+ *   <li>A newer invitation to the same address and organisation retires the older pending one, under a lock per organisation and
+ *       address, so one live link remains whoever invites. The hourly limit counts one person across every organisation.
  *   <li>Accepting: the signed-in account must be the invited address (case-insensitive) with a verified mailbox. A different
  *       account gets 403 {@code invitation-email-mismatch} and the invitation stays usable for the right one; an unverified
  *       one gets 403 {@code email-not-verified}. Decision recorded in the P1.5 report.
@@ -72,9 +73,10 @@ class InvitationService {
         Instant now = clock.instant();
 
         repo.lockInviter(inviter);
-        if (repo.invitationsSentSince(inviter, now.minus(Duration.ofHours(1))) >= props.invitationHourlyLimit()) {
+        if (repo.invitationsSentSince(now.minus(Duration.ofHours(1))) >= props.invitationHourlyLimit()) {
             throw OrgProblems.tooManyInvitations(3600);
         }
+        repo.lockInvitee(orgId, email);
         repo.retirePending(orgId, email, now);
         String token = InviteTokens.newToken();
         Instant expires = now.plus(props.invitationTtl());

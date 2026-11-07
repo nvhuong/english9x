@@ -142,9 +142,113 @@ class RoleGrantsIT extends OrgIT {
         UUID admin = orgAdmin(a);
         UUID m = user("m");
         member(a, m);
-        put(a, m, List.of(role("ORG_ADMIN", null), role("TEACHER", "IELTS")), admin, a);
+        Res written = put(a, m, List.of(role("ORG_ADMIN", null), role("TEACHER", "IELTS")), admin, a);
+        assertEquals(200, written.status(), written.raw());
+        assertEquals(List.of("ORG_ADMIN:-:" + a, "TEACHER:IELTS:" + a), grantsOf(m), "the write the next check depends on really happened");
         assertEquals(0, su.queryForObject("""
                 select count(*) from role_grants g where g.org_id is not null
                    and not exists (select 1 from org_memberships m where m.org_id = g.org_id and m.user_id = g.user_id)""", Integer.class));
+    }
+
+    // ---- concurrency around the last-admin rule: the requests are made to wait at the organisation's lock, which this test holds ------
+
+    private void awaitWaiters(int n) throws InterruptedException {
+        long deadline = System.nanoTime() + java.time.Duration.ofSeconds(20).toNanos();
+        while (System.nanoTime() < deadline) {
+            Integer waiting = su.queryForObject("""
+                    select count(*) from pg_locks where locktype = 'advisory' and not granted
+                       and database = (select oid from pg_database where datname = current_database())""", Integer.class);
+            if (waiting != null && waiting >= n) {
+                return;
+            }
+            Thread.sleep(20);
+        }
+        throw new AssertionError(n + " requests never reached the organisation lock");
+    }
+
+    /** Runs the calls with the org lock held, waits until they are all queued at it, does {@code meanwhile} in the same commit, lets go. */
+    private List<Res> atTheLock(UUID org, java.util.function.Consumer<java.sql.Connection> meanwhile, List<java.util.concurrent.Callable<Res>> calls) throws Exception {
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(calls.size());
+        try (java.sql.Connection c = com.english9x.support.TestPostgres.superuser(DB).getConnection()) {
+            c.setAutoCommit(false);
+            try (java.sql.PreparedStatement lock = c.prepareStatement("select pg_advisory_xact_lock(hashtextextended(?, 7))")) {
+                lock.setString(1, org.toString());
+                lock.execute();
+            }
+            List<java.util.concurrent.Future<Res>> running = new java.util.ArrayList<>();
+            for (var call : calls) {
+                running.add(pool.submit(call));
+            }
+            awaitWaiters(calls.size());
+            meanwhile.accept(c);
+            c.commit();
+            List<Res> out = new java.util.ArrayList<>();
+            for (var f : running) {
+                out.add(f.get(30, java.util.concurrent.TimeUnit.SECONDS));
+            }
+            return out;
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    private static void sql(java.sql.Connection c, String statement, Object... args) {
+        try (java.sql.PreparedStatement p = c.prepareStatement(statement)) {
+            for (int i = 0; i < args.length; i++) {
+                p.setObject(i + 1, args[i]);
+            }
+            p.executeUpdate();
+        } catch (java.sql.SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Test
+    void twoAdminsDemotingEachOtherGetOneSuccessAndOneLastAdminRefusal() throws Exception {
+        UUID a = org("CENTER");
+        UUID x = orgAdmin(a);
+        UUID y = orgAdmin(a);
+        List<Res> results = atTheLock(a, c -> { }, List.of(
+                () -> put(a, y, List.of(role("LEARNER", null)), x, a),
+                () -> put(a, x, List.of(role("LEARNER", null)), y, a)));
+        List<Integer> statuses = results.stream().map(Res::status).sorted().toList();
+        assertEquals(List.of(200, 409), statuses, results.toString());
+        assertEquals("urn:e9x:problem:last-org-admin", results.stream().filter(r -> r.status() == 409).findFirst().orElseThrow().problemType());
+        assertEquals(1, su.queryForObject("select count(*) from role_grants where org_id = ? and role = 'ORG_ADMIN'", Integer.class, a), "one admin is left");
+    }
+
+    @Test
+    void anAdminDemotedWhileWaitingIsRefusedCleanlyAndWritesNothing() throws Exception {
+        UUID a = org("CENTER");
+        UUID keeps = orgAdmin(a);
+        UUID demoted = orgAdmin(a);
+        UUID target = user("target");
+        grant(target, a, "IELTS", "TEACHER");
+        // an edit with an insert and a delete: the insert would be an RLS error (500), the delete a silent 0 rows (200)
+        List<Res> both = atTheLock(a, c -> sql(c, "delete from role_grants where user_id = ? and role = 'ORG_ADMIN'", demoted),
+                List.of(() -> put(a, target, List.of(role("REVIEWER", "IELTS")), demoted, a)));
+        assertEquals(403, both.get(0).status(), both.get(0).raw());
+        assertEquals("urn:e9x:problem:forbidden", both.get(0).problemType());
+        assertEquals(List.of("TEACHER:IELTS:" + a), grantsOf(target), "nothing was written");
+        // only a delete
+        grant(demoted, a, null, "ORG_ADMIN");
+        List<Res> del = atTheLock(a, c -> sql(c, "delete from role_grants where user_id = ? and role = 'ORG_ADMIN'", demoted),
+                List.of(() -> put(a, target, List.of(), demoted, a)));
+        assertEquals(403, del.get(0).status(), "never a 0-row 200: " + del.get(0).raw());
+        assertEquals(List.of("TEACHER:IELTS:" + a), grantsOf(target));
+        assertTrue(isMember(a, keeps));
+    }
+
+    @Test
+    void aSysAdminWhoLostTheGrantWhileWaitingIsRefusedCleanly() throws Exception {
+        UUID a = org("CENTER");
+        orgAdmin(a);
+        UUID sys = sysAdmin();
+        UUID target = user("target");
+        grant(target, a, "IELTS", "TEACHER");
+        List<Res> r = atTheLock(a, c -> sql(c, "delete from role_grants where user_id = ? and role = 'SYS_ADMIN'", sys),
+                List.of(() -> put(a, target, List.of(role("REVIEWER", "IELTS")), sys, null)));
+        assertEquals(403, r.get(0).status(), r.get(0).raw());
+        assertEquals(List.of("TEACHER:IELTS:" + a), grantsOf(target));
     }
 }

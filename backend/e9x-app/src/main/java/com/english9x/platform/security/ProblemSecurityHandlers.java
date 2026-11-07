@@ -1,5 +1,6 @@
 package com.english9x.platform.security;
 
+import com.english9x.platform.web.ProblemInstance;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,7 +21,7 @@ import org.springframework.stereotype.Component;
 /**
  * 401 and 403 produced by Spring Security (entry point, access-denied handler, and errors thrown by our filters before
  * MVC is reached) in exactly the shape of {@code ProblemDetailsAdvice}: {@code application/problem+json} with
- * {@code type}, {@code title}, {@code status}, {@code detail}, {@code instance} and an empty {@code errors[]}. The text
+ * {@code type}, {@code title}, {@code status}, {@code detail}, {@code instance} (see {@link ProblemInstance}) and an empty {@code errors[]}. The text
  * is generic: it does not say whether a token was missing, malformed, expired or badly signed.
  */
 @Component
@@ -51,7 +52,9 @@ public class ProblemSecurityHandlers implements AuthenticationEntryPoint, Access
         body.put("title", title);
         body.put("status", status.value());
         body.put("detail", detail);
-        body.put("instance", request.getRequestURI());
+        if (ProblemInstance.mayEchoPath(request.getRequestURI())) {
+            body.put("instance", request.getRequestURI());
+        }
         body.put("errors", List.of());
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);

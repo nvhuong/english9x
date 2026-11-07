@@ -62,7 +62,8 @@ final class OrgDtos {
             @NotEmpty @Size(max = 20) List<@Valid @NotNull RoleSpec> roles) {}
 
     @Schema(name = "InvitationStatus", enumAsRef = true)
-    enum InvitationStatus { PENDING, ACCEPTED, REVOKED, EXPIRED }
+    /** VOIDED: unexpired and not revoked, but the inviter no longer holds the authority, so accepting it would be refused. */
+    enum InvitationStatus { PENDING, ACCEPTED, REVOKED, EXPIRED, VOIDED }
 
     @Schema(name = "InvitationView")
     record InvitationView(

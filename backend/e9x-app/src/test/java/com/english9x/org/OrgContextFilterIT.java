@@ -1,6 +1,7 @@
 package com.english9x.org;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.english9x.support.TestAuth;
@@ -43,13 +44,15 @@ class OrgContextFilterIT extends OrgIT {
         UUID a = org("CENTER");
         UUID u = user("outsider");
         Res foreign = get("/api/me/context", u, a);
-        Res nowhere = get("/api/me/context", u, UUID.randomUUID());
+        UUID missing = UUID.randomUUID();
+        Res nowhere = get("/api/me/context", u, missing);
         assertEquals(403, foreign.status(), foreign.raw());
         assertEquals(403, nowhere.status(), nowhere.raw());
         assertEquals("urn:e9x:problem:forbidden", foreign.problemType());
         assertEquals(foreign.body(), nowhere.body(), "nothing in the answer tells the two apart");
         assertTrue(foreign.headers().getContentType().toString().startsWith("application/problem+json"));
-        assertTrue(!foreign.raw().contains(a.toString()) && !nowhere.raw().contains("-0000"), "the id is not echoed");
+        assertFalse(foreign.raw().contains(a.toString()), "the id is not echoed: " + foreign.raw());
+        assertFalse(nowhere.raw().contains(missing.toString()), "the id is not echoed: " + nowhere.raw());
     }
 
     @Test

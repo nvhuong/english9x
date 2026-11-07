@@ -9,6 +9,7 @@ import com.english9x.org.internal.OrgDtos.SetRolesRequest;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +44,11 @@ class RoleGrantService {
         boolean keepsAdmin = wanted.stream().anyMatch(r -> r.role() == Role.ORG_ADMIN);
         if (hadAdmin && !keepsAdmin && repo.otherAdmins(orgId, req.userId()) == 0) {
             throw OrgProblems.lastOrgAdmin();
+        }
+        // The checks at the top ran before the wait for the lock. Whoever held it may have demoted this caller; RLS would then turn
+        // the insert into an error and the delete into a silent 0 rows. (Two admins demoting each other: the second gets the 409 above.)
+        if (!repo.stillManagesCurrentContext()) {
+            throw new AccessDeniedException("demoted while waiting");
         }
         repo.setRoles(orgId, req.userId(), wanted);
         // Audit (P1.9) must record this change: actor, organisation, target, old and new roles.

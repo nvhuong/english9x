@@ -115,6 +115,15 @@ class OrgRepository {
         jdbc.queryForList("select pg_advisory_xact_lock(hashtextextended(?, 7))", orgId.toString());
     }
 
+    /**
+     * Does the caller still manage the organisation, as of now? Asked on this connection after {@link #lockOrg}: somebody ahead in that
+     * queue may have demoted them. In an organisation context that takes its ORG_ADMIN, in the personal one a SYS_ADMIN, as in {@link OrgAccess}.
+     */
+    boolean stillManagesCurrentContext() {
+        return Boolean.TRUE.equals(jdbc.queryForObject(
+                "select case when e9x_current_org() is not null then e9x_is_current_org_admin() else e9x_is_sys_admin() end", Boolean.class));
+    }
+
     long otherAdmins(UUID orgId, UUID except) {
         Long n = jdbc.queryForObject("select count(*) from role_grants where org_id = ? and role = 'ORG_ADMIN' and user_id <> ?", Long.class, orgId, except);
         return n == null ? 0 : n;
@@ -149,8 +158,9 @@ class OrgRepository {
 
     // ---- invitations -------------------------------------------------------------------------------------------------------
 
-    long invitationsSentSince(UUID inviter, Instant since) {
-        Long n = jdbc.queryForObject("select count(*) from invitations where invited_by = ? and created_at > ?", Long.class, inviter, ts(since));
+    /** By the person bound to this transaction, in every organisation: RLS would show only the current one, so a definer function counts. */
+    long invitationsSentSince(Instant since) {
+        Long n = jdbc.queryForObject("select e9x_invitations_sent_since(?)", Long.class, ts(since));
         return n == null ? 0 : n;
     }
 
@@ -158,9 +168,15 @@ class OrgRepository {
         jdbc.queryForList("select pg_advisory_xact_lock(hashtextextended(?, 11))", inviter.toString());
     }
 
+    /** Serialises the invitations of one address to one organisation, so that two admins inviting it leave one live link. Taken after {@link #lockInviter}, always in that order. */
+    void lockInvitee(UUID orgId, String email) {
+        jdbc.queryForList("select pg_advisory_xact_lock(hashtextextended(?, 13))", orgId + ":" + email);
+    }
+
+    /** Ends what could still be accepted. An expired row stays EXPIRED. One voided by its inviter's lost authority is retired too: that authority can come back. */
     void retirePending(UUID orgId, String email, Instant now) {
-        jdbc.update("update invitations set revoked_at = ? where org_id is not distinct from ? and email = lower(?) and accepted_at is null and revoked_at is null",
-                ts(now), orgId, email);
+        jdbc.update("update invitations set revoked_at = ? where org_id is not distinct from ? and email = lower(?) and accepted_at is null and revoked_at is null and expires_at > ?",
+                ts(now), orgId, email, ts(now));
     }
 
     UUID insertInvitation(UUID orgId, String email, List<RoleSpec> roles, byte[] tokenHash, UUID invitedBy, Instant expires) {
@@ -188,7 +204,9 @@ class OrgRepository {
                 select id, email, grants::text as grants, created_at, expires_at,
                        case when accepted_at is not null then 'ACCEPTED'
                             when revoked_at is not null then 'REVOKED'
-                            when expires_at <= ? then 'EXPIRED' else 'PENDING' end as status
+                            when expires_at <= ? then 'EXPIRED'
+                            when e9x_invitation_inviter_active(id) is not true then 'VOIDED'
+                            else 'PENDING' end as status
                   from invitations where org_id is not distinct from ?
                  order by created_at desc limit 100""",
                 (rs, n) -> new InvitationView(rs.getObject("id", UUID.class), rs.getString("email"), parseGrants(rs.getString("grants")),
@@ -210,8 +228,8 @@ class OrgRepository {
 
     /** Revokes a pending invitation of that scope; false when there is none (or it is not the caller's to see). */
     boolean revoke(UUID invitationId, UUID orgId, Instant now) {
-        return jdbc.update("update invitations set revoked_at = ? where id = ? and org_id is not distinct from ? and accepted_at is null and revoked_at is null",
-                ts(now), invitationId, orgId) == 1;
+        return jdbc.update("update invitations set revoked_at = ? where id = ? and org_id is not distinct from ? and accepted_at is null and revoked_at is null and expires_at > ?",
+                ts(now), invitationId, orgId, ts(now)) == 1;
     }
 
     record Accepted(String outcome, UUID orgId) {}

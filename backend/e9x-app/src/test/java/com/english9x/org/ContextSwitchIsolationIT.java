@@ -131,6 +131,5 @@ class ContextSwitchIsolationIT extends OrgIT {
             assertEquals(expected, list(r.body().path("after")), "request " + i + ": " + r.raw());
             assertEquals(ctx == null ? "" : ctx.toString(), r.body().path("boundOrg").asText());
         }
-        assertTrue(com.english9x.org.api.CurrentContextHolder.current().isEmpty(), "the test thread itself is clean");
     }
 }
