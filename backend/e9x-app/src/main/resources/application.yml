@@ -29,7 +29,7 @@ spring:
       # spec §6: module events are persisted in the publisher's transaction (event_publication, Flyway-owned) and delivered at
       # least once; consumers are idempotent. A completed publication is deleted, so events with ids/addresses do not linger.
       completion-mode: delete
-      republish-outstanding-events-on-restart: true
+      republish-outstanding-events-on-restart: false   # EventRedelivery (platform.events) is the only redelivery path: a bad row must not stop start-up
       jdbc:
         schema-initialization:
           enabled: false
@@ -69,7 +69,8 @@ e9x:
     # Content-Security-Policy of the SPA and API (same origin only). Tasks that load media from elsewhere extend it here.
     csp: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
   events:
-    redelivery-after: 2m             # a module event whose listener has not completed is resubmitted once it is this old (and at start-up)
+    redelivery-after: 2m             # a module event whose listener has not completed is resubmitted once it is this old (first cycle one period after start-up)
+    publication-max-age: 30d         # a publication still incomplete after this is logged as an error and deleted, so a failing row cannot keep personal data for ever
   jobs:
     poll-interval: 2s
     workers: 2                       # general threads, each claims any job type

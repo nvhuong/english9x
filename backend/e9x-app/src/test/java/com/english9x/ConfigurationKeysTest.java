@@ -50,6 +50,8 @@ class ConfigurationKeysTest {
             {"e9x.org.invitation-hourly-limit", "50"},
             {"e9x.workflow.max-bundle-size", "2000"},
             {"e9x.events.redelivery-after", "2m"},
+            {"e9x.events.publication-max-age", "30d"},
+            {"spring.modulith.events.republish-outstanding-events-on-restart", "false"},
             {"e9x.notification.telegram.api-base", "${E9X_TELEGRAM_API_BASE:https://api.telegram.org}"},
             {"e9x.notification.telegram.link-ttl", "15m"},
         };
