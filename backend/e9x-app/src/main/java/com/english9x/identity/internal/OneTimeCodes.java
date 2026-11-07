@@ -18,7 +18,10 @@ import org.springframework.stereotype.Component;
 @Component
 class OneTimeCodes {
 
-    private record Entry(UUID userId, Instant expires) {}
+    /** Who the code signs in, and the credentials version the sign-in was made against (see auth_refresh_issue). */
+    record Redeemed(UUID userId, long credentialsVersion) {}
+
+    private record Entry(Redeemed who, Instant expires) {}
 
     private static final int MAX = 10_000;
 
@@ -31,18 +34,18 @@ class OneTimeCodes {
         this.ttl = props.oauthCodeTtl();
     }
 
-    synchronized String issue(UUID userId) {
+    synchronized String issue(UUID userId, long credentialsVersion) {
         Instant now = clock.instant();
         byHash.values().removeIf(e -> !e.expires().isAfter(now));
         while (byHash.size() >= MAX) {
             byHash.remove(byHash.keySet().iterator().next());
         }
         String code = TokenCodec.newToken();
-        byHash.put(key(code), new Entry(userId, now.plus(ttl)));
+        byHash.put(key(code), new Entry(new Redeemed(userId, credentialsVersion), now.plus(ttl)));
         return code;
     }
 
-    synchronized Optional<UUID> redeem(String code) {
+    synchronized Optional<Redeemed> redeem(String code) {
         if (!TokenCodec.plausible(code)) {
             return Optional.empty();
         }
@@ -50,7 +53,7 @@ class OneTimeCodes {
         if (e == null || !e.expires().isAfter(clock.instant())) {
             return Optional.empty();
         }
-        return Optional.of(e.userId());
+        return Optional.of(e.who());
     }
 
     private static String key(String code) {

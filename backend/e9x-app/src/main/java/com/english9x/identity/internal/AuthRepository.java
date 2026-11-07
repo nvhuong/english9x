@@ -18,7 +18,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 class AuthRepository {
 
-    record LoginRow(UUID userId, String passwordHash, boolean emailVerified, String displayName, String locale) {}
+    record LoginRow(UUID userId, String passwordHash, boolean emailVerified, String displayName, String locale, long credentialsVersion) {}
 
     record Recipient(UUID userId, String displayName, String locale) {}
 
@@ -30,7 +30,10 @@ class AuthRepository {
 
     enum OAuthOutcome { EXISTING, EMAIL_NOT_VERIFIED, LINKED, LINKED_NEUTRALISED, CREATED }
 
-    record OAuthResult(OAuthOutcome outcome, UUID userId, String displayName, String locale) {}
+    record OAuthResult(OAuthOutcome outcome, UUID userId, String displayName, String locale, long credentialsVersion) {}
+
+    /** ISSUED: a refresh token was stored. STALE: the credentials changed since they were verified (nothing stored). */
+    enum IssueOutcome { ISSUED, STALE }
 
     private final JdbcTemplate jdbc;
 
@@ -43,17 +46,17 @@ class AuthRepository {
     }
 
     /** New account, or empty when the email is taken. */
-    Optional<UUID> createUser(String email, String displayName, String passwordHash, String locale, Instant consentAt,
-                              boolean verified, Instant now) {
-        UUID id = jdbc.queryForObject("select auth_create_user(?,?,?,?,?,?,?)", UUID.class,
-                email, displayName, passwordHash, locale, ts(consentAt), verified, ts(now));
+    Optional<UUID> createUser(String email, String displayName, String passwordHash, String locale, Instant consentAt) {
+        UUID id = jdbc.queryForObject("select auth_create_user(?,?,?,?,?)", UUID.class,
+                email, displayName, passwordHash, locale, ts(consentAt));
         return Optional.ofNullable(id);
     }
 
     Optional<LoginRow> findLogin(String email) {
         return jdbc.query("select * from auth_login_lookup(?)",
                 (rs, n) -> new LoginRow(rs.getObject("r_user_id", UUID.class), rs.getString("r_password_hash"),
-                        rs.getBoolean("r_email_verified"), rs.getString("r_display_name"), rs.getString("r_locale")),
+                        rs.getBoolean("r_email_verified"), rs.getString("r_display_name"), rs.getString("r_locale"),
+                        rs.getLong("r_credentials_version")),
                 email).stream().findFirst();
     }
 
@@ -80,8 +83,9 @@ class AuthRepository {
                 .stream().findFirst();
     }
 
-    void issueRefresh(UUID userId, UUID familyId, byte[] hash, Instant expires, Instant now) {
-        jdbc.queryForList("select auth_refresh_issue(?,?,?,?,?)", userId, familyId, hash, ts(expires), ts(now));
+    IssueOutcome issueRefresh(UUID userId, UUID familyId, byte[] hash, Instant expires, Instant now, long credentialsVersion) {
+        return IssueOutcome.valueOf(jdbc.queryForObject("select auth_refresh_issue(?,?,?,?,?,?)", String.class,
+                userId, familyId, hash, ts(expires), ts(now), credentialsVersion));
     }
 
     Rotation rotate(byte[] oldHash, byte[] newHash, Instant newExpires, Instant now, Duration grace) {
@@ -101,13 +105,13 @@ class AuthRepository {
                            String locale, Instant now) {
         return jdbc.queryForObject("select * from auth_oauth_login(?,?,?,?,?,?,?)",
                 (rs, n) -> new OAuthResult(OAuthOutcome.valueOf(rs.getString("r_outcome")),
-                        rs.getObject("r_user_id", UUID.class), rs.getString("r_display_name"), rs.getString("r_locale")),
+                        rs.getObject("r_user_id", UUID.class), rs.getString("r_display_name"), rs.getString("r_locale"),
+                        rs.getLong("r_credentials_version")),
                 provider, subject, email, emailVerified, displayName, locale, ts(now));
     }
 
-    int purge(Instant now, Duration older) {
-        Integer n = jdbc.queryForObject("select auth_purge_expired(?, cast(? as interval))", Integer.class,
-                ts(now), older.toSeconds() + " seconds");
+    int purge() {
+        Integer n = jdbc.queryForObject("select auth_purge_expired()", Integer.class);
         return n == null ? 0 : n;
     }
 

@@ -22,15 +22,15 @@ class OneTimeCodesTest {
     void aCodeIsRedeemableOnce() {
         OneTimeCodes c = codes();
         UUID id = UUID.randomUUID();
-        String code = c.issue(id);
-        assertEquals(id, c.redeem(code).orElseThrow());
+        String code = c.issue(id, 7);
+        assertEquals(new OneTimeCodes.Redeemed(id, 7), c.redeem(code).orElseThrow());
         assertTrue(c.redeem(code).isEmpty(), "second use");
     }
 
     @Test
     void aCodeExpiresAfterItsTtl() {
         OneTimeCodes c = codes();
-        String code = c.issue(UUID.randomUUID());
+        String code = c.issue(UUID.randomUUID(), 1);
         clock.advance(Duration.ofSeconds(61));
         assertTrue(c.redeem(code).isEmpty());
     }
@@ -38,7 +38,7 @@ class OneTimeCodesTest {
     @Test
     void guessesAndGarbageFail() {
         OneTimeCodes c = codes();
-        c.issue(UUID.randomUUID());
+        c.issue(UUID.randomUUID(), 1);
         assertTrue(c.redeem("A".repeat(43)).isEmpty());
         assertTrue(c.redeem("x").isEmpty());
         assertTrue(c.redeem(null).isEmpty());

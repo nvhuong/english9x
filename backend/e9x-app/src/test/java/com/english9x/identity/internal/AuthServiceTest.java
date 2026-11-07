@@ -47,7 +47,7 @@ class AuthServiceTest {
     @Test
     void aGoogleOnlyAccountAlsoPaysAndFailsTheSameWay() {
         when(repo.findLogin("g@example.test")).thenReturn(Optional.of(
-                new AuthRepository.LoginRow(UUID.randomUUID(), null, true, "G", "vi")));
+                new AuthRepository.LoginRow(UUID.randomUUID(), null, true, "G", "vi", 1)));
         ErrorResponseException e = assertThrows(ErrorResponseException.class, () -> service().login("g@example.test", "Whatever-pass-1", "1.1.1.1"));
         assertEquals(401, e.getStatusCode().value());
         verify(hasher).burn("Whatever-pass-1");
@@ -56,7 +56,7 @@ class AuthServiceTest {
     @Test
     void aKnownEmailWithAWrongPasswordIsTheSameAnswer() {
         when(repo.findLogin("a@example.test")).thenReturn(Optional.of(
-                new AuthRepository.LoginRow(UUID.randomUUID(), "$2a$04$hash", true, "A", "vi")));
+                new AuthRepository.LoginRow(UUID.randomUUID(), "$2a$04$hash", true, "A", "vi", 1)));
         when(hasher.matches("wrong-password", "$2a$04$hash")).thenReturn(false);
         ErrorResponseException e = assertThrows(ErrorResponseException.class, () -> service().login("a@example.test", "wrong-password", "1.1.1.1"));
         assertEquals(401, e.getStatusCode().value());
@@ -67,7 +67,7 @@ class AuthServiceTest {
     @Test
     void registrationHashesThePasswordEvenForAnExistingAddress() {
         when(hasher.hash("Some-pass-123")).thenReturn("$2a$04$h");
-        when(repo.createUser(anyString(), anyString(), anyString(), anyString(), any(), org.mockito.ArgumentMatchers.anyBoolean(), any()))
+        when(repo.createUser(anyString(), anyString(), anyString(), anyString(), any()))
                 .thenReturn(Optional.empty());
         when(repo.findLogin("dup@example.test")).thenReturn(Optional.empty());
         PlatformTransactionManager tm = mock(PlatformTransactionManager.class);

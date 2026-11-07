@@ -244,6 +244,20 @@ class GoogleLoginIT extends IdentityIT {
     }
 
     @Test
+    void aCodeFromBeforeAPasswordChangeIsRefused() throws Exception {
+        String email = registerVerified(uniqueEmail(), PASSWORD);
+        String code = codeOf(signIn(scenario(email, true)));
+        int before = smtp().to(email).size();
+        post("/api/auth/password-reset/request", Map.of("email", email));
+        String token = smtp().await(email, before).linkParam("token");
+        assertEquals(204, post("/api/auth/password-reset/confirm", Map.of("token", token, "newPassword", "Owner-new-pass-1")).status());
+        Res exchanged = exchange(code);
+        assertEquals(400, exchanged.status(), exchanged.raw());
+        assertEquals("urn:e9x:problem:invalid-login-code", exchanged.problemType());
+        assertEquals(0, su.queryForObject("select count(*) from refresh_tokens where user_id = ? and revoked_at is null", Integer.class, userId(email)));
+    }
+
+    @Test
     void theAuthorizationSessionDoesNotOutliveTheCallback() throws Exception {
         IDP.willSignIn(scenario(uniqueEmail(), true));
         HttpResponse<String> start = rawGet("http://localhost:" + port + "/api/auth/oauth2/google", null);

@@ -6,8 +6,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
-import java.time.Clock;
-import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,17 +38,15 @@ class IdentityStartupChecks {
     static class Purge {
         private static final Logger LOG = LoggerFactory.getLogger(Purge.class);
         private final AuthRepository repo;
-        private final Clock clock;
 
-        Purge(AuthRepository repo, Clock clock) {
+        Purge(AuthRepository repo) {
             this.repo = repo;
-            this.clock = clock;
         }
 
         @Scheduled(initialDelayString = "PT10M", fixedDelayString = "PT6H")
         void purge() {
             try {
-                int n = repo.purge(clock.instant(), Duration.ofDays(7));
+                int n = repo.purge();
                 if (n > 0) {
                     LOG.info("purged {} stale auth tokens", n);
                 }

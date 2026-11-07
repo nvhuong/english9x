@@ -44,7 +44,8 @@ class SeedController {
 
     /**
      * A learner with a known password. {@code verified} defaults to true. Created through the same SECURITY DEFINER
-     * function as real sign-ups ({@code auth_create_user}), as the table owner. Returns the credentials to sign in with.
+     * function as real sign-ups ({@code auth_create_user}); verifying is done here as the table owner, the function has no
+     * such option. Returns the credentials to sign in with.
      */
     @PostMapping("/learner")
     @ResponseStatus(HttpStatus.CREATED)
@@ -55,11 +56,14 @@ class SeedController {
         String password = r.password() != null ? r.password() : "Seed-pass-" + suffix;
         boolean verified = r.verified() == null || r.verified();
         Instant now = Instant.now();
-        UUID id = db.jdbc().queryForObject("select auth_create_user(?,?,?,?,?,?,?)", UUID.class,
+        UUID id = db.jdbc().queryForObject("select auth_create_user(?,?,?,?,?)", UUID.class,
                 email, r.displayName() != null ? r.displayName() : "Seed Learner", encoder.encode(password),
-                r.locale() != null ? r.locale() : "vi", java.sql.Timestamp.from(now), verified, java.sql.Timestamp.from(now));
+                r.locale() != null ? r.locale() : "vi", java.sql.Timestamp.from(now));
         if (id == null) {
             throw new org.springframework.web.server.ResponseStatusException(HttpStatus.CONFLICT, "email already exists");
+        }
+        if (verified) {
+            db.jdbc().update("update users set email_verified_at = ? where id = ?", java.sql.Timestamp.from(now), id);
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("userId", id.toString());

@@ -122,6 +122,49 @@ class RefreshRotationIT extends IdentityIT {
                 Integer.class, userId(s.email())), "nothing revoked");
     }
 
+    /**
+     * A replay inside the grace gets a second successor, which is the price of tolerating two tabs. That branch must not
+     * live on undetected: once one branch has moved on and the grace is over, using the other is a replay.
+     */
+    @Test
+    void aBranchCreatedInsideTheGraceDiesWhenUsedAfterIt() {
+        Session s = signIn();
+        String first = refresh(s.refresh()).body().get("refreshToken").asText();
+        String branch = refresh(s.refresh()).body().get("refreshToken").asText(); // the replay: a thief, or the other tab
+        Res moved = refresh(first);
+        assertEquals(200, moved.status());
+        String current = moved.body().get("refreshToken").asText();
+        ageRotation(s.email());
+
+        Res late = refresh(branch);
+        assertEquals(401, late.status(), "the side branch is a replay now: " + late.raw());
+        assertEquals(401, refresh(current).status(), "and the whole family is revoked");
+        assertEquals(0, su.queryForObject("select count(*) from refresh_tokens where user_id = ? and revoked_at is null", Integer.class, userId(s.email())));
+    }
+
+    @Test
+    void cousinBranchesInsideTheGraceAreCaughtTooOnceItIsOver() {
+        Session s = signIn();
+        String a1 = refresh(s.refresh()).body().get("refreshToken").asText();
+        String b1 = refresh(s.refresh()).body().get("refreshToken").asText();
+        String a2 = refresh(a1).body().get("refreshToken").asText();
+        String b2 = refresh(b1).body().get("refreshToken").asText(); // both branches moved on within the grace
+        assertEquals(200, refresh(a2).status());
+        ageRotation(s.email());
+        assertEquals(401, refresh(b2).status(), "b2 is as old as a2, which was rotated well before the grace ended");
+    }
+
+    @Test
+    void anAttackersBranchThatRunsAheadIsCaughtWhenTheVictimComesBack() {
+        Session s = signIn();
+        String victim = refresh(s.refresh()).body().get("refreshToken").asText();
+        String attacker = refresh(s.refresh()).body().get("refreshToken").asText();
+        String ahead = refresh(attacker).body().get("refreshToken").asText();
+        ageRotation(s.email());
+        assertEquals(401, refresh(victim).status(), "the victim's next refresh exposes the branch");
+        assertEquals(401, refresh(ahead).status(), "and it dies");
+    }
+
     @Test
     void anExpiredRefreshTokenIsRejected() {
         Session s = signIn();

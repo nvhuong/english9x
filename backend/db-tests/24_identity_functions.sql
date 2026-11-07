@@ -23,15 +23,19 @@ END $$;
 DO $$
 DECLARE a uuid; b uuid; c uuid;
 BEGIN
-  a := auth_create_user('  Alice@Example.COM ', 'Alice', 'hash-a', 'en', now(), false, now());
+  a := auth_create_user('  Alice@Example.COM ', 'Alice', 'hash-a', 'en', now());
   ASSERT a IS NOT NULL, 'created';
-  b := auth_create_user('alice@example.com', 'Impostor', 'hash-b', 'vi', now(), false, now());
+  b := auth_create_user('alice@example.com', 'Impostor', 'hash-b', 'vi', now());
   ASSERT b IS NULL, 'duplicate email (case-insensitive) is refused with NULL, no error';
-  c := auth_create_user('carol@example.com', 'Carol', NULL, 'zz', now(), true, now());
+  c := auth_create_user('carol@example.com', 'Carol', 'hash-c', 'zz', now());
   ASSERT c IS NOT NULL;
   ASSERT (SELECT r_locale FROM auth_login_lookup('carol@example.com')) = 'vi', 'unknown locale falls back to vi';
-  ASSERT (SELECT r_email_verified FROM auth_login_lookup('carol@example.com')), 'created verified';
+  ASSERT NOT (SELECT r_email_verified FROM auth_login_lookup('carol@example.com')), 'always created unverified';
 END $$;
+-- (only the table owner can mark an account verified without a token: fixtures do it like the E2E seed API does)
+RESET ROLE;
+UPDATE users SET email_verified_at = now() WHERE email = 'carol@example.com';
+SET ROLE e9x_app;
 
 -- login lookup: exactly one row for exactly that email, none for others, never a wildcard
 DO $$
@@ -69,7 +73,7 @@ BEGIN
 END $$;
 DO $$
 BEGIN
-  PERFORM auth_create_user('dave@example.com', 'Dave', 'hash-d', 'vi', now(), false, now());
+  PERFORM auth_create_user('dave@example.com', 'Dave', 'hash-d', 'vi', now());
   ASSERT (SELECT count(*) FROM auth_email_verification_issue_for_email('DAVE@example.com', '\xcc01', now() + interval '1 day', now())) = 1,
          'unverified account: resend issues a token';
   ASSERT (SELECT count(*) FROM auth_email_verification_consume('\xcc01', now())) = 1;
@@ -79,7 +83,7 @@ END $$;
 DO $$
 DECLARE u uuid := (SELECT r_user_id FROM auth_login_lookup('alice@example.com')); fam uuid := gen_random_uuid(); t0 timestamptz := now();
 BEGIN
-  PERFORM auth_refresh_issue(u, fam, '\x1001', t0 + interval '30 days', t0);
+  PERFORM auth_refresh_issue(u, fam, '\x1001', t0 + interval '30 days', t0, 1);
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x9999', '\x1100', t0 + interval '30 days', t0, interval '10 seconds')) = 'INVALID', 'unknown token';
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x1001', '\x1002', t0 + interval '30 days', t0, interval '10 seconds')) = 'ROTATED';
   -- two tabs: the old token arrives again 2s later
@@ -92,10 +96,10 @@ BEGIN
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x1004', '\x1007', t0 + interval '30 days', t0 + interval '5 minutes', interval '10 seconds')) = 'INVALID', 'family revoked';
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x1005', '\x1008', t0 + interval '30 days', t0 + interval '5 minutes', interval '10 seconds')) = 'INVALID', 'family revoked';
   -- expiry
-  PERFORM auth_refresh_issue(u, gen_random_uuid(), '\x2001', t0 + interval '1 day', t0);
+  PERFORM auth_refresh_issue(u, gen_random_uuid(), '\x2001', t0 + interval '1 day', t0, 1);
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x2001', '\x2002', t0 + interval '30 days', t0 + interval '2 days', interval '10 seconds')) = 'INVALID', 'expired';
   -- logout revokes the family
-  PERFORM auth_refresh_issue(u, gen_random_uuid(), '\x3001', t0 + interval '30 days', t0);
+  PERFORM auth_refresh_issue(u, gen_random_uuid(), '\x3001', t0 + interval '30 days', t0, 1);
   PERFORM auth_refresh_revoke_family('\x3001', t0);
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x3001', '\x3002', t0 + interval '30 days', t0, interval '10 seconds')) = 'INVALID', 'logged out';
 END $$;
@@ -105,7 +109,7 @@ DO $$
 DECLARE u uuid := (SELECT r_user_id FROM auth_login_lookup('alice@example.com')); fam uuid := gen_random_uuid(); t0 timestamptz := now();
 BEGIN
   ASSERT (SELECT count(*) FROM auth_password_reset_issue('ghost@example.com', '\xdd01', t0 + interval '1 hour', t0)) = 0, 'unknown email: no row';
-  PERFORM auth_refresh_issue(u, fam, '\x4001', t0 + interval '30 days', t0);
+  PERFORM auth_refresh_issue(u, fam, '\x4001', t0 + interval '30 days', t0, 1);
   ASSERT (SELECT count(*) FROM auth_password_reset_issue('alice@example.com', '\xdd02', t0 + interval '1 hour', t0)) = 1;
   ASSERT (SELECT count(*) FROM auth_password_reset_confirm('\xdd99', 'new-hash', t0)) = 0, 'unknown token';
   ASSERT (SELECT count(*) FROM auth_password_reset_confirm('\xdd02', 'new-hash', t0 + interval '2 hours')) = 0, 'expired';
@@ -141,9 +145,9 @@ BEGIN
   ASSERT NOT EXISTS (SELECT 1 FROM auth_identities WHERE subject = 'sub-evil'), 'nothing linked';
 
   -- pre-hijack: an UNVERIFIED local account (attacker password + live session) is neutralised on link
-  PERFORM auth_create_user('victim@example.com', 'Attacker', 'attacker-hash', 'vi', t0, false, t0);
+  PERFORM auth_create_user('victim@example.com', 'Attacker', 'attacker-hash', 'vi', t0);
   u := (SELECT r_user_id FROM auth_login_lookup('victim@example.com'));
-  PERFORM auth_refresh_issue(u, fam, '\x5001', t0 + interval '30 days', t0);
+  PERFORM auth_refresh_issue(u, fam, '\x5001', t0 + interval '30 days', t0, 1);
   PERFORM auth_email_verification_issue(u, '\x5002', t0 + interval '1 day', t0);
   SELECT * INTO r FROM auth_oauth_login('google','sub-victim','victim@example.com', true, 'Victim', 'vi', t0);
   ASSERT r.r_outcome = 'LINKED_NEUTRALISED' AND r.r_user_id = u;
@@ -157,8 +161,9 @@ END $$;
 DO $$
 DECLARE u uuid := (SELECT r_user_id FROM auth_login_lookup('alice@example.com')); t0 timestamptz := now();
 BEGIN
-  PERFORM auth_refresh_issue(u, gen_random_uuid(), '\x6001', t0 - interval '40 days', t0 - interval '70 days');
-  ASSERT auth_purge_expired(t0, interval '7 days') >= 1, 'old expired token removed';
+  PERFORM auth_refresh_issue(u, gen_random_uuid(), '\x6001', t0 - interval '40 days', t0 - interval '70 days',
+                             (SELECT r_credentials_version FROM auth_login_lookup('alice@example.com')));
+  ASSERT auth_purge_expired() >= 1, 'old expired token removed';
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x6001', '\x6002', t0 + interval '30 days', t0, interval '10 seconds')) = 'INVALID';
 END $$;
 

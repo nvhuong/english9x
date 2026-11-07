@@ -77,7 +77,7 @@ class AuthService {
         String passwordHash = hasher.hash(r.password()); // always paid, also for an address that already exists
         Instant now = clock.instant();
         tx.executeWithoutResult(status -> {
-            Optional<UUID> id = repo.createUser(email, name, passwordHash, locale, now, false, now);
+            Optional<UUID> id = repo.createUser(email, name, passwordHash, locale, now);
             if (id.isPresent()) {
                 String token = TokenCodec.newToken();
                 repo.issueVerification(id.get(), TokenCodec.hash(token), now.plus(props.verificationTtl()), now);
@@ -130,7 +130,9 @@ class AuthService {
             throw AuthProblems.invalidCredentials();
         }
         loginLimiter.reset(key);
-        return issueTokens(row.get().userId(), UUID.randomUUID());
+        // The version read before bcrypt goes along: a password change while bcrypt ran is refused here. Same answer as a
+        // wrong password, which is what it now is.
+        return issueTokens(row.get().userId(), row.get().credentialsVersion()).orElseThrow(AuthProblems::invalidCredentials);
     }
 
     TokenPair refresh(String refreshToken) {
@@ -160,11 +162,16 @@ class AuthService {
         }
     }
 
-    private TokenPair issueTokens(UUID userId, UUID family) {
+    /** A new token family, or empty when the credentials changed since {@code credentialsVersion} was read. */
+    private Optional<TokenPair> issueTokens(UUID userId, long credentialsVersion) {
         Instant now = clock.instant();
         String refresh = TokenCodec.newToken();
-        repo.issueRefresh(userId, family, TokenCodec.hash(refresh), now.plus(props.refreshTokenTtl()), now);
-        return new TokenPair(accessTokens.issue(userId), refresh, props.accessTokenTtl().toSeconds(), "Bearer");
+        AuthRepository.IssueOutcome outcome = repo.issueRefresh(userId, UUID.randomUUID(), TokenCodec.hash(refresh),
+                now.plus(props.refreshTokenTtl()), now, credentialsVersion);
+        if (outcome != AuthRepository.IssueOutcome.ISSUED) {
+            return Optional.empty();
+        }
+        return Optional.of(new TokenPair(accessTokens.issue(userId), refresh, props.accessTokenTtl().toSeconds(), "Bearer"));
     }
 
     // ---- password reset ----------------------------------------------------------------------------------------------------
@@ -206,13 +213,13 @@ class AuthService {
         });
     }
 
-    String issueLoginCode(UUID userId) {
-        return codes.issue(userId);
+    String issueLoginCode(UUID userId, long credentialsVersion) {
+        return codes.issue(userId, credentialsVersion);
     }
 
     TokenPair exchangeLoginCode(String code) {
-        UUID userId = codes.redeem(code).orElseThrow(AuthProblems::invalidLoginCode);
-        return issueTokens(userId, UUID.randomUUID());
+        OneTimeCodes.Redeemed who = codes.redeem(code).orElseThrow(AuthProblems::invalidLoginCode);
+        return issueTokens(who.userId(), who.credentialsVersion()).orElseThrow(AuthProblems::invalidLoginCode);
     }
 
     // ---- helpers ---------------------------------------------------------------------------------------------------------------

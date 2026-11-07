@@ -124,7 +124,7 @@ class GoogleLoginConfiguration {
                         LOG.warn("google sign-in linked an unverified local account {}: its password was removed and its sessions revoked",
                                 result.userId());
                     }
-                    target = baseUrl + "/login/google?code=" + URLEncoder.encode(auth.issueLoginCode(result.userId()), StandardCharsets.UTF_8);
+                    target = baseUrl + "/login/google?code=" + URLEncoder.encode(auth.issueLoginCode(result.userId(), result.credentialsVersion()), StandardCharsets.UTF_8);
                 }
             } catch (RuntimeException e) {
                 LOG.warn("google sign-in failed: {}", e.getClass().getSimpleName());
