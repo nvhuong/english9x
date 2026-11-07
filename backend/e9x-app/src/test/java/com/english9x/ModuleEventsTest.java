@@ -10,15 +10,18 @@ import org.springframework.modulith.core.ApplicationModules;
 /** The modules that publish domain events expose their {@code api.events} package as the named interface "events". */
 class ModuleEventsTest {
 
-    private static final Map<String, String> PUBLISHER = Map.of(
-            "AttemptSubmitted", "exam",
-            "AttemptScored", "grading",
-            "ContentPublished", "workflow",
-            "OrderConfirmed", "billing",
-            "OrderRejected", "billing",
-            "SeatAssigned", "billing",
-            "SeatRevoked", "billing",
-            "UserRegistered", "identity");
+    private static final Map<String, String> PUBLISHER = Map.ofEntries(
+            Map.entry("AttemptSubmitted", "exam"),
+            Map.entry("AttemptScored", "grading"),
+            Map.entry("ContentPublished", "workflow"),
+            Map.entry("ReviewRequested", "workflow"),
+            Map.entry("ReviewChangesRequested", "workflow"),
+            Map.entry("ReviewApproved", "workflow"),
+            Map.entry("OrderConfirmed", "billing"),
+            Map.entry("OrderRejected", "billing"),
+            Map.entry("SeatAssigned", "billing"),
+            Map.entry("SeatRevoked", "billing"),
+            Map.entry("UserRegistered", "identity"));
 
     @Test
     void everyEventIsExposedByItsPublisher() {

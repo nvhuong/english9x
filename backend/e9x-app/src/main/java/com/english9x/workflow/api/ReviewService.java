@@ -13,7 +13,12 @@ import java.util.UUID;
  * <p>Failures: {@link org.springframework.security.access.AccessDeniedException} (403: the role is missing for this exam in
  * this context, or {@link SelfReviewException}); {@link ReviewNotFoundException} (404: no such version or review, or not
  * one the caller may see, indistinguishably); {@link ReviewConflictException} (409: the state is not the one the action
- * needs, including losing a race); {@link UnpublishedDependencyException} (409, lists the dependencies).
+ * needs, including losing a race); {@link UnpublishedDependencyException} (409, lists the dependencies);
+ * {@link InvalidReviewInputException} (400). All but the first are {@code ErrorResponseException}s: the problem+json
+ * advice renders them, no controller code is needed.
+ *
+ * <p>Events, published last in the transaction: {@code ReviewRequested} on submit, {@code ReviewChangesRequested} and
+ * {@code ReviewApproved} (with the author) on decisions, {@code ContentPublished} on approval.
  */
 public interface ReviewService {
 
@@ -52,9 +57,12 @@ public interface ReviewService {
 
     Optional<ReviewView> find(UUID reviewId);
 
-    /** Open reviews the caller may see (the reviewer's queue, the author's pending submissions), oldest first. */
-    List<ReviewView> open(int limit);
+    /**
+     * The open queue the caller may see (a reviewer's queue, an author's pending submissions), oldest first: one entry per
+     * bundle and one per standalone review, so a 2000-member import is one line. {@code limit} is clamped to 1..200.
+     */
+    List<ReviewQueueEntry> open(int offset, int limit);
 
-    /** The reviews of a bundle the caller may see. */
-    List<ReviewView> members(UUID bundleId);
+    /** The reviews of a bundle the caller may see, oldest id first; {@code limit} is clamped to 1..200. */
+    List<ReviewView> members(UUID bundleId, int offset, int limit);
 }

@@ -11,6 +11,8 @@ import com.english9x.org.api.CurrentContextHolder;
 import com.english9x.support.TestPostgres;
 import com.english9x.workflow.api.BundleRef;
 import com.english9x.workflow.api.ContentStatus;
+import com.english9x.workflow.api.InvalidReviewInputException;
+import com.english9x.workflow.api.ReviewQueueEntry;
 import com.english9x.workflow.api.ReviewConflictException;
 import com.english9x.workflow.api.ReviewNotFoundException;
 import com.english9x.workflow.api.ReviewService;
@@ -19,6 +21,9 @@ import com.english9x.workflow.api.SelfReviewException;
 import com.english9x.workflow.api.UnpublishedDependencyException;
 import com.english9x.workflow.api.VersionRef;
 import com.english9x.workflow.api.events.ContentPublished;
+import com.english9x.workflow.api.events.ReviewApproved;
+import com.english9x.workflow.api.events.ReviewChangesRequested;
+import com.english9x.workflow.api.events.ReviewRequested;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +51,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.context.event.EventListener;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -61,6 +68,10 @@ class ReviewServiceIT {
 
     static final String DB = TestPostgres.createDatabase();
 
+    static final int MAX_BUNDLE = 130;
+    static final UUID ORG_C = UUID.randomUUID();           // its own organisation: a queue nobody else filled
+    static final UUID AUTHOR_C = UUID.randomUUID();
+    static final UUID REVIEWER_C = UUID.randomUUID();
     static final UUID ORG_A = UUID.randomUUID();
     static final UUID ORG_B = UUID.randomUUID();
     static final UUID AUTHOR_A = UUID.randomUUID();       // AUTHOR IELTS in A
@@ -79,6 +90,7 @@ class ReviewServiceIT {
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
         TestPostgres.connect(registry, DB);
+        registry.add("e9x.workflow.max-bundle-size", () -> String.valueOf(MAX_BUNDLE));
     }
 
     @TestConfiguration
@@ -97,6 +109,22 @@ class ReviewServiceIT {
     static class Recorder {
         final List<ContentPublished> committed = new CopyOnWriteArrayList<>();
         final List<Boolean> publishedInsideTransaction = new CopyOnWriteArrayList<>();
+        final List<Object> workflowEvents = new CopyOnWriteArrayList<>();
+
+        @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+        void requested(ReviewRequested e) {
+            workflowEvents.add(e);
+        }
+
+        @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+        void changes(ReviewChangesRequested e) {
+            workflowEvents.add(e);
+        }
+
+        @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+        void approved(ReviewApproved e) {
+            workflowEvents.add(e);
+        }
 
         @EventListener
         void now(ContentPublished e) {
@@ -116,15 +144,17 @@ class ReviewServiceIT {
     @Autowired ReviewService reviews;
     @Autowired TestItems items;
     @Autowired Recorder recorder;
+    @Autowired JdbcTemplate appJdbc;
+    @Autowired PlatformTransactionManager tm;
     static JdbcTemplate su;
 
     @BeforeAll
     static void fixtures(@Autowired JdbcTemplate migrated) {
         su = new JdbcTemplate(TestPostgres.superuser(DB));
         su.update("insert into exams(code,name) values ('IELTS','IELTS'),('TOEIC','TOEIC') on conflict do nothing");
-        su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER')", ORG_A, ORG_B);
+        su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER'),(?,'C','CENTER')", ORG_A, ORG_B, ORG_C);
         for (UUID u : new UUID[] {AUTHOR_A, AUTHOR_A_BOTH, REVIEWER_A, REVIEWER_A2, REVIEWER_A_TOEIC, DUAL_A, LEARNER_A, AUTHOR_B,
-                REVIEWER_B, E9_AUTHOR, E9_REVIEWER, SYS_DUAL}) {
+                REVIEWER_B, E9_AUTHOR, E9_REVIEWER, SYS_DUAL, AUTHOR_C, REVIEWER_C}) {
             su.update("insert into users(id,email) values (?,?)", u, u + "@x.test");
         }
         for (UUID u : new UUID[] {AUTHOR_A, AUTHOR_A_BOTH, REVIEWER_A, REVIEWER_A2, REVIEWER_A_TOEIC, DUAL_A, LEARNER_A, E9_REVIEWER}) {
@@ -133,6 +163,11 @@ class ReviewServiceIT {
         for (UUID u : new UUID[] {AUTHOR_B, REVIEWER_B}) {
             su.update("insert into org_memberships(org_id,user_id) values (?,?)", ORG_B, u);
         }
+        for (UUID u : new UUID[] {AUTHOR_C, REVIEWER_C}) {
+            su.update("insert into org_memberships(org_id,user_id) values (?,?)", ORG_C, u);
+        }
+        grant(AUTHOR_C, ORG_C, "IELTS", "AUTHOR");
+        grant(REVIEWER_C, ORG_C, "IELTS", "REVIEWER");
         grant(AUTHOR_A, ORG_A, "IELTS", "AUTHOR");
         grant(AUTHOR_A_BOTH, ORG_A, "IELTS", "AUTHOR");
         grant(AUTHOR_A_BOTH, ORG_A, "TOEIC", "AUTHOR");
@@ -153,7 +188,17 @@ class ReviewServiceIT {
                 + " status text not null default 'DRAFT', body text not null default 'v1')");
         su.execute("create table test_item_deps (item_id uuid not null, dep_id uuid not null)");
         // attached exactly as P2 attaches it to its *_versions tables
-        su.execute("create trigger test_items_lifecycle before update or delete on test_items for each row execute function e9x_guard_version_lifecycle()");
+        su.execute("create trigger test_items_lifecycle before insert or update or delete on test_items for each row execute function e9x_guard_version_lifecycle()");
+        // baseline-shaped policies (see `questions` in V202611060001): English9x rows are readable by everyone when PUBLISHED, by staff
+        // always; an organisation reads and writes its own rows only. An organisation's reviewer therefore has no UPDATE policy on
+        // English9x rows, which is what FOR SHARE needs.
+        su.execute("alter table test_items enable row level security");
+        su.execute("create policy ti_select on test_items for select using ((owner_org_id is null and (status = 'PUBLISHED' or e9x_is_staff()))"
+                + " or (owner_org_id is not null and owner_org_id = e9x_current_org()))");
+        su.execute("create policy ti_insert on test_items for insert with check ((owner_org_id is null and e9x_is_staff()) or (owner_org_id is not null and owner_org_id = e9x_current_org()))");
+        su.execute("create policy ti_update on test_items for update using ((owner_org_id is null and e9x_is_staff()) or (owner_org_id is not null and owner_org_id = e9x_current_org()))"
+                + " with check ((owner_org_id is null and e9x_is_staff()) or (owner_org_id is not null and owner_org_id = e9x_current_org()))");
+        su.execute("create policy ti_delete on test_items for delete using ((owner_org_id is null and e9x_is_staff()) or (owner_org_id is not null and owner_org_id = e9x_current_org()))");
         su.execute("grant select, insert, update, delete on test_items, test_item_deps to e9x_app");
     }
 
@@ -164,6 +209,7 @@ class ReviewServiceIT {
     @BeforeEach
     void reset() {
         recorder.committed.clear();
+        recorder.workflowEvents.clear();
         recorder.publishedInsideTransaction.clear();
         items.afterDependencyLocked = id -> {};
     }
@@ -198,6 +244,25 @@ class ReviewServiceIT {
             body.run();
             return null;
         });
+    }
+
+    /** The whole open queue, page by page. */
+    List<ReviewQueueEntry> queue(UUID user, UUID org) {
+        List<ReviewQueueEntry> all = new ArrayList<>();
+        for (int offset = 0;; offset += 50) {
+            int at = offset;
+            List<ReviewQueueEntry> page = as(user, org, () -> reviews.open(at, 50));
+            all.addAll(page);
+            if (page.size() < 50) {
+                return all;
+            }
+        }
+    }
+
+    int bundlesVisibleTo(UUID user, UUID org, UUID bundle) {
+        Integer n = as(user, org, () -> new TransactionTemplate(tm).execute(st ->
+                appJdbc.queryForObject("select count(*) from review_bundles where id = ?", Integer.class, bundle)));
+        return n;
     }
 
     static VersionRef ref(UUID id) {
@@ -253,8 +318,8 @@ class ReviewServiceIT {
         UUID review = submitted(AUTHOR_A, ORG_A, it);
         assertEquals("IN_REVIEW", status(it));
 
-        assertThrows(IllegalArgumentException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, "   ")), "a comment is required");
-        assertThrows(IllegalArgumentException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, null)));
+        assertThrows(InvalidReviewInputException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, "   ")), "a comment is required");
+        assertThrows(InvalidReviewInputException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, null)));
         assertEquals("IN_REVIEW", status(it));
 
         asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, "Option C is also correct"));
@@ -361,7 +426,7 @@ class ReviewServiceIT {
         UUID b5 = as(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(r1), ref(r2)))));
         asDo(REVIEWER_A, ORG_A, () -> reviews.requestBundleChanges(b5, "redo both"));
         assertEquals(List.of("CHANGES_REQUESTED", "CHANGES_REQUESTED"), List.of(status(r1), status(r2)));
-        assertEquals(2, as(AUTHOR_A, ORG_A, () -> reviews.members(b5)).stream().filter(v -> v.comment().equals(Optional.of("redo both"))).count());
+        assertEquals(2, as(AUTHOR_A, ORG_A, () -> reviews.members(b5, 0, 100)).stream().filter(v -> v.comment().equals(Optional.of("redo both"))).count());
     }
 
     @Test
@@ -382,7 +447,7 @@ class ReviewServiceIT {
         assertThrows(AccessDeniedException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(ok), ref(toeic))))));
         assertEquals("DRAFT", status(ok));
         // the same version twice
-        assertThrows(IllegalArgumentException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(ok), ref(ok))))));
+        assertThrows(InvalidReviewInputException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(ok), ref(ok))))));
         assertEquals(bundlesBefore, su.queryForObject("select count(*) from review_bundles", Integer.class), "no bundle row survived a refused submission");
         assertEquals("DRAFT", status(ok));
     }
@@ -407,8 +472,8 @@ class ReviewServiceIT {
         asDo(REVIEWER_A, ORG_A, () -> reviews.approve(review));
         assertEquals("PUBLISHED", status(it));
 
-        JdbcTemplate app = new JdbcTemplate(TestPostgres.app(DB));
-        assertThrows(DataIntegrityViolationException.class, () -> app.update("update test_items set body = 'changed' where id = ?", it), "the application role");
+        assertThrows(DataIntegrityViolationException.class, () -> as(AUTHOR_A, ORG_A, () -> new TransactionTemplate(tm).execute(st ->
+                appJdbc.update("update test_items set body = 'changed' where id = ?", it))), "the application role");
         assertThrows(DataIntegrityViolationException.class, () -> su.update("update test_items set body = 'changed' where id = ?", it), "even the superuser");
         assertThrows(DataIntegrityViolationException.class, () -> su.update("update test_items set status = 'DRAFT' where id = ?", it));
         assertThrows(DataIntegrityViolationException.class, () -> su.update("delete from test_items where id = ?", it));
@@ -426,7 +491,7 @@ class ReviewServiceIT {
         UUID review = submitted(AUTHOR_A, ORG_A, it);
         for (UUID org : new UUID[] {ORG_B, null}) {
             assertEquals(Optional.empty(), as(REVIEWER_B, org, () -> reviews.find(review)), "context " + org);
-            assertTrue(as(REVIEWER_B, org, () -> reviews.open(200)).stream().noneMatch(v -> v.ownerOrgId().equals(Optional.of(ORG_A))),
+            assertTrue(queue(REVIEWER_B, org).stream().noneMatch(v -> v.ownerOrgId().equals(Optional.of(ORG_A))),
                     "B's queue holds no review of A");
             assertThrows(ReviewNotFoundException.class, () -> asDo(REVIEWER_B, org, () -> reviews.approve(review)));
             assertThrows(ReviewNotFoundException.class, () -> asDo(REVIEWER_B, org, () -> reviews.requestChanges(review, "no")));
@@ -436,7 +501,7 @@ class ReviewServiceIT {
         assertEquals("IN_REVIEW", reviewStatus(review));
         assertEquals(List.of(), recorder.committed);
         // the same call from inside the right organisation works (the positive control)
-        assertEquals(1, as(REVIEWER_A, ORG_A, () -> reviews.open(200)).stream().filter(v -> v.id().equals(review)).count());
+        assertEquals(1, queue(REVIEWER_A, ORG_A).stream().filter(v -> v.reviewId().equals(Optional.of(review))).count());
     }
 
     @Test
@@ -463,10 +528,10 @@ class ReviewServiceIT {
         assertEquals("IN_REVIEW", status(a));
         assertEquals(List.of(), recorder.committed);
         // the open queues are separate
-        List<ReviewView> queue = as(E9_REVIEWER, null, () -> reviews.open(200));
-        assertTrue(queue.stream().anyMatch(v -> v.id().equals(e9Review)));
+        List<ReviewQueueEntry> queue = queue(E9_REVIEWER, null);
+        assertTrue(queue.stream().anyMatch(v -> v.reviewId().equals(Optional.of(e9Review))));
         assertTrue(queue.stream().allMatch(v -> v.ownerOrgId().isEmpty()), "the English9x queue holds English9x reviews only");
-        assertTrue(as(REVIEWER_A, ORG_A, () -> reviews.open(200)).stream().noneMatch(v -> v.id().equals(e9Review)));
+        assertTrue(queue(REVIEWER_A, ORG_A).stream().noneMatch(v -> v.reviewId().equals(Optional.of(e9Review))));
         // English9x publication carries no owner
         asDo(E9_REVIEWER, null, () -> reviews.approve(e9Review));
         assertEquals(List.of(new ContentPublished("item", e9, Optional.empty(), "IELTS")), recorder.committed);
@@ -478,7 +543,7 @@ class ReviewServiceIT {
         UUID review = submitted(AUTHOR_A, ORG_A, ielts);
         assertThrows(ReviewNotFoundException.class, () -> asDo(REVIEWER_A_TOEIC, ORG_A, () -> reviews.approve(review)));
         assertThrows(ReviewNotFoundException.class, () -> asDo(REVIEWER_A_TOEIC, ORG_A, () -> reviews.requestChanges(review, "x")));
-        assertTrue(as(REVIEWER_A_TOEIC, ORG_A, () -> reviews.open(200)).stream().allMatch(v -> v.examCode().equals("TOEIC")),
+        assertTrue(queue(REVIEWER_A_TOEIC, ORG_A).stream().allMatch(v -> v.examCode().equals("TOEIC")),
                 "the TOEIC reviewer's queue holds TOEIC reviews only");
         // those who see the review but do not hold REVIEWER of its exam: refused, not "not found"
         assertThrows(AccessDeniedException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.approve(review)));
@@ -505,7 +570,7 @@ class ReviewServiceIT {
         assertThrows(ReviewNotFoundException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.submit(ref(e9))), "English9x version from an organisation");
         assertThrows(ReviewNotFoundException.class, () -> asDo(E9_AUTHOR, null, () -> reviews.submit(ref(a))));
         assertThrows(ReviewNotFoundException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.submit(ref(UUID.randomUUID()))));
-        assertThrows(IllegalArgumentException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.submit(new VersionRef("nonsense", a))));
+        assertThrows(InvalidReviewInputException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.submit(new VersionRef("nonsense", a))));
         assertEquals(List.of("DRAFT", "DRAFT", "DRAFT", "DRAFT"), List.of(status(a), status(aToeic), status(b), status(e9)));
         assertEquals(0, su.queryForObject("select count(*) from review_requests where version_id in (?,?,?,?)", Integer.class, a, aToeic, b, e9));
         // a version that is already in review or published cannot be submitted again
@@ -640,5 +705,182 @@ class ReviewServiceIT {
         assertNotNull(as(REVIEWER_A, ORG_A, () -> reviews.find(review)).orElse(null));
         assertInstanceOf(ReviewNotFoundException.class, assertThrows(RuntimeException.class, () -> asDo(REVIEWER_B, ORG_B, () -> reviews.approve(review))));
         assertEquals("IN_REVIEW", status(a));
+    }
+
+    // ---- fix round 1 ----------------------------------------------------------------------------------------------------------------------
+
+    @Test
+    void anOrganisationDependsOnPublishedEnglish9xContentButNotOnADraftOrAnotherOrganisationsContent() {
+        UUID e9Published = item(null, "IELTS", E9_AUTHOR, "PUBLISHED");
+        UUID e9Draft = item(null, "IELTS", E9_AUTHOR, "DRAFT");
+        UUID bPublished = item(ORG_B, "IELTS", AUTHOR_B, "PUBLISHED");
+        UUID own = item(ORG_A, "IELTS", AUTHOR_A, "PUBLISHED");
+
+        UUID ok = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT", e9Published, own);
+        UUID okReview = submitted(AUTHOR_A, ORG_A, ok);
+        asDo(REVIEWER_A, ORG_A, () -> reviews.approve(okReview));
+        assertEquals("PUBLISHED", status(ok), "an English9x PUBLISHED dependency satisfies a centre's version");
+
+        UUID draftDep = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT", e9Draft);
+        UUID r1 = submitted(AUTHOR_A, ORG_A, draftDep);
+        UnpublishedDependencyException e1 = assertThrows(UnpublishedDependencyException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approve(r1)));
+        assertEquals(List.of(ref(e9Draft)), e1.missing());
+
+        UUID foreignDep = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT", bPublished);
+        UUID r2 = submitted(AUTHOR_A, ORG_A, foreignDep);
+        UnpublishedDependencyException e2 = assertThrows(UnpublishedDependencyException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approve(r2)));
+        assertEquals(List.of(ref(bPublished)), e2.missing(), "another organisation's published content is not readable, so not a dependency");
+        assertEquals("IN_REVIEW", status(draftDep));
+        assertEquals("IN_REVIEW", status(foreignDep));
+    }
+
+    @Test
+    void theQueueHasOneLinePerBundleAndPagesRealLines() {
+        List<VersionRef> members = new ArrayList<>();
+        for (int i = 0; i < MAX_BUNDLE; i++) {
+            members.add(ref(item(ORG_C, "IELTS", AUTHOR_C, "DRAFT")));
+        }
+        UUID bundle = as(AUTHOR_C, ORG_C, () -> reviews.submit(new BundleRef(members)));
+        UUID later = item(ORG_C, "IELTS", AUTHOR_C, "DRAFT");
+        UUID laterReview = submitted(AUTHOR_C, ORG_C, later);
+
+        List<ReviewQueueEntry> page1 = as(REVIEWER_C, ORG_C, () -> reviews.open(0, 50));
+        assertEquals(2, page1.size(), "a 130-member bundle is one line, the newer standalone review is on page one");
+        assertEquals(Optional.of(bundle), page1.get(0).bundleId());
+        assertEquals(MAX_BUNDLE, page1.get(0).size());
+        assertEquals("IELTS", page1.get(0).examCode());
+        assertEquals(Optional.of(laterReview), page1.get(1).reviewId());
+        assertEquals(1, page1.get(1).size());
+        assertEquals(List.of(page1.get(1)), as(REVIEWER_C, ORG_C, () -> reviews.open(1, 1)), "offset and limit page the lines");
+        assertEquals(List.of(), as(REVIEWER_C, ORG_C, () -> reviews.open(2, 50)));
+
+        // the members, paged
+        assertEquals(50, as(REVIEWER_C, ORG_C, () -> reviews.members(bundle, 0, 50)).size());
+        assertEquals(50, as(REVIEWER_C, ORG_C, () -> reviews.members(bundle, 50, 50)).size());
+        assertEquals(MAX_BUNDLE - 100, as(REVIEWER_C, ORG_C, () -> reviews.members(bundle, 100, 50)).size());
+        assertEquals(List.of(), as(REVIEWER_B, ORG_B, () -> reviews.members(bundle, 0, 50)));
+
+        // one more than the limit is refused, the limit itself was accepted above
+        List<VersionRef> tooMany = new ArrayList<>(members);
+        tooMany.add(ref(item(ORG_C, "IELTS", AUTHOR_C, "DRAFT")));
+        int bundles = su.queryForObject("select count(*) from review_bundles", Integer.class);
+        assertThrows(InvalidReviewInputException.class, () -> asDo(AUTHOR_C, ORG_C, () -> reviews.submit(new BundleRef(tooMany))));
+        assertEquals(bundles, su.queryForObject("select count(*) from review_bundles", Integer.class));
+    }
+
+    @Test
+    void eachWorkflowEventFiresOnceOnItsPathAndNeverOnARefusedOne() {
+        UUID it = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        // a refused submission: nothing
+        assertThrows(AccessDeniedException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.submit(ref(it))));
+        assertEquals(List.of(), recorder.workflowEvents);
+        UUID review = submitted(AUTHOR_A, ORG_A, it);
+        assertEquals(List.of(new ReviewRequested("item", it, Optional.of(ORG_A), "IELTS", review, Optional.empty())), recorder.workflowEvents);
+        recorder.workflowEvents.clear();
+        // refused decisions: nothing
+        assertThrows(AccessDeniedException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.approve(review)));
+        assertThrows(ReviewNotFoundException.class, () -> asDo(REVIEWER_B, ORG_B, () -> reviews.requestChanges(review, "x")));
+        assertThrows(InvalidReviewInputException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, " ")));
+        assertEquals(List.of(), recorder.workflowEvents);
+        asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, "again"));
+        assertEquals(List.of(new ReviewChangesRequested("item", it, Optional.of(ORG_A), "IELTS", review, Optional.empty(), AUTHOR_A)), recorder.workflowEvents);
+        recorder.workflowEvents.clear();
+        UUID second = submitted(AUTHOR_A, ORG_A, it);
+        recorder.workflowEvents.clear();
+        asDo(REVIEWER_A, ORG_A, () -> reviews.approve(second));
+        assertEquals(List.of(new ReviewApproved("item", it, Optional.of(ORG_A), "IELTS", second, Optional.empty(), AUTHOR_A)), recorder.workflowEvents);
+        assertThrows(ReviewConflictException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approve(second)));
+        assertEquals(1, recorder.workflowEvents.size());
+        assertEquals(1, recorder.forVersion(it).size());
+    }
+
+    @Test
+    void bundleEventsAreOnePerExamForRequestsAndOnePerAuthorForDecisions() {
+        UUID i1 = item(ORG_A, "IELTS", AUTHOR_A_BOTH, "DRAFT");
+        UUID i2 = item(ORG_A, "IELTS", AUTHOR_A_BOTH, "DRAFT");
+        UUID t1 = item(ORG_A, "TOEIC", AUTHOR_A_BOTH, "DRAFT");
+        UUID bundle = as(AUTHOR_A_BOTH, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(i1), ref(i2), ref(t1)))));
+        List<ReviewRequested> requested = recorder.workflowEvents.stream().map(ReviewRequested.class::cast).toList();
+        assertEquals(Set.of("IELTS", "TOEIC"), Set.copyOf(requested.stream().map(ReviewRequested::examCode).toList()));
+        assertEquals(2, requested.size());
+        assertTrue(requested.stream().allMatch(e -> e.bundleId().equals(Optional.of(bundle))));
+        recorder.workflowEvents.clear();
+
+        UUID j1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID j2 = item(ORG_A, "IELTS", AUTHOR_A_BOTH, "DRAFT");
+        UUID j3 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        // two authors' versions submitted by one person who may submit them: AUTHOR_A_BOTH submits all three
+        UUID b2 = as(AUTHOR_A_BOTH, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(j1), ref(j2), ref(j3)))));
+        recorder.workflowEvents.clear();
+        asDo(REVIEWER_A, ORG_A, () -> reviews.approveBundle(b2));
+        List<ReviewApproved> approved = recorder.workflowEvents.stream().map(ReviewApproved.class::cast).toList();
+        assertEquals(Set.of(AUTHOR_A, AUTHOR_A_BOTH), Set.copyOf(approved.stream().map(ReviewApproved::authorId).toList()));
+        assertEquals(2, approved.size(), "one per author, not per member");
+        assertEquals(3, recorder.committed.size(), "ContentPublished is still one per version");
+
+        UUID k1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID k2 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID b3 = as(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(k1), ref(k2)))));
+        recorder.workflowEvents.clear();
+        asDo(REVIEWER_A, ORG_A, () -> reviews.requestBundleChanges(b3, "redo"));
+        assertEquals(1, recorder.workflowEvents.size());
+        assertInstanceOf(ReviewChangesRequested.class, recorder.workflowEvents.get(0));
+        // a refused bundle decision publishes nothing
+        UUID m1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID m2 = item(ORG_A, "IELTS", DUAL_A, "DRAFT");
+        UUID b4 = as(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(m1), ref(m2)))));
+        recorder.workflowEvents.clear();
+        assertThrows(SelfReviewException.class, () -> asDo(DUAL_A, ORG_A, () -> reviews.approveBundle(b4)));
+        assertEquals(List.of(), recorder.workflowEvents);
+    }
+
+    @Test
+    void aBundleRefusalListsTheDependenciesOfEveryMemberAtOnce() {
+        UUID d1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID d2 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID m1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT", d1);
+        UUID m2 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT", d2);
+        UUID m3 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT", m1);   // depends on a member that itself fails
+        UUID bundle = as(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(m1), ref(m2), ref(m3)))));
+        UnpublishedDependencyException e = assertThrows(UnpublishedDependencyException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approveBundle(bundle)));
+        assertEquals(Set.of(ref(d1), ref(d2)), Set.copyOf(e.missing()), "both outside dependencies, no member of the bundle itself");
+        assertEquals(2, e.missing().size());
+    }
+
+    @Test
+    void otherTenantsCannotDecideOrSeeABundle() {
+        UUID a = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID b = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID bundle = as(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(a), ref(b)))));
+        for (UUID org : new UUID[] {ORG_B, null}) {
+            assertThrows(ReviewNotFoundException.class, () -> asDo(REVIEWER_B, org, () -> reviews.approveBundle(bundle)));
+            assertThrows(ReviewNotFoundException.class, () -> asDo(REVIEWER_B, org, () -> reviews.requestBundleChanges(bundle, "x")));
+        }
+        assertThrows(ReviewNotFoundException.class, () -> asDo(E9_REVIEWER, ORG_A, () -> reviews.approveBundle(bundle)));
+        assertEquals(List.of("IN_REVIEW", "IN_REVIEW"), List.of(status(a), status(b)));
+        // row-level security of review_bundles itself
+        assertEquals(1, bundlesVisibleTo(AUTHOR_A, ORG_A, bundle));
+        assertEquals(0, bundlesVisibleTo(REVIEWER_B, ORG_B, bundle));
+        assertEquals(0, bundlesVisibleTo(E9_REVIEWER, null, bundle));
+        assertThrows(Exception.class, () -> as(AUTHOR_B, ORG_B, () -> new TransactionTemplate(tm).execute(st ->
+                appJdbc.update("insert into review_bundles(owner_org_id, submitted_by, member_count) values (?,?,1)", ORG_A, AUTHOR_B))),
+                "a bundle cannot be filed into another organisation");
+    }
+
+    @Test
+    void anOuterTransactionRolledBackAfterPublicationDeliversNothing() {
+        UUID it = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID review = submitted(AUTHOR_A, ORG_A, it);
+        recorder.workflowEvents.clear();
+        as(REVIEWER_A, ORG_A, () -> new TransactionTemplate(tm).execute(st -> {
+            reviews.approve(review);
+            st.setRollbackOnly();
+            return null;
+        }));
+        assertEquals(List.of(true), recorder.publishedInsideTransaction, "it was published inside the transaction ...");
+        assertEquals(List.of(), recorder.committed, "... and an AFTER_COMMIT listener never saw it");
+        assertEquals(List.of(), recorder.workflowEvents);
+        assertEquals("IN_REVIEW", status(it));
+        assertEquals("IN_REVIEW", reviewStatus(review));
     }
 }

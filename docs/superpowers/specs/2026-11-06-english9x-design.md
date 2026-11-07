@@ -345,7 +345,7 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.auth.no-consent-retention` | `7d` | Tài khoản Google bỏ dở ở bước đồng ý (chưa có đồng ý, không có hoạt động) bị xoá sau thời gian này; tối thiểu 1 ngày | Cấu hình |
 | `e9x.org.invitation-ttl` | `7d` | Hạn dùng của liên kết lời mời (tài khoản nội bộ và thành viên tổ chức); dùng một lần | Cấu hình |
 | `e9x.org.invitation-hourly-limit` | `50` | Số lời mời (email) mỗi người được gửi trong một giờ; chặn việc dùng biểu mẫu mời để gửi thư rác | Cấu hình |
-| `e9x.workflow.max-bundle-size` | `2000` | Số phiên bản tối đa trong một cụm gửi duyệt (`review_bundle`); không nhỏ hơn `e9x.content.import.max-rows`, vì một lô import Excel gửi duyệt thành một cụm | Cấu hình |
+| `e9x.workflow.max-bundle-size` | `2000` | Số phiên bản tối đa trong một cụm gửi duyệt (`review_bundle`), từ 1 đến 5000 (cận của CSDL; giá trị ngoài khoảng làm ứng dụng không khởi động); không nhỏ hơn `e9x.content.import.max-rows`, vì một lô import Excel gửi duyệt thành một cụm | Cấu hình |
 | `e9x.learning.streak.min-minutes` | `10` | Số phút học để tính một ngày trong chuỗi | Quản trị |
 | `e9x.learning.heartbeat-interval` | `30s` | Chu kỳ gửi tín hiệu đang học | Cấu hình |
 | `e9x.learning.idle-timeout` | `2m` | Không tương tác quá thời gian này thì ngừng tính giờ | Cấu hình |

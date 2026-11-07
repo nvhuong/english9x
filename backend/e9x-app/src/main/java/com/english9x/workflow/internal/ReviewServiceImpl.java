@@ -5,6 +5,8 @@ import com.english9x.org.api.CurrentContextHolder;
 import com.english9x.org.api.Role;
 import com.english9x.workflow.api.BundleRef;
 import com.english9x.workflow.api.ContentStatus;
+import com.english9x.workflow.api.InvalidReviewInputException;
+import com.english9x.workflow.api.ReviewQueueEntry;
 import com.english9x.workflow.api.ReviewConflictException;
 import com.english9x.workflow.api.ReviewNotFoundException;
 import com.english9x.workflow.api.ReviewService;
@@ -15,6 +17,9 @@ import com.english9x.workflow.api.SelfReviewException;
 import com.english9x.workflow.api.UnpublishedDependencyException;
 import com.english9x.workflow.api.VersionRef;
 import com.english9x.workflow.api.events.ContentPublished;
+import com.english9x.workflow.api.events.ReviewApproved;
+import com.english9x.workflow.api.events.ReviewChangesRequested;
+import com.english9x.workflow.api.events.ReviewRequested;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -85,17 +90,23 @@ class ReviewServiceImpl implements ReviewService {
     private ReviewableType type(String name) {
         ReviewableType t = types.get(name);
         if (t == null) {
-            throw new IllegalArgumentException("unknown content type");
+            throw new InvalidReviewInputException("type", "unknown", "unknown content type");
         }
         return t;
     }
 
     // ---- submit ---------------------------------------------------------------------------------------------------------
 
+    private record Submitted(UUID reviewId, VersionRef ref, String examCode, UUID ownerOrgId) {}
+
     @Override
     public UUID submit(VersionRef version) {
         Actor me = actor();
-        return submitOne(me, version, null);
+        Submitted s = submitOne(me, version, null);
+        // Audit (P1.9): action review.submit, target = review id, detail = type, versionId, examCode
+        events.publishEvent(new ReviewRequested(s.ref().type(), s.ref().versionId(), Optional.ofNullable(s.ownerOrgId()), s.examCode(),
+                s.reviewId(), Optional.empty()));
+        return s.reviewId();
     }
 
     @Override
@@ -103,21 +114,28 @@ class ReviewServiceImpl implements ReviewService {
         Actor me = actor();
         List<VersionRef> members = new ArrayList<>(bundle.members());
         if (new HashSet<>(members).size() != members.size()) {
-            throw new IllegalArgumentException("a version is listed twice in the bundle");
+            throw new InvalidReviewInputException("members", "duplicate", "a version is listed twice in the bundle");
         }
         if (members.size() > props.maxBundleSize()) {
-            throw new IllegalArgumentException("a bundle holds at most " + props.maxBundleSize() + " versions");
+            throw new InvalidReviewInputException("members", "too-many", "a bundle holds at most " + props.maxBundleSize() + " versions");
         }
         members.sort(BY_REF); // content rows are locked in one order, whoever submits
         UUID bundleId = UUID.randomUUID();
         repo.insertBundle(bundleId, me.orgId().orElse(null), me.userId(), members.size());
+        Map<String, Submitted> firstPerExam = new LinkedHashMap<>();
         for (VersionRef m : members) {
-            submitOne(me, m, bundleId);
+            Submitted s = submitOne(me, m, bundleId);
+            firstPerExam.putIfAbsent(s.examCode(), s);
+        }
+        // Audit (P1.9): action review.submit-bundle, target = bundle id, detail = member count
+        for (Submitted s : firstPerExam.values()) {
+            events.publishEvent(new ReviewRequested(s.ref().type(), s.ref().versionId(), Optional.ofNullable(s.ownerOrgId()), s.examCode(),
+                    s.reviewId(), Optional.of(bundleId)));
         }
         return bundleId;
     }
 
-    private UUID submitOne(Actor me, VersionRef ref, UUID bundleId) {
+    private Submitted submitOne(Actor me, VersionRef ref, UUID bundleId) {
         ReviewableType t = type(ref.type());
         // not in the caller's context = not found, whatever the content module's own visibility rules say
         Reviewable v = t.lockForReview(ref.versionId()).filter(r -> r.ownerOrgId().equals(me.orgId()))
@@ -133,7 +151,7 @@ class ReviewServiceImpl implements ReviewService {
             throw new ReviewConflictException("the version is already in review");
         }
         t.setStatus(ref.versionId(), ContentStatus.IN_REVIEW);
-        return id;
+        return new Submitted(id, ref, v.examCode(), me.orgId().orElse(null));
     }
 
     // ---- decisions on one review ---------------------------------------------------------------------------------------------
@@ -142,10 +160,11 @@ class ReviewServiceImpl implements ReviewService {
     public void approve(UUID reviewId) {
         Actor me = actor();
         ReviewRepository.Row row = lockForDecision(me, reviewId);
-        List<ContentPublished> published = new ArrayList<>();
+        List<Object> queued = new ArrayList<>();
         Reviewable v = loadForDecision(me, row);
-        publish(me, row, v, published);
-        published.forEach(events::publishEvent);
+        publish(me, row, v, queued);
+        // Audit (P1.9): action review.approve, target = review id, detail = type, versionId, examCode
+        queued.forEach(events::publishEvent);
     }
 
     @Override
@@ -153,7 +172,10 @@ class ReviewServiceImpl implements ReviewService {
         String text = comment(comment);
         Actor me = actor();
         ReviewRepository.Row row = lockForDecision(me, reviewId);
-        sendBack(me, row, loadForDecision(me, row), text);
+        List<Object> queued = new ArrayList<>();
+        sendBack(me, row, loadForDecision(me, row), text, queued);
+        // Audit (P1.9): action review.request-changes, target = review id, detail = comment length (not the text)
+        queued.forEach(events::publishEvent);
     }
 
     /** Steps 1 to 3 for a single review: visible, REVIEWER of its exam, locked, still open and not part of a bundle. */
@@ -191,20 +213,21 @@ class ReviewServiceImpl implements ReviewService {
         }
     }
 
-    private void sendBack(Actor me, ReviewRepository.Row row, Reviewable v, String comment) {
+    private void sendBack(Actor me, ReviewRepository.Row row, Reviewable v, String comment, List<Object> queue) {
         requireNotOwn(me, row, v);
         type(row.type()).setStatus(row.versionId(), ContentStatus.CHANGES_REQUESTED);
         decided(repo.decide(row.id(), ContentStatus.CHANGES_REQUESTED, me.userId(), comment));
+        queue.add(new ReviewChangesRequested(row.type(), row.versionId(), Optional.ofNullable(row.ownerOrgId()), row.examCode(),
+                row.id(), Optional.ofNullable(row.bundleId()), row.authorId()));
     }
 
-    /** Applies the publishing rules to a locked, open review and writes PUBLISHED. The event is queued, not yet published. */
-    private void publish(Actor me, ReviewRepository.Row row, Reviewable v, List<ContentPublished> queue) {
+    /** Applies the publishing rules to a locked, open review and writes PUBLISHED. Events are queued, not yet published. */
+    private void publish(Actor me, ReviewRepository.Row row, Reviewable v, List<Object> queue) {
         requireNotOwn(me, row, v);
         List<VersionRef> missing = new ArrayList<>();
         List<VersionRef> deps = v.dependencies().stream().distinct().sorted(BY_REF).toList(); // stable lock order
         for (VersionRef d : deps) {
-            Optional<ContentStatus> s = Optional.ofNullable(types.get(d.type())).flatMap(t -> t.lockStatus(d.versionId()));
-            if (s.orElse(null) != ContentStatus.PUBLISHED) {
+            if (!dependencyPublished(me, d)) {
                 missing.add(d);
             }
         }
@@ -214,6 +237,27 @@ class ReviewServiceImpl implements ReviewService {
         type(row.type()).setStatus(row.versionId(), ContentStatus.PUBLISHED);
         decided(repo.decide(row.id(), ContentStatus.PUBLISHED, me.userId(), null));
         queue.add(new ContentPublished(row.type(), row.versionId(), Optional.ofNullable(row.ownerOrgId()), row.examCode()));
+        queue.add(new ReviewApproved(row.type(), row.versionId(), Optional.ofNullable(row.ownerOrgId()), row.examCode(),
+                row.id(), Optional.ofNullable(row.bundleId()), row.authorId()));
+    }
+
+    /**
+     * Is the dependency PUBLISHED, as far as the caller can know? First the shared lock (nobody changes it until we commit).
+     * If the caller cannot lock it, a plain read: accepted only when PUBLISHED and owned by another context (published
+     * English9x content used by an organisation; not locked, see {@link ReviewableType#readStatus}). A dependency that
+     * does not exist or cannot be read counts as unpublished.
+     */
+    private boolean dependencyPublished(Actor me, VersionRef d) {
+        ReviewableType t = types.get(d.type());
+        if (t == null) {
+            return false;
+        }
+        Optional<ContentStatus> locked = t.lockStatus(d.versionId());
+        if (locked.isPresent()) {
+            return locked.get() == ContentStatus.PUBLISHED;
+        }
+        return t.readStatus(d.versionId())
+                .filter(r -> r.status() == ContentStatus.PUBLISHED && !r.ownerOrgId().equals(me.orgId())).isPresent();
     }
 
     private static void decided(boolean updated) {
@@ -224,10 +268,10 @@ class ReviewServiceImpl implements ReviewService {
 
     private static String comment(String comment) {
         if (comment == null || comment.isBlank()) {
-            throw new IllegalArgumentException("a comment is required");
+            throw new InvalidReviewInputException("comment", "required", "a comment is required");
         }
         if (comment.length() > MAX_COMMENT) {
-            throw new IllegalArgumentException("the comment is too long");
+            throw new InvalidReviewInputException("comment", "too-long", "the comment is too long");
         }
         return comment.strip();
     }
@@ -240,9 +284,12 @@ class ReviewServiceImpl implements ReviewService {
         Actor me = actor();
         Map<VersionRef, ReviewRepository.Row> rows = lockBundle(me, bundleId);
         Map<VersionRef, Reviewable> loaded = loadBundle(me, rows);
+        List<Object> queued = new ArrayList<>();
         for (Map.Entry<VersionRef, ReviewRepository.Row> e : rows.entrySet()) {
-            sendBack(me, e.getValue(), loaded.get(e.getKey()), text);
+            sendBack(me, e.getValue(), loaded.get(e.getKey()), text, queued);
         }
+        // Audit (P1.9): action review.request-bundle-changes, target = bundle id, detail = member count
+        onePerAuthor(queued).forEach(events::publishEvent);
     }
 
     @Override
@@ -250,11 +297,34 @@ class ReviewServiceImpl implements ReviewService {
         Actor me = actor();
         Map<VersionRef, ReviewRepository.Row> rows = lockBundle(me, bundleId);
         Map<VersionRef, Reviewable> loaded = loadBundle(me, rows);
-        List<ContentPublished> published = new ArrayList<>();
+        List<Object> queued = new ArrayList<>();
+        List<VersionRef> missing = new ArrayList<>();
         for (VersionRef ref : dependencyOrder(rows.keySet(), loaded)) {
-            publish(me, rows.get(ref), loaded.get(ref), published);
+            try {
+                publish(me, rows.get(ref), loaded.get(ref), queued);
+            } catch (UnpublishedDependencyException e) {
+                // keep going: the reviewer gets every member's missing dependencies at once (nothing is written by a refused member)
+                e.missing().stream().filter(d -> !rows.containsKey(d) && !missing.contains(d)).forEach(missing::add);
+            }
         }
-        published.forEach(events::publishEvent);
+        if (!missing.isEmpty()) {
+            throw new UnpublishedDependencyException(missing); // rolls everything back
+        }
+        // Audit (P1.9): action review.approve-bundle, target = bundle id, detail = member count
+        onePerAuthor(queued).forEach(events::publishEvent);
+    }
+
+    /** ContentPublished for every version; ReviewApproved / ReviewChangesRequested once per author (their first member). */
+    private static List<Object> onePerAuthor(List<Object> queued) {
+        Set<UUID> authors = new HashSet<>();
+        List<Object> out = new ArrayList<>();
+        for (Object e : queued) {
+            UUID author = e instanceof ReviewApproved a ? a.authorId() : e instanceof ReviewChangesRequested c ? c.authorId() : null;
+            if (author == null || authors.add(author)) {
+                out.add(e);
+            }
+        }
+        return out;
     }
 
     /**
@@ -328,14 +398,14 @@ class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReviewView> open(int limit) {
-        return repo.open(Math.max(1, Math.min(limit, 200))).stream().map(ReviewServiceImpl::view).toList();
+    public List<ReviewQueueEntry> open(int offset, int limit) {
+        return repo.queue(Math.max(0, offset), Math.max(1, Math.min(limit, 200)));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ReviewView> members(UUID bundleId) {
-        return repo.members(bundleId).stream().map(ReviewServiceImpl::view).toList();
+    public List<ReviewView> members(UUID bundleId, int offset, int limit) {
+        return repo.membersPage(bundleId, Math.max(0, offset), Math.max(1, Math.min(limit, 200))).stream().map(ReviewServiceImpl::view).toList();
     }
 
     private static ReviewView view(ReviewRepository.Row r) {

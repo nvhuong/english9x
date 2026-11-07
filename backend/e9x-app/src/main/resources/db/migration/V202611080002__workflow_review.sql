@@ -13,7 +13,7 @@
 --    helpers need no SECURITY DEFINER.
 --
 -- e9x_guard_version_lifecycle(): the generic trigger function P2 attaches to each of its *_versions tables.
---   CREATE TRIGGER <table>_lifecycle BEFORE UPDATE OR DELETE ON <table>
+--   CREATE TRIGGER <table>_lifecycle BEFORE INSERT OR UPDATE OR DELETE ON <table>
 --     FOR EACH ROW EXECUTE FUNCTION e9x_guard_version_lifecycle('updated_at');
 -- The table needs a text column "status" holding a ContentStatus name. Trigger arguments name the columns that may change
 -- together with a status move (bookkeeping such as updated_at); none by default. It enforces, for every writer
@@ -24,7 +24,15 @@
 --   * DELETE is refused for IN_REVIEW, PUBLISHED and ARCHIVED rows.
 --   * A version cannot reach PUBLISHED except from IN_REVIEW. (That a review approved it is the workflow service's rule;
 --     the database refuses the shortcut.)
--- INSERT of a row already beyond DRAFT is the table's own business: P2 gives its status column DEFAULT 'DRAFT' and a CHECK.
+--   * INSERT: when the writer is the application role (member of e9x_app, not a superuser) the row must be DRAFT, with the
+--     status written or defaulted; a PUBLISHED / IN_REVIEW / NULL status is refused. The owner (Flyway: migrations and seed
+--     data) and a superuser may insert any status. Attach the trigger as BEFORE INSERT OR UPDATE OR DELETE.
+--   * A table without a text/enum "status" column is refused on every operation (the guard never fails open).
+--   * LIMIT: a stored GENERATED column is NULL in NEW inside a BEFORE trigger, so the "nothing else changed" comparison would
+--     see a difference and refuse a legal move. Do not use stored generated columns on a guarded table (keep them in a view
+--     or compute them in the application), or name them as trigger arguments.
+--   * The status of a content row has no database link to a review_requests row: that a review approved the move to
+--     PUBLISHED is the workflow service's rule (the database refuses the shortcuts, not a forged IN_REVIEW to PUBLISHED).
 
 CREATE FUNCTION e9x_guard_version_lifecycle() RETURNS trigger
   LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
@@ -35,6 +43,18 @@ DECLARE
   v_new jsonb;
   v_col text;
 BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF pg_has_role(current_user, 'e9x_app', 'MEMBER')
+       AND NOT (SELECT r.rolsuper FROM pg_roles r WHERE r.rolname = current_user)
+       AND to_jsonb(NEW) ->> 'status' IS DISTINCT FROM 'DRAFT' THEN
+      RAISE EXCEPTION 'a new version starts as DRAFT' USING ERRCODE = '23000';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF v_old_status IS NULL THEN
+    RAISE EXCEPTION 'the guarded table has no usable status column' USING ERRCODE = '23514';
+  END IF;
+
   IF TG_OP = 'DELETE' THEN
     IF v_old_status IN ('IN_REVIEW', 'PUBLISHED', 'ARCHIVED') THEN
       RAISE EXCEPTION 'a % version cannot be deleted', v_old_status USING ERRCODE = '23000';

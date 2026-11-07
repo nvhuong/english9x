@@ -48,6 +48,13 @@ class TestItems implements ReviewableType {
     }
 
     @Override
+    public Optional<VersionStatus> readStatus(UUID versionId) {
+        return jdbc.query("select status, owner_org_id from test_items where id = ?",
+                (rs, n) -> new VersionStatus(ContentStatus.valueOf(rs.getString(1)), Optional.ofNullable(rs.getObject(2, UUID.class))),
+                versionId).stream().findFirst();
+    }
+
+    @Override
     public void setStatus(UUID versionId, ContentStatus status) {
         jdbc.update("update test_items set status = ? where id = ?", status.name(), versionId);
     }

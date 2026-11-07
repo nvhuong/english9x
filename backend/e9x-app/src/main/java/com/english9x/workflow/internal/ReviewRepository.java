@@ -1,6 +1,7 @@
 package com.english9x.workflow.internal;
 
 import com.english9x.workflow.api.ContentStatus;
+import com.english9x.workflow.api.ReviewQueueEntry;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
@@ -74,8 +75,27 @@ class ReviewRepository {
         return jdbc.query("select member_count from review_bundles where id = ?", (rs, n) -> rs.getInt(1), bundleId).stream().findFirst();
     }
 
-    List<Row> open(int limit) {
-        return jdbc.query("select " + COLUMNS + " from review_requests where status = 'IN_REVIEW' order by submitted_at, id limit ?", MAPPER, limit);
+    /** One line per bundle (its open members the caller sees) and per standalone open review, oldest first. */
+    List<ReviewQueueEntry> queue(int offset, int limit) {
+        return jdbc.query("""
+                select review_id, bundle_id, size, content_type, exam_code, owner_org_id, submitted_by, submitted_at from (
+                  select id as review_id, null::uuid as bundle_id, 1 as size, content_type, exam_code, owner_org_id, submitted_by, submitted_at
+                    from review_requests where status = 'IN_REVIEW' and bundle_id is null
+                  union all
+                  select null::uuid, bundle_id, count(*)::int,
+                         (array_agg(content_type order by submitted_at, id))[1], (array_agg(exam_code order by submitted_at, id))[1],
+                         (array_agg(owner_org_id order by submitted_at, id))[1], (array_agg(submitted_by order by submitted_at, id))[1],
+                         min(submitted_at)
+                    from review_requests where status = 'IN_REVIEW' and bundle_id is not null group by bundle_id
+                ) q order by submitted_at, coalesce(review_id, bundle_id) limit ? offset ?
+                """, (rs, n) -> new ReviewQueueEntry(Optional.ofNullable(rs.getObject("review_id", UUID.class)),
+                Optional.ofNullable(rs.getObject("bundle_id", UUID.class)), rs.getInt("size"), rs.getString("content_type"),
+                rs.getString("exam_code"), Optional.ofNullable(rs.getObject("owner_org_id", UUID.class)),
+                rs.getObject("submitted_by", UUID.class), rs.getTimestamp("submitted_at").toInstant()), limit, offset);
+    }
+
+    List<Row> membersPage(UUID bundleId, int offset, int limit) {
+        return jdbc.query("select " + COLUMNS + " from review_requests where bundle_id = ? order by id limit ? offset ?", MAPPER, bundleId, limit, offset);
     }
 
     /** @return false when the review is no longer open (somebody decided it first) */

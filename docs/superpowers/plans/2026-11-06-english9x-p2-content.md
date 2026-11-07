@@ -40,6 +40,8 @@
 
 **Tests:** `QuestionServiceIT.invalidContentRejectedWithJsonPaths`, `.editingPublishedCreatesNewDraftVersion`, `.authorOfOtherExamForbidden`. E2E F09 tạo một câu cho mỗi dạng câu (31), F18 kiểm phiên bản.
 
+> **Ghi chú 2026-11-08 (từ P1.6):** (1) Bảng version gắn `e9x_guard_version_lifecycle` (xem ghi chú P1.6 trong plan nền). Bảng con của một version cần guard riêng chặn INSERT, UPDATE, DELETE khi version cha không ở trạng thái sửa được (DRAFT/CHANGES_REQUESTED); test kỳ vọng: sửa/thêm/xoá dòng con của version PUBLISHED hoặc IN_REVIEW bị từ chối. (2) RLS bảng version phải cho REVIEWER của kỳ thi đọc và khoá (UPDATE policy) hàng version trong ngữ cảnh của nội dung. (3) Mọi AUTHOR của kỳ thi sửa được bản nháp của đồng nghiệp, nhưng `Reviewable.authorId()` chỉ là một người: P2 phải ghi lại người đóng góp hoặc hạn chế việc sửa bản của người khác (mặc định hạn chế sửa bản của đồng nghiệp trừ khi spec nói khác; chủ dự án quyết định) và đưa tập rộng hơn vào kiểm tra tự duyệt. (4) Không dùng cột stored generated trên bảng được bảo vệ.
+
 ### Task P2.4: bài phương pháp (W4) — F14
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/content/strategy/**`, migration `V202611110002__strategy_lessons.sql`, `backend/e9x-app/src/main/resources/catalog/strategy-block.schema.json`, `frontend/src/features/cms/lesson-editor/**` (khối: heading, paragraph, table, image, audio, video-upload, video-embed (YouTube/Vimeo, kiểm domain), callout tip/trap, embedded-question, worked-example), `frontend/src/features/learning/StrategyLessonView.tsx`, E2E `F14-strategy-lesson.spec.ts`.
@@ -66,15 +68,19 @@
 
 **Tests:** `TestStructureValidatorTest.toeicRequiresSevenParts`, `.ieltsRequiresFourSkills`, `TestVersionViewIT.examRoomDtoHasNoAnswerKey` (serialize JSON và tìm chuỗi `answer`), `.publishBlockedUntilAllGroupsPublished`.
 
+> **Ghi chú 2026-11-08 (từ P1.6):** các bảng con của version đề (`test_parts`, `test_part_groups`) cần guard riêng chặn INSERT, UPDATE, DELETE khi version đề cha không sửa được; test kỳ vọng: thêm/sửa/xoá phần hoặc nhóm của đề PUBLISHED/IN_REVIEW bị từ chối. Tương tự `chapters` và `lessons` ở các task khoá/bài (P2.4 và task dựng khoá) khi nội dung của chúng có version.
+
 ### Task P2.7: import Excel (W5) — F11
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/content/importer/**` (`TemplateGenerator`, `RowParser`, `ImportJobHandler`), migration `V202611120002__import_jobs.sql`, `frontend/src/features/cms/import/**`, E2E `F11-excel-import.spec.ts`, fixtures `e2e/fixtures/excel/{toeic_p5_ok.xlsx, toeic_p5_errors.xlsx, ielts_r_headings_ok.xlsx, media.zip}`.
 
 **Interfaces:** `GET /api/cms/import/templates/{typeCode}.xlsx` (sinh từ JSON Schema: sheet `Huong_dan`, sheet `Du_lieu` có data validation cho enum, 1 dòng ví dụ); `POST /api/cms/import {typeCode, file, mediaZip?}` → `{jobId}`; job `excel_import`: validate mọi dòng (schema + media tồn tại trong zip + giới hạn `e9x.content.import.max-rows`, `max-media-size`), lỗi → `import_errors(row, column, message)` + file Excel tô đỏ tải được, **không tạo gì**; thành công → tạo toàn bộ DRAFT + `review_bundle`.
 
-**Tests:** `TemplateGeneratorTest.templateColumnsMatchSchema` (mỗi dạng câu), `RowParserTest.reportsRowAndColumn` ("dòng 37: thiếu đáp án"), `ImportJobIT.anyErrorCreatesNothing`, `.successCreatesDraftBundle`, `.missingMediaFileReported`, `.overRowLimitRejected`.
+**Tests:** `TemplateGeneratorTest.templateColumnsMatchSchema` (mỗi dạng câu), `RowParserTest.reportsRowAndColumn` ("dòng 37: thiếu đáp án"), `ImportJobIT.anyErrorCreatesNothing`, `.successCreatesDraftVersionsInOneJob`, `.missingMediaFileReported`, `.overRowLimitRejected`.
 
 > **Ghi chú 2026-11-07 (từ P1.7, vòng sửa 1):** `{jobId}` trả cho client là `import_jobs.id` (bảng của P2.7), không phải `jobs.id`: role `e9x_app` không đọc được `jobs`. Handler `excel_import` cập nhật `import_jobs` (tiến độ/lỗi) và dùng `JobExecutor#onExhausted` để đánh dấu import thất bại khi hết thử lại.
+
+> **Ghi chú 2026-11-08 (từ P1.6, quyết định của controller):** lô import gom các bản nháp qua `import_jobs`; dòng `review_bundles` chỉ được tạo khi tác giả gọi `ReviewService.submit(BundleRef)` (spec §7.1 chỉ nói có thể gửi duyệt cả cụm). Bản nháp không nằm trong `review_bundles` (mọi phần tử của cụm chuyển sang IN_REVIEW ngay khi gửi). `e9x.workflow.max-bundle-size` (mặc định 2000, 1-5000) phải không nhỏ hơn `e9x.content.import.max-rows`; một dòng import có thể tạo nhiều version nên tính theo số version.
 
 ### Task P2.8: CMS UI (W5) — F06 (phần UI), F09, F10
 
@@ -89,3 +95,5 @@
 **Files:** `frontend/src/features/cms/review/**` (danh sách chờ duyệt, xem cả cụm, diff JSON → hiển thị khác biệt trường theo trường, nút Yêu cầu sửa/Duyệt), E2E `F17-review-workflow.spec.ts`, `F18-versioning.spec.ts`.
 
 **Tests:** Vitest `VersionDiff.highlightsChangedFields`; E2E F17 (gồm "người duyệt không duyệt được bản mình soạn" và "đề chưa đủ câu xuất bản thì không xuất bản được"), F18 (học viên đang thi vẫn thấy bản cũ).
+
+> **Ghi chú 2026-11-08 (từ P1.6, quyết định của controller):** P2.9 sở hữu controller backend của luồng duyệt (`backend/e9x-app/src/main/java/com/english9x/content/review/**` hoặc gói tương đương): danh sách chờ duyệt (`ReviewService.open`), xem cụm (`members`), duyệt, yêu cầu sửa, duyệt/yêu cầu sửa cả cụm. Thêm endpoint thì phải đưa vào sweep (`SweepEndpoints`; hàng của org B đã có trong `SweepFixtures`) và làm mới snapshot OpenAPI. Ánh xạ lỗi đã có sẵn (ngoại lệ workflow là `ErrorResponseException`).
