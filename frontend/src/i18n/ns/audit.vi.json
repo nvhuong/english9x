@@ -1,0 +1,58 @@
+{
+  "nav": { "audit": "Nhật ký" },
+  "title": "Nhật ký hệ thống",
+  "description": "Ghi lại ai đã làm gì, lúc nào, ở ngữ cảnh nào: duyệt nội dung, đổi quyền, lời mời, tạo tổ chức. Chỉ xem, không sửa hay xoá được.",
+  "filters": {
+    "title": "Bộ lọc",
+    "action": "Hành động",
+    "anyAction": "Tất cả hành động",
+    "actor": "Người thực hiện",
+    "actorHint": "Địa chỉ email hoặc mã người dùng",
+    "targetType": "Loại đối tượng",
+    "targetId": "Mã đối tượng",
+    "from": "Từ ngày",
+    "to": "Đến ngày",
+    "apply": "Lọc",
+    "reset": "Xoá bộ lọc"
+  },
+  "results": {
+    "title": "Kết quả",
+    "loading": "Đang tải nhật ký",
+    "loadFailed": "Không tải được nhật ký. Hãy thử lại.",
+    "retry": "Thử lại",
+    "empty": "Nhật ký chưa có bản ghi nào",
+    "emptyHint": "Các thao tác quản trị sẽ xuất hiện ở đây ngay khi chúng xảy ra.",
+    "emptyFiltered": "Không có bản ghi nào khớp",
+    "emptyFilteredHint": "Thử bỏ bớt điều kiện lọc hoặc mở rộng khoảng ngày.",
+    "pagination": "Phân trang nhật ký",
+    "pageOf": "Trang {{page}}",
+    "previous": "Trang trước",
+    "next": "Trang sau"
+  },
+  "table": {
+    "caption": "Các bản ghi nhật ký, mới nhất trước",
+    "when": "Thời điểm",
+    "actor": "Người thực hiện",
+    "context": "Ngữ cảnh",
+    "action": "Hành động",
+    "target": "Đối tượng",
+    "detail": "Chi tiết",
+    "operator": "Quản trị viên máy chủ",
+    "unknownActor": "Tài khoản đã bị xoá",
+    "personal": "Cá nhân"
+  },
+  "actionNames": {
+    "org_create": "Tạo tổ chức",
+    "role_change": "Đổi quyền",
+    "invitation_send": "Gửi lời mời",
+    "invitation_revoke": "Thu hồi lời mời",
+    "invitation_accept": "Chấp nhận lời mời",
+    "review_submit": "Gửi duyệt",
+    "review_submit_bundle": "Gửi duyệt cả cụm",
+    "review_approve": "Duyệt nội dung",
+    "review_approve_bundle": "Duyệt cả cụm",
+    "review_request_changes": "Yêu cầu sửa",
+    "review_request_bundle_changes": "Yêu cầu sửa cả cụm",
+    "sys_admin_grant": "Cấp quyền quản trị hệ thống đầu tiên"
+  }
+}

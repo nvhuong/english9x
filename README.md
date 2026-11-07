@@ -76,6 +76,14 @@ The accepting account must be signed in with the invited address, verified; a di
 A request names its organisation with `X-Org-Context: <uuid>` (absent = "Cá nhân"); a non-member, an unknown or a malformed value gets the same 403.
 `join_codes` exists with its policies and a redeem function (`org_join_code_redeem`); the endpoint and screens are P6.1 (F44).
 
+## Audit log (P1.9)
+Who did what, when and in which context (`/admin/audit-log`, SYS_ADMIN only; there is no organisation-level log). The table is append-only for
+everyone, the table owner included (a trigger refuses UPDATE, DELETE and TRUNCATE); a record is written in the same transaction as the action
+it records, so a rolled-back action leaves nothing and an action whose record cannot be written fails. Modules call
+`audit.api.AuditLog#record(action, targetType, targetId, detail)`; the actor and context come from the session, never from the caller.
+The first SYS_ADMIN grant by the script above is in the log too (`sys-admin.grant`, actor kind OPERATOR).
+The log keeps the invited address of an invitation: personal data in an append-only table, see the retention note in the foundation plan (P1.4).
+
 ## Notifications (P1.8)
 In-app (always on), email and Telegram, per event and channel (`/notifications`, `/notifications/preferences`). Email goes through the same SMTP
 settings as account mail (`E9X_SMTP_*`). Telegram is off until the operator creates a bot with @BotFather and sets `E9X_TELEGRAM_BOT_TOKEN`,

@@ -36,6 +36,87 @@
         "required" : [ "createdAt", "id", "name", "type" ],
         "type" : "object"
       },
+      "AuditEntry" : {
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "actorEmail" : {
+            "description" : "Looked up now; null when the account no longer exists",
+            "type" : "string"
+          },
+          "actorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "actorKind" : {
+            "description" : "USER, or OPERATOR for what was done outside the application",
+            "type" : "string"
+          },
+          "actorName" : {
+            "description" : "Looked up now; null when the account no longer exists",
+            "type" : "string"
+          },
+          "at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "detail" : {
+            "additionalProperties" : { },
+            "description" : "Facts about the action. Plain data: show it as text.",
+            "type" : "object"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orgId" : {
+            "description" : "The context the actor was in; null = personal / English9x",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orgName" : {
+            "type" : "string"
+          },
+          "seq" : {
+            "description" : "The log's own order: larger = later",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "targetId" : {
+            "type" : "string"
+          },
+          "targetType" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "action", "actorKind", "at", "detail", "id", "seq", "targetId", "targetType" ],
+        "type" : "object"
+      },
+      "AuditPage" : {
+        "properties" : {
+          "hasMore" : {
+            "type" : "boolean"
+          },
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AuditEntry"
+            },
+            "type" : "array"
+          },
+          "page" : {
+            "description" : "Zero-based",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "hasMore", "items", "page", "size" ],
+        "type" : "object"
+      },
       "AuthConfig" : {
         "properties" : {
           "googleEnabled" : {
@@ -611,6 +692,126 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/admin/audit-log" : {
+      "get" : {
+        "operationId" : "list_4",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "action",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "targetType",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "targetId",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "actor",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "from",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditPage"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "audit-controller" ]
+      }
+    },
+    "/api/admin/audit-log/actions" : {
+      "get" : {
+        "operationId" : "actions",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "audit-controller" ]
+      }
+    },
     "/api/admin/invitations" : {
       "get" : {
         "operationId" : "staffInvitations",

@@ -345,6 +345,9 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.auth.no-consent-retention` | `7d` | Tài khoản Google bỏ dở ở bước đồng ý (chưa có đồng ý, không có hoạt động) bị xoá sau thời gian này; tối thiểu 1 ngày | Cấu hình |
 | `e9x.org.invitation-ttl` | `7d` | Hạn dùng của liên kết lời mời (tài khoản nội bộ và thành viên tổ chức); dùng một lần | Cấu hình |
 | `e9x.org.invitation-hourly-limit` | `50` | Số lời mời (email) mỗi người được gửi trong một giờ; chặn việc dùng biểu mẫu mời để gửi thư rác | Cấu hình |
+| `e9x.audit.default-page-size` | `50` | Số bản ghi mỗi trang của màn hình nhật ký khi yêu cầu không nói; từ 1 đến `e9x.audit.max-page-size` | Cấu hình |
+| `e9x.audit.max-page-size` | `100` | Số bản ghi tối đa một yêu cầu đọc nhật ký được xin (xin nhiều hơn thì trả đúng số này); từ 1 đến 1000 | Cấu hình |
+| `e9x.audit.max-detail-bytes` | `4096` | Dung lượng JSON tối đa của phần chi tiết một bản ghi nhật ký (cận của CSDL: 16384); chi tiết quá cỡ làm hành động thất bại thay vì bị cắt | Cấu hình |
 | `e9x.workflow.max-bundle-size` | `2000` | Số phiên bản tối đa trong một cụm gửi duyệt (`review_bundle`), từ 1 đến 5000 (cận của CSDL; giá trị ngoài khoảng làm ứng dụng không khởi động); không nhỏ hơn `e9x.content.import.max-rows`, vì một lô import Excel gửi duyệt thành một cụm | Cấu hình |
 | `e9x.learning.streak.min-minutes` | `10` | Số phút học để tính một ngày trong chuỗi | Quản trị |
 | `e9x.learning.heartbeat-interval` | `30s` | Chu kỳ gửi tín hiệu đang học | Cấu hình |

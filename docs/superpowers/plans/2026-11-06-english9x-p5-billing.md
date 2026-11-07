@@ -35,6 +35,8 @@
 
 ### Task P5.2: VietQR + xác nhận thủ công (W4) — F40
 
+> **Ghi chú 2026-11-08 (từ P1.9, F57 cần bản ghi này):** gọi `audit.api.AuditLog#record` trong CÙNG giao dịch với việc xác nhận / từ chối đơn (spec §6: mọi thao tác quản trị đều ghi `audit_log`): `order.confirm` và `order.reject`, `targetType` `order`, `targetId` = id đơn, detail chỉ gồm mã gói, số tiền, mã giao dịch ngân hàng nếu có, lý do từ chối dưới dạng độ dài (không ghi văn bản tự do, không ghi số tài khoản). Actor và ngữ cảnh tự lấy từ phiên. Mỗi thao tác quản trị khác của P5 (gói, tài khoản nhận tiền) cũng ghi. Rồi mở rộng `e2e/specs/admin/F57-audit-log.spec.ts` bằng dòng "xác nhận đơn" và bỏ phần tương ứng trong mục F57 của `e2e/partial-features.json`.
+
 > **Ghi chú 2026-11-08 (từ P1.8):** Nguồn thông báo của task này (spec §13), do P1.8 khai báo `EventType` + mẫu vi/en nhưng CHƯA có nguồn (không dựng nguồn giả): `ORDER_PENDING` (cho mọi SYS_ADMIN: cần hàm tra cứu `SECURITY DEFINER` hẹp để liệt kê SYS_ADMIN, giống `notification_reviewers_of_review`, không cấp đọc `role_grants` rộng), `ORDER_CONFIRMED` (từ `OrderConfirmed`, người nhận `userId` của đơn; đơn của tổ chức thì ORG_ADMIN), `ORDER_REJECTED` (từ `OrderRejected`; `data.reason` là chữ do quản trị nhập, được escape theo kênh nhưng đừng đưa chuỗi dài > 500 ký tự). Nối bằng `@ApplicationModuleListener` trong `notification.internal` (theo mẫu `ReviewNotifications`) hoặc gọi `NotificationService.notify` từ listener của billing; E2E F52–F55 đang ghi `partial-features.json` chờ nguồn này.
 
 
@@ -49,6 +51,8 @@
 **Tests:** `QrPayloadIT.decodesToConfiguredAccountAmountAndNote` (giải mã ảnh PNG bằng ZXing → `VietQr.parseTopLevel`), `.longCourseListFallsBackToOrderCode`, `OrderAdminIT.confirmCreatesEntitlementsFromConfirmationTime`, `.rejectRequiresReason`, `.confirmTwiceConflict`, `.auditRecorded`. Trước khi phát hành: kiểm thủ công quét QR bằng 3 app ngân hàng (ghi kết quả vào PR) — rủi ro độ dài trường `62.08` khác nhau giữa ngân hàng.
 
 ### Task P5.3: gói suất tổ chức + gán suất (W5) — F42, F43
+
+> **Ghi chú 2026-11-08 (từ P1.9, F57 cần bản ghi này):** gán và **thu hồi suất** gọi `audit.api.AuditLog#record` trong cùng giao dịch: `seat.assign`, `seat.revoke` (và `license.create`/`license.change` cho giấy phép suất), `targetType` `seat` hoặc `license`, `targetId` = id suất / giấy phép, detail gồm id người dùng và id khoá, không ghi email. Mở rộng `F57-audit-log.spec.ts` bằng dòng "thu hồi suất" và bỏ phần tương ứng trong mục F57 của `e2e/partial-features.json`.
 
 > **Ghi chú 2026-11-07 (từ P1.3):** quyền học theo suất cần FK tới `seat_assignments`, kiểm tra khoá thuộc `org_license_courses` của giấy phép và kiểm tra sức chứa (số suất). Hiện ORG_ADMIN có thể chèn dòng suất tuỳ ý (`source_seat_id` chưa có FK, cột `entitlements.source_org_id` đã có và RLS buộc bằng tổ chức hiện tại) cho thành viên tổ chức mình; DB chưa chặn được vượt sức chứa. Thu hồi = UPDATE `valid_until`.
 

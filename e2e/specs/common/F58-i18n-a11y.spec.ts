@@ -8,7 +8,7 @@
 // !! from the W10 completion criteria. Do not delete the pending list to make it look done.
 //
 // Scanned today, signed in (P1.5): the admin area (empty state), organisations, one organisation's members + invitations, staff
-// invitations, and the organisation admin's members page in its context. Both languages, light and dark.
+// invitations, the audit log (P1.9, with records), and the organisation admin's members page in its context. Both languages, light and dark.
 // Scanned today, signed in (P1.8): the notification centre with a notification in it, and the notification preferences with the
 // Telegram panel. Both languages, light and dark.
 // Scanned today (reachable without signing in): learner home, display preferences, exam area (empty state), the
@@ -146,6 +146,10 @@ for (const lang of ['vi', 'en'] as const) {
       await seed.member({ orgId: center.orgId, userId: admin.userId, roles: [{ role: 'ORG_ADMIN' }] });
       const learner = await seed.verifiedLearner({ email: uniqueEmail('f58-member'), displayName: 'Học viên Axe' });
       await seed.member({ orgId: center.orgId, userId: learner.userId, roles: [{ role: 'LEARNER' }] });
+      // P1.9: the audit log is scanned with records in it (a real review submit by an author)
+      const author = await seed.verifiedLearner({ email: uniqueEmail('f58-author'), displayName: 'Tác giả Axe' });
+      await seed.staffGrant({ userId: author.userId, role: 'AUTHOR', examCode: 'IELTS' });
+      await seed.reviewFlow({ authorId: author.userId, outcome: 'submitted' });
       await auth.loginAs(page, admin);
       await page.evaluate((v) => {
         localStorage.setItem('e9x.theme', v.theme);
@@ -156,6 +160,7 @@ for (const lang of ['vi', 'en'] as const) {
         ['organisations', '/admin/organizations', lang === 'vi' ? /^Tổ chức$/ : /^Organizations$/],
         ['one organisation', `/admin/organizations/${center.orgId}`, lang === 'vi' ? new RegExp(`^Thành viên của ${orgName}$`) : new RegExp(`^Members of ${orgName}$`)],
         ['staff invitations', '/admin/staff', lang === 'vi' ? /^Tài khoản nội bộ$/ : /^Internal accounts$/],
+        ['audit log', '/admin/audit-log', lang === 'vi' ? /^Nhật ký hệ thống$/ : /^Audit log$/],
       ];
       for (const [name, path, heading] of screens) {
         await page.goto(path);
