@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Sliding-window counter of failures per key, in memory. The deployment is ONE app instance on one VPS, so an
+ * Sliding-window counter of attempts per key, in memory. The deployment is ONE app instance on one VPS, so an
  * in-process structure is enough (a second instance would need this in the database / Redis; recorded in the P1.4
  * report). Bounded: at most {@code maxKeys} keys, the least recently used is evicted first, expired ones are dropped
  * as they are met, so memory cannot grow with attacker-chosen emails.
@@ -55,9 +55,17 @@ final class AttemptLimiter {
         };
     }
 
-    /** True when {@code key} has already used up its failures in the current window. */
-    synchronized boolean blocked(String key) {
-        return prune(key) >= max;
+    /**
+     * Atomically takes one attempt from {@code key}'s allowance, or returns false when it is used up. Call it BEFORE the
+     * work being limited: checking first and counting after a slow step (bcrypt) would let every parallel request
+     * through the check. A success gives the allowance back with {@link #reset}.
+     */
+    synchronized boolean tryAcquire(String key) {
+        if (prune(key) >= max) {
+            return false;
+        }
+        failures.computeIfAbsent(key, k -> new ArrayDeque<>()).addLast(clock.instant());
+        return true;
     }
 
     /** Seconds until the oldest counted failure leaves the window (at least 1). */
@@ -68,11 +76,6 @@ final class AttemptLimiter {
         }
         long s = Duration.between(clock.instant(), d.peekFirst().plus(window)).toSeconds() + 1;
         return Math.max(1, s);
-    }
-
-    synchronized void recordFailure(String key) {
-        prune(key);
-        failures.computeIfAbsent(key, k -> new ArrayDeque<>()).addLast(clock.instant());
     }
 
     synchronized void reset(String key) {

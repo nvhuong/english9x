@@ -16,7 +16,7 @@ final class AuthDtos {
     @Schema(name = "RegisterRequest")
     record RegisterRequest(
             @NotBlank @Email @Size(max = 254) String email,
-            @NotBlank @Size(min = 8, message = "must be at least 8 characters") @Utf8MaxBytes(PasswordHasher.MAX_BYTES) String password,
+            @NotBlank @PasswordMinLength @Utf8MaxBytes(PasswordHasher.MAX_BYTES) String password,
             @NotBlank @Size(max = 100) String displayName,
             @NotNull @AssertTrue(message = "consent to personal data processing is required") Boolean consent,
             @Schema(allowableValues = {"vi", "en"}, nullable = true) @Size(max = 5) String locale) {}
@@ -39,7 +39,7 @@ final class AuthDtos {
     @Schema(name = "ResetConfirmRequest")
     record ResetConfirmRequest(
             @NotBlank @Size(max = 200) String token,
-            @NotBlank @Size(min = 8, message = "must be at least 8 characters") @Utf8MaxBytes(PasswordHasher.MAX_BYTES) String newPassword) {}
+            @NotBlank @PasswordMinLength @Utf8MaxBytes(PasswordHasher.MAX_BYTES) String newPassword) {}
 
     @Schema(name = "OAuthCodeRequest")
     record OAuthCodeRequest(@NotBlank @Size(max = 200) String code) {}

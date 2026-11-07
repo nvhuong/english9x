@@ -42,6 +42,7 @@
     "Size": "Giá trị chưa đúng độ dài cho phép.",
     "AssertTrue": "Bạn cần đồng ý để tạo tài khoản.",
     "NotNull": "Vui lòng nhập thông tin này.",
+    "PasswordMinLength": "Mật khẩu quá ngắn.",
     "Utf8MaxBytes": "Mật khẩu quá dài (tối đa 72 byte)."
   },
   "login": {

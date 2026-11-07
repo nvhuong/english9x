@@ -74,4 +74,32 @@ class LoginRateLimitIT extends IdentityIT {
         Res fresh = post("/api/auth/login", Map.of("email", email, "password", PASSWORD), Map.of("X-Forwarded-For", "203.0.113.77"));
         assertEquals(429, fresh.status(), "no proxy is trusted, so the header is ignored and the real peer is counted");
     }
+
+    /** The attempt is reserved before the (slow) password check: parallel guesses cannot all slip through it. */
+    @Test
+    void parallelWrongPasswordsGetExactlyTheLimitEvaluated() throws Exception {
+        for (int round = 0; round < 5; round++) {
+            String email = registerVerified(uniqueEmail(), PASSWORD);
+            int threads = 40;
+            java.util.concurrent.CyclicBarrier go = new java.util.concurrent.CyclicBarrier(threads);
+            java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(threads);
+            try {
+                java.util.List<java.util.concurrent.Future<Integer>> results = new java.util.ArrayList<>();
+                for (int i = 0; i < threads; i++) {
+                    int n = i;
+                    results.add(pool.submit(() -> {
+                        go.await();
+                        return login(email, "wrong-password-" + n).status();
+                    }));
+                }
+                java.util.Map<Integer, Integer> statuses = new java.util.TreeMap<>();
+                for (java.util.concurrent.Future<Integer> f : results) {
+                    statuses.merge(f.get(), 1, Integer::sum);
+                }
+                assertEquals(java.util.Map.of(401, 3, 429, threads - 3), statuses, "round " + round + ": limit 3/15m, statuses " + statuses);
+            } finally {
+                pool.shutdownNow();
+            }
+        }
+    }
 }

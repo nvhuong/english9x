@@ -70,7 +70,7 @@ class AuthService {
     // ---- registration and email verification -----------------------------------------------------------------------
 
     void register(RegisterRequest r, String ip) {
-        throttle(registerLimiter, ip, true);
+        throttle(registerLimiter, ip);
         String email = normalise(r.email());
         String name = r.displayName().strip();
         String locale = "en".equals(r.locale()) ? "en" : "vi";
@@ -105,7 +105,7 @@ class AuthService {
     /** Always silent: whether the address exists, or is already verified, is not revealed. */
     void resendVerification(String rawEmail, String ip) {
         String email = normalise(rawEmail);
-        throttle(resendLimiter, ip + "|" + email, true);
+        throttle(resendLimiter, ip + "|" + email);
         String token = TokenCodec.newToken();
         Instant now = clock.instant();
         repo.issueVerificationForEmail(email, TokenCodec.hash(token), now.plus(props.verificationTtl()), now)
@@ -117,7 +117,7 @@ class AuthService {
     TokenPair login(String rawEmail, String password, String ip) {
         String email = normalise(rawEmail);
         String key = ip + "|" + email;
-        throttle(loginLimiter, key, false);
+        throttle(loginLimiter, key); // reserved before bcrypt, given back below on success
         Optional<AuthRepository.LoginRow> row = repo.findLogin(email);
         boolean ok;
         if (row.isPresent() && row.get().passwordHash() != null) {
@@ -127,7 +127,6 @@ class AuthService {
             ok = false;
         }
         if (!ok) {
-            loginLimiter.recordFailure(key);
             throw AuthProblems.invalidCredentials();
         }
         loginLimiter.reset(key);
@@ -173,7 +172,7 @@ class AuthService {
     /** Always silent, like {@link #resendVerification}. */
     void requestPasswordReset(String rawEmail, String ip) {
         String email = normalise(rawEmail);
-        throttle(resetLimiter, ip + "|" + email, true);
+        throttle(resetLimiter, ip + "|" + email);
         String token = TokenCodec.newToken();
         Instant now = clock.instant();
         repo.issueReset(email, TokenCodec.hash(token), now.plus(props.resetTtl()), now)
@@ -218,13 +217,9 @@ class AuthService {
 
     // ---- helpers ---------------------------------------------------------------------------------------------------------------
 
-    /** @param count true: every call counts as an attempt; false: the caller records failures itself */
-    private static void throttle(AttemptLimiter limiter, String key, boolean count) {
-        if (limiter.blocked(key)) {
+    private static void throttle(AttemptLimiter limiter, String key) {
+        if (!limiter.tryAcquire(key)) {
             throw AuthProblems.tooManyAttempts(limiter.retryAfterSeconds(key));
-        }
-        if (count) {
-            limiter.recordFailure(key);
         }
     }
 
