@@ -1,7 +1,7 @@
 INSERT INTO users(id,email) VALUES
  ('11111111-0000-0000-0000-000000000001','u1@x.test'),
  ('22222222-0000-0000-0000-000000000002','u2@x.test');
-INSERT INTO exams(code,name) VALUES ('IELTS','IELTS');
+INSERT INTO exams(code,name) VALUES ('IELTS','IELTS') ON CONFLICT DO NOTHING;
 INSERT INTO organizations(id,name,type) VALUES ('a1a1a1a1-0000-0000-0000-00000000000a','A','CENTER');
 INSERT INTO courses(id,owner_org_id,exam_code,code,title,status)
  VALUES ('dddddddd-0000-0000-0000-00000000000d',NULL,'IELTS','E9PUB1','c','PUBLISHED');

@@ -4,7 +4,7 @@
 --  * The English9x queue needs the English9x flag (personal context) AND a grant for the exam; no flag, no rows.
 --  * A review is decided once (IN_REVIEW -> PUBLISHED | CHANGES_REQUESTED); nothing else about it changes; the decider is
 --    never its author nor the person who submitted it.
-INSERT INTO exams(code,name) VALUES ('IELTS','IELTS'),('TOEIC','TOEIC');
+INSERT INTO exams(code,name) VALUES ('IELTS','IELTS'),('TOEIC','TOEIC') ON CONFLICT DO NOTHING;
 INSERT INTO users(id,email) VALUES
  ('c0000000-0000-0000-0000-000000000001','rev-a-ielts@x.test'),
  ('c0000000-0000-0000-0000-000000000002','rev-a-toeic@x.test'),
