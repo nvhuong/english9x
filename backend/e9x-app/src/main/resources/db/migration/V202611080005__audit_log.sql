@@ -3,13 +3,18 @@
 --
 -- Append-only, for everybody: a trigger refuses UPDATE and DELETE per row and TRUNCATE per statement. It fires for the table owner
 -- (e9x_owner) and for a superuser too, and is ENABLE ALWAYS so even `session_replication_role = replica` does not skip it. The request
--- role has no UPDATE, DELETE or TRUNCATE privilege on top. What nobody can promise at SQL level: the owner can still DROP or ALTER the
--- table (DDL). That is a schema change, visible in flyway_schema_history and the server log, not a statement a compromised application can make.
+-- role has no UPDATE, DELETE or TRUNCATE privilege on top. What nobody can promise at SQL level: the table owner (e9x_owner) can still
+-- run DDL, for instance ALTER TABLE ... DISABLE TRIGGER and then DELETE, or DROP the table. Owner DDL is NOT blocked and NOT logged by default:
+-- a statement run by hand leaves no row in flyway_schema_history, and the server logs statements only if log_statement is set (it is not
+-- set here). In v1 the application process also holds the Flyway (owner) credentials (spring.flyway.user), so a compromised application is
+-- not shielded from this either. Separating the Flyway credentials from the app process in production is on the hardening list under P6.5.
 --
 -- Who and where are SERVER-DERIVED, never arguments:
 --   * actor_id DEFAULTs to e9x_current_user() and org_id to e9x_current_org() (the context the transaction was bound to); the request role has
---     no INSERT privilege on those columns, and the INSERT policy checks them against the session as well, so a statement cannot record
---     someone else as the actor nor another organisation as the context.
+--     no INSERT privilege on those columns, and the INSERT policy checks them against the session as well, so an INSERT cannot NAME another
+--     actor or organisation. That holds only as far as the session-binding model does (the P1.3 trusted-setter limit): a statement run as the
+--     request role can itself set app.user_id (and app.e9x_staff) with set_config() and then insert, or read, as that person. The database
+--     ties a row to the session's binding, not to proof of identity; closing that is the binding model's job, not this table's.
 --   * No user bound (a background job or listener without a person): no record can be written. The application refuses first
 --     (AuditLog#record throws), the database refuses second (actor_kind USER needs an actor). A background step records what a PERSON did
 --     only by running bound to that person, as the notification listeners already must. The system itself has no actor in v1.
@@ -20,9 +25,12 @@
 -- actor_id and org_id carry NO foreign key on purpose: a log must outlive the person and the organisation, and a cascading
 -- or SET NULL action would be an UPDATE or DELETE of an audit row.
 --
--- Personal data: detail may hold the invited email address (invitation.send, invitation.revoke) and nothing else personal. An append-only
--- table cannot honour an erasure request row by row; the data-deletion work (P6.5 / spec section 15) must treat it as a retention point:
--- see the plan note there. detail never holds tokens, password material, comment text or Telegram secrets (AuditLog refuses such keys).
+-- Personal data: detail holds none, by design. The invited address of invitation.send / invitation.revoke is NOT stored: the audit screen
+-- reads it at read time through target_id from invitations (as the actor's name is read from users), so erasing the invitation erases
+-- the address everywhere and the row then shows a neutral placeholder. An append-only table cannot erase rows (spec section 15 asks that personal
+-- data be deletable on request), so the log keeps ONLY pseudonymous ids (actor_id, target_id, org_id). No plan task owned erasure until
+-- P6.5: see its dated note ("xoá dữ liệu cá nhân"), which builds that path. detail never holds tokens, password material, comment text
+-- or Telegram secrets (AuditLog refuses such keys).
 CREATE TABLE audit_log (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   seq bigint GENERATED ALWAYS AS IDENTITY,                -- the stable order of the log (newest first = seq DESC)

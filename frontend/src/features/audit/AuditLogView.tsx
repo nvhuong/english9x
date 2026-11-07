@@ -36,7 +36,7 @@ export function AuditLogView({ entries }: { entries: readonly AuditEntry[] }) {
                 </span>
               )}
             </TableCell>
-            <TableCell>{e.orgId ? (e.orgName ?? e.orgId) : t('table.personal')}</TableCell>
+            <TableCell>{e.orgId ? (e.orgName ?? e.orgId) : e.actorKind === 'OPERATOR' ? t('table.system') : t('table.english9x')}</TableCell>
             <TableCell>
               <span className="flex flex-col">
                 <span>{actionLabel(t, e.action)}</span>
@@ -47,6 +47,9 @@ export function AuditLogView({ entries }: { entries: readonly AuditEntry[] }) {
               <span className="flex flex-col">
                 <span>{e.targetType}</span>
                 <code className="break-all text-xs text-muted">{e.targetId}</code>
+                {e.targetType === 'invitation' && (
+                  <span className="break-all text-xs">{e.invitedEmail ?? <span className="text-muted">{t('table.invitedGone')}</span>}</span>
+                )}
               </span>
             </TableCell>
             <TableCell>

@@ -39,7 +39,9 @@
     "detail": "Detail",
     "operator": "Server operator",
     "unknownActor": "Deleted account",
-    "personal": "Personal"
+    "english9x": "English9x",
+    "system": "System",
+    "invitedGone": "Address erased"
   },
   "actionNames": {
     "org_create": "Organization created",

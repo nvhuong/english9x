@@ -49,8 +49,8 @@
     },
     {
       "id": "F57",
-      "pending": "The acceptance line names three kinds of record: order confirmation, seat revocation and content approval. The spec covers what exists, through the real screens and the real services: organisation creation, role changes, invitation send/revoke/accept and content approval (a real ReviewService run over a stand-in e2e_doc version through seed.reviewFlow, since the CMS review screens do not exist yet), read on the real audit-log screen by the SYS_ADMIN and refused to everybody else. Pending: the order-confirmation record (billing module, no module yet) and the seat-revocation record (classroom/seats, no module yet); those modules must call AuditLog#record and extend this spec with the two rows. Content approval through the real CMS review screen instead of the seed arrives with P2.9.",
-      "owner": "P5.2 (order confirm/reject), P6.1 (seat assign/revoke), P2.9 (review screen replaces seed.reviewFlow)"
+      "pending": "The acceptance line names three kinds of record: order confirmation, seat revocation and content approval. The spec covers what exists, through the real screens and the real services: organisation creation, role changes, invitation send/revoke/accept and content approval (a real ReviewService run over a stand-in e2e_doc version through seed.reviewFlow, since the CMS review screens do not exist yet), read on the real audit-log screen by the SYS_ADMIN and refused to everybody else. Pending: the order-confirmation record (billing module, no module yet) and the seat-revocation record (billing seats, P5.3, no module yet); those modules must call AuditLog#record and extend this spec with the two rows. Content approval through the real CMS review screen instead of the seed arrives with P2.9.",
+      "owner": "P5.2 (order confirm/reject), P5.3 (seat assign/revoke), P2.9 (review screen replaces seed.reviewFlow)"
     }
   ]
 }

@@ -19,7 +19,8 @@ describe('AuditLogView', () => {
     expect(within(row).getByText('role.change')).toBeInTheDocument();
     expect(within(row).getByText('An Nguyen')).toBeInTheDocument();
     expect(within(row).getByText('an@example.test')).toBeInTheDocument();
-    expect(within(row).getByText('Cá nhân')).toBeInTheDocument();
+    expect(within(row).getByText('English9x')).toBeInTheDocument();
+    expect(within(row).queryByText('Cá nhân')).toBeNull();
     expect(within(row).getByText('AUTHOR/IELTS, LEARNER')).toBeInTheDocument();
   });
 
@@ -46,6 +47,33 @@ describe('AuditLogView', () => {
     render(<AuditLogView entries={[entry({ actorKind: 'OPERATOR', actorId: undefined, actorName: undefined, actorEmail: undefined }), entry({ id: '3', actorName: undefined, actorEmail: undefined })]} />);
     expect(screen.getByText('Quản trị viên máy chủ')).toBeInTheDocument();
     expect(screen.getByText('Tài khoản đã bị xoá')).toBeInTheDocument();
+  });
+});
+
+describe('AuditLogView invitations and context', () => {
+  const invitation = (over: Partial<AuditEntry> = {}) => entry({ action: 'invitation.send', targetType: 'invitation', targetId: 'inv-1', detail: { roles: ['LEARNER'] }, ...over });
+
+  it('shows the invited address from the invitation while it exists, and a neutral placeholder once it is gone', () => {
+    render(<AuditLogView entries={[invitation({ invitedEmail: 'guest@example.test' }), invitation({ id: '2', invitedEmail: undefined })]} />);
+    expect(screen.getByText('guest@example.test')).toBeInTheDocument();
+    expect(screen.getByText('Địa chỉ đã được xoá')).toBeInTheDocument();
+    expect(screen.getAllByTestId('audit-row')).toHaveLength(2);
+  });
+
+  it('does not invent an address for other targets', () => {
+    render(<AuditLogView entries={[entry({ invitedEmail: undefined })]} />);
+    expect(screen.queryByText('Địa chỉ đã được xoá')).toBeNull();
+  });
+
+  it('names an empty context English9x for a person and the system for what the operator did, never "personal"', async () => {
+    render(<AuditLogView entries={[entry({ actorKind: 'OPERATOR', actorId: undefined, actorName: undefined, actorEmail: undefined, action: 'sys-admin.grant' })]} />);
+    const row = screen.getByTestId('audit-row');
+    expect(within(row).getByText('Hệ thống')).toBeInTheDocument();
+    expect(within(row).queryByText('Cá nhân')).toBeNull();
+    await resetI18n('en');
+    render(<AuditLogView entries={[entry({ id: '5' })]} />);
+    expect(screen.getAllByText('English9x').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Personal')).toBeNull();
   });
 });
 

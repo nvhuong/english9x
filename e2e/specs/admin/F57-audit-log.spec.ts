@@ -3,7 +3,7 @@
 // inviting and revoking, accepting an invitation (all through the admin screens and the invitation page), and approving content
 // (a real ReviewService run on a stand-in version, seed.reviewFlow, until the CMS review screens of P2.9 exist). The SYS_ADMIN then
 // reads all of it on the audit-log screen, filters it, and nobody else can open it.
-// PENDING (see e2e/partial-features.json): order confirmation (billing, P5.2) and seat revocation (classroom, P6.1) have no module
+// PENDING (see e2e/partial-features.json): order confirmation (billing, P5.2) and seat revocation (billing, P5.3) have no module
 // yet, so their records cannot be produced; those modules call AuditLog#record and extend this spec with the two rows.
 import { test, expect } from '../../fixtures';
 import type { Page } from '@playwright/test';
@@ -92,13 +92,14 @@ test.describe('F57 audit log', () => {
     await expect(created).toContainText('org.create');
     await expect(created).toContainText('Quản Trị Nhật Ký');
     await expect(created).toContainText(admin.email);
-    await expect(created).toContainText('Cá nhân');
+    await expect(created).toContainText('English9x');
     const roleRow = rowsOf(page).filter({ hasText: member.userId });
     await expect(roleRow).toHaveCount(1);
     await expect(roleRow).toContainText('Đổi quyền');
     await expect(roleRow).toContainText('LEARNER');
     await expect(roleRow).toContainText('LEARNER, TEACHER/IELTS');
     await expect(rowsOf(page).filter({ hasText: 'invitation.send' })).toHaveCount(2);
+    // the log keeps no address (it could not be erased): the screen reads it from the invitation, which still exists here
     await expect(rowsOf(page).filter({ hasText: invitee.email })).toContainText('Gửi lời mời');
     const revoked = rowsOf(page).filter({ hasText: 'invitation.revoke' });
     await expect(revoked).toHaveCount(1);
@@ -133,8 +134,13 @@ test.describe('F57 audit log', () => {
     expect(all.status).toBe(200);
     expect(JSON.stringify(all.body)).not.toContain(token);
     expect(JSON.stringify(all.body).toLowerCase()).not.toMatch(/token|password|secret|hash/);
+    const sentRows = (await org.api(adminToken, 'GET', '/api/admin/audit-log?action=invitation.send&size=100')).body.items as Array<{ invitedEmail?: string; detail: Record<string, unknown> }>;
+    expect(sentRows.some((r) => r.invitedEmail === invitee.email), 'the address is resolved from the invitation').toBe(true);
+    expect(sentRows.every((r) => !('email' in r.detail)), 'no address is stored in any detail').toBe(true);
     for (const method of ['PUT', 'PATCH', 'DELETE', 'POST']) {
-      expect((await org.api(adminToken, method, '/api/admin/audit-log', { body: {} })).status, `${method} is not offered`).toBeGreaterThanOrEqual(400);
+      const { status } = await org.api(adminToken, method, '/api/admin/audit-log', { body: {} });
+      expect(status, `${method} is refused as a client error, not served and not a crash`).toBeGreaterThanOrEqual(400);
+      expect(status, `${method} is refused as a client error, not served and not a crash`).toBeLessThan(500);
     }
     expect((await org.api(adminToken, 'GET', '/api/admin/audit-log?size=100000')).body.size).toBe(100);
   });

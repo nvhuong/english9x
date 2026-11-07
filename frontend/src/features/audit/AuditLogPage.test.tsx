@@ -43,7 +43,7 @@ describe('AuditLogPage', () => {
 
   it('explains an empty log, and an empty result of a filter with a way back', async () => {
     const calls = stubApi({
-      'GET /api/admin/audit-log': (c) => json(200, page(new URLSearchParams(c.search).has('targetType') ? [] : [])),
+      'GET /api/admin/audit-log': () => json(200, page([])),
       'GET /api/admin/audit-log/actions': actions,
     });
     render();
