@@ -24,7 +24,7 @@ export function useExamCodes() {
   return useQuery({
     queryKey: publicKey('catalog', 'exams'),
     staleTime: 5 * 60_000,
-    queryFn: async () => ((await api.GET('/api/catalog/exams')).data as ExamInfo[]).map((e) => e.code),
+    queryFn: async () => ((await api.GET('/api/catalog/exams')).data as ExamInfo[]).flatMap((e) => (e.code ? [e.code] : [])),
   });
 }
 
