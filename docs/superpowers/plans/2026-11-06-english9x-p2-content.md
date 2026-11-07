@@ -97,3 +97,5 @@
 **Tests:** Vitest `VersionDiff.highlightsChangedFields`; E2E F17 (gồm "người duyệt không duyệt được bản mình soạn" và "đề chưa đủ câu xuất bản thì không xuất bản được"), F18 (học viên đang thi vẫn thấy bản cũ).
 
 > **Ghi chú 2026-11-08 (từ P1.6, quyết định của controller):** P2.9 sở hữu controller backend của luồng duyệt (`backend/e9x-app/src/main/java/com/english9x/content/review/**` hoặc gói tương đương): danh sách chờ duyệt (`ReviewService.open`), xem cụm (`members`), duyệt, yêu cầu sửa, duyệt/yêu cầu sửa cả cụm. Thêm endpoint thì phải đưa vào sweep (`SweepEndpoints`; hàng của org B đã có trong `SweepFixtures`) và làm mới snapshot OpenAPI. Ánh xạ lỗi đã có sẵn (ngoại lệ workflow là `ErrorResponseException`).
+
+> **Ghi chú 2026-11-08 (từ P1.8):** thông báo F52–F55 hiện được kích bằng endpoint seed `POST /api/test/seed/review-event` (nguồn event giả). Khi P2.9 làm màn duyệt thật: thay trigger seed bằng thao tác trên màn duyệt (gửi duyệt, duyệt, yêu cầu sửa) trong các spec `e2e/specs/notify/F52..F55`, và xoá F52–F55 khỏi `e2e/partial-features.json` trừ khi còn nguồn event khác chưa làm (đọc `partial-features.json` để biết).

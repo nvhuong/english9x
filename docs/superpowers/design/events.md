@@ -4,7 +4,7 @@ Nguồn: spec §5.3, §10.4, §11, §12 và plan P1.11. Hình dạng bản ghi *
 
 ## Quy ước chung
 
-- Mỗi event là một `record` trong `com.english9x.<module>.api.events`, một file một record. Gói đó là named interface `events` của module phát hành (`package-info.java` với `@NamedInterface("events")`), nên module khác chỉ cần phụ thuộc vào `<module>::events`, không chạm `internal`. `ModuleEventsTest` kiểm tra phía phát hành (mọi event nằm trong named interface `events` của module phát hành). Phía consumer sẽ được `ModularityTest` kiểm tra khi P4.1 thêm listener thật đầu tiên (Modulith không đưa test class vào mô hình module).
+- Mỗi event là một `record` trong `com.english9x.<module>.api.events`, một file một record. Gói đó là named interface `events` của module phát hành (`package-info.java` với `@NamedInterface("events")`), nên module khác chỉ cần phụ thuộc vào `<module>::events`, không chạm `internal`. `ModuleEventsTest` kiểm tra phía phát hành (mọi event nằm trong named interface `events` của module phát hành). Phía consumer được `ModularityTest` kiểm tra (Modulith không đưa test class vào mô hình module). Từ P1.8 `notification` là consumer đầu tiên (`ReviewNotifications`) và `ModularityTest` đã kiểm tra phía consumer.
 - Phát bằng `ApplicationEventPublisher` **trong transaction** của nghiệp vụ gây ra nó. Spring Modulith ghi event vào bảng publication (event publication registry) cùng transaction; listener chạy **sau commit**.
 - Nghe bằng `@ApplicationModuleListener` (bất đồng bộ, transaction riêng, sau commit). Giao **ít nhất một lần**: listener chưa hoàn tất khi tiến trình dừng sẽ được phát lại, nên **mọi consumer phải idempotent** (khoá tự nhiên là id trong event).
 - Thứ tự giữa các event khác nhau không được bảo đảm. Event không mang bí mật, đáp án hay dữ liệu cá nhân ngoài id; consumer đọc dữ liệu bằng API của module phát hành.
@@ -35,7 +35,8 @@ Từ P1.8 Spring Modulith ghi bảng `event_publication` (migration `V2026110800
 - **Idempotent bằng khoá tự nhiên.** `notification` dùng `(userId, "<loại>:<reviewId>")` làm khoá chống trùng trong `NotificationService.notify`.
 - Listener chạy trên luồng async **không có ngữ cảnh người dùng** (`platform.events.AsyncContextCleaner` xoá/khôi phục binding ở đầu và cuối mỗi tác vụ). Cần RLS của một người thì tự `CurrentContextHolder.bind` TRƯỚC khi mở transaction.
 - Bean có listener giao dịch bị Modulith bọc proxy (CGLIB): không đọc field `public` của bean đó từ ngoài, dùng phương thức.
-- Event còn dòng chưa xong chứa dữ liệu event (id; `UserRegistered` có email) đến khi listener hoàn tất: giữ event nhỏ, không bí mật.
+- Event còn dòng chưa xong chứa dữ liệu event (id; `UserRegistered` có email) đến khi listener hoàn tất: giữ event nhỏ, không bí mật. Dòng chưa xong quá `e9x.events.publication-max-age` (mặc định `30d`) bị ghi log lỗi (id, loại, listener, không có nội dung) và xoá bởi `EventRedelivery`; dòng không đọc lại được (đổi hình dạng record, lớp không còn) được ghi log lỗi và bỏ qua, không chặn các dòng khác và không chặn khởi động (`republish-outstanding-events-on-restart=false`, `EventRedelivery` là đường gửi lại duy nhất). Mỗi chu kỳ cảnh báo số dòng cũ hơn `2 x redelivery-after`.
+- **Event chỉ là gợi ý, không phải bằng chứng.** Role request (`e9x_app`) có quyền INSERT/UPDATE/DELETE `event_publication` và `jobs` (thư viện buộc phải cấp, vì nó ghi trong transaction của bên phát). Một câu lệnh SQL bị chiếm quyền vì thế dựng được một event giả có hình dạng hợp lệ và đọc được event đang chờ của mọi tenant. Consumer làm việc quan trọng (cấp quyền học, đổi trạng thái đơn, tính điểm, gửi nội dung) phải **đọc lại dòng nguồn** (và kiểm tra nó khớp event) trước khi hành động, không tin dữ liệu trong event.
 
 ## Lỗi API (liên quan)
 

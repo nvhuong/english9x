@@ -14,6 +14,8 @@
 
 ### Task P5.1: gói + đơn + quyền học (W3) — F39, F41
 
+> **Ghi chú 2026-11-08 (từ P1.8, quyết định về quyền của role request):** event là **gợi ý**, không phải bằng chứng. Role `e9x_app` có INSERT/UPDATE/DELETE `event_publication` và INSERT `jobs` (thư viện Modulith buộc phải cấp), nên một câu lệnh SQL bị chiếm quyền dựng được event giả hợp lệ hình dạng. Listener của task này phải **đọc lại dòng nguồn** (lượt thi, đơn, suất ...) và kiểm tra khớp với event trước khi làm việc quan trọng; không tin id/giá trị mang trong event. Xem `docs/superpowers/design/events.md`.
+
 > **Ghi chú 2026-11-08 (từ P1.8):** Nguồn thông báo của task này (spec §13), do P1.8 khai báo `EventType` + mẫu vi/en nhưng CHƯA có nguồn (không dựng nguồn giả): `PLAN_EXPIRING` (còn `e9x.billing.expiry-reminder` = 7 ngày) và `PLAN_EXPIRED` cho học viên, phát từ job định kỳ `plan_expiry_reminder`/`expire_entitlements` bằng `NotificationService.notify(EventType.PLAN_EXPIRING, userId, data, "plan-expiring:" + entitlementId)` (khoá chống trùng theo entitlement, job chạy lại không báo hai lần). Worker không đọc được `users`: job chỉ cần userId trong payload và gọi `notify` (qua `JobQueue`/transaction chính). Dữ liệu `data` chỉ là id/mã, không tiêu đề khoá.
 
 
