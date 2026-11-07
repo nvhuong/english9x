@@ -57,6 +57,8 @@ class ConfigurationKeysTest {
             {"spring.modulith.events.republish-outstanding-events-on-restart", "false"},
             {"e9x.notification.telegram.api-base", "${E9X_TELEGRAM_API_BASE:https://api.telegram.org}"},
             {"e9x.notification.telegram.link-ttl", "15m"},
+            {"e9x.auth.no-consent-retention", "7d"},
+            {"e9x.notification.mail-from", "${E9X_MAIL_FROM:English9x <no-reply@english9x.vn>}"},
         };
         for (String[] kv : expected) {
             Object actual = p.getProperty(kv[0]);

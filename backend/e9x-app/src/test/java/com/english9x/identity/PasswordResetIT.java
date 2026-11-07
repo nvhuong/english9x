@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.english9x.support.SmtpSink;
 import com.english9x.support.TestAuth;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class PasswordResetIT extends IdentityIT {
@@ -48,8 +49,25 @@ class PasswordResetIT extends IdentityIT {
         assertEquals("urn:e9x:problem:invalid-or-expired-token", reuse.problemType());
         assertEquals(401, login(email, "Yet-another-pass-3").status());
 
-        // Access tokens are stateless: the one issued before the reset keeps working until its 15 minutes are up.
-        assertEquals(200, get("/api/auth/me", oldAccess).status());
+        // M11: the access token issued before the reset ends with it, and a client that refreshes gets nowhere (above)
+        assertEquals(401, get("/api/auth/me", oldAccess).status());
+        assertEquals(200, get("/api/auth/me", login(email, NEW_PASSWORD).body().get("accessToken").asText()).status());
+    }
+
+    @Test
+    void aResetRemovesTheTelegramLinkAndItsTokensButKeepsThePreferences() {
+        String email = registerVerified(uniqueEmail(), PASSWORD);
+        UUID id = userId(email);
+        su.update("insert into telegram_links(user_id,chat_id) values (?, ?)", id, Math.abs(id.getMostSignificantBits() >> 4));
+        su.update("insert into telegram_link_tokens(user_id,token_hash,expires_at) values (?, sha256(?::bytea), now() + interval '1 hour')", id, id.toString());
+        su.update("insert into notification_prefs(user_id,event_type,channel,enabled) values (?,'SCORE_OFFICIAL','EMAIL',false)", id);
+
+        assertEquals(204, confirm(requestReset(email, smtp().to(email).size()).linkParam("token"), NEW_PASSWORD).status());
+
+        assertEquals(0, su.queryForObject("select count(*) from telegram_links where user_id = ?", Integer.class, id));
+        assertEquals(0, su.queryForObject("select count(*) from telegram_link_tokens where user_id = ?", Integer.class, id));
+        assertEquals(1, su.queryForObject("select count(*) from notification_prefs where user_id = ? and not enabled", Integer.class, id),
+                "the preference is the owner's own choice or harmless: only the destination could be somebody else's");
     }
 
     @Test

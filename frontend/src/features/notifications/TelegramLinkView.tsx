@@ -11,13 +11,15 @@ export interface TelegramLinkViewProps {
   link?: { deepLink: string; expiresAt: string };
   creating?: boolean;
   error?: 'create' | 'unlink';
+  /** The address is not verified: the server issues no link, so the button is not offered (the page says why). */
+  locked?: boolean;
   onCreate: () => void;
   onUnlink: () => void;
   onCheck: () => void;
 }
 
 /** Telegram connection (F54): create a one-time link, open it in Telegram, come back and check. The chat id is never shown. */
-export function TelegramLinkView({ enabled, linked, failing, link, creating, error, onCreate, onUnlink, onCheck }: TelegramLinkViewProps) {
+export function TelegramLinkView({ enabled, linked, failing, link, creating, error, locked, onCreate, onUnlink, onCheck }: TelegramLinkViewProps) {
   const { t, i18n } = useTranslation('notifications');
   const safe = link && link.deepLink.startsWith('https://t.me/') ? link : undefined;
   return (
@@ -55,9 +57,11 @@ export function TelegramLinkView({ enabled, linked, failing, link, creating, err
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Button variant={linked ? 'secondary' : 'primary'} loading={creating} onClick={onCreate}>
-              {creating ? t('telegram.creating') : linked ? t('telegram.recreate') : t('telegram.create')}
-            </Button>
+            {!locked && (
+              <Button variant={linked ? 'secondary' : 'primary'} loading={creating} onClick={onCreate}>
+                {creating ? t('telegram.creating') : linked ? t('telegram.recreate') : t('telegram.create')}
+              </Button>
+            )}
             {linked && (
               <Button variant="danger" onClick={onUnlink}>
                 {t('telegram.unlink')}

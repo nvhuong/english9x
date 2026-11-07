@@ -12,5 +12,6 @@ playwright-report/
 backend/e9x-app/src/main/resources/static/*
 !backend/e9x-app/src/main/resources/static/.gitkeep
 .env
+/restore/
 .tmp-api-gen-*/
 storybook-static/

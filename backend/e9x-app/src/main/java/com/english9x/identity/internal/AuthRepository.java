@@ -26,7 +26,7 @@ class AuthRepository {
 
     enum RotateOutcome { INVALID, ROTATED, ROTATED_CONCURRENT, REUSED }
 
-    record Rotation(RotateOutcome outcome, UUID userId, UUID familyId, byte[] storedHash) {}
+    record Rotation(RotateOutcome outcome, UUID userId, UUID familyId, byte[] storedHash, long credentialsVersion) {}
 
     enum OAuthOutcome { EXISTING, EMAIL_NOT_VERIFIED, LINKED, LINKED_NEUTRALISED, CREATED }
 
@@ -97,9 +97,9 @@ class AuthRepository {
         List<Rotation> rows = jdbc.query("select * from auth_refresh_rotate(?,?,?,?,cast(? as interval))",
                 (rs, n) -> new Rotation(RotateOutcome.valueOf(rs.getString("r_outcome")),
                         rs.getObject("r_user_id", UUID.class), rs.getObject("r_family_id", UUID.class),
-                        rs.getBytes("r_stored_hash")),
+                        rs.getBytes("r_stored_hash"), rs.getLong("r_credentials_version")),
                 oldHash, newHash, ts(newExpires), ts(now), grace.toMillis() + " milliseconds");
-        return rows.isEmpty() ? new Rotation(RotateOutcome.INVALID, null, null, null) : rows.get(0);
+        return rows.isEmpty() ? new Rotation(RotateOutcome.INVALID, null, null, null, 0) : rows.get(0);
     }
 
     /** Empty when the account no longer exists. */
@@ -125,6 +125,11 @@ class AuthRepository {
                         rs.getObject("r_user_id", UUID.class), rs.getString("r_display_name"), rs.getString("r_locale"),
                         rs.getLong("r_credentials_version")),
                 provider, subject, email, emailVerified, displayName, locale, ts(now));
+    }
+
+    /** Null when the account does not exist. One primary-key read, in autocommit: no transaction, so no session context is set up for it. */
+    Long credentialsVersion(UUID userId) {
+        return jdbc.queryForObject("select auth_credentials_version(?)", Long.class, userId);
     }
 
     int purge() {

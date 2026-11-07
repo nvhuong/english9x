@@ -46,6 +46,13 @@ public final class TestPostgres {
         return c;
     }
 
+    /** A row in {@code users} for a test that needs nothing but a signed-in somebody: an access token for no account answers 401. */
+    public static java.util.UUID someUser(String db) {
+        java.util.UUID id = java.util.UUID.randomUUID();
+        new org.springframework.jdbc.core.JdbcTemplate(superuser(db)).update("insert into users(id, email) values (?, ?)", id, id + "@example.test");
+        return id;
+    }
+
     public static PostgreSQLContainer<?> container() {
         return CONTAINER;
     }

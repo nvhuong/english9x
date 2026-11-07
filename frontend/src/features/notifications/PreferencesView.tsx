@@ -13,11 +13,13 @@ export interface PreferencesViewProps {
   events: PrefsEvent[];
   telegramLinked: boolean;
   busy?: boolean;
+  /** The address is not verified: the server refuses a change, so nothing can be changed here. */
+  locked?: boolean;
   onToggle: (eventType: string, channel: 'EMAIL' | 'TELEGRAM', enabled: boolean) => void;
 }
 
 /** Events x channels. In-app is shown as always on (no control); email and Telegram are one checkbox per event. */
-export function PreferencesView({ events, telegramLinked, busy, onToggle }: PreferencesViewProps) {
+export function PreferencesView({ events, telegramLinked, busy, locked, onToggle }: PreferencesViewProps) {
   const { t } = useTranslation('notifications');
   return (
     <div className="flex flex-col gap-3">
@@ -53,7 +55,7 @@ export function PreferencesView({ events, telegramLinked, busy, onToggle }: Pref
                         className="size-5 accent-primary"
                         aria-label={label}
                         checked={on}
-                        disabled={busy}
+                        disabled={busy || locked}
                         onChange={(ev) => onToggle(e.type, channel, ev.target.checked)}
                       />
                     </TableCell>

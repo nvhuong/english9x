@@ -1,5 +1,6 @@
 package com.english9x.platform.security;
 
+import com.english9x.identity.api.CredentialsVersions;
 import com.english9x.org.api.CurrentContextHolder;
 import com.english9x.org.api.OrgMembershipCheck;
 import jakarta.servlet.FilterChain;
@@ -29,19 +30,28 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * answer tells "no such organisation" from "not a member". Membership is asked of the database on every request (never read
  * from the token), and the transaction hook asks again when the request's transaction begins. The binding lives for this
  * request only and is released in a {@code finally}.
+ *
+ * <p>The token's {@code credentials_version} claim must equal the account's version in the database, read here on every authenticated request
+ * (one primary-key read). A password reset or a Google sign-in that changes the account moves the version, so every access token from
+ * before it answers 401 at once and the client's refresh, whose token was revoked in the same step, ends at sign-in. A token without the claim,
+ * from before this check, gets the same 401; the client's refresh replaces it. Only a request carrying a JWT comes here:
+ * the seed API, event listeners and background jobs have no token, bind their own context, and are not affected.
  */
 public class CurrentContextFilter extends OncePerRequestFilter {
 
     static final String ORG_HEADER = "X-Org-Context";
+    private static final String CREDENTIALS_VERSION = "credentials_version";
 
     private static final Pattern CANONICAL_UUID = Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
 
     private final ProblemSecurityHandlers problems;
     private final OrgMembershipCheck membership;
+    private final CredentialsVersions credentials;
 
-    public CurrentContextFilter(ProblemSecurityHandlers problems, OrgMembershipCheck membership) {
+    public CurrentContextFilter(ProblemSecurityHandlers problems, OrgMembershipCheck membership, CredentialsVersions credentials) {
         this.problems = problems;
         this.membership = membership;
+        this.credentials = credentials;
     }
 
     @Override
@@ -58,6 +68,12 @@ public class CurrentContextFilter extends OncePerRequestFilter {
         } catch (RuntimeException e) {
             SecurityContextHolder.clearContext();
             problems.write(request, response, HttpStatus.UNAUTHORIZED, "unauthorized", "Unauthorized", "Authentication is required.");
+            return;
+        }
+        if (!(jwt.getToken().getClaims().get(CREDENTIALS_VERSION) instanceof Number version)
+                || !credentials.isCurrent(userId, version.longValue())) {
+            SecurityContextHolder.clearContext();
+            problems.commence(request, response, null);
             return;
         }
         List<String> headers = Collections.list(request.getHeaders(ORG_HEADER));

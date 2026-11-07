@@ -116,8 +116,9 @@ class JobWorker implements SmartLifecycle {
         }
 
         JobResult result;
-        ScheduledFuture<?> beat = startHeartbeat(claimed);
+        ScheduledFuture<?> beat = null;
         try (WorkerDatabase.JobScope ignored = database.enterJob()) {
+            beat = startHeartbeat(claimed); // in here: one that cannot start is this job's failure, not the poll's
             result = handler.get().handle(job);
             if (result == null) {
                 result = JobResult.failure("handler returned null");
@@ -128,7 +129,9 @@ class JobWorker implements SmartLifecycle {
             log.warn("job {} type={} attempt={}: handler threw {}", job.id(), job.type(), job.attempt(), t.getClass().getName());
             result = JobResult.failure(t.getClass().getName());
         } finally {
-            beat.cancel(false);
+            if (beat != null) {
+                beat.cancel(false);
+            }
             Thread.interrupted(); // a handler may leave the flag set; it must not leak into the next job or the DB calls below
         }
         afterJob(job);

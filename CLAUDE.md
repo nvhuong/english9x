@@ -15,18 +15,7 @@ Nền tảng dạy & luyện thi tiếng Anh (v1: IELTS AC/GT + TOEIC L&R, B2C +
 - Không tuyên bố hoàn tất khi chưa có output test thật.
 
 ## Trạng thái hiện tại (nhánh `release/v1`)
-- Đã xong (wave cục bộ): `backend/e9x-domain` (lõi nghiệp vụ thuần Java), migration `V202611060001__org_baseline.sql` + `backend/db-tests` (RLS), gate E2E.
-- Kiểm chứng offline: `./scripts/test-domain.sh` 129/129 (shim JUnit), `./scripts/test-db.sh` 14/14 (cần binary PostgreSQL 16 cục bộ), gate E2E 0/58.
-- Chưa có: `e9x-app` (Spring Boot), `frontend/`, `e2e/` specs, `infra/` Compose — bắt đầu ở wave **W0** (P1.1).
-
-## Việc đầu tiên trên máy có mạng + Docker
-```bash
-git checkout release/v1
-# 1) Xác nhận lõi domain bằng JUnit 5 thật (phải 129 test xanh như shim)
-docker run --rm -v "$PWD":/w -w /w/backend maven:3.9-eclipse-temurin-21 mvn -B -pl e9x-domain test
-# 2) Test RLS trên PostgreSQL 16
-docker run --rm -v "$PWD":/w -w /w postgres:16 bash scripts/test-db.sh
-# 3) Đẩy lên GitHub (không push --force, không merge main)
-git push -u origin main release/v1
-```
-Sau đó thực hiện W0 theo `2026-11-06-english9x-p1-foundation.md` (P1.1 Monorepo/CI/Compose).
+- Đã xong: toàn bộ **P1 Foundation** (W0–W2): `backend/e9x-domain`, `backend/e9x-app` (Spring Boot Modulith: identity, org, workflow, notification, audit, platform.jobs), 10 migration, `frontend/` (shell, design system, i18n, xác thực, tổ chức, thông báo, nhật ký), `e2e/` (Playwright trên Compose thật), `infra/` (Compose, Caddy, sao lưu và khôi phục), review cuối P1 đã sửa xong.
+- Kiểm chứng: `E9X_A11Y=1 ./scripts/verify.sh`, `docker run --rm -v "$PWD":/w -w /w postgres:16 bash scripts/test-db.sh`, `./scripts/e2e.sh`. Số liệu mới nhất ở báo cáo của lần chạy, không ghi cứng ở đây. Gate E2E còn chưa đạt tới W10 (`coverage-progress`).
+- Chưa có trên GitHub: `ci.yml` chưa từng chạy trên runner (`release/v1` chưa push), xem finding M5 của review cuối.
+- **Việc tiếp theo: wave W3** (P2 Content), theo `2026-11-06-english9x-p2-content.md`, đọc các ghi chú ngày 2026-11-08 trong từng task. Chạy thử stack: mục "Run the stack" của `README.md`.

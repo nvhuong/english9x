@@ -36,6 +36,7 @@
     "loadFailed": "Không tải được tuỳ chọn.",
     "retry": "Thử lại",
     "saveFailed": "Chưa lưu được thay đổi. Hãy thử lại.",
+    "verifyFirst": "Hãy xác thực email để đổi tuỳ chọn thông báo và kết nối Telegram.",
     "caption": "Kênh nhận thông báo theo sự kiện",
     "event": "Sự kiện",
     "inApp": "Trong ứng dụng",

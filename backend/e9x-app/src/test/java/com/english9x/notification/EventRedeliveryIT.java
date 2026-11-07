@@ -104,6 +104,18 @@ class EventRedeliveryIT extends NotificationIT {
     }
 
     @Test
+    void anUnreadableRowIsAnErrorOnceThenACountEveryCycle(CapturedOutput output) {
+        UUID review = review();
+        UUID bad = UUID.randomUUID();
+        insertOutstanding(bad, rowFor(review), "not json either", "interval '1 hour'");
+        String warning = "event publications cannot be read back";
+        // the redelivery cycle runs every second here: wait for several
+        Awaitility.await().atMost(Duration.ofSeconds(20)).until(() -> output.getAll().split(warning, -1).length > 3);
+        String named = "event publication " + bad + " (type";
+        assertEquals(2, output.getAll().split(java.util.regex.Pattern.quote(named), -1).length, "the row is named once in this process, however many cycles ran");
+    }
+
+    @Test
     void aPublicationThatNeverCompletedIsDeletedOnceOlderThanTheMaximumAge(CapturedOutput output) {
         UUID review = review();
         Map<String, Object> like = rowFor(review);

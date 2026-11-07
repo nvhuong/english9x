@@ -3,6 +3,9 @@ import { Badge, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRo
 import { actionLabel, detailLines } from './auditText';
 import type { AuditEntry } from './queries';
 
+/** Things a person does for themselves: with no organisation in context these were not done for English9x. */
+const PERSONAL_ACTIONS: ReadonlySet<string> = new Set(['invitation.accept']);
+
 /** The records as a table. Every value from the server is rendered as text. */
 export function AuditLogView({ entries }: { entries: readonly AuditEntry[] }) {
   const { t, i18n } = useTranslation('audit');
@@ -36,7 +39,7 @@ export function AuditLogView({ entries }: { entries: readonly AuditEntry[] }) {
                 </span>
               )}
             </TableCell>
-            <TableCell>{e.orgId ? (e.orgName ?? e.orgId) : e.actorKind === 'OPERATOR' ? t('table.system') : t('table.english9x')}</TableCell>
+            <TableCell>{e.orgId ? (e.orgName ?? e.orgId) : e.actorKind === 'OPERATOR' ? t('table.system') : PERSONAL_ACTIONS.has(e.action) ? t('table.personal') : t('table.english9x')}</TableCell>
             <TableCell>
               <span className="flex flex-col">
                 <span>{actionLabel(t, e.action)}</span>

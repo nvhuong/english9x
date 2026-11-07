@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiProblemError } from '../../api/problem';
 import { useApi } from '../../api/useApi';
 import type { components } from '../../api/generated/client';
 import { useAuthStore } from '../../app/stores/auth';
@@ -92,6 +93,10 @@ export function useRevokeInvitation(orgId: string | null) {
         ? api.DELETE('/api/orgs/{id}/invitations/{invitationId}', { params: { path: { id: orgId, invitationId } } })
         : api.DELETE('/api/admin/invitations/{invitationId}', { params: { path: { invitationId } } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ctxKey(ctx, ...parts) }),
+    // it expired or was revoked a moment ago: what the list shows is out of date, so show what is true now
+    onError: (err) => {
+      if (err instanceof ApiProblemError && err.status === 404) void queryClient.invalidateQueries({ queryKey: ctxKey(ctx, ...parts) });
+    },
   });
 }
 

@@ -27,8 +27,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  *       login answers one generic 401 (an unknown email still pays for a bcrypt check).
  *   <li>Mail is sent after the commit and never throws into the request.
  *   <li>Nothing secret is logged: not passwords, not tokens, not JWTs.
- *   <li>Access tokens already issued stay valid until they expire (15 min) after a password reset or logout: they are
- *       stateless on purpose. Refresh tokens are what gets revoked.
+ *   <li>A password reset or a Google link ends every access token at once ({@code credentials_version}, checked per request).
+ *       After a logout an access token stays valid until it expires (15 min); the refresh token is what gets revoked.
  * </ul>
  */
 @Service
@@ -159,7 +159,7 @@ class AuthService {
                 || !TokenCodec.same(r.storedHash(), oldHash)) {
             throw AuthProblems.invalidRefreshToken();
         }
-        return new TokenPair(accessTokens.issue(r.userId()), next, props.accessTokenTtl().toSeconds(), "Bearer");
+        return new TokenPair(accessTokens.issue(r.userId(), r.credentialsVersion()), next, props.accessTokenTtl().toSeconds(), "Bearer");
     }
 
     void logout(String refreshToken) {
@@ -179,7 +179,7 @@ class AuthService {
         if (outcome != AuthRepository.IssueOutcome.ISSUED) {
             return new Issued(outcome, null);
         }
-        return new Issued(outcome, new TokenPair(accessTokens.issue(userId), refresh, props.accessTokenTtl().toSeconds(), "Bearer"));
+        return new Issued(outcome, new TokenPair(accessTokens.issue(userId, credentialsVersion), refresh, props.accessTokenTtl().toSeconds(), "Bearer"));
     }
 
     // ---- password reset ----------------------------------------------------------------------------------------------------

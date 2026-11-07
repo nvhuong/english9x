@@ -43,7 +43,7 @@ BEGIN
   -- the definer skips RLS on role_grants only because it owns the table and the table does not FORCE RLS
   ASSERT (SELECT relowner FROM pg_class WHERE oid = 'role_grants'::regclass) = f.proowner, 'the helper is owned by the owner of role_grants';
   ASSERT NOT (SELECT relforcerowsecurity FROM pg_class WHERE oid = 'role_grants'::regclass),
-         'FORCE ROW LEVEL SECURITY would send the helper back through the policy that calls it';
+         'the helper relies on the owner skipping RLS; FORCE ROW LEVEL SECURITY would subject it to the policies of role_grants, whatever the plan then does';
   -- no SELECT policy of the three tables still ends in the bare flag
   ASSERT NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename IN ('org_memberships','role_grants','users') AND cmd = 'SELECT'
                       AND qual LIKE '%e9x_is_staff%'), 'the bare staff flag authorises no read here';

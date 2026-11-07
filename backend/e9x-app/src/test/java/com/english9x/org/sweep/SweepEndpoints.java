@@ -76,7 +76,28 @@ public final class SweepEndpoints {
         }
     }
 
-    /** Deliberately leaky: reads the same table over a superuser connection, i.e. past RLS. */
+    /** A correct write: goes through the application connection, so RLS decides. PATCH, because no real route uses that method yet. */
+    @RestController
+    @Profile("rls-sweep")
+    static class ProtectedWriteController {
+        record Rename(@jakarta.validation.constraints.NotBlank String name) {}
+
+        private final JdbcTemplate jdbc;
+
+        ProtectedWriteController(JdbcTemplate jdbc) {
+            this.jdbc = jdbc;
+        }
+
+        @org.springframework.web.bind.annotation.PatchMapping("/api/sweep/classes/{id}")
+        @Transactional
+        void rename(@PathVariable UUID id, @jakarta.validation.Valid @org.springframework.web.bind.annotation.RequestBody Rename body) {
+            if (jdbc.update("update classes set name = ? where id = ?", body.name(), id) == 0) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    /** Deliberately leaky: reads and writes the same table over a superuser connection, i.e. past RLS. */
     @RestController
     @Profile("rls-sweep-leak")
     static class LeakyController {
@@ -86,6 +107,18 @@ public final class SweepEndpoints {
                         @Value("${e9x.test.leaky-password}") String password) {
             DataSource ds = new DriverManagerDataSource(url, user, password);
             this.privileged = new JdbcTemplate(ds);
+        }
+
+        /** The hole the sweep exists for: a write with no tenant check, reaching another organisation's row. */
+        @org.springframework.web.bind.annotation.PutMapping("/api/sweep-leaky/classes/{id}")
+        String rename(@PathVariable UUID id) {
+            return String.valueOf(privileged.update("update classes set name = 'renamed by a stranger' where id = ?", id));
+        }
+
+        /** A write route whose author wrote no fixture: the sweep must fail on it without calling it. */
+        @org.springframework.web.bind.annotation.PostMapping("/api/sweep-leaky/no-fixture/{id}")
+        String noFixture(@PathVariable UUID id) {
+            return id.toString();
         }
 
         @GetMapping("/api/sweep-leaky/classes/{id}")

@@ -24,6 +24,14 @@
 
 **Tests:** `CourseServiceIT.codeMustBeSixUppercaseAlnum`, `LessonGateIT.strictLocksUntilChapterTestPassed`, `.completionIgnoresScore`, `.freeOpensAll`, `.notEntitledBeatsUnlock`, `CatalogIT.guestSeesOutlineNotContent`.
 
+> **Ghi chú 2026-11-08 (review cuối P1, sửa plan 5):** task này nhận lại phần P2.2 đã từ chối: học viên có entitlement tới khoá chứa media được `GET /api/media/{id}/url`, kèm test cả hai chiều.
+
+> **Ghi chú 2026-11-08 (review cuối P1, M1, M2):** `courses_*` chưa được thu hẹp: đo được phiên staff chỉ có TEACHER TOEIC đặt được `status=PUBLISHED`, `shared_status=APPROVED`. Thay bằng policy theo vai trò và kỳ thi trước endpoint đầu tiên, phần kho chung phối hợp với P6.5.
+
+> **Ghi chú 2026-11-08 (review cuối P1, quét rò rỉ):** `GET /api/catalog/courses/{code}` khoá riêng theo mã chính là ca F08. Không miễn: thêm fixture với slot chuỗi `FIXTURES.courseCodeB` (`SweepFixtures`). Mọi route ghi mới của P2 đến P6 đều cần fixture có body hợp lệ và positive control, thiếu là `RlsLeakSweepIT` đỏ.
+
+> **Ghi chú 2026-11-08 (review cuối P1, triage ledger 80):** mockup 02 trùng nhãn: xử lý khi dựng màn này.
+
 ### Task P3.2: learning — bài học, luyện tập, kiểm tra chương, thời gian học (W7) — F22, F23 (+ dữ liệu cho F24)
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/learning/**`, migration `V202611140001__learning.sql` (`lesson_progress`, `practice_attempts`, `chapter_test_attempts`, `study_time_daily`, `study_streaks`), `frontend/src/features/learning/{LessonPage,PracticeBlock,ChapterTestPage,ChapterMap}.tsx`, `frontend/src/features/learning/useStudyHeartbeat.ts`, E2E `F22-lesson-practice.spec.ts`, `F23-chapter-test.spec.ts`.
@@ -55,6 +63,8 @@
 
 > **Ghi chú 2026-11-07 (từ P1.7, vòng sửa 1):** handler `auto_submit_attempt` chạy với `CurrentContextHolder.bind(userId, orgId)` từ payload. Nếu thành viên đã rời tổ chức thì việc bind/transaction ném `OrgContextDeniedException`; handler phải xử lý để lượt thi vẫn được nộp (ví dụ chuyển sang ngữ cảnh cá nhân hoặc đường nộp hệ thống đã được cấp quyền riêng), không để job FAILED im lặng. Dùng `JobExecutor#onExhausted` để đặt trạng thái cuối khi hết thử lại. `auto_submit_attempt` nằm trong `e9x.jobs.priority-types` (có luồng riêng). Cần bean `Clock` (đã có ở `platform.time`).
 
+> **Ghi chú 2026-11-08 (review cuối P1, triage ledger 70, 71):** guard enqueue bị đánh lừa khi người giữ kết nối chính không ở trong transaction (kiểm thêm autoCommit): đây là enqueue quan trọng đầu tiên. Lần chạy cuối quá hạn rồi thành công vẫn kết thúc FAILED và gọi `onExhausted` cho việc đã xong: handler `auto_submit_attempt` phải chịu được.
+
 ### Task P3.4: phòng thi UI (W7) — F25, F26, F27, F28, F29, F32
 
 **Files:** `frontend/src/features/exam/**` (`ExamRoom`, `SectionTimer` (đếm theo `endsAt` − lệch đồng hồ `serverNow`), `ReadingSplitView`, `ListeningPlayer` (không có điều khiển tua/dừng), `WritingEditor` (đếm từ, `spellcheck=false`), `SpeakingRecorder` (kiểm micro, đếm ngược chuẩn bị, ghi đúng thời lượng, upload + thử lại), `QuestionNavigator`, `SaveStatus`, `offlineQueue.ts` (IndexedDB)), renderer cho 12 `InteractionKind`, E2E F25–F29, F32.
@@ -64,3 +74,6 @@
 **Tests:** Vitest `offlineQueue.replaysInOrder`, `SectionTimer.usesServerOffset`, `ListeningPlayer.hasNoSeekControls`, `SpeakingRecorder.stopsAtDuration` (MediaRecorder giả); E2E: F25 (TOEIC 200 câu — dùng `seed.publishedToeicTest()` và trả lời theo bảng đáp án seed để kiểm điểm), F26 (AC và GT), F27, F28 (`context.setOffline(true)`), F29 (tải lại 3 lần), F32 (Chromium `--use-fake-device-for-media-stream`).
 
 > **Ghi chú 2026-11-07 (từ vòng sửa P1.10), khi nối các component phòng thi vào backend:** (1) `Timer` phải neo theo `performance.now()` (không phải `Date.now()`, tránh đổi giờ máy) và tính lại ngay khi `visibilitychange`; (2) `AudioPlayer` phải đặt handler `mediaSession` bằng `null` cho phím pause/seekbackward/seekforward/seekto, reset ref khi `src` đổi, còn việc chỉ phát một lần do server cưỡng chế; (3) ô Writing là `textarea` với `spellCheck={false}`, `autoCorrect="off"`, `autoComplete="off"`.
+
+> **Ghi chú 2026-11-08 (review cuối P1, triage ledger 110):** tab bỏ lỡ storage event, marker: phòng thi phải giữ phiên ổn định, xử lý ở đây.
+

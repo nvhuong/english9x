@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Local verification: the CI steps that need no running stack. CI's own jobs for what is NOT here: `db-tests`
-# (scripts/test-db.sh), `compose`, `frontend-a11y` (opt-in below) and `e2e` (scripts/e2e.sh).
+# (scripts/test-db.sh), `frontend-a11y` (opt-in below) and `e2e` (scripts/e2e.sh). Backup and restore are in step 1 (BackupRestoreIT).
 #   1. backend    mvn -B verify          (unit + Modulith + Testcontainers ITs; needs Docker)
 #   2. fakes      node --test            (fake Gemini / fake Telegram behaviour)
 #   3. frontend   pnpm lint, test, build
 #   4. e2e        tsc --noEmit on the specs, then the gate node scripts/check-e2e-coverage.mjs
+#   5. infra      scripts/test-infra.sh (Compose's required settings, preflight, a real Caddy's body limits and health listener; needs Docker)
 #   (opt-in) E9X_A11Y=1  also runs the Storybook axe scan (needs Playwright Chromium: `pnpm -C frontend exec playwright install chromium`);
 #            CI always runs it as its own job, `frontend-a11y`.
 #
@@ -42,5 +43,8 @@ pnpm -C e2e exec tsc --noEmit
 
 step "e2e coverage gate"
 ./scripts/e2e-gate.sh
+
+step "infra: compose, preflight, caddy"
+./scripts/test-infra.sh
 
 printf '\nverify.sh: OK\n'

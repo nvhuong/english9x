@@ -16,7 +16,7 @@ BEGIN
     ASSERT has_function_privilege('e9x_app', f.oid, 'EXECUTE'), f.proname || ' executable by e9x_app';
     ASSERT NOT has_function_privilege('outsider', f.oid, 'EXECUTE'), f.proname || ' must not be executable by others';
   END LOOP;
-  ASSERT n = 14, 'expected 14 auth functions, found ' || n;
+  ASSERT n = 15, 'expected 15 auth functions, found ' || n;
 END $$;
 
 -- create_user: new, duplicate (case-insensitive), locale fallback

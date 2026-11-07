@@ -33,6 +33,8 @@
 
 > **Ghi chú 2026-11-07 (từ P1.7, vòng sửa 1):** P5.1 sở hữu việc lên lịch định kỳ (job lặp) đầu tiên: `expire_orders`, `expire_entitlements`, `plan_expiry_reminder`, `release_expired_claim` (P1.7 chỉ có hàng đợi; worker hiện không có INSERT/DELETE trên `jobs`). Cần: cột/khoá `dedupe_key` để hai instance không xếp trùng cùng một lần chạy, chính sách giữ/dọn payload và job đã xong (payload có thể chứa dữ liệu người dùng), và migration cấp quyền hẹp cho `e9x_worker` (GRANT + POLICY) cho phần dữ liệu các handler này đụng tới.
 
+> **Ghi chú 2026-11-08 (review cuối P1, sửa plan 9, M10, phán quyết):** **chuyển trạng thái của hệ thống có ghi audit** (spec §11: mọi thao tác ghi `audit_log`), ví dụ `expire_orders`. Hôm nay không ghi được: policy đòi USER, worker không có grant, `record` ném lỗi khi không có binding. Task này thêm actor kind `SYSTEM` (CHECK và màn hình `/admin/audit-log`) và **một đường cho worker**, definer hẹp, không có người dùng nào đứng tên.
+
 ### Task P5.2: VietQR + xác nhận thủ công (W4) — F40
 
 > **Ghi chú 2026-11-08 (từ P1.9, F57 cần bản ghi này):** gọi `audit.api.AuditLog#record` trong CÙNG giao dịch với việc xác nhận / từ chối đơn (spec §6: mọi thao tác quản trị đều ghi `audit_log`): `order.confirm` và `order.reject`, `targetType` `order`, `targetId` = id đơn, detail chỉ gồm mã gói, số tiền, mã giao dịch ngân hàng nếu có, lý do từ chối dưới dạng độ dài (không ghi văn bản tự do, không ghi số tài khoản). Actor và ngữ cảnh tự lấy từ phiên. Mỗi thao tác quản trị khác của P5 (gói, tài khoản nhận tiền) cũng ghi. Rồi mở rộng `e2e/specs/admin/F57-audit-log.spec.ts` bằng dòng "xác nhận đơn" và bỏ phần tương ứng trong mục F57 của `e2e/partial-features.json`.

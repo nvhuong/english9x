@@ -71,6 +71,14 @@
 | W9 | P4.4 kết quả + điểm yếu + gợi ý · P4.5 tiến trình theo gói + giám sát AI · P6.4 báo cáo + Excel · P6.5 cấu hình chấm trung tâm + nội dung riêng + kho chung | W8 |
 | W10 | Hoàn tất E2E F01–F58 (kể cả F58: danh sách 8 màn chính còn chờ ở ghi chú P1.12 phải rỗng; gỡ `continue-on-error` của job CI `e2e`) · k6 50 người · review toàn nhánh · PR `release/v1 → main` | W9 |
 
+> **Ghi chú 2026-11-08 (review cuối P1, các việc của W10):**
+> - **Khôi phục, phần MinIO:** PostgreSQL đã có `infra/backup/restore.sh` và `BackupRestoreIT` (chạy trong `mvn verify`). W10 là chủ phần MinIO: thay `cp -a` theo ghi chú P2.2, viết thủ tục khôi phục media, diễn tập cả hai nửa cùng nhau, và làm healthcheck của `backup` kiểm thật (ledger 19).
+> - **Bước trong README chưa chạy:** xoá volume cũ `english9x_pgdata` để khôi phục đúng tại chỗ chưa từng được chạy thử (lần diễn tập dùng project mới với volume mới). Diễn tập bước đó trong W10.
+> - **Gate (M13, ledger 89):** regex của `check-e2e-coverage.mjs` đếm `test.only` là đang chạy, `forbidOnly` chỉ bật trên CI, xoá F58 khỏi danh sách partial không gắn với `PENDING_MAIN_SCREENS`: cho gate đọc danh sách chờ. Mỗi mục truy cập bị từ chối đang tính là một màn. Xem cả ghi chú F58.
+> - **Đợt rà soát bảo mật trước khi ra mắt:** reset-confirm tốn CPU, cần giới hạn theo IP; mail bomb, giới hạn theo địa chỉ; trusted proxy RFC1918, IPv6 /64, LRU flush; chuỗi OAuth trả 500 không phải problem+json, cờ JSESSIONID, session ẩn danh; các mutation test còn thiếu (state, nonce, alg, issuer, proxy, dùng mã, bí mật trong log, cache); các test race còn sót khi bỏ khoá (ledger 103, 110).
+> - **Khác:** script `grant-sys-admin.sh` tin tên context thay vì endpoint (P1.5 N3); CI chưa từng build image ngoài job `e2e`; Storybook test-runner trên SB10; header cache cho asset có hash; các thông số tinh chỉnh chưa kiểm (pool 4 so với số worker, heartbeat so với lease), k6 sẽ đo; test phụ thuộc thời gian (M16: `F03-password-reset.spec.ts:105`), xem lần chạy CI đầu; `app.worker.enabled=false` vẫn chạy `EventRedelivery` và purge (M14), task nào tách worker thì xử lý.
+> - **Migration song song:** số version đặt khi merge trong wave, không đặt khi bắt đầu task (M8).
+
 Các task trong một wave không sửa chung file. File dùng chung (`pom.xml` gốc, `frontend/src/app/router.tsx`, `e2e/features.json`) chỉ sửa ở P1.1/P1.10/P1.12; task sau thêm route/feature bằng file đăng ký riêng (`frontend/src/routes/<khu>/*.routes.ts` được nạp tự động; `e2e/specs/**`).
 
 ## Ma trận F01–F58 → task → spec E2E

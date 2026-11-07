@@ -2,6 +2,7 @@
 # Creates the database roles of the RLS model (P1.3). Idempotent: re-running rotates the two passwords.
 # Runs once on an empty data directory (docker-entrypoint-initdb.d). On an existing volume run it by hand:
 #   docker compose exec -e E9X_OWNER_PASSWORD=... -e E9X_APP_PASSWORD=... -e E9X_WORKER_PASSWORD=... postgres bash /docker-entrypoint-initdb.d/01-roles.sh
+# A volume from before P1.3 has its tables owned by the superuser, and this script does not change that: e9x_owner cannot migrate them. Start clean (down -v), see README.
 #
 #   e9x_owner      LOGIN  owns the database and every table; used only by Flyway. Not a superuser.
 #   e9x_app_login  LOGIN  the application runtime login; inherits e9x_app, owns nothing, never bypasses RLS.

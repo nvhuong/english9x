@@ -8,6 +8,7 @@ import com.english9x.org.sweep.ForeignIdSweep;
 import com.english9x.org.sweep.SweepFixtures;
 import com.english9x.support.TestAuth;
 import com.english9x.support.TestPostgres;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -19,13 +20,14 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 /**
- * Review Focus #1: a member of org A asks every GET endpoint with an id for rows of org B. The endpoint list comes
+ * Review Focus #1: a member of org A calls every endpoint, with every HTTP method, with ids of org B. The endpoint list comes
  * from /v3/api-docs, so endpoints added by later tasks are swept automatically; the foreign ids come from a catalog
  * query over every RLS table. The test-only controllers are described in {@code SweepEndpoints}.
  */
@@ -38,22 +40,20 @@ class RlsLeakSweepIT {
     static final String DB = TestPostgres.createDatabase();
     static final SweepFixtures FIXTURES = new SweepFixtures(new JdbcTemplate(TestPostgres.superuser(DB)));
 
-    /** Path templates that legitimately answer other organisations' ids, each with its reason. None yet. */
-    static final Map<String, String> EXEMPT = Map.of();
-
-    /** Tables with an id that carry no tenant data to sweep, each with its reason. None yet. */
-    static final Map<String, String> EXEMPT_TABLES = Map.of();
-
     /**
-     * Typed fixtures for templates with several path parameters, each slot filled with an id of its kind. All three mixes of
-     * "mine" and "foreign" are tried: both foreign, my own parent with a foreign child (an endpoint that authorises the
-     * parent and trusts the child id), and a foreign parent with my own child.
+     * The test-only routes: reads with two parameters, and a write through a real PATCH with a body. All three mixes of "mine" and "foreign" are tried for two
+     * parameters: both foreign, my own parent with a foreign child (an endpoint that authorises the parent and trusts the child id), and a foreign
+     * parent with my own child.
      */
-    static Map<String, List<Map<String, UUID>>> typedFixtures() {
-        return Map.of("/api/sweep/classes/{classId}/members/{userId}", List.of(
-                Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userB),
-                Map.of("classId", FIXTURES.classA, "userId", FIXTURES.userB),
-                Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userA)));
+    static Map<String, ForeignIdSweep.Fixture> fixtures() {
+        Map<String, ForeignIdSweep.Fixture> all = new HashMap<>(FIXTURES.writeFixtures());
+        all.put("GET /api/sweep/classes/{classId}/members/{userId}", ForeignIdSweep.Fixture.read(List.of(
+                new ForeignIdSweep.Attempt(Map.of("classId", FIXTURES.classB.toString(), "userId", FIXTURES.userB.toString())),
+                new ForeignIdSweep.Attempt(Map.of("classId", FIXTURES.classA.toString(), "userId", FIXTURES.userB.toString())),
+                new ForeignIdSweep.Attempt(Map.of("classId", FIXTURES.classB.toString(), "userId", FIXTURES.userA.toString())))));
+        all.put("PATCH /api/sweep/classes/{id}", ForeignIdSweep.Fixture.write("{\"name\":\"renamed\"}", List.of(),
+                ForeignIdSweep.Control.of(Map.of("id", FIXTURES.classA.toString()), null)));
+        return all;
     }
 
     @DynamicPropertySource
@@ -70,11 +70,20 @@ class RlsLeakSweepIT {
     }
 
     private int getAsOrgA(String path) {
+        return call(new ForeignIdSweep.Call("GET", path, path, null, null));
+    }
+
+    /** The real request path: a signed token and the real X-Org-Context header (no test filter). */
+    private int call(ForeignIdSweep.Call c) {
         HttpHeaders h = new HttpHeaders();
-        // the real request path: a signed token for A's member and the real X-Org-Context header (no test filter)
-        h.add("X-Org-Context", FIXTURES.orgA.toString());
-        h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA));
-        return http.exchange(path, HttpMethod.GET, new HttpEntity<>(h), String.class).getStatusCode().value();
+        if (ForeignIdSweep.ADMIN.equals(c.caller())) {
+            h.setBearerAuth(TestAuth.accessToken(FIXTURES.admin));
+        } else {
+            h.add("X-Org-Context", FIXTURES.orgA.toString());
+            h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA));
+        }
+        h.setContentType(MediaType.APPLICATION_JSON);
+        return http.exchange(c.path(), HttpMethod.valueOf(c.method()), new HttpEntity<>(c.body(), h), String.class).getStatusCode().value();
     }
 
     @Test
@@ -83,26 +92,35 @@ class RlsLeakSweepIT {
     }
 
     @Test
-    void everyGetEndpointRejectsForeignOrgIds() throws Exception {
+    void everyEndpointWithEveryMethodRejectsForeignOrgIds() throws Exception {
         // a 404 for every foreign id means nothing unless the same endpoint answers 200 for the caller's own org
         assertEquals(200, getAsOrgA("/api/sweep/classes/" + FIXTURES.classA), "positive control");
         String openApi = http.getForObject("/v3/api-docs", String.class);
         assertEquals(200, getAsOrgA("/api/sweep/classes/" + FIXTURES.classA + "/members/" + FIXTURES.userA), "positive control, two parameters");
         assertEquals(200, getAsOrgA("/api/orgs/" + FIXTURES.orgA + "/role-grants"), "positive control: A's admin lists A's members");
         assertEquals(200, getAsOrgA("/api/orgs/" + FIXTURES.orgA + "/invitations"), "positive control: A's admin lists A's invitations");
-        SweepFixtures.Catalog catalog = FIXTURES.foreignIds(EXEMPT_TABLES);
-        assertEquals(List.of(), catalog.problems(), "every table with an id must have a foreign row or a reason");
+        SweepFixtures.Catalog catalog = FIXTURES.foreignIds(Map.of());
+        assertEquals(List.of(), catalog.problems(), "every table must have a foreign row or a reason");
         List<UUID> foreign = catalog.ids();
         assertTrue(foreign.contains(FIXTURES.classB) && foreign.size() >= 7, "foreign ids found by catalog: " + foreign);
+        assertTrue(catalog.texts().contains(FIXTURES.courseCodeB), "a text key is collected for a string slot: " + catalog.texts());
+        String before = classNameOfB();
 
-        ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, foreign, EXEMPT, typedFixtures(), (template, path) -> getAsOrgA(path));
+        ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, foreign, SweepFixtures.EXEMPT_OPERATIONS, fixtures(), this::call);
 
-        assertTrue(r.visited().contains("/api/sweep/classes/{id}"), "the sweep must reach the test endpoint, visited " + r.visited());
-        assertTrue(r.visited().contains("/api/sweep/classes/{classId}/members/{userId}"), "multi-parameter endpoint swept: " + r.visited());
-        assertTrue(r.visited().containsAll(List.of("/api/orgs/{id}/role-grants", "/api/orgs/{id}/invitations")),
-                "the org endpoints of P1.5 are swept through the real X-Org-Context binding: " + r.visited());
-        assertFalse(r.visited().isEmpty(), "a sweep that visits nothing proves nothing");
         assertEquals(List.of(), r.unsweepable());
         assertEquals(List.of(), r.leaks());
+        assertEquals(before, classNameOfB(), "nothing of org B changed");
+        // every write route of the application was really called, and each answered 2xx to its own positive control (or it would be unsweepable)
+        assertTrue(r.visited().containsAll(List.of("GET /api/sweep/classes/{id}", "GET /api/sweep/classes/{classId}/members/{userId}", "PATCH /api/sweep/classes/{id}",
+                "GET /api/orgs/{id}/role-grants", "GET /api/orgs/{id}/invitations",
+                "POST /api/me/notifications/{id}/read", "POST /api/orgs/{id}/invitations", "PUT /api/orgs/{id}/role-grants",
+                "DELETE /api/orgs/{id}/invitations/{invitationId}", "DELETE /api/admin/invitations/{invitationId}",
+                "POST /api/invitations/{token}/accept", "POST /api/admin/invitations", "POST /api/admin/organizations")),
+                "visited " + r.visited());
+    }
+
+    private String classNameOfB() {
+        return new JdbcTemplate(TestPostgres.superuser(DB)).queryForObject("select name from classes where id = ?", String.class, FIXTURES.classB);
     }
 }

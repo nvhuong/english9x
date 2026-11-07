@@ -1,5 +1,6 @@
 package com.english9x.notification.internal;
 
+import com.english9x.identity.api.EmailNotVerifiedException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -51,6 +52,7 @@ class TelegramLinkService {
         if (!cfg.enabled()) {
             throw NotificationProblems.telegramNotConfigured();
         }
+        requireVerifiedEmail(jdbc);
         byte[] raw = new byte[32];
         random.nextBytes(raw);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
@@ -85,6 +87,17 @@ class TelegramLinkService {
         }
         return jdbc.query("select r_status, r_locale, r_old_chat from telegram_link_consume(?, ?, ?)",
                 (rs, i) -> new Consumed(rs.getString(1), rs.getString(2), (Long) rs.getObject(3)), digest(token), chatId, Timestamp.from(clock.instant())).get(0);
+    }
+
+    /**
+     * An unverified account is not yet known to be the mailbox's owner (final review I1), so it can neither link a chat nor set a
+     * preference. The database refuses both as well; this gives the clear answer. An address never goes back to unverified, so this cannot race.
+     */
+    static void requireVerifiedEmail(JdbcTemplate jdbc) {
+        if (!Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists (select 1 from users where id = e9x_current_user() and email_verified_at is not null)", Boolean.class))) {
+            throw new EmailNotVerifiedException();
+        }
     }
 
     static byte[] digest(String token) {

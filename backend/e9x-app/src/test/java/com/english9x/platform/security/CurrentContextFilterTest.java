@@ -27,6 +27,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 /** The request filter that binds the authenticated user for Row-Level Security. */
 class CurrentContextFilterTest {
 
+    private final java.util.concurrent.atomic.AtomicLong currentVersion = new java.util.concurrent.atomic.AtomicLong(1);
+    private final AtomicReference<String> versionAskedFor = new AtomicReference<>();
     /** Who belongs to what; records the binding that was in force when it was asked. */
     private final Set<String> memberships = new HashSet<>();
     private final AtomicReference<Optional<CurrentContextHolder.Binding>> boundWhenAsked = new AtomicReference<>();
@@ -34,7 +36,10 @@ class CurrentContextFilterTest {
         boundWhenAsked.set(CurrentContextHolder.current());
         return memberships.contains(user + "/" + org);
     };
-    private final CurrentContextFilter filter = new CurrentContextFilter(new ProblemSecurityHandlers(new ObjectMapper()), membership);
+    private final CurrentContextFilter filter = new CurrentContextFilter(new ProblemSecurityHandlers(new ObjectMapper()), membership, (user, version) -> {
+        versionAskedFor.set(user + "/" + version);
+        return version == currentVersion.get();
+    });
 
     @AfterEach
     void clean() {
@@ -43,8 +48,42 @@ class CurrentContextFilterTest {
     }
 
     private static void authenticate(String subject) {
-        Jwt jwt = Jwt.withTokenValue("t").header("alg", "HS256").subject(subject).issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(60)).build();
+        Jwt jwt = Jwt.withTokenValue("t").header("alg", "HS256").subject(subject).claim("credentials_version", 1L).issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(60)).build();
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, java.util.List.of()));
+    }
+
+    @Test
+    void aTokenFromBeforeACredentialsChangeIsRefusedWithTheUsual401() throws Exception {
+        UUID id = UUID.randomUUID();
+        authenticate(id.toString());
+        currentVersion.set(2);
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        boolean[] reached = {false};
+        filter.doFilter(new MockHttpServletRequest(), res, (rq, rs) -> reached[0] = true);
+        assertEquals(401, res.getStatus());
+        assertEquals("Bearer", res.getHeader("WWW-Authenticate"));
+        assertFalse(reached[0], "the request goes no further");
+        assertEquals(id + "/1", versionAskedFor.get());
+        assertTrue(SecurityContextHolder.getContext().getAuthentication() == null);
+    }
+
+    @Test
+    void aTokenWithoutTheClaimIsRefusedWithoutAsking() throws Exception {
+        Jwt jwt = Jwt.withTokenValue("t").header("alg", "HS256").subject(UUID.randomUUID().toString()).issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(60)).build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, java.util.List.of()));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        boolean[] reached = {false};
+        filter.doFilter(new MockHttpServletRequest(), res, (rq, rs) -> reached[0] = true);
+        assertEquals(401, res.getStatus());
+        assertFalse(reached[0]);
+    }
+
+    @Test
+    void aRequestWithoutAJwtIsNotAskedAboutAtAll() throws Exception {
+        boolean[] reached = {false};
+        filter.doFilter(new MockHttpServletRequest(), new MockHttpServletResponse(), (rq, rs) -> reached[0] = true);
+        assertTrue(reached[0], "anonymous (the seed API, public routes): the filter only passes it on");
+        assertEquals(null, versionAskedFor.get());
     }
 
     @Test

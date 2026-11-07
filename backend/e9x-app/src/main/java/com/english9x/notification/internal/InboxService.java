@@ -92,6 +92,7 @@ class InboxService {
 
     @Transactional
     void setPref(EventType type, Channel channel, boolean enabled) {
+        TelegramLinkService.requireVerifiedEmail(jdbc);
         jdbc.update("insert into notification_prefs(user_id, event_type, channel, enabled, updated_at) values (e9x_current_user(), ?, ?, ?, ?) "
                 + "on conflict (user_id, event_type, channel) do update set enabled = excluded.enabled, updated_at = excluded.updated_at",
                 type.name(), channel.name(), enabled, Timestamp.from(clock.instant()));

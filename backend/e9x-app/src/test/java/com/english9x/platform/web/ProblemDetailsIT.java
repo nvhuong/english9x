@@ -43,7 +43,7 @@ class ProblemDetailsIT {
     private ResponseEntity<String> send(HttpMethod method, String path, String body) {
         HttpHeaders h = new HttpHeaders();
         h.setContentType(MediaType.APPLICATION_JSON);
-        h.setBearerAuth(TestAuth.accessToken(java.util.UUID.randomUUID())); // /api/** needs a token; the endpoints under test ignore who it is
+        h.setBearerAuth(TestAuth.accessToken(TestPostgres.someUser(DB))); // /api/** needs a token; the endpoints under test ignore who it is
         return http.exchange(path, method, new HttpEntity<>(body, h), String.class);
     }
 
