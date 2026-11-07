@@ -36,6 +36,7 @@
     "loadFailed": "Could not load preferences.",
     "retry": "Try again",
     "saveFailed": "Could not save the change. Please try again.",
+    "verifyFirst": "Verify your email address to change notification settings and connect Telegram.",
     "caption": "Notification channels by event",
     "event": "Event",
     "inApp": "In the app",

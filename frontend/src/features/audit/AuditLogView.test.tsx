@@ -24,6 +24,13 @@ describe('AuditLogView', () => {
     expect(within(row).getByText('AUTHOR/IELTS, LEARNER')).toBeInTheDocument();
   });
 
+  it('a person accepting an invitation outside any organisation acted for themselves, not for English9x', async () => {
+    render(<AuditLogView entries={[entry({ action: 'invitation.accept', targetType: 'invitation' })]} />);
+    const row = screen.getByTestId('audit-row');
+    expect(within(row).getByText('Cá nhân')).toBeInTheDocument();
+    expect(within(row).queryByText('English9x')).toBeNull();
+  });
+
   it('is worded in English too, and shows an unknown action by its code', async () => {
     await resetI18n('en');
     render(<AuditLogView entries={[entry({ action: 'order.confirm' }), entry({ id: '2', action: 'invitation.accept', orgId: 'o-1', orgName: 'Center A' })]} />);

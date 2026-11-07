@@ -22,6 +22,33 @@ afterEach(() => vi.unstubAllGlobals());
 const row = (id: string, read: boolean) => ({ id, type: 'REVIEW_REQUESTED', data: { contentType: 'question', examCode: 'IELTS' }, createdAt: '2026-11-07T03:00:00Z', read });
 
 describe('notification pages against the API', () => {
+  it('an unverified person is told why: no toggle, no link button, and nothing is sent', async () => {
+    useAuthStore.setState({ user: me({ emailVerified: false }) as never });
+    const calls = stubApi({
+      'GET /api/me/notification-prefs': () => json(200, { channels: ['IN_APP', 'EMAIL', 'TELEGRAM'], events: [{ type: 'REVIEW_REQUESTED', audience: 'REVIEWER', email: true, telegram: true }] }),
+      'GET /api/me/telegram': () => json(200, { enabled: true, linked: false, failing: false }),
+    });
+    renderAt('/p', '/p', <NotificationPreferencesPage />);
+    expect(await screen.findByText('Hãy xác thực email để đổi tuỳ chọn thông báo và kết nối Telegram.')).toBeInTheDocument();
+    for (const box of await screen.findAllByRole('checkbox')) expect(box).toBeDisabled();
+    await screen.findByRole('heading', { name: /Telegram/ });
+    expect(screen.queryByRole('button', { name: 'Tạo liên kết kết nối' })).toBeNull();
+    expect(calls.filter((c) => c.method !== 'GET')).toHaveLength(0);
+  });
+
+  it('a server refusal for an unverified address says the same, also when this tab still thinks the address is verified', async () => {
+    const refused = () => json(403, { type: 'urn:e9x:problem:email-not-verified', title: 'Email not verified', status: 403, errors: [] });
+    stubApi({
+      'GET /api/me/notification-prefs': () => json(200, { channels: ['IN_APP', 'EMAIL', 'TELEGRAM'], events: [{ type: 'REVIEW_REQUESTED', audience: 'REVIEWER', email: true, telegram: true }] }),
+      'GET /api/me/telegram': () => json(200, { enabled: true, linked: false, failing: false }),
+      'POST /api/me/telegram/link': refused,
+    });
+    renderAt('/p', '/p', <NotificationPreferencesPage />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Tạo liên kết kết nối' }));
+    expect(await screen.findByText('Hãy xác thực email để đổi tuỳ chọn thông báo và kết nối Telegram.')).toBeInTheDocument();
+    expect(screen.queryByText('Chưa tạo được liên kết. Hãy thử lại.')).toBeNull();
+  });
+
   it('the bell shows the unread count and links to the centre; nothing is requested when signed out', async () => {
     stubApi({ 'GET /api/me/notifications/unread-count': () => json(200, { count: 3 }) });
     renderAt('/', '/', <NotificationBell />);
