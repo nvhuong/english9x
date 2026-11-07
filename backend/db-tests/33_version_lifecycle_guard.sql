@@ -84,6 +84,15 @@ BEGIN
   ASSERT (SELECT count(*) FROM lifecycle_demo WHERE body IN ('ok','default is DRAFT') AND status = 'DRAFT') = 2;
 END $$;
 RESET ROLE;
+-- every other login is refused too: the rule names who may, not who may not (an import job runs as the worker)
+GRANT SELECT, INSERT ON lifecycle_demo TO e9x_worker_login;
+SET ROLE e9x_worker_login;
+DO $$
+BEGIN
+  ASSERT pg_temp.refused($q$INSERT INTO lifecycle_demo(status,body) VALUES ('PUBLISHED','x')$q$), 'worker inserts PUBLISHED';
+  INSERT INTO lifecycle_demo(status,body) VALUES ('DRAFT','worker draft');
+END $$;
+RESET ROLE;
 DO $$
 BEGIN
   -- the owner / a superuser (migrations, seed data) may insert any status

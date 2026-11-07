@@ -24,9 +24,9 @@
 --   * DELETE is refused for IN_REVIEW, PUBLISHED and ARCHIVED rows.
 --   * A version cannot reach PUBLISHED except from IN_REVIEW. (That a review approved it is the workflow service's rule;
 --     the database refuses the shortcut.)
---   * INSERT: when the writer is the application role (member of e9x_app, not a superuser) the row must be DRAFT, with the
---     status written or defaulted; a PUBLISHED / IN_REVIEW / NULL status is refused. The owner (Flyway: migrations and seed
---     data) and a superuser may insert any status. Attach the trigger as BEFORE INSERT OR UPDATE OR DELETE.
+--   * INSERT: the row must be DRAFT, with the status written or defaulted; a PUBLISHED / IN_REVIEW / NULL status is refused.
+--     Only the owner (Flyway: migrations and seed data) and a superuser may insert any status, so the application, worker
+--     and grader logins are all refused. Attach the trigger as BEFORE INSERT OR UPDATE OR DELETE.
 --   * A table without a text/enum "status" column is refused on every operation (the guard never fails open).
 --   * LIMIT: a stored GENERATED column is NULL in NEW inside a BEFORE trigger, so the "nothing else changed" comparison would
 --     see a difference and refuse a legal move. Do not use stored generated columns on a guarded table (keep them in a view
@@ -44,7 +44,7 @@ DECLARE
   v_col text;
 BEGIN
   IF TG_OP = 'INSERT' THEN
-    IF pg_has_role(current_user, 'e9x_app', 'MEMBER')
+    IF current_user <> 'e9x_owner'
        AND NOT (SELECT r.rolsuper FROM pg_roles r WHERE r.rolname = current_user)
        AND to_jsonb(NEW) ->> 'status' IS DISTINCT FROM 'DRAFT' THEN
       RAISE EXCEPTION 'a new version starts as DRAFT' USING ERRCODE = '23000';

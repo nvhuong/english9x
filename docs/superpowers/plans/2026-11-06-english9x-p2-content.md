@@ -92,7 +92,7 @@
 
 ### Task P2.9: UI duyệt + so sánh phiên bản (W6) — F17, F18
 
-**Files:** `frontend/src/features/cms/review/**` (danh sách chờ duyệt, xem cả cụm, diff JSON → hiển thị khác biệt trường theo trường, nút Yêu cầu sửa/Duyệt), E2E `F17-review-workflow.spec.ts`, `F18-versioning.spec.ts`.
+**Files:** controller backend của luồng duyệt (xem ghi chú 2026-11-08 bên dưới), `frontend/src/features/cms/review/**` (danh sách chờ duyệt, xem cả cụm, diff JSON → hiển thị khác biệt trường theo trường, nút Yêu cầu sửa/Duyệt), E2E `F17-review-workflow.spec.ts`, `F18-versioning.spec.ts`.
 
 **Tests:** Vitest `VersionDiff.highlightsChangedFields`; E2E F17 (gồm "người duyệt không duyệt được bản mình soạn" và "đề chưa đủ câu xuất bản thì không xuất bản được"), F18 (học viên đang thi vẫn thấy bản cũ).
 
