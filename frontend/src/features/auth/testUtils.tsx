@@ -82,5 +82,6 @@ export function renderAt(path: string, routePath: string, page: ReactElement) {
 
 export function resetAuth() {
   refreshStorage.clear();
+  localStorage.removeItem('e9x.auth.session');
   useAuthStore.setState({ accessToken: null, user: null, status: 'anonymous' });
 }

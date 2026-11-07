@@ -96,7 +96,6 @@ export default function RegisterPage() {
           <Button asChild variant="secondary">
             <a href="/api/auth/oauth2/google">{t('login.google')}</a>
           </Button>
-          <p className="text-xs text-muted">{t('login.googleConsent')}</p>
         </div>
       )}
     </AuthCard>

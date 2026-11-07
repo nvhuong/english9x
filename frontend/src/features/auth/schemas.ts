@@ -24,6 +24,9 @@ export const registerSchema = z.object({
 });
 export type RegisterValues = z.infer<typeof registerSchema>;
 
+export const googleConsentSchema = z.object({ consent: z.boolean().refine((v) => v === true, 'validation.consentGoogle') });
+export type GoogleConsentValues = z.infer<typeof googleConsentSchema>;
+
 export const forgotSchema = z.object({ email: emailField });
 export type ForgotValues = z.infer<typeof forgotSchema>;
 

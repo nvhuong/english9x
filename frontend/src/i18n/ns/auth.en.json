@@ -29,6 +29,7 @@
     "passwordLong": "The password is too long (72 bytes at most; accented characters take more than one byte).",
     "passwordMismatch": "The two passwords do not match.",
     "consent": "You need to agree to create an account.",
+    "consentGoogle": "You need to agree to continue.",
     "nameLong": "The name is too long (100 characters at most)."
   },
   "problem": {
@@ -37,6 +38,7 @@
     "invalidToken": "This link is invalid, already used, or has expired.",
     "generic": "Something went wrong. Please try again.",
     "network": "Could not reach the server. Check your connection and try again.",
+    "consentRequired": "This account has not agreed to the processing of personal data yet. Sign in with Google once to give your agreement.",
     "NotBlank": "Please fill in this field.",
     "Email": "This email address is not valid.",
     "Size": "The value is not within the allowed length.",
@@ -53,7 +55,6 @@
     "noAccount": "No account yet?",
     "registerLink": "Sign up",
     "google": "Sign in with Google",
-    "googleConsent": "By continuing with Google you agree that English9x processes your personal data as required.",
     "errorGoogle": "Google sign-in did not work. Please try again.",
     "errorGoogleUnverified": "Google has not confirmed this email address, so we cannot link or create an account. Verify the address with Google, or sign in with email and password.",
     "alreadySignedIn": "You are signed in."
@@ -100,6 +101,14 @@
     "failTitle": "Could not reset the password"
   },
   "google": {
+    "consentTitle": "One more step",
+    "consentBody": "Before your account can be used, English9x needs your agreement to process your personal data.",
+    "consentSubmit": "Agree and continue",
+    "replaceTitle": "You are already signed in",
+    "replaceBody": "This browser is signed in as {{name}}. Did you just sign in with Google yourself? If you followed a link from someone else, keep your current session.",
+    "replaceBodyNoName": "This browser already has a signed-in session. Did you just sign in with Google yourself? If you followed a link from someone else, keep your current session.",
+    "replaceContinue": "Continue with the Google account",
+    "replaceStay": "Keep my current session",
     "working": "Finishing your Google sign-in…",
     "failTitle": "Google sign-in did not work"
   },

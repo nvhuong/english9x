@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore, type AuthUser } from '../../app/stores/auth';
 import { useRoleStore } from '../../app/stores/roles';
 import {
-  bootstrapSession, clearCacheOnUserChange, endSession, logout, refreshSession, refreshStorage, startSession, syncLogoutAcrossTabs,
+  bootstrapSession, clearCacheOnUserChange, endSession, logout, refreshSession, refreshStorage, startSession, syncSessionAcrossTabs,
 } from './session';
 import { json, me, problem, resetAuth, stubApi, tokens } from './testUtils';
 
@@ -131,9 +131,227 @@ describe('startSession, bootstrap, logout', () => {
 
   it('signing out in another tab signs this one out', () => {
     useAuthStore.setState({ accessToken: 'a', user: me() as never, status: 'authenticated' });
-    const stop = syncLogoutAcrossTabs();
+    const stop = syncSessionAcrossTabs();
     window.dispatchEvent(new StorageEvent('storage', { key: 'e9x.auth.refresh', newValue: null }));
     expect(useAuthStore.getState().status).toBe('anonymous');
+    stop();
+  });
+});
+
+describe('a session that changed while something was in flight', () => {
+  const deferred = <T,>() => {
+    let resolve!: (v: T) => void;
+    const promise = new Promise<T>((r) => (resolve = r));
+    return { promise, resolve };
+  };
+
+  it('logging out during a refresh does not bring the tokens back, and the orphan is revoked', async () => {
+    refreshStorage.set('refresh-1');
+    useAuthStore.setState({ accessToken: 'a', user: me() as never, status: 'authenticated' });
+    const gate = deferred<void>();
+    const calls = stubApi({
+      'POST /api/auth/refresh': async () => {
+        await gate.promise;
+        return json(200, tokens(2));
+      },
+      'POST /api/auth/logout': () => new Response(null, { status: 204 }),
+    });
+    const refreshing = refreshSession();
+    await vi.waitFor(() => expect(calls.some((c) => c.path === '/api/auth/refresh')).toBe(true));
+    await logout();
+    gate.resolve();
+    expect(await refreshing).toBeNull();
+    expect(refreshStorage.get()).toBeNull();
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: null, user: null, status: 'anonymous' });
+    await vi.waitFor(() => expect(calls.filter((c) => c.path === '/api/auth/logout').map((c) => c.body)).toContainEqual({ refreshToken: 'refresh-2' }));
+  });
+
+  it('signing in as someone else during a refresh keeps the new session', async () => {
+    refreshStorage.set('refresh-old');
+    const gate = deferred<void>();
+    const calls = stubApi({
+      'POST /api/auth/refresh': async () => {
+        await gate.promise;
+        return json(200, tokens(2));
+      },
+      'POST /api/auth/logout': () => new Response(null, { status: 204 }),
+      'GET /api/auth/me': () => json(200, me({ id: 'other' })),
+    });
+    const refreshing = refreshSession();
+    await vi.waitFor(() => expect(calls.some((c) => c.path === '/api/auth/refresh')).toBe(true));
+    await startSession(tokens(7));
+    gate.resolve();
+    expect(await refreshing).toBeNull();
+    expect(refreshStorage.get()).toBe('refresh-7');
+    expect(useAuthStore.getState().accessToken).toBe('access-7');
+    expect(useAuthStore.getState().user?.id).toBe('other');
+  });
+
+  it('a dead token answer that arrives after signing in as someone else does not end the new session', async () => {
+    refreshStorage.set('refresh-old');
+    const gate = deferred<void>();
+    const calls = stubApi({
+      'POST /api/auth/refresh': async () => {
+        await gate.promise;
+        return problem(401, 'invalid-refresh-token');
+      },
+      'GET /api/auth/me': () => json(200, me({ id: 'other' })),
+    });
+    const refreshing = refreshSession();
+    await vi.waitFor(() => expect(calls.some((c) => c.path === '/api/auth/refresh')).toBe(true));
+    await startSession(tokens(7));
+    gate.resolve();
+    await refreshing;
+    expect(refreshStorage.get()).toBe('refresh-7');
+    expect(useAuthStore.getState().status).toBe('authenticated');
+  });
+
+  it('the profile answer of a sign-in does not sign back in after logging out', async () => {
+    const gate = deferred<void>();
+    stubApi({
+      'GET /api/auth/me': async () => {
+        await gate.promise;
+        return json(200, me());
+      },
+      'POST /api/auth/logout': () => new Response(null, { status: 204 }),
+    });
+    const signingIn = startSession(tokens(1));
+    await logout();
+    gate.resolve();
+    await signingIn;
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: null, user: null, status: 'anonymous' });
+  });
+
+  it('a refresh after sign-in as someone else does not share the old in-flight promise', async () => {
+    refreshStorage.set('refresh-old');
+    const gate = deferred<void>();
+    let n = 0;
+    stubApi({
+      'POST /api/auth/refresh': async (c) => {
+        n++;
+        if ((c.body as { refreshToken: string }).refreshToken === 'refresh-old') {
+          await gate.promise;
+          return json(200, tokens(2));
+        }
+        return json(200, tokens(9));
+      },
+      'POST /api/auth/logout': () => new Response(null, { status: 204 }),
+      'GET /api/auth/me': () => json(200, me({ id: 'other' })),
+    });
+    const old = refreshSession();
+    await vi.waitFor(() => expect(n).toBe(1));
+    await startSession(tokens(7));
+    expect(await refreshSession()).toBe('access-9');
+    gate.resolve();
+    await old;
+    expect(refreshStorage.get()).toBe('refresh-9');
+  });
+
+  it('another tab signing out during our refresh wins: its answer is not written back', async () => {
+    refreshStorage.set('refresh-1');
+    localStorage.setItem('e9x.auth.session', 'm1');
+    useAuthStore.setState({ accessToken: 'a', user: me() as never, status: 'authenticated' });
+    const gate = deferred<void>();
+    const calls = stubApi({
+      'POST /api/auth/refresh': async () => {
+        await gate.promise;
+        return json(200, tokens(2));
+      },
+      'POST /api/auth/logout': () => new Response(null, { status: 204 }),
+    });
+    const refreshing = refreshSession();
+    await vi.waitFor(() => expect(calls.some((c) => c.path === '/api/auth/refresh')).toBe(true));
+    localStorage.removeItem('e9x.auth.refresh'); // the other tab
+    localStorage.removeItem('e9x.auth.session');
+    gate.resolve();
+    expect(await refreshing).toBeNull();
+    expect(refreshStorage.get()).toBeNull();
+  });
+});
+
+describe('other tabs', () => {
+  const otherTabSignsIn = (token: string, marker: string) => {
+    localStorage.setItem('e9x.auth.refresh', token);
+    localStorage.setItem('e9x.auth.session', marker);
+    window.dispatchEvent(new StorageEvent('storage', { key: 'e9x.auth.refresh', newValue: token }));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'e9x.auth.session', newValue: marker }));
+  };
+
+  it('a sign-in as someone else in another tab re-reads /me, shows that person and drops the cache', async () => {
+    const qc = new QueryClient();
+    const stopCache = clearCacheOnUserChange(qc);
+    const A = me({ id: 'a' });
+    stubApi({ 'GET /api/auth/me': () => json(200, A) });
+    await startSession(tokens(1));
+    qc.setQueryData(['ctx', 'personal', 'x'], 'private of A');
+    useRoleStore.setState({ grants: [{ role: 'LEARNER', org: null, exam: null }] });
+    const calls = stubApi({
+      'POST /api/auth/refresh': (c) => {
+        expect((c.body as { refreshToken: string }).refreshToken).toBe('refresh-b');
+        return json(200, tokens(3));
+      },
+      'GET /api/auth/me': () => json(200, me({ id: 'b', email: 'b@example.test' })),
+    });
+    const stop = syncSessionAcrossTabs();
+    otherTabSignsIn('refresh-b', 'session-of-b');
+    await vi.waitFor(() => expect(useAuthStore.getState().user?.id).toBe('b'));
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: 'access-3', status: 'authenticated' });
+    expect(qc.getQueryData(['ctx', 'personal', 'x'])).toBeUndefined();
+    expect(useRoleStore.getState().grants).toBeNull();
+    expect(calls.filter((c) => c.path === '/api/auth/refresh')).toHaveLength(1);
+    stop();
+    stopCache();
+  });
+
+  it('the same person signing in again in another tab keeps the cache', async () => {
+    const qc = new QueryClient();
+    const stopCache = clearCacheOnUserChange(qc);
+    stubApi({ 'GET /api/auth/me': () => json(200, me({ id: 'a' })) });
+    await startSession(tokens(1));
+    qc.setQueryData(['ctx', 'personal', 'x'], 'mine');
+    stubApi({ 'POST /api/auth/refresh': () => json(200, tokens(3)), 'GET /api/auth/me': () => json(200, me({ id: 'a' })) });
+    const stop = syncSessionAcrossTabs();
+    otherTabSignsIn('refresh-again', 'second-session');
+    await vi.waitFor(() => expect(useAuthStore.getState().accessToken).toBe('access-3'));
+    expect(qc.getQueryData(['ctx', 'personal', 'x'])).toBe('mine');
+    stop();
+    stopCache();
+  });
+
+  it('an ordinary rotation in another tab costs nothing: no refresh of our own, no ping-pong between tabs', async () => {
+    stubApi({ 'GET /api/auth/me': () => json(200, me()) });
+    await startSession(tokens(1));
+    const marker = localStorage.getItem('e9x.auth.session');
+    expect(marker).not.toBeNull();
+    const calls = stubApi({});
+    const stop = syncSessionAcrossTabs();
+    localStorage.setItem('e9x.auth.refresh', 'refresh-rotated');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'e9x.auth.refresh', newValue: 'refresh-rotated' }));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(calls).toHaveLength(0);
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: 'access-1', status: 'authenticated' });
+    stop();
+  });
+
+  it('a tab that is signed out follows a sign-in made in another tab', async () => {
+    stubApi({ 'POST /api/auth/refresh': () => json(200, tokens(3)), 'GET /api/auth/me': () => json(200, me({ id: 'b' })) });
+    const stop = syncSessionAcrossTabs();
+    otherTabSignsIn('refresh-b', 'session-of-b');
+    await vi.waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
+    expect(useAuthStore.getState().user?.id).toBe('b');
+    stop();
+  });
+
+  it('sign-out then immediately sign-in elsewhere: the late sign-out event does not wipe the new token', async () => {
+    useAuthStore.setState({ accessToken: 'a', user: me({ id: 'a' }) as never, status: 'authenticated' });
+    stubApi({ 'POST /api/auth/refresh': () => json(200, tokens(3)), 'GET /api/auth/me': () => json(200, me({ id: 'b' })) });
+    const stop = syncSessionAcrossTabs();
+    localStorage.setItem('e9x.auth.refresh', 'refresh-b');
+    localStorage.setItem('e9x.auth.session', 'later-session-of-b');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'e9x.auth.refresh', newValue: null })); // delivered late
+    expect(localStorage.getItem('e9x.auth.refresh')).toBe('refresh-b');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'e9x.auth.session', newValue: 'later-session-of-b' }));
+    await vi.waitFor(() => expect(useAuthStore.getState().user?.id).toBe('b'));
     stop();
   });
 });

@@ -8,6 +8,8 @@ export function problemMessage(err: unknown, t: TFunction): string {
     switch (err.type) {
       case 'urn:e9x:problem:invalid-credentials':
         return t('problem.invalidCredentials');
+      case 'urn:e9x:problem:consent-required':
+        return t('problem.consentRequired');
       case 'urn:e9x:problem:too-many-attempts':
         return t('problem.tooManyAttempts');
       case 'urn:e9x:problem:invalid-or-expired-token':

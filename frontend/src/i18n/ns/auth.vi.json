@@ -29,6 +29,7 @@
     "passwordLong": "Mật khẩu quá dài (tối đa 72 byte; ký tự có dấu chiếm nhiều byte hơn).",
     "passwordMismatch": "Hai mật khẩu chưa giống nhau.",
     "consent": "Bạn cần đồng ý để tạo tài khoản.",
+    "consentGoogle": "Bạn cần đồng ý để tiếp tục.",
     "nameLong": "Tên quá dài (tối đa 100 ký tự)."
   },
   "problem": {
@@ -37,6 +38,7 @@
     "invalidToken": "Liên kết không hợp lệ, đã được dùng hoặc đã hết hạn.",
     "generic": "Có lỗi xảy ra. Vui lòng thử lại.",
     "network": "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.",
+    "consentRequired": "Tài khoản này chưa đồng ý cho xử lý dữ liệu cá nhân. Hãy đăng nhập bằng Google một lần để đồng ý.",
     "NotBlank": "Vui lòng nhập thông tin này.",
     "Email": "Địa chỉ email chưa hợp lệ.",
     "Size": "Giá trị chưa đúng độ dài cho phép.",
@@ -53,7 +55,6 @@
     "noAccount": "Chưa có tài khoản?",
     "registerLink": "Đăng ký",
     "google": "Đăng nhập bằng Google",
-    "googleConsent": "Khi tiếp tục với Google, bạn đồng ý để English9x xử lý dữ liệu cá nhân của bạn theo quy định.",
     "errorGoogle": "Đăng nhập bằng Google không thành công. Vui lòng thử lại.",
     "errorGoogleUnverified": "Google chưa xác nhận địa chỉ email này, nên chúng tôi không thể liên kết hay tạo tài khoản. Hãy xác thực email với Google hoặc đăng nhập bằng email và mật khẩu.",
     "alreadySignedIn": "Bạn đang đăng nhập."
@@ -100,6 +101,14 @@
     "failTitle": "Không đặt lại được mật khẩu"
   },
   "google": {
+    "consentTitle": "Còn một bước nữa",
+    "consentBody": "Trước khi dùng tài khoản, English9x cần bạn đồng ý cho xử lý dữ liệu cá nhân.",
+    "consentSubmit": "Đồng ý và tiếp tục",
+    "replaceTitle": "Bạn đang đăng nhập",
+    "replaceBody": "Trình duyệt này đang đăng nhập với tên {{name}}. Có phải bạn vừa tự đăng nhập bằng Google? Nếu bạn mở liên kết do người khác gửi, hãy giữ phiên hiện tại.",
+    "replaceBodyNoName": "Trình duyệt này đang có một phiên đăng nhập. Có phải bạn vừa tự đăng nhập bằng Google? Nếu bạn mở liên kết do người khác gửi, hãy giữ phiên hiện tại.",
+    "replaceContinue": "Tiếp tục với tài khoản Google",
+    "replaceStay": "Giữ phiên hiện tại",
     "working": "Đang hoàn tất đăng nhập bằng Google…",
     "failTitle": "Đăng nhập bằng Google không thành công"
   },

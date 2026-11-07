@@ -105,7 +105,6 @@ export default function LoginPage() {
           <Button asChild variant="secondary">
             <a href={googleHref}>{t('login.google')}</a>
           </Button>
-          <p className="text-xs text-muted">{t('login.googleConsent')}</p>
         </div>
       )}
     </AuthCard>
