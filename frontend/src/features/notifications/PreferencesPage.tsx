@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ApiProblemError } from '../../api/problem';
-import { useAuthStore } from '../../app/stores/auth';
+import { useApi } from '../../api/useApi';
+import { useAuthStore, type AuthUser } from '../../app/stores/auth';
 import { Button, EmptyState } from '../../design';
 import { FormAlert, FormNotice } from '../auth/components';
 import { PreferencesView, type PrefsEvent } from './PreferencesView';
@@ -10,6 +11,42 @@ import { TelegramLinkView } from './TelegramLinkView';
 import { usePrefs, useSetPref, useTelegramLink, useTelegramStatus, useTelegramUnlink } from './queries';
 
 const notVerified = (err: unknown) => err instanceof ApiProblemError && err.type === 'urn:e9x:problem:email-not-verified';
+
+/**
+ * While the profile in THIS tab says the address is unverified, read it again on mount and whenever the tab gets focus back: the
+ * person may have verified in another tab, and only that tab reloads the profile. Once verified, nothing is asked.
+ */
+function useFreshProfileWhileUnverified() {
+  const api = useApi();
+  const apiRef = useRef(api);
+  useEffect(() => {
+    apiRef.current = api;
+  }, [api]);
+  const unverified = useAuthStore((s) => s.status === 'authenticated' && s.user?.emailVerified === false);
+  const refresh = useCallback(async () => {
+    try {
+      const fresh = (await apiRef.current.GET('/api/auth/me')).data as AuthUser | undefined;
+      const current = useAuthStore.getState();
+      if (fresh && current.user?.id === fresh.id && fresh.emailVerified !== current.user.emailVerified) current.setUser(fresh);
+    } catch {
+      // offline or signed out meanwhile: the page keeps what it knows
+    }
+  }, []);
+  useEffect(() => {
+    if (!unverified) return;
+    void refresh();
+    const onFocus = () => void refresh();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [unverified, refresh]);
+}
 
 /** /notifications/preferences: channels per event (F55) and the Telegram connection (F54). */
 export default function NotificationPreferencesPage() {
@@ -22,6 +59,7 @@ export default function NotificationPreferencesPage() {
   const createLink = useTelegramLink();
   const unlink = useTelegramUnlink();
   const [unlinkFailed, setUnlinkFailed] = useState(false);
+  useFreshProfileWhileUnverified();
   if (status === 'loading') return <p role="status" className="text-muted">{t('prefs.loading')}</p>;
   if (status !== 'authenticated') {
     return (
