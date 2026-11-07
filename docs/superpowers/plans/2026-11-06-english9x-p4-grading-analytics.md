@@ -26,6 +26,8 @@
 
 **Tests:** `AutoGradingIT.toeicScoresWithTestOverrideTable`, `.ieltsListeningReadingBands`, `.interruptedAttemptScoredAndFlagged`, `.scoreTableVersionRecorded`, `.idempotentOnDuplicateEvent`.
 
+> **Ghi chú 2026-11-08 (review cuối P1, sửa plan 10):** `e9x_caller_is_sys_admin` và các helper của workflow chỉ cấp `EXECUTE` cho `e9x_app`, nên grader đọc các bảng đó sẽ bị từ chối: cấp thêm trong migration của P4, kèm db-test. Login của grader phải được thêm vào `infra/postgres/init/01-roles.sh`, và volume đang có phải chạy lại script đó bằng tay (README, Database roles).
+
 ### Task P4.2: chấm AI bằng Gemini (W7) — F34, F37
 
 > **Ghi chú 2026-11-08 (từ P1.8):** Nguồn thông báo của task này (spec §13), do P1.8 khai báo `EventType` + mẫu vi/en nhưng CHƯA có nguồn (không dựng nguồn giả): `SCORE_PRELIMINARY` từ `AttemptScored(official=false)` và `AI_GRADING_FAILED` (cho SYS_ADMIN, gọi từ `JobExecutor#onExhausted` của job `ai_grade`; cần danh sách SYS_ADMIN qua hàm `SECURITY DEFINER` hẹp). Idempotent: khoá `"score-preliminary:" + attemptId`.
@@ -42,6 +44,8 @@
 - Dry-run cho P2.5: `AiGrader` dùng chung, không lưu.
 
 **Tests:** `GeminiAiGraderTest` (fake HTTP server) `.validJsonParsed`, `.schemaViolationRetriedOnceWithErrors`, `.serverErrorRetriedWithConfiguredDelays`, `AiGradeJobIT.exhaustedRetriesMarksAiFailedAndNotifiesAdmin`, `.dailyLimitZeroMeansUnlimited`, `.dailyLimitPositiveRoutesToTeacherQueue`.
+
+> **Ghi chú 2026-11-08 (review cuối P1, triage ledger 63, 70, 71, 90):** lần chạy cuối quá hạn rồi thành công kết thúc FAILED và gọi `onExhausted` cho việc đã xong: `ai_grade` phải chịu được. `onExhausted` chậm thì không bao giờ tới FAILED: callback thật đầu tiên nằm ở đây. `last_error` nên có thêm lớp root cause, hữu ích trước hết cho Gemini. Khoá fake Gemini và timeout test: giữ khoá không được lâu hơn timeout của test.
 
 ### Task P4.3: hàng chờ giáo viên + chế độ Cả hai (W8) — F35, F36
 

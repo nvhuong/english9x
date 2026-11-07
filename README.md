@@ -59,13 +59,15 @@ No upgrade path is promised across development volumes: `down -v` starts clean. 
 The service `backup` writes `pg-<UTC stamp>.sql.gz` to the `backups` volume at start-up and every 24h, keeping `E9X_BACKUP_RETENTION` (14), with a copy of the MinIO data beside it. The dump has no owners in it: **the login that restores it becomes the owner of everything, so it must be `e9x_owner`, on a volume prepared by `01-roles.sh`**. Restored as the superuser the app cannot start (`flyway_schema_history` is out of `e9x_owner`'s reach, measured in `BackupRestoreIT`), and `infra/backup/restore.sh` refuses it.
 ```bash
 C="docker compose --env-file infra/.env -f infra/docker-compose.yml"
-$C run --rm --entrypoint ls backup /backups                                      # pick a dump
-$C stop app caddy backup
-$C rm -sf postgres && docker volume rm english9x_pgdata                            # the OLD DATABASE IS GONE from here on
-$C up -d --wait postgres                                                          # a new volume: 01-roles.sh runs with the passwords in infra/.env
-$C run --rm --no-deps --entrypoint /usr/local/bin/restore.sh backup /backups/pg-<stamp>.sql.gz
-$C up -d --wait                                                                   # the app's Flyway validates what was restored and goes on from there
+R="docker compose -p english9x-restored --env-file infra/.env -f infra/docker-compose.yml"   # a new project: new, empty volumes; the old database stays until you are sure
+$C exec -T backup sh -c 'ls -1 /backups/pg-*.sql.gz'                              # pick a dump
+mkdir -p restore && $C cp backup:/backups/pg-<stamp>.sql.gz restore/
+$C stop app caddy backup                                                          # frees ports 80 and 443
+$R up -d --wait postgres                                                          # a new volume: 01-roles.sh runs with the passwords in infra/.env
+$R run --rm --no-deps -v "$PWD/restore:/restore:ro" --entrypoint /usr/local/bin/restore.sh backup /restore/pg-<stamp>.sql.gz
+$R up --build -d --wait                                                           # the app's Flyway validates what was restored and goes on from there
 ```
+Exactly this was run from a fresh clone: `final-fix-report` of the P1 review has the output. To keep the old project name, remove the old volume only after checking the new stack; that in-place step has not been drilled yet (W10).
 `restore.sh` takes one file, runs in one transaction and refuses a database that already has tables. `BackupRestoreIT` (in `mvn verify`, so in `verify.sh` and CI's `backend`) backs up, restores into a fresh volume and starts the application on it. The MinIO half is a directory copy and has no drill yet: owner W10, see the plan.
 
 ## Threat model: what `e9x_app` can do
