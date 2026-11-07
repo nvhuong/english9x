@@ -59,10 +59,19 @@ export default function NotificationPreferencesPage() {
           onToggle={(eventType, channel, enabled) => setPref.mutate({ eventType, channel, enabled })}
         />
       )}
+      {telegram.isError && (
+        <div className="flex flex-col items-start gap-2">
+          <FormAlert>{t('telegram.statusFailed')}</FormAlert>
+          <Button variant="secondary" onClick={() => void telegram.refetch()}>
+            {t('telegram.retryStatus')}
+          </Button>
+        </div>
+      )}
       {telegram.data && (
         <TelegramLinkView
           enabled={telegram.data.enabled}
           linked={linked}
+          failing={telegram.data.failing}
           link={createLink.data}
           creating={createLink.isPending}
           error={createLink.isError ? 'create' : unlinkFailed ? 'unlink' : undefined}

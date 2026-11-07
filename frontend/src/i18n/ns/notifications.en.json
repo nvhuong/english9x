@@ -25,7 +25,9 @@
     "more": "Show more",
     "unreadCount": "{{count}} unread",
     "allRead": "You are all caught up",
-    "caption": "Notification list"
+    "caption": "Notification list",
+    "markFailed": "Could not mark it as read. Please try again.",
+    "markAllFailed": "Could not mark all as read. Please try again."
   },
   "prefs": {
     "title": "Notification preferences",
@@ -60,7 +62,10 @@
     "unlink": "Disconnect",
     "unlinkFailed": "Could not disconnect. Please try again.",
     "createFailed": "Could not create the link. Please try again.",
-    "rule": "A chat can be connected to one account only. If this chat is connected to another account, disconnect it there first."
+    "rule": "A chat can be connected to one account only. If this chat is connected to another account, disconnect it there first.",
+    "statusFailed": "Could not load the Telegram status.",
+    "retryStatus": "Try the Telegram status again",
+    "failing": "Telegram is connected but the latest message could not be delivered (for example you blocked the bot). Unblock the bot or connect another chat."
   },
   "audience": {
     "SYS_ADMIN": "System admin",

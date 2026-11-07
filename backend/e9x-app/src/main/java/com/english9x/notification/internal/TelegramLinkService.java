@@ -38,7 +38,8 @@ class TelegramLinkService {
 
     record Issued(String deepLink, Instant expiresAt) {}
 
-    record Consumed(String status, String locale) {}
+    /** {@code oldChat}: the chat this account had before a LINKED replaced it, else null. */
+    record Consumed(String status, String locale, Long oldChat) {}
 
     boolean enabled() {
         return cfg.enabled();
@@ -61,22 +62,29 @@ class TelegramLinkService {
 
     @Transactional(readOnly = true)
     boolean linked() {
-        return Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from telegram_links)", Boolean.class));
+        return Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from telegram_links where user_id = e9x_current_user())", Boolean.class));
     }
 
+    /** Removes the person's chat and retires their outstanding link tokens (one database function, rows of the caller only). */
     @Transactional
     void unlink() {
-        jdbc.update("delete from telegram_links");
+        jdbc.queryForList("select telegram_unlink()");
+    }
+
+    /** True when the linked chat is recorded but the latest delivery to it failed (for example the person blocked the bot). */
+    @Transactional(readOnly = true)
+    boolean failing() {
+        return Boolean.TRUE.equals(jdbc.queryForObject("select telegram_delivery_failing()", Boolean.class));
     }
 
     /** Called by the webhook. INVALID covers an unknown, used, expired or malformed token alike. */
     @Transactional
     Consumed consume(String token, long chatId) {
         if (token == null || !TOKEN.matcher(token).matches()) {
-            return new Consumed("INVALID", null);
+            return new Consumed("INVALID", null, null);
         }
-        return jdbc.query("select r_status, r_locale from telegram_link_consume(?, ?, ?)",
-                (rs, i) -> new Consumed(rs.getString(1), rs.getString(2)), digest(token), chatId, Timestamp.from(clock.instant())).get(0);
+        return jdbc.query("select r_status, r_locale, r_old_chat from telegram_link_consume(?, ?, ?)",
+                (rs, i) -> new Consumed(rs.getString(1), rs.getString(2), (Long) rs.getObject(3)), digest(token), chatId, Timestamp.from(clock.instant())).get(0);
     }
 
     static byte[] digest(String token) {

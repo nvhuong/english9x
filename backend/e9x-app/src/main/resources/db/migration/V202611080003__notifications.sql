@@ -26,8 +26,17 @@
 -- What the request role can still do through these functions (they narrow SQL, they do not make a compromised statement harmless):
 --  * create a notification (in-app row, and the delivery of it) for any user id it knows, with an event type of the allowed shape and
 --    data of the allowed size: unwanted notifications / mail / Telegram messages to a known person, never reading anyone's;
---  * learn the reviewer ids of an open review whose id it holds; link a Telegram chat to an account only with a token it holds.
+--  * learn the reviewer ids of an open review whose id it holds; link a Telegram chat to an account only with a token it holds;
+--  * (ruling, P1.8 review) INSERT into `jobs` and into `event_publication` directly: the job queue and the Spring Modulith registry
+--    write in the publisher's transaction as e9x_app, so the library forces these grants. Through them a compromised statement can queue
+--    a job or FORGE an event of a valid shape (a listener then acts on it) and read the in-flight events of every tenant. Narrowing
+--    notification_create to a source-keyed function would NOT remove that power, so it is not done. The answer is on the consumer
+--    side: an event is a HINT. A listener that does anything that matters re-reads the source row and checks it matches the event
+--    (docs/superpowers/design/events.md, notes in the P4 and P5 plans).
 -- It can NOT: read another person's notifications, preferences, link or tokens; read addresses or chat ids; list people by organisation.
+--
+-- Email: non-security notification mail is never sent to an address that is not verified (users.email_verified_at). The in-app row is
+-- unaffected; the EMAIL delivery is recorded as SKIPPED with the reason 'email-unverified'. Security mail (SmtpAuthMailer) is separate.
 
 -- ---- tables ---------------------------------------------------------------------------------------------------------------------
 CREATE TABLE notifications (
@@ -182,6 +191,11 @@ BEGIN
      WHERE notification_id = p_notification AND channel = p_channel;
     RETURN;
   END IF;
+  IF p_channel = 'EMAIL' AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = v_user AND u.email_verified_at IS NOT NULL) THEN
+    UPDATE notification_deliveries SET status = 'SKIPPED', last_error = 'email-unverified', updated_at = now()
+     WHERE notification_id = p_notification AND channel = p_channel;
+    RETURN;
+  END IF;
   IF p_channel = 'TELEGRAM' THEN
     SELECT l.chat_id INTO v_chat FROM telegram_links l WHERE l.user_id = v_user;
     IF v_chat IS NULL THEN
@@ -249,49 +263,85 @@ END $$;
 -- Consume (the unauthenticated webhook): LINKED | CHAT_TAKEN | INVALID. INVALID covers unknown, used and expired tokens alike, so the
 -- answer never tells which tokens exist. The locale is the person's, for the confirmation text.
 CREATE FUNCTION telegram_link_consume(p_token_hash bytea, p_chat_id bigint, p_now timestamptz)
-  RETURNS TABLE (r_status text, r_locale text)
+  RETURNS TABLE (r_status text, r_locale text, r_old_chat bigint)
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
 DECLARE
   v_token telegram_link_tokens%ROWTYPE;
   v_owner uuid;
   v_locale text;
+  v_old bigint;
 BEGIN
   SELECT * INTO v_token FROM telegram_link_tokens t WHERE t.token_hash = p_token_hash FOR UPDATE;
   IF NOT FOUND OR v_token.used_at IS NOT NULL OR v_token.expires_at <= p_now THEN
-    r_status := 'INVALID'; r_locale := NULL;
+    r_status := 'INVALID'; r_locale := NULL; r_old_chat := NULL;
     RETURN NEXT;
     RETURN;
   END IF;
   SELECT l.user_id INTO v_owner FROM telegram_links l WHERE l.chat_id = p_chat_id;
   IF v_owner IS NOT NULL AND v_owner <> v_token.user_id THEN
-    r_status := 'CHAT_TAKEN'; r_locale := NULL;
+    r_status := 'CHAT_TAKEN'; r_locale := NULL; r_old_chat := NULL;
     RETURN NEXT;
     RETURN;
   END IF;
+  -- the chat this account had before, to be told that it no longer receives anything (NULL when none, or the same chat)
+  SELECT l.chat_id INTO v_old FROM telegram_links l WHERE l.user_id = v_token.user_id AND l.chat_id <> p_chat_id;
   BEGIN
     INSERT INTO telegram_links (user_id, chat_id, linked_at) VALUES (v_token.user_id, p_chat_id, p_now)
     ON CONFLICT (user_id) DO UPDATE SET chat_id = EXCLUDED.chat_id, linked_at = EXCLUDED.linked_at;
   EXCEPTION WHEN unique_violation THEN
     -- another account took this chat between the check and the insert
-    r_status := 'CHAT_TAKEN'; r_locale := NULL;
+    r_status := 'CHAT_TAKEN'; r_locale := NULL; r_old_chat := NULL;
     RETURN NEXT;
     RETURN;
   END;
   UPDATE telegram_link_tokens SET used_at = p_now WHERE id = v_token.id;
   SELECT u.locale INTO v_locale FROM users u WHERE u.id = v_token.user_id;
-  r_status := 'LINKED'; r_locale := v_locale;
+  r_status := 'LINKED'; r_locale := v_locale; r_old_chat := v_old;
   RETURN NEXT;
 END $$;
+
+-- Unlink: removes the caller's chat AND retires every outstanding link token of the caller, so a link made before the unlink cannot
+-- re-link a chat afterwards. Only the caller's rows (the predicate is the second line behind Row-Level Security).
+CREATE FUNCTION telegram_unlink()
+  RETURNS void
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+DECLARE
+  v_user uuid := e9x_current_user();
+BEGIN
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'no signed-in user' USING ERRCODE = '42501';
+  END IF;
+  DELETE FROM telegram_links WHERE user_id = v_user;
+  DELETE FROM telegram_link_tokens WHERE user_id = v_user AND used_at IS NULL;
+END $$;
+
+-- Is the caller's linked chat failing? True when the latest conclusive Telegram delivery since the link was made FAILED (for example
+-- the person blocked the bot): the link is still recorded, but nothing reaches the chat. A later SENT clears it. The caller sees only
+-- this boolean, never the delivery rows.
+CREATE FUNCTION telegram_delivery_failing()
+  RETURNS boolean
+  LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+  SELECT COALESCE((SELECT d.status = 'FAILED'
+                     FROM notification_deliveries d
+                     JOIN notifications n ON n.id = d.notification_id
+                     JOIN telegram_links l ON l.user_id = n.user_id
+                    WHERE n.user_id = e9x_current_user() AND d.channel = 'TELEGRAM' AND d.status IN ('SENT', 'FAILED')
+                      AND d.updated_at >= l.linked_at
+                    ORDER BY d.updated_at DESC LIMIT 1), false) $$;
 
 REVOKE ALL ON FUNCTION notification_create(uuid, text, jsonb, text, timestamptz),
                        notification_delivery_load(uuid, text),
                        notification_delivery_finish(uuid, text, text, text),
                        notification_reviewers_of_review(uuid),
                        telegram_link_issue(bytea, timestamptz, timestamptz),
-                       telegram_link_consume(bytea, bigint, timestamptz) FROM PUBLIC;
+                       telegram_link_consume(bytea, bigint, timestamptz),
+                       telegram_unlink(),
+                       telegram_delivery_failing() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION notification_create(uuid, text, jsonb, text, timestamptz),
                           notification_reviewers_of_review(uuid),
                           telegram_link_issue(bytea, timestamptz, timestamptz),
-                          telegram_link_consume(bytea, bigint, timestamptz) TO e9x_app;
+                          telegram_link_consume(bytea, bigint, timestamptz),
+                          telegram_unlink(),
+                          telegram_delivery_failing() TO e9x_app;
 GRANT EXECUTE ON FUNCTION notification_delivery_load(uuid, text),
                           notification_delivery_finish(uuid, text, text, text) TO e9x_worker;

@@ -8,7 +8,10 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.Map;
 
 /** A minimal Telegram Bot API for tests: records {@code POST /bot<token>/sendMessage}; can be told to fail. */
 public final class FakeTelegram implements AutoCloseable {
@@ -33,6 +36,7 @@ public final class FakeTelegram implements AutoCloseable {
     private final HttpServer server;
     private final List<Sent> sent = new CopyOnWriteArrayList<>();
     private volatile int failWith;
+    private final Map<String, Long> delays = new ConcurrentHashMap<>();
 
     public FakeTelegram() {
         try {
@@ -42,6 +46,14 @@ public final class FakeTelegram implements AutoCloseable {
         }
         server.createContext("/", ex -> {
             byte[] req = ex.getRequestBody().readAllBytes();
+            Long delay = delays.get(JSON.readTree(req).path("chat_id").asText());
+            if (delay != null) {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
             String path = ex.getRequestURI().getPath();
             int status = 200;
             String reply = "{\"ok\":true,\"result\":{}}";
@@ -65,6 +77,11 @@ public final class FakeTelegram implements AutoCloseable {
             ex.getResponseBody().write(out);
             ex.close();
         });
+        server.setExecutor(Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r, "fake-telegram");
+            t.setDaemon(true);
+            return t;
+        }));
         server.start();
     }
 
@@ -81,6 +98,11 @@ public final class FakeTelegram implements AutoCloseable {
             }
         }
         return out;
+    }
+
+    /** Every call for this chat is answered only after the delay (a slow chat must not hold up the others). */
+    public void delayChat(String chatId, long millis) {
+        delays.put(chatId, millis);
     }
 
     /** 0 = work; otherwise answer every call with this HTTP status. */

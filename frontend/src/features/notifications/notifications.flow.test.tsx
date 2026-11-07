@@ -95,4 +95,47 @@ describe('notification pages against the API', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Tạo liên kết kết nối' }));
     expect(await screen.findByRole('link', { name: 'Mở trong Telegram' })).toHaveAttribute('href', 'https://t.me/e9x_bot?start=tok');
   });
+
+  it('shows an error with a retry when marking one notification read fails', async () => {
+    let fail = true;
+    const calls = stubApi({
+      'GET /api/me/notifications': () => json(200, { items: [row('a', false)], unread: 1 }),
+      'POST /api/me/notifications/a/read': () => (fail ? json(500, { title: 'x' }) : new Response(null, { status: 204 })),
+    });
+    renderAt('/notifications', '/notifications', <NotificationsPage />);
+    await userEvent.click(await screen.findByRole('button', { name: /Đánh dấu đã đọc: Có nội dung chờ duyệt/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chưa đánh dấu được đã đọc');
+    fail = false;
+    await userEvent.click(screen.getByRole('button', { name: 'Thử lại' }));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    expect(calls.filter((c) => c.path === '/api/me/notifications/a/read')).toHaveLength(2);
+  });
+
+  it('shows an error with a retry when marking all read fails', async () => {
+    let fail = true;
+    stubApi({
+      'GET /api/me/notifications': () => json(200, { items: [row('a', false)], unread: 1 }),
+      'POST /api/me/notifications/read-all': () => (fail ? json(500, { title: 'x' }) : new Response(null, { status: 204 })),
+    });
+    renderAt('/notifications', '/notifications', <NotificationsPage />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Đánh dấu tất cả đã đọc' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chưa đánh dấu được tất cả');
+    fail = false;
+    await userEvent.click(screen.getByRole('button', { name: 'Thử lại' }));
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+  });
+
+  it('shows an error with a retry when the Telegram status cannot be read, and the failing-chat warning when it says so', async () => {
+    let status: 'error' | 'failing' = 'error';
+    stubApi({
+      'GET /api/me/notification-prefs': () => json(200, { channels: ['IN_APP', 'EMAIL', 'TELEGRAM'], events: [] }),
+      'GET /api/me/telegram': () => (status === 'error' ? json(500, { title: 'x' }) : json(200, { enabled: true, linked: true, failing: true })),
+    });
+    renderAt('/notifications/preferences', '/notifications/preferences', <NotificationPreferencesPage />);
+    expect(await screen.findByText('Không tải được trạng thái Telegram.')).toBeInTheDocument();
+    status = 'failing';
+    await userEvent.click(screen.getByRole('button', { name: 'Thử lại trạng thái Telegram' }));
+    expect(await screen.findByText(/Telegram đã kết nối nhưng tin gần nhất không gửi được/)).toBeInTheDocument();
+    expect(screen.queryByText('Không tải được trạng thái Telegram.')).toBeNull();
+  });
 });

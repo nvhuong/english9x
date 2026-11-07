@@ -34,3 +34,4 @@ export const TelegramWithLink: S = {
 };
 export const TelegramLinked: S = { render: () => <TelegramLinkView enabled linked onCreate={noop} onUnlink={noop} onCheck={noop} /> };
 export const TelegramUnavailable: S = { render: () => <TelegramLinkView enabled={false} linked={false} onCreate={noop} onUnlink={noop} onCheck={noop} /> };
+export const TelegramLinkedButFailing: S = { render: () => <TelegramLinkView enabled linked failing onCreate={noop} onUnlink={noop} onCheck={noop} /> };

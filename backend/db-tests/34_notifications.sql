@@ -116,10 +116,39 @@ BEGIN
   SELECT * INTO r FROM telegram_link_consume(sha256('tok-b'::bytea), 777003, now());
   ASSERT r.r_status = 'LINKED', 'the refused token was not spent';
 END $$;
+-- re-linking reports the chat that is being replaced (and not the same chat); unlinking retires the outstanding tokens
+SELECT telegram_link_issue(sha256('tok-b2'::bytea), now(), now() + interval '15 minutes');
+DO $$
+DECLARE r record;
+BEGIN
+  SELECT * INTO r FROM telegram_link_consume(sha256('tok-b2'::bytea), 777004, now());
+  ASSERT r.r_status = 'LINKED' AND r.r_old_chat = 777003, 'the replaced chat is reported: ' || coalesce(r.r_old_chat::text, 'null');
+END $$;
+SELECT telegram_link_issue(sha256('tok-b3'::bytea), now(), now() + interval '15 minutes');
+DO $$
+DECLARE r record;
+BEGIN
+  SELECT * INTO r FROM telegram_link_consume(sha256('tok-b3'::bytea), 777004, now());
+  ASSERT r.r_status = 'LINKED' AND r.r_old_chat IS NULL, 'the same chat again replaces nothing';
+END $$;
+SELECT telegram_link_issue(sha256('tok-b4'::bytea), now(), now() + interval '15 minutes');
+DO $$
+DECLARE r record; n int;
+BEGIN
+  ASSERT telegram_delivery_failing() = false, 'no delivery, not failing';
+  PERFORM telegram_unlink();
+  SELECT count(*) INTO n FROM telegram_links;
+  ASSERT n = 0, 'unlink removes the caller''s chat';
+  SELECT * INTO r FROM telegram_link_consume(sha256('tok-b4'::bytea), 777005, now());
+  ASSERT r.r_status = 'INVALID', 'a token issued before the unlink no longer links';
+END $$;
 SELECT set_config('app.user_id','',false);
 DO $$
 DECLARE failed boolean := false;
 BEGIN
+  BEGIN PERFORM telegram_unlink(); EXCEPTION WHEN insufficient_privilege THEN failed := true; END;
+  ASSERT failed, 'unlinking needs a signed-in person';
+  failed := false;
   BEGIN PERFORM telegram_link_issue(sha256('nobody'::bytea), now(), now() + interval '1 hour'); EXCEPTION WHEN insufficient_privilege THEN failed := true; END;
   ASSERT failed, 'issuing a token needs a signed-in person';
 END $$;
@@ -150,5 +179,8 @@ BEGIN
   failed := false;
   BEGIN PERFORM * FROM notification_create('c0000000-0000-0000-0000-000000000001','REVIEW_REQUESTED','{}','w', now()); EXCEPTION WHEN insufficient_privilege THEN failed := true; END;
   ASSERT failed, 'the worker cannot create notifications';
+  failed := false;
+  BEGIN PERFORM telegram_unlink(); EXCEPTION WHEN insufficient_privilege THEN failed := true; END;
+  ASSERT failed, 'the worker cannot unlink';
 END $$;
 RESET ROLE;

@@ -179,12 +179,90 @@ class TelegramLinkIT extends NotificationIT {
         TELEGRAM.failWith(500);
         try {
             webhook(WEBHOOK_SECRET, start(newChatId(), "B".repeat(43)));
-            Awaitility.await().pollDelay(Duration.ofMillis(500)).atMost(Duration.ofSeconds(5)).until(() -> true);
+            // the failing reply is logged by the webhook before it answers, so the log line is the proof that the failure path ran
+            Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> out.getAll().contains("telegram reply could not be sent"));
         } finally {
             TELEGRAM.failWith(0);
         }
         assertFalse(out.getAll().contains(FakeTelegram.BOT_TOKEN));
         assertFalse(out.getAll().contains(token));
         assertFalse(out.getAll().contains(WEBHOOK_SECRET));
+    }
+
+    @Test
+    void unlinkingRetiresAnOutstandingLinkToken() {
+        UUID u = user("retire");
+        String token = linkToken(u);
+        assertEquals(204, call(HttpMethod.DELETE, "/api/me/telegram", null, u, null).status());
+        assertEquals(0, su.queryForObject("select count(*) from telegram_link_tokens where user_id = ? and used_at is null", Integer.class, u),
+                "no outstanding token is left");
+        String chat = newChatId();
+        assertEquals(200, webhook(WEBHOOK_SECRET, start(chat, token)).status());
+        assertEquals(null, chatOf(u), "the token issued before the unlink links nothing");
+    }
+
+    @Test
+    void relinkingTellsTheOldChatWithoutBlockingTheNewOne() {
+        UUID u = user("relink");
+        String oldChat = newChatId();
+        String newChat = newChatId();
+        webhook(WEBHOOK_SECRET, start(oldChat, linkToken(u)));
+        Awaitility.await().atMost(Duration.ofSeconds(10)).until(() -> TELEGRAM.to(oldChat).size() == 1);
+        TELEGRAM.delayChat(oldChat, 3000);
+        long t0 = System.nanoTime();
+        assertEquals(200, webhook(WEBHOOK_SECRET, start(newChat, linkToken(u))).status());
+        long ms = Duration.ofNanos(System.nanoTime() - t0).toMillis();
+        assertTrue(ms < 2500, "the webhook did not wait for the old chat: " + ms + " ms");
+        assertEquals(newChat, chatOf(u));
+        Awaitility.await().atMost(Duration.ofSeconds(10)).until(() -> TELEGRAM.to(oldChat).size() == 2);
+        assertTrue(TELEGRAM.to(oldChat).get(1).text().contains("không còn nhận thông báo ở đây"), TELEGRAM.to(oldChat).get(1).text());
+        Awaitility.await().atMost(Duration.ofSeconds(10)).until(() -> TELEGRAM.to(newChat).size() == 1);
+        assertTrue(TELEGRAM.to(newChat).get(0).text().contains("Đã liên kết Telegram"));
+    }
+
+    @Test
+    void relinkingTheSameChatTellsNobodyElse() {
+        UUID u = user("same");
+        String chat = newChatId();
+        webhook(WEBHOOK_SECRET, start(chat, linkToken(u)));
+        webhook(WEBHOOK_SECRET, start(chat, linkToken(u)));
+        Awaitility.await().atMost(Duration.ofSeconds(10)).until(() -> TELEGRAM.to(chat).size() >= 2);
+        assertTrue(TELEGRAM.to(chat).stream().noneMatch(s -> s.text().contains("không còn nhận")), "the chat that stays linked is not told it left");
+    }
+
+    @Test
+    void aBareStartIsAnsweredWithAnInstruction() {
+        String chat = newChatId();
+        Map<String, Object> bare = Map.of("update_id", 5, "message", Map.of("chat", Map.of("id", Long.parseLong(chat), "type", "private"), "text", "/start"));
+        assertEquals(200, webhook(WEBHOOK_SECRET, bare).status());
+        Awaitility.await().atMost(Duration.ofSeconds(10)).until(() -> !TELEGRAM.to(chat).isEmpty());
+        assertTrue(TELEGRAM.to(chat).get(0).text().contains("tạo liên kết"), TELEGRAM.to(chat).get(0).text());
+        String other = newChatId();
+        Map<String, Object> addressed = Map.of("update_id", 6, "message", Map.of("chat", Map.of("id", Long.parseLong(other), "type", "private"), "text", "/start@" + BOT_USERNAME + "  "));
+        webhook(WEBHOOK_SECRET, addressed);
+        Awaitility.await().atMost(Duration.ofSeconds(10)).until(() -> !TELEGRAM.to(other).isEmpty());
+    }
+
+    @Test
+    void theStatusSaysWhenTheLinkedChatIsFailing() {
+        UUID u = user("failing");
+        linkTelegram(u);
+        assertEquals(false, get("/api/me/telegram", u).body().path("failing").asBoolean(), "nothing sent yet");
+        delivery(u, "FAILED", 1);
+        assertEquals(true, get("/api/me/telegram", u).body().path("failing").asBoolean(), "the latest conclusive delivery failed");
+        assertEquals(true, get("/api/me/telegram", u).body().path("linked").asBoolean(), "the link itself is still recorded");
+        delivery(u, "SENT", 2);
+        assertEquals(false, get("/api/me/telegram", u).body().path("failing").asBoolean(), "a later success clears it");
+        UUID other = user("failing-other");
+        linkTelegram(other);
+        assertEquals(false, get("/api/me/telegram", other).body().path("failing").asBoolean(), "someone else's failure is not mine");
+    }
+
+    /** A Telegram delivery whose outcome was recorded {@code secondsAfterLink} after the link (fixture). */
+    private UUID delivery(UUID user, String status, int secondsAfterLink) {
+        UUID n = UUID.randomUUID();
+        su.update("insert into notifications(id,user_id,event_type,dedupe_key) values (?,?,'REVIEW_REQUESTED',?)", n, user, "d-" + n);
+        su.update("insert into notification_deliveries(notification_id,channel,status,updated_at) values (?,'TELEGRAM',?, now() + make_interval(secs => ?))", n, status, secondsAfterLink);
+        return n;
     }
 }

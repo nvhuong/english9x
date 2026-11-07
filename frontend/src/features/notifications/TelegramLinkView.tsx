@@ -5,6 +5,8 @@ import { FormAlert, FormNotice } from '../auth/components';
 export interface TelegramLinkViewProps {
   enabled: boolean;
   linked: boolean;
+  /** The chat is linked, but the latest delivery to it failed (for example the bot was blocked): nothing reaches the person. */
+  failing?: boolean;
   /** A freshly created one-time link, if any. */
   link?: { deepLink: string; expiresAt: string };
   creating?: boolean;
@@ -15,7 +17,7 @@ export interface TelegramLinkViewProps {
 }
 
 /** Telegram connection (F54): create a one-time link, open it in Telegram, come back and check. The chat id is never shown. */
-export function TelegramLinkView({ enabled, linked, link, creating, error, onCreate, onUnlink, onCheck }: TelegramLinkViewProps) {
+export function TelegramLinkView({ enabled, linked, failing, link, creating, error, onCreate, onUnlink, onCheck }: TelegramLinkViewProps) {
   const { t, i18n } = useTranslation('notifications');
   const safe = link && link.deepLink.startsWith('https://t.me/') ? link : undefined;
   return (
@@ -31,6 +33,7 @@ export function TelegramLinkView({ enabled, linked, link, creating, error, onCre
           <p role="status" className="font-semibold">
             {linked ? t('telegram.linked') : t('telegram.notLinked')}
           </p>
+          {linked && failing && <FormAlert>{t('telegram.failing')}</FormAlert>}
           {error === 'create' && <FormAlert>{t('telegram.createFailed')}</FormAlert>}
           {error === 'unlink' && <FormAlert>{t('telegram.unlinkFailed')}</FormAlert>}
           {safe && (

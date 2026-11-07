@@ -96,7 +96,7 @@ export function useTelegramStatus() {
   return useQuery({
     queryKey: publicKey('me', me, 'telegram'),
     enabled: me !== null,
-    queryFn: async () => (await api.GET('/api/me/telegram')).data as { enabled: boolean; linked: boolean },
+    queryFn: async () => (await api.GET('/api/me/telegram')).data as { enabled: boolean; linked: boolean; failing?: boolean },
   });
 }
 

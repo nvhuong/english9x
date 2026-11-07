@@ -34,7 +34,8 @@ class NotificationController {
     @Schema(name = "NotificationPrefRequest")
     record PrefRequest(@NotBlank String eventType, @NotBlank String channel, @NotNull Boolean enabled) {}
 
-    record TelegramStatus(boolean enabled, boolean linked) {}
+    /** {@code failing}: a chat is linked but the latest delivery to it failed, so nothing reaches the person. */
+    record TelegramStatus(boolean enabled, boolean linked, boolean failing) {}
 
     record TelegramLink(String deepLink, Instant expiresAt) {}
 
@@ -104,7 +105,8 @@ class NotificationController {
 
     @GetMapping("/api/me/telegram")
     TelegramStatus telegram() {
-        return new TelegramStatus(telegram.enabled(), telegram.linked());
+        boolean linked = telegram.linked();
+        return new TelegramStatus(telegram.enabled(), linked, linked && telegram.failing());
     }
 
     /** A one-time deep link: opening it in Telegram and pressing Start sends {@code /start <token>} to the bot. */

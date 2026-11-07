@@ -678,6 +678,7 @@ export interface components {
         };
         TelegramStatus: {
             enabled?: boolean;
+            failing?: boolean;
             linked?: boolean;
         };
         TokenPair: {
@@ -1756,11 +1757,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                "application/json": string;
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {

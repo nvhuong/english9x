@@ -66,8 +66,10 @@ class EmailChannelIT extends NotificationIT {
         UUID u = user("off");
         setPref(u, EventType.REVIEW_REQUESTED, "EMAIL", false);
         notifications.notify(EventType.REVIEW_REQUESTED, u, Map.of("contentType", "question", "examCode", "IELTS"), "off1");
-        assertEquals(0, TestAuth.SMTP.countAfterSettling(emailOf(u)));
+        // nothing was planned: the preference is applied when the notification is created, so there is no delivery row and no job to wait for
+        assertEquals(0, deliveries(u).size(), "no email delivery exists: " + deliveries(u));
         assertEquals(1, inAppCount(u));
+        assertEquals(0, TestAuth.SMTP.to(emailOf(u)).size());
     }
 
     @Test
@@ -85,5 +87,30 @@ class EmailChannelIT extends NotificationIT {
         assertEquals(202, post("/api/auth/password-reset/request", Map.of("email", email), null).status());
         SmtpSink.Mail reset = TestAuth.SMTP.await(email, before);
         assertTrue(reset.subject().contains("Đặt lại mật khẩu"), reset.subject());
+    }
+
+    @Test
+    void anUnverifiedAddressGetsNoNotificationMailButKeepsTheInAppRow() {
+        UUID u = user("unverified");
+        su.update("update users set email_verified_at = null where id = ?", u);
+        notifications.notify(EventType.REVIEW_REQUESTED, u, Map.of("contentType", "question", "examCode", "IELTS"), "unv1");
+        // the recorded outcome of the job is the proof: once it is SKIPPED the worker has finished with it and sent nothing
+        awaitDeliveryStatus(u, "EMAIL", "SKIPPED");
+        assertEquals("email-unverified", su.queryForObject("select d.last_error from notification_deliveries d join notifications n on n.id = d.notification_id "
+                + "where n.user_id = ? and d.channel = 'EMAIL'", String.class, u));
+        assertEquals(0, TestAuth.SMTP.to(emailOf(u)).size(), "no mail to an unverified address");
+        assertEquals(1, inAppCount(u), "the in-app notification is unaffected");
+    }
+
+    @Test
+    void theSameAddressGetsMailOnceItIsVerified() {
+        UUID u = user("later");
+        su.update("update users set email_verified_at = null where id = ?", u);
+        notifications.notify(EventType.REVIEW_REQUESTED, u, Map.of("contentType", "question", "examCode", "IELTS"), "later1");
+        awaitDeliveryStatus(u, "EMAIL", "SKIPPED");
+        su.update("update users set email_verified_at = now() where id = ?", u);
+        notifications.notify(EventType.REVIEW_REQUESTED, u, Map.of("contentType", "question", "examCode", "IELTS"), "later2");
+        assertNotNull(TestAuth.SMTP.await(emailOf(u)));
+        assertEquals(1, TestAuth.SMTP.to(emailOf(u)).size(), "only the one created after verification");
     }
 }

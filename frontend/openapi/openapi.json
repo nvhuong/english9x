@@ -562,6 +562,9 @@
           "enabled" : {
             "type" : "boolean"
           },
+          "failing" : {
+            "type" : "boolean"
+          },
           "linked" : {
             "type" : "boolean"
           }
@@ -1739,15 +1742,6 @@
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "type" : "string"
-              }
-            }
-          }
-        },
         "responses" : {
           "200" : {
             "content" : {

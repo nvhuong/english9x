@@ -62,18 +62,18 @@ class InboxService {
 
     @Transactional(readOnly = true)
     int unread() {
-        return jdbc.queryForObject("select count(*) from notifications where read_at is null", Integer.class);
+        return jdbc.queryForObject("select count(*) from notifications where read_at is null and user_id = e9x_current_user()", Integer.class);
     }
 
     /** Idempotent; false for a notification that is not the caller's or does not exist (indistinguishable). */
     @Transactional
     boolean markRead(UUID id) {
-        return jdbc.update("update notifications set read_at = coalesce(read_at, ?) where id = ?", Timestamp.from(clock.instant()), id) == 1;
+        return jdbc.update("update notifications set read_at = coalesce(read_at, ?) where id = ? and user_id = e9x_current_user()", Timestamp.from(clock.instant()), id) == 1;
     }
 
     @Transactional
     void markAllRead() {
-        jdbc.update("update notifications set read_at = ? where read_at is null", Timestamp.from(clock.instant()));
+        jdbc.update("update notifications set read_at = ? where read_at is null and user_id = e9x_current_user()", Timestamp.from(clock.instant()));
     }
 
     @Transactional(readOnly = true)

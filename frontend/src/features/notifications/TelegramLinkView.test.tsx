@@ -33,4 +33,12 @@ describe('TelegramLinkView', () => {
     expect(screen.getByText('Telegram chưa được bật trên máy chủ này.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tạo liên kết kết nối' })).toBeNull();
   });
+
+  it('says so when the chat is linked but deliveries to it are failing', () => {
+    const { rerender } = render(<TelegramLinkView {...handlers} enabled linked />);
+    expect(screen.queryByRole('alert')).toBeNull();
+    rerender(<TelegramLinkView {...handlers} enabled linked failing />);
+    expect(screen.getByRole('alert')).toHaveTextContent('Telegram đã kết nối nhưng tin gần nhất không gửi được');
+    expect(screen.getByRole('button', { name: 'Kết nối lại với cuộc trò chuyện khác' })).toBeInTheDocument();
+  });
 });

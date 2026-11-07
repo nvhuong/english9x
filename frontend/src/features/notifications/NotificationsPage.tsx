@@ -51,6 +51,22 @@ export default function NotificationsPage() {
           </Button>
         </div>
       )}
+      {markRead.isError && (
+        <div className="flex flex-col items-start gap-2">
+          <FormAlert>{t('list.markFailed')}</FormAlert>
+          <Button variant="secondary" onClick={() => markRead.variables && markRead.mutate(markRead.variables)}>
+            {t('list.retry')}
+          </Button>
+        </div>
+      )}
+      {markAll.isError && (
+        <div className="flex flex-col items-start gap-2">
+          <FormAlert>{t('list.markAllFailed')}</FormAlert>
+          <Button variant="secondary" onClick={() => markAll.mutate()}>
+            {t('list.retry')}
+          </Button>
+        </div>
+      )}
       {list.data && (
         <NotificationListView
           items={list.data.items}

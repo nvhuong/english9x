@@ -25,7 +25,9 @@
     "more": "Xem thêm",
     "unreadCount": "{{count}} chưa đọc",
     "allRead": "Bạn đã đọc hết",
-    "caption": "Danh sách thông báo"
+    "caption": "Danh sách thông báo",
+    "markFailed": "Chưa đánh dấu được đã đọc. Hãy thử lại.",
+    "markAllFailed": "Chưa đánh dấu được tất cả đã đọc. Hãy thử lại."
   },
   "prefs": {
     "title": "Tuỳ chọn thông báo",
@@ -60,7 +62,10 @@
     "unlink": "Huỷ kết nối",
     "unlinkFailed": "Chưa huỷ được kết nối. Hãy thử lại.",
     "createFailed": "Chưa tạo được liên kết. Hãy thử lại.",
-    "rule": "Một cuộc trò chuyện chỉ kết nối được với một tài khoản. Nếu cuộc trò chuyện này đang gắn với tài khoản khác, hãy huỷ kết nối ở tài khoản đó trước."
+    "rule": "Một cuộc trò chuyện chỉ kết nối được với một tài khoản. Nếu cuộc trò chuyện này đang gắn với tài khoản khác, hãy huỷ kết nối ở tài khoản đó trước.",
+    "statusFailed": "Không tải được trạng thái Telegram.",
+    "retryStatus": "Thử lại trạng thái Telegram",
+    "failing": "Telegram đã kết nối nhưng tin gần nhất không gửi được (ví dụ bạn đã chặn bot). Hãy bỏ chặn bot hoặc kết nối lại với cuộc trò chuyện khác."
   },
   "audience": {
     "SYS_ADMIN": "Quản trị hệ thống",
