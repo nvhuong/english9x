@@ -7,20 +7,34 @@
 	header @public Strict-Transport-Security "max-age=31536000"
 	# Caddy puts the real client address in X-Forwarded-For (replacing any value the client sent); the app believes it
 	# only from the networks in E9X_AUTH_TRUSTED_PROXIES.
-	# Request body limits (the API never needs an unbounded body). The webhook of the Telegram bot takes a few KB, so 1MB is generous;
-	# the rest of the API allows 600MB: the largest planned upload is an Excel import with its media ZIP of up to 500MB
-	# (e9x.content.import.max-media-size, spec 7.4) plus the workbook and multipart overhead. Keep this above that key. The limit applies to the
-	# bytes actually received, so a lying Content-Length does not help. The app itself rejects an over-size media file with a clear error.
+	# Request body limits. The limit applies to the bytes actually received, so a lying Content-Length does not help.
+	#  * 1MB: the Telegram webhook, a few KB per update.
+	#  * 600MB: only the two upload routes. Excel import (P2.7) takes a workbook and a media ZIP of up to 500MB (e9x.content.import.max-media-size, spec 7.4)
+	#    plus multipart overhead, so keep this above that key; the media upload (P2.2) stays below it. The app rejects an over-size file with a clear error.
+	#  * 10MB: everything else under /api, so an unauthenticated JSON route cannot be made to buffer 600MB.
+	# A new upload route goes in @upload; anything else gets 413 above 10MB.
 	@webhook path /api/telegram/webhook
 	request_body @webhook {
 		max_size 1MB
 	}
-	@api {
-		path /api/*
-		not path /api/telegram/webhook
-	}
-	request_body @api {
+	@upload path /api/cms/media /api/cms/import
+	request_body @upload {
 		max_size 600MB
 	}
+	@api {
+		path /api/*
+		not path /api/telegram/webhook /api/cms/media /api/cms/import
+	}
+	request_body @api {
+		max_size 10MB
+	}
+	reverse_proxy app:8080
+}
+
+# Only the container's own healthcheck reaches this (bound to loopback, not published): "/" through Caddy to the app.
+http://127.0.0.1:2080 {
+	bind 127.0.0.1
+	@notRoot not path /
+	respond @notRoot 404
 	reverse_proxy app:8080
 }

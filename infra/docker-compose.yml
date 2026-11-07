@@ -1,5 +1,6 @@
-# English9x stack.  Dev:  docker compose -f infra/docker-compose.yml up --build
-# Credentials come from env vars (see README); the defaults below are for local use only.
+# English9x stack.  First:  cp infra/.env.example infra/.env, fill in E9X_JWT_SECRET (README, Run the stack). Then:
+#   docker compose --env-file infra/.env -f infra/docker-compose.yml up --build -d
+# Credentials come from env vars (see README); the password defaults below are for localhost only: service preflight refuses them on any other E9X_DOMAIN.
 # Database logins (P1.3): POSTGRES_USER is the bootstrap superuser (backup only); Flyway connects as the
 # table owner e9x_owner; the running app connects as e9x_app_login, which owns nothing and is subject to RLS; the
 # background-job worker (P1.7) has its own small pool as e9x_worker_login (jobs table only, also subject to RLS).
@@ -7,8 +8,27 @@
 name: english9x
 
 services:
+  # Runs once and exits; postgres and minio wait for it, so nothing starts on a public domain with a published password (infra/preflight.sh).
+  preflight:
+    image: postgres:16.15@sha256:933463a6c8eba2b9f5cd414138738cd8d5519cd2c471214c222652f547a66a32
+    entrypoint: ["/bin/sh", "/preflight.sh"]
+    environment:
+      E9X_DOMAIN: ${E9X_DOMAIN:-localhost}
+      E9X_SMTP_HOST: ${E9X_SMTP_HOST:?E9X_SMTP_HOST is required. Run - cp infra/.env.example infra/.env - and start with --env-file infra/.env, see README}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-e9x_dev_password}
+      E9X_FLYWAY_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}
+      E9X_DB_PASSWORD: ${E9X_DB_PASSWORD:-e9x_app_dev_password}
+      E9X_WORKER_DB_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-e9x_minio_dev_password}
+    volumes:
+      - ./preflight.sh:/preflight.sh:ro
+    restart: "no"
+
   postgres:
     image: postgres:16.15@sha256:933463a6c8eba2b9f5cd414138738cd8d5519cd2c471214c222652f547a66a32
+    depends_on:
+      preflight:
+        condition: service_completed_successfully
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-e9x}
       POSTGRES_USER: ${POSTGRES_USER:-e9x}
@@ -31,6 +51,9 @@ services:
     # Its free tier only offers the floating `latest` tag, so we pin the digest instead.
     # Refresh: docker buildx imagetools inspect chainguard/minio:latest  (copy the Digest), test, then update below.
     image: chainguard/minio@sha256:aea6c163749e1caca37f907976dcf337177ddf5f558808f2aa591618fd3a6eef
+    depends_on:
+      preflight:
+        condition: service_completed_successfully
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-e9x_minio}
@@ -64,12 +87,12 @@ services:
       E9X_WORKER_DB_USER: e9x_worker_login
       E9X_WORKER_DB_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
       E9X_GEMINI_API_KEY: ${E9X_GEMINI_API_KEY:-}
-      # Identity (P1.4). The JWT secret and the SMTP host have NO default: the app refuses to start without them.
+      # Identity (P1.4). The JWT secret and the SMTP host have NO default: Compose stops right here with the message below when they are missing.
       # Generate the secret with `openssl rand -hex 32`. Dev/E2E: scripts/e2e.sh does it for you.
       E9X_DOMAIN: ${E9X_DOMAIN:-localhost}
       E9X_PUBLIC_BASE_URL: https://${E9X_DOMAIN:-localhost}
-      E9X_JWT_SECRET: ${E9X_JWT_SECRET:-}
-      E9X_SMTP_HOST: ${E9X_SMTP_HOST:-}
+      E9X_JWT_SECRET: ${E9X_JWT_SECRET:?E9X_JWT_SECRET is required. Run - cp infra/.env.example infra/.env - put in the output of - openssl rand -hex 32 - and start with --env-file infra/.env, see README}
+      E9X_SMTP_HOST: ${E9X_SMTP_HOST:?E9X_SMTP_HOST is required. Run - cp infra/.env.example infra/.env - and start with --env-file infra/.env, see README}
       E9X_SMTP_PORT: ${E9X_SMTP_PORT:-587}
       E9X_SMTP_USER: ${E9X_SMTP_USER:-}
       E9X_SMTP_PASSWORD: ${E9X_SMTP_PASSWORD:-}
@@ -93,6 +116,9 @@ services:
       timeout: 5s
       retries: 30
       start_period: 30s
+    # On SIGTERM the job worker stops claiming and waits up to 30s for running handlers, and Spring's graceful shutdown drains requests. Docker's default
+    # 10s would kill it first and burn an attempt of every running job on each deploy.
+    stop_grace_period: 40s
     restart: unless-stopped
 
   caddy:
@@ -110,10 +136,12 @@ services:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "caddy", "version"]
+      # through Caddy to the app's "/", on a listener only this container can reach (infra/Caddyfile): a Caddy that cannot proxy is unhealthy
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2080/"]
       interval: 10s
-      timeout: 3s
+      timeout: 5s
       retries: 3
+      start_period: 15s
     restart: unless-stopped
 
   backup:
@@ -124,6 +152,7 @@ services:
       PGDATABASE: ${POSTGRES_DB:-e9x}
       PGUSER: ${POSTGRES_USER:-e9x}
       PGPASSWORD: ${POSTGRES_PASSWORD:-e9x_dev_password}
+      E9X_OWNER_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}   # restore.sh only; this container already holds the superuser's
       MINIO_DATA_DIR: /minio-data
       E9X_BACKUP_RETENTION: ${E9X_BACKUP_RETENTION:-14}
     volumes:

@@ -20,4 +20,5 @@ WORKDIR /app
 COPY --from=api /src/backend/e9x-app/target/e9x-app-*-SNAPSHOT.jar /app/app.jar
 USER e9x
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
+# ExitOnOutOfMemoryError: worker threads catch Throwable, so without it a JVM out of memory would limp on; restart: unless-stopped brings it back clean.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-XX:+ExitOnOutOfMemoryError", "-jar", "/app/app.jar"]

@@ -53,6 +53,11 @@ teardown() {
   "${COMPOSE[@]}" down -v --remove-orphans ${rmi[@]+"${rmi[@]}"} 2>&1 | tail -n 15
 }
 
+# Compose interpolates the file on every command, `down` too. Secrets of this run only (never reused, never printed): the JWT signing key, and the secret
+# the seed API demands. The Playwright process below inherits E9X_E2E_SEED_SECRET. The overlay points the app at Mailpit whatever this host name says.
+export E9X_JWT_SECRET="${E9X_JWT_SECRET:-$(openssl rand -hex 32)}"
+export E9X_SMTP_HOST="${E9X_SMTP_HOST:-mailpit}"
+
 if [ "$DOWN_ONLY" = "1" ]; then teardown; exit 0; fi
 
 # First free TCP port at or above $1 (the E2E host may already use the defaults).
@@ -88,9 +93,6 @@ while [ "$E9X_FAKE_OIDC_PORT" = "$E9X_FAKE_TELEGRAM_PORT" ] || [ "$E9X_FAKE_OIDC
 done
 echo "ports: https 443, mailpit $E9X_MAILPIT_PORT, fake-telegram $E9X_FAKE_TELEGRAM_PORT, fake-gemini $E9X_FAKE_GEMINI_PORT, fake-oidc $E9X_FAKE_OIDC_PORT"
 
-# Secrets of this run only (never reused, never printed): the JWT signing key, and the secret the seed API demands.
-# The Playwright process below inherits E9X_E2E_SEED_SECRET.
-export E9X_JWT_SECRET="${E9X_JWT_SECRET:-$(openssl rand -hex 32)}"
 export E9X_E2E_SEED_SECRET="${E9X_E2E_SEED_SECRET:-$(openssl rand -hex 24)}"
 export E9X_E2E_TELEGRAM_WEBHOOK_SECRET="${E9X_E2E_TELEGRAM_WEBHOOK_SECRET:-$(openssl rand -hex 16)}"   # the specs play Telegram with it
 
