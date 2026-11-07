@@ -66,12 +66,13 @@ export function resolveContext(stored: string | null, current: string | null, or
 
 /** Applies an answer of GET /api/me/context: roles, organisations, and the context to be in. */
 export async function applyMeContext(queryClient: QueryClient, userId: string, body: MeContextBody): Promise<void> {
-  useRoleStore.getState().setGrants(grantsFromApi(body.grants));
   useOrgStore.setState({ orgs: body.organizations, loaded: true });
   const current = useContextStore.getState().orgId;
   const target = resolveContext(readStoredContext(userId), current, body.organizations);
+  // the context first, the roles after: a page guarded by a role never sees "my roles, but the wrong context" for a moment
   if (target !== current) await switchContext(queryClient, target);
   if (target === null && current !== null) writeStoredContext(userId, null);
+  useRoleStore.getState().setGrants(grantsFromApi(body.grants));
 }
 
 /** Forget everything about the previous person (sign-out, another account). */

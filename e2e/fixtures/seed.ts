@@ -74,6 +74,10 @@ export const seed = {
   staffGrant: (opts: { userId: string; role: string; examCode?: string | null }) =>
     post<{ status: string }>('staff-grant', { ...opts, examCode: opts.examCode ?? null }),
 
+  /** What the server's own Authz (used by the CMS and every module) answers for "role R, optionally for exam X" for that person in that context. */
+  authz: (opts: { userId: string; orgId?: string | null; role: string; examCode?: string | null }) =>
+    post<{ allowed: boolean; canReviewOwnVersion: boolean }>('authz', { orgId: null, examCode: null, ...opts }),
+
   /** A verified person who holds SYS_ADMIN, who can sign in through the real login screen. The operator's script does this in production. */
   sysAdmin: async (opts: { email?: string; password?: string; displayName?: string } = {}): Promise<SeededLearner> => {
     const learner = await seed.verifiedLearner({ displayName: 'Quản trị hệ thống', ...opts });

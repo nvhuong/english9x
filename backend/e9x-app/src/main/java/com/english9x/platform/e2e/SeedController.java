@@ -1,7 +1,9 @@
 package com.english9x.platform.e2e;
 
 import com.english9x.identity.api.UserDirectory;
+import com.english9x.org.api.Authz;
 import com.english9x.org.api.CurrentContextHolder;
+import com.english9x.org.api.Role;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,12 +34,14 @@ class SeedController {
 
     private final SeedDatabase db;
     private final UserDirectory users;
+    private final Authz authz;
     // a low cost keeps seeding fast; the application verifies whatever cost the hash carries
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(6);
 
-    SeedController(SeedDatabase db, UserDirectory users) {
+    SeedController(SeedDatabase db, UserDirectory users, Authz authz) {
         this.db = db;
         this.users = users;
+        this.authz = authz;
     }
 
     record LearnerRequest(String email, String password, String displayName, Boolean verified, String locale) {}
@@ -150,6 +154,22 @@ class SeedController {
         db.jdbc().update("insert into role_grants(user_id, org_id, exam_code, role) values (?, null, ?, ?) on conflict on constraint role_grants_scope_uq do nothing",
                 req.userId(), req.examCode(), req.role());
         return Map.of("status", "ok");
+    }
+
+    record AuthzProbe(UUID userId, UUID orgId, Role role, String examCode) {}
+
+    /**
+     * Asks the REAL {@code Authz} (the one the CMS and the other modules will call) what that person may do in a context: the
+     * answer for "role R for exam X". Lets a spec prove exam-scoped roles on the server before the screens that use them exist.
+     */
+    @PostMapping("/authz")
+    Map<String, Object> authz(@RequestBody AuthzProbe req) {
+        try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(req.userId(), req.orgId())) {
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("allowed", authz.has(req.role(), java.util.Optional.ofNullable(req.examCode())));
+            out.put("canReviewOwnVersion", authz.canReviewOwnVersion());
+            return out;
+        }
     }
 
     /** Proves the profile is on and shows which database login the seed code writes as. */

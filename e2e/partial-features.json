@@ -1,0 +1,31 @@
+{
+  "source": "docs/superpowers/specs/2026-11-06-english9x-design.md#16.2",
+  "note": "Features whose Playwright spec exists but cannot yet cover the whole §16.2 scenario. Each entry says what is pending and which task owns it. Never fake or skip a test to remove an entry: finish the scenario, then delete the entry. scripts/check-e2e-coverage.mjs counts these as PARTIAL; E9X_E2E_GATE=strict fails while any remains.",
+  "features": [
+    {
+      "id": "F01",
+      "pending": "'chưa xác thực thì không mua được gói' through the real checkout: an unverified learner opens a plan, tries to pay and is refused; after verifying, the same order goes through. Today the rule is asserted at UserDirectory#requireVerified (via the seed API) and in the banner.",
+      "owner": "P5.1 / P5.2"
+    },
+    {
+      "id": "F06",
+      "pending": "'AUTHOR IELTS không thấy/không sửa được câu TOEIC' and 'REVIEWER không duyệt được bản mình soạn' through the CMS screens: needs the question editor and the review workflow. Today: the exam a role is granted for travels from invitation to grants, the server's Authz answers per exam (canReviewOwnVersion is false), and the screens an AUTHOR/REVIEWER can open.",
+      "owner": "P2.8 (question editor), P2.9 (review queue)"
+    },
+    {
+      "id": "F07",
+      "pending": "'danh sách khoá/lớp đổi theo': there are no courses or classes yet. Today the data that changes with the context is the organisation's members and roles, the menus the roles open, and the switcher; the course and class lists must be asserted in the same two-organisation setup.",
+      "owner": "P3.1 (courses), P6.1 (classes and members)"
+    },
+    {
+      "id": "F08",
+      "pending": "'mở URL lớp/khoá riêng của tổ chức B → 404': there is no class or course page or endpoint yet. Today the same scenario runs against the organisation-owned pages and endpoints that exist (members, roles, invitations) in the browser and over HTTP; the class and course URLs must be added.",
+      "owner": "P3.1 (courses), P6.1 (classes)"
+    },
+    {
+      "id": "F58",
+      "pending": "The 8 main screens of the design mockups are not built yet: 01 course catalogue, 02 chapter map, 03 lesson, 04 exam room Reading, 05 exam room Speaking, 06 result, 07 CMS review queue, 08 admin QR orders. They move from PENDING_MAIN_SCREENS to SCREENS in the spec as they appear (see its header and the P1.12 note in the foundation plan).",
+      "owner": "P3.1 (01, 02), P3.2 (03), P3.4 (04, 05), P4.4 (06), P2.9 (07), P5.4 (08)"
+    }
+  ]
+}
