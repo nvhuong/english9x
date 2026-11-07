@@ -17,6 +17,8 @@ test.describe('F53 email notifications', () => {
     expect(mail.HTML).toContain('<html lang="vi">');
     expect(mailpit.linksIn(mail).some((l) => l === 'https://localhost/notifications')).toBe(true);
 
+    // the same person also writes content, so a later event of another kind can be sent to them (see the end of the test)
+    await seed.member({ orgId: w.org.orgId, userId: w.reviewer.userId, roles: [{ role: 'AUTHOR', examCode: 'IELTS' }] });
     // switch email off for THIS event in the preference screen
     await auth.loginAs(page, w.reviewer);
     await page.goto('/notifications/preferences');
@@ -34,7 +36,11 @@ test.describe('F53 email notifications', () => {
       await page.reload();
       await expect(page.getByRole('listitem').filter({ hasText: 'Có nội dung chờ duyệt' })).toHaveCount(2, { timeout: 2_000 });
     }).toPass({ timeout: 40_000 });
-    // the delivery is decided in the same transaction as the in-app row, so the inbox having both rows means the plan is final
+    // "no mail" is only proven by a mail that is known to come AFTER the one that must not be sent: a later event for the same person
+    // whose email is still on. When that mail is in Mailpit, a wrongly planned mail of the earlier event (created in the same
+    // transaction as its in-app row, long before) has had every chance to arrive first.
+    await seed.reviewEvent({ kind: 'approved', authorId: w.reviewer.userId, orgId: w.org.orgId });
+    await mailpit.lastEmailTo(w.reviewer.email, { subjectIncludes: 'Nội dung đã được xuất bản', timeoutMs: 40_000 });
     expect(await mailpit.countEmailsTo(w.reviewer.email, 'Có nội dung chờ duyệt')).toBe(1);
   });
 

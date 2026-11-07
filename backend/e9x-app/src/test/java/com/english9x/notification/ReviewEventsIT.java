@@ -97,6 +97,13 @@ class ReviewEventsIT extends NotificationIT {
                 .stream().map(UUID::fromString).collect(Collectors.toSet());
     }
 
+    /** A negative needs proof that the listener has finished: its publication row is deleted when it completes. */
+    private void awaitListenersCompleted(UUID reviewId) {
+        Awaitility.await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> assertEquals(0,
+                su.queryForObject("select count(*) from event_publication where serialized_event like ?", Integer.class, "%" + reviewId + "%"),
+                "the listeners of the event have completed"));
+    }
+
     private void awaitCount(String type, String reviewId, int n) {
         Awaitility.await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> assertEquals(n, notified(type, reviewId).size()));
     }
@@ -160,9 +167,9 @@ class ReviewEventsIT extends NotificationIT {
         } catch (IllegalStateException expected) {
             // rolled back
         }
-        Awaitility.await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(5)).until(() -> true);
-        assertEquals(0, notified("REVIEW_REQUESTED", r.toString()).size());
+        // the publication row is written in the business transaction, so a rollback leaves none: no event exists that a listener could ever see
         assertEquals(0, su.queryForObject("select count(*) from event_publication where serialized_event like ?", Integer.class, "%" + r + "%"));
+        assertEquals(0, notified("REVIEW_REQUESTED", r.toString()).size());
     }
 
     @Test
@@ -173,7 +180,7 @@ class ReviewEventsIT extends NotificationIT {
         awaitCount("REVIEW_REQUESTED", r.toString(), 2);
         // a second publication of the very same event (what a redelivery after a crash looks like to the consumer)
         publish(e);
-        Awaitility.await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(5)).until(() -> true);
+        awaitListenersCompleted(r);
         assertEquals(2, notified("REVIEW_REQUESTED", r.toString()).size());
         assertEquals(2, su.queryForObject("select count(*) from notifications where data ->> 'reviewId' = ?", Integer.class, r.toString()));
         assertEquals(1, TestAuth.SMTP.to(emailOf(reviewerA1)).size(), "one mail, not two");
@@ -238,7 +245,8 @@ class ReviewEventsIT extends NotificationIT {
         publish(requested(orgA, "IELTS", decided));
         UUID ghost = UUID.randomUUID();
         publish(requested(orgA, "IELTS", ghost));
-        Awaitility.await().pollDelay(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(5)).until(() -> true);
+        awaitListenersCompleted(decided);
+        awaitListenersCompleted(ghost);
         assertEquals(0, notified("REVIEW_REQUESTED", decided.toString()).size());
         assertEquals(0, notified("REVIEW_REQUESTED", ghost.toString()).size());
     }

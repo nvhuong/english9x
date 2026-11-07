@@ -34,7 +34,9 @@ test.describe('F55 channel preferences', () => {
 
     await w.requested();
     await mailpit.lastEmailTo(w.reviewer.email, { subjectIncludes: 'Có nội dung chờ duyệt', timeoutMs: 40_000 });
-    // another event, for which Telegram is still on, arrives in the chat; jobs run in order, so the earlier event's message would be there first
+    // another event, for which Telegram is still on, arrives in the chat. The "no Telegram for the switched-off event" check below is only as
+    // strong as the order of arrival: the switched-off event's mail was awaited above, and this later event's message is awaited here,
+    // so a wrongly planned Telegram delivery of the earlier event (created in the same transaction as that mail's) would have been sent by now.
     await seed.reviewEvent({ kind: 'approved', authorId: w.reviewer.userId, orgId: w.org.orgId });
     const messages = await telegram.waitForMessages(chat, { count: 2, timeoutMs: 40_000 });
     expect(messages).toHaveLength(2);
@@ -55,8 +57,12 @@ test.describe('F55 channel preferences', () => {
     await expect(page.getByRole('checkbox', { name: /^Email: Nội dung đã được xuất bản/ })).not.toBeChecked();
     await seed.reviewEvent({ kind: 'approved', authorId: w.reviewer.userId, orgId: w.org.orgId });
     await telegram.waitForMessages(chat, { count: 4, timeoutMs: 40_000 });
-    // one 'published' mail exists (the approved event before email was switched off), the later one was not mailed
-    await expect.poll(() => mailpit.countEmailsTo(w.reviewer.email, 'Có nội dung chờ duyệt'), { timeout: 40_000 }).toBe(2);
-    await expect.poll(() => mailpit.countEmailsTo(w.reviewer.email, 'Nội dung đã được xuất bản'), { timeout: 40_000 }).toBe(1);
+    // Before counting the mails, wait for a mail known to come AFTER the one that must not be sent: a later 'requested' event (email on).
+    // Its 'Có nội dung chờ duyệt' mail is the third one to this person; once it is there, a wrongly planned 'published' mail of the
+    // earlier event has had every chance to arrive before it.
+    await w.requested();
+    await expect.poll(() => mailpit.countEmailsTo(w.reviewer.email, 'Có nội dung chờ duyệt'), { timeout: 40_000 }).toBe(3);
+    // exactly one 'published' mail exists: the one for the approved event before email was switched off; the later approval sent none
+    expect(await mailpit.countEmailsTo(w.reviewer.email, 'Nội dung đã được xuất bản')).toBe(1);
   });
 });

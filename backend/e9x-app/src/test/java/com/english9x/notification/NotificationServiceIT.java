@@ -78,7 +78,10 @@ class NotificationServiceIT extends NotificationIT {
         assertEquals(0, notifications.notify(EventType.REVIEW_REQUESTED, u, reviewData(), "same"), "redelivery of the event does nothing");
         assertEquals(1, inAppCount(u));
         TestAuth.SMTP.await(mail);
-        assertEquals(1, TestAuth.SMTP.countAfterSettling(mail));
+        // a second mail could only come from a second job; there is exactly one delivery row and it is SENT, so the one job finished
+        awaitDeliveryStatus(u, "EMAIL", "SENT");
+        assertEquals(1, deliveries(u).size(), "one delivery for the one notification");
+        assertEquals(1, TestAuth.SMTP.to(mail).size());
         assertEquals(1, notifications.notify(EventType.REVIEW_REQUESTED, u, reviewData(), "other"), "another source event is another notification");
     }
 
