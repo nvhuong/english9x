@@ -36,8 +36,12 @@ class CurrentContextFilterTest {
         boundWhenAsked.set(CurrentContextHolder.current());
         return memberships.contains(user + "/" + org);
     };
+    private final AtomicReference<RuntimeException> versionCheckFails = new AtomicReference<>();
     private final CurrentContextFilter filter = new CurrentContextFilter(new ProblemSecurityHandlers(new ObjectMapper()), membership, (user, version) -> {
         versionAskedFor.set(user + "/" + version);
+        if (versionCheckFails.get() != null) {
+            throw versionCheckFails.get();
+        }
         return version == currentVersion.get();
     });
 
@@ -65,6 +69,18 @@ class CurrentContextFilterTest {
         assertFalse(reached[0], "the request goes no further");
         assertEquals(id + "/1", versionAskedFor.get());
         assertTrue(SecurityContextHolder.getContext().getAuthentication() == null);
+    }
+
+    @Test
+    void aDatabaseErrorWhileCheckingTheVersionFailsClosed() {
+        authenticate(UUID.randomUUID().toString());
+        versionCheckFails.set(new IllegalStateException("database is down"));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        boolean[] reached = {false};
+        assertThrows(IllegalStateException.class, () -> filter.doFilter(new MockHttpServletRequest(), res, (rq, rs) -> reached[0] = true));
+        assertFalse(reached[0], "the request goes no further when the account's version cannot be read");
+        assertTrue(CurrentContextHolder.current().isEmpty(), "nothing is bound");
+        assertFalse(res.isCommitted(), "no answer was written");
     }
 
     @Test

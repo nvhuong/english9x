@@ -29,6 +29,35 @@ for t in $(ls "$ROOT"/backend/db-tests/*.sql 2>/dev/null | sort); do
   else echo "FAIL $(basename "$t")"; echo "$out" | sed 's/^/     /'; fail=$((fail+1)); fi
   "${PSQL[@]}" -d postgres -c "DROP DATABASE t_tmp" >/dev/null
 done
+echo "== lock order: telegram_link_consume against a sign-in that holds the user (two sessions, held locks)"
+# auth_oauth_login / auth_password_reset_confirm take users FOR UPDATE, then delete the link tokens. A consume that took its token row
+# first and then waited on users (the foreign key of its link insert) closed a cycle: Postgres aborted one of them with "deadlock detected".
+"${PSQL[@]}" -d postgres -c "CREATE DATABASE t_tmp TEMPLATE e9x_test" >/dev/null
+LOCKOUT="$WORK/lock-out"; mkdir -p "$LOCKOUT"
+LU=f0000000-0000-0000-0000-000000000001
+"${PSQL[@]}" -d t_tmp -c "INSERT INTO users(id,email,password_hash,consent_at,locale,email_verified_at) VALUES ('$LU','lock@x.test','h',now(),'vi',now());
+  INSERT INTO telegram_link_tokens(user_id,token_hash,created_at,expires_at) VALUES ('$LU',sha256('lock-tok'::bytea),now(),now()+interval '1 hour')" >/dev/null
+SESS=(psql -h "$WORK" -p "$PORT" -U postgres -q -X -At -d t_tmp)
+# A: the sign-in. Holds the user, waits 1.5 s, then deletes the tokens (in that order, as the auth functions do).
+"${SESS[@]}" -c "BEGIN; SELECT 1 FROM users WHERE id = '$LU' FOR UPDATE; SELECT pg_sleep(1.5); DELETE FROM telegram_link_tokens WHERE user_id = '$LU'; COMMIT;" >"$LOCKOUT/a" 2>&1 &
+PA=$!
+sleep 0.5
+# B: the webhook, 0.5 s in, while A holds the user.
+"${SESS[@]}" -c "SET ROLE e9x_app; SELECT r_status FROM telegram_link_consume(sha256('lock-tok'::bytea), 777001, now());" >"$LOCKOUT/b" 2>&1 &
+PB=$!
+wait $PA $PB 2>/dev/null || true
+if grep -qi "deadlock" "$LOCKOUT/a" "$LOCKOUT/b"; then
+  echo "FAIL telegram_link_consume deadlocks against a sign-in holding the user"; sed 's/^/     /' "$LOCKOUT/a" "$LOCKOUT/b"; fail=$((fail+1))
+elif grep -q "ERROR" "$LOCKOUT/a" "$LOCKOUT/b"; then
+  echo "FAIL lock-order scenario failed for another reason"; sed 's/^/     /' "$LOCKOUT/a" "$LOCKOUT/b"; fail=$((fail+1))
+elif [ "$(grep -c '^INVALID$' "$LOCKOUT/b")" = "1" ] \
+   && [ "$("${SESS[@]}" -c "SELECT count(*) FROM telegram_link_tokens WHERE user_id = '$LU'")" = "0" ] \
+   && [ "$("${SESS[@]}" -c "SELECT count(*) FROM telegram_links WHERE user_id = '$LU'")" = "0" ]; then
+  echo "PASS telegram_link_consume waits for the sign-in instead of deadlocking, then finds no token (INVALID, no link)"; pass=$((pass+1))
+else
+  echo "FAIL lock-order scenario ended in an unexpected state"; sed 's/^/     /' "$LOCKOUT/a" "$LOCKOUT/b"; fail=$((fail+1))
+fi
+"${PSQL[@]}" -d postgres -c "DROP DATABASE t_tmp" >/dev/null
 echo "== operator script: grant-sys-admin.sql"
 "${PSQL[@]}" -d postgres -c "CREATE DATABASE t_tmp TEMPLATE e9x_test" >/dev/null
 opfail=0

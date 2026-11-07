@@ -27,6 +27,7 @@ describe('notification pages against the API', () => {
     const calls = stubApi({
       'GET /api/me/notification-prefs': () => json(200, { channels: ['IN_APP', 'EMAIL', 'TELEGRAM'], events: [{ type: 'REVIEW_REQUESTED', audience: 'REVIEWER', email: true, telegram: true }] }),
       'GET /api/me/telegram': () => json(200, { enabled: true, linked: false, failing: false }),
+      'GET /api/auth/me': () => json(200, me({ emailVerified: false })),
     });
     renderAt('/p', '/p', <NotificationPreferencesPage />);
     expect(await screen.findByText('Hãy xác thực email để đổi tuỳ chọn thông báo và kết nối Telegram.')).toBeInTheDocument();
@@ -34,6 +35,44 @@ describe('notification pages against the API', () => {
     await screen.findByRole('heading', { name: /Telegram/ });
     expect(screen.queryByRole('button', { name: 'Tạo liên kết kết nối' })).toBeNull();
     expect(calls.filter((c) => c.method !== 'GET')).toHaveLength(0);
+  });
+
+  it('a tab left open unlocks once the address was verified elsewhere: the profile is read again on mount and on focus', async () => {
+    useAuthStore.setState({ user: me({ emailVerified: false }) as never });
+    let verified = false;
+    const calls = stubApi({
+      'GET /api/me/notification-prefs': () => json(200, { channels: ['IN_APP', 'EMAIL', 'TELEGRAM'], events: [{ type: 'REVIEW_REQUESTED', audience: 'REVIEWER', email: true, telegram: true }] }),
+      'GET /api/me/telegram': () => json(200, { enabled: true, linked: false, failing: false }),
+      'GET /api/auth/me': () => json(200, me({ emailVerified: verified })),
+    });
+    renderAt('/p', '/p', <NotificationPreferencesPage />);
+    // mount: still unverified on the server, so still locked
+    expect(await screen.findByText('Hãy xác thực email để đổi tuỳ chọn thông báo và kết nối Telegram.')).toBeInTheDocument();
+    const profileReads = () => calls.filter((c) => c.path === '/api/auth/me').length;
+    await waitFor(() => expect(profileReads()).toBeGreaterThan(0)); // (StrictMode runs the mount effect twice)
+    const afterMount = profileReads();
+    // the person verifies in another tab, then comes back to this one
+    verified = true;
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    expect(await screen.findByRole('button', { name: 'Tạo liên kết kết nối' })).toBeInTheDocument();
+    expect(profileReads()).toBeGreaterThan(afterMount);
+    expect(screen.queryByText('Hãy xác thực email để đổi tuỳ chọn thông báo và kết nối Telegram.')).toBeNull();
+    expect(useAuthStore.getState().user?.emailVerified).toBe(true);
+  });
+
+  it('a verified person is not asked about the profile again', async () => {
+    const calls = stubApi({
+      'GET /api/me/notification-prefs': () => json(200, { channels: ['IN_APP', 'EMAIL', 'TELEGRAM'], events: [] }),
+      'GET /api/me/telegram': () => json(200, { enabled: true, linked: false, failing: false }),
+    });
+    renderAt('/p', '/p', <NotificationPreferencesPage />);
+    await screen.findByRole('button', { name: 'Tạo liên kết kết nối' });
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    expect(calls.filter((c) => c.path === '/api/auth/me')).toHaveLength(0);
   });
 
   it('a server refusal for an unverified address says the same, also when this tab still thinks the address is verified', async () => {
