@@ -26,10 +26,10 @@ import org.springframework.test.context.DynamicPropertySource;
  * signed access tokens and the real {@code X-Org-Context} header. Tests use unique names and emails instead of cleaning up.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-abstract class OrgIT {
+public abstract class OrgIT {
 
-    static final String DB = TestPostgres.createDatabase();
-    static final ObjectMapper JSON = new ObjectMapper();
+    protected static final String DB = TestPostgres.createDatabase();
+    protected static final ObjectMapper JSON = new ObjectMapper();
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
@@ -43,14 +43,14 @@ abstract class OrgIT {
     protected final JdbcTemplate su = new JdbcTemplate(TestPostgres.superuser(DB));
 
     protected record Res(int status, JsonNode body, HttpHeaders headers, String raw) {
-        String problemType() {
+        public String problemType() {
             return body.path("type").asText();
         }
     }
 
     // ---- fixtures ---------------------------------------------------------------------------------------------------------
 
-    static String email(String label) {
+    protected static String email(String label) {
         return label + "-" + UUID.randomUUID().toString().substring(0, 8) + "@example.test";
     }
 
@@ -141,11 +141,24 @@ abstract class OrgIT {
         return call(HttpMethod.GET, path, null, asUser, inOrg);
     }
 
+    /** GET with the query string sent exactly as written: {@link #get} lets the client encode it, so "%00" would arrive as the text "%00". */
+    protected Res getAsWritten(String pathAndQuery, UUID asUser) {
+        HttpHeaders h = new HttpHeaders();
+        h.setBearerAuth(TestAuth.accessToken(asUser));
+        ResponseEntity<String> r = http.exchange(java.net.URI.create(http.getRootUri() + pathAndQuery), HttpMethod.GET, new HttpEntity<>(null, h), String.class);
+        try {
+            String raw = r.getBody() == null ? "" : r.getBody();
+            return new Res(r.getStatusCode().value(), raw.trim().startsWith("{") ? JSON.readTree(raw) : JSON.createObjectNode(), r.getHeaders(), raw);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     protected Res post(String path, Object body, UUID asUser, UUID inOrg) {
         return call(HttpMethod.POST, path, body, asUser, inOrg);
     }
 
-    static Map<String, Object> role(String role, String exam) {
+    protected static Map<String, Object> role(String role, String exam) {
         Map<String, Object> m = new HashMap<>();
         m.put("role", role);
         m.put("examCode", exam);

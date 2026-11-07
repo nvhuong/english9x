@@ -28,6 +28,11 @@ final class RoleRules {
 
     private RoleRules() {}
 
+    /** {@code ROLE} or {@code ROLE/EXAM}: how a grant is written in the audit log and in the invitation mail. */
+    static String label(RoleSpec r) {
+        return r.examCode() == null ? r.role().name() : r.role().name() + "/" + r.examCode();
+    }
+
     /** The roles without duplicates, in order. Throws 400 (shape) or 409 (ENTERPRISE) problems. */
     static List<RoleSpec> check(Optional<OrgType> orgType, List<RoleSpec> roles) {
         List<OrgProblems.FieldProblem> shape = new ArrayList<>();

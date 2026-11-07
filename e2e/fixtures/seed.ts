@@ -93,6 +93,15 @@ export const seed = {
   reviewEvent: (opts: { kind: 'requested' | 'changes' | 'approved'; authorId: string; examCode?: string; orgId?: string | null }) =>
     post<{ reviewId: string; kind: string }>('review-event', { examCode: 'IELTS', orgId: null, ...opts }),
 
+  /**
+   * Runs the REAL review workflow for a stand-in content version ("e2e_doc") until P2 brings real content: the author submits it and the
+   * reviewer approves it (outcome 'approved'), sends it back ('changes') or it is left in review ('submitted'). Authz, RLS, the lifecycle
+   * trigger, the events and the audit log all run for real; the people need an AUTHOR / REVIEWER grant for `examCode` in that context
+   * (`seed.staffGrant` for the English9x context, `seed.member` for an organisation). The CMS review screens (P2.9) replace this.
+   */
+  reviewFlow: (opts: { authorId: string; reviewerId?: string; examCode?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
+    post<{ reviewId: string; versionId: string; outcome: string }>('review-flow', { examCode: 'IELTS', orgId: null, outcome: 'approved', ...opts }),
+
   /** A centre with teachers and learners (classes, members). Needs the classroom module. */
   center: (_opts: { teachers: number; learners: number }): Promise<SeededCenter> =>
     notImplemented('seed.center', 'P6.1 (members and classes); organisations themselves exist since P1.5 (seed.organization, seed.member)'),

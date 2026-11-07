@@ -1,0 +1,60 @@
+{
+  "nav": { "audit": "Audit log" },
+  "title": "Audit log",
+  "description": "Records who did what, when and in which context: content approval, role changes, invitations, organization creation. Read only; records cannot be edited or deleted.",
+  "filters": {
+    "title": "Filters",
+    "action": "Action",
+    "anyAction": "Any action",
+    "actor": "Actor",
+    "actorHint": "Email address or user id",
+    "targetType": "Target type",
+    "targetId": "Target id",
+    "from": "From date",
+    "to": "To date",
+    "apply": "Apply",
+    "reset": "Clear filters"
+  },
+  "results": {
+    "title": "Results",
+    "loading": "Loading the log",
+    "loadFailed": "The log could not be loaded. Please try again.",
+    "retry": "Try again",
+    "empty": "The log has no records yet",
+    "emptyHint": "Administrative actions appear here as they happen.",
+    "emptyFiltered": "No records match",
+    "emptyFilteredHint": "Remove a filter or widen the date range.",
+    "pagination": "Audit log pages",
+    "pageOf": "Page {{page}}",
+    "previous": "Previous page",
+    "next": "Next page"
+  },
+  "table": {
+    "caption": "Audit records, newest first",
+    "when": "When",
+    "actor": "Actor",
+    "context": "Context",
+    "action": "Action",
+    "target": "Target",
+    "detail": "Detail",
+    "operator": "Server operator",
+    "unknownActor": "Deleted account",
+    "english9x": "English9x",
+    "system": "System",
+    "invitedGone": "Address erased"
+  },
+  "actionNames": {
+    "org_create": "Organization created",
+    "role_change": "Roles changed",
+    "invitation_send": "Invitation sent",
+    "invitation_revoke": "Invitation revoked",
+    "invitation_accept": "Invitation accepted",
+    "review_submit": "Submitted for review",
+    "review_submit_bundle": "Bundle submitted for review",
+    "review_approve": "Content approved",
+    "review_approve_bundle": "Bundle approved",
+    "review_request_changes": "Changes requested",
+    "review_request_bundle_changes": "Bundle changes requested",
+    "sys_admin_grant": "First system admin granted"
+  }
+}

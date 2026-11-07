@@ -51,7 +51,9 @@ export async function request(url: string, init: { method?: string; headers?: Re
   return new Promise<{ status: number; text: string }>((resolve, reject) => {
     const req = client.request(
       target,
-      { method, headers: init.headers, rejectUnauthorized: false, timeout: 20_000 }, // E2E only: Caddy's own CA
+      // E2E only: Caddy's own CA. Content-Length is set whenever there is a body: node adds no framing to a DELETE (or GET) that has one, so the body
+      // bytes would be read as the start of the NEXT request on a kept-alive connection and Caddy would answer that one "400 Bad Request".
+      { method, headers: { ...init.headers, ...(init.body === undefined ? {} : { 'content-length': String(Buffer.byteLength(init.body)) }) }, rejectUnauthorized: false, timeout: 20_000 },
       (res) => {
         const chunks: Buffer[] = [];
         res.on('data', (c: Buffer) => chunks.push(c));

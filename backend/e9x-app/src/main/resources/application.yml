@@ -142,6 +142,10 @@ e9x:
   org:
     invitation-ttl: 7d             # how long an invitation link stays valid (assumption)
     invitation-hourly-limit: 50    # invitations (mails) one person may send per hour (assumption)
+  audit:
+    default-page-size: 50          # rows per page of the audit-log screen when the request does not say (assumption)
+    max-page-size: 100             # the most rows one request may ask for; more is answered with this many (assumption)
+    max-detail-bytes: 4096         # the most JSON bytes one audit record's detail may take (assumption)
   workflow:
     max-bundle-size: 2000          # versions one review bundle may hold; keep >= e9x.content.import.max-rows (assumption)
   learning:

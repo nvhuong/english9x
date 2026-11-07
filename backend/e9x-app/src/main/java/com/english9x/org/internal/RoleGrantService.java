@@ -1,5 +1,6 @@
 package com.english9x.org.internal;
 
+import com.english9x.audit.api.AuditLog;
 import com.english9x.org.api.Role;
 import com.english9x.org.internal.OrgDtos.MemberView;
 import com.english9x.org.internal.OrgDtos.MembersView;
@@ -7,6 +8,7 @@ import com.english9x.org.internal.OrgDtos.OrgView;
 import com.english9x.org.internal.OrgDtos.RoleSpec;
 import com.english9x.org.internal.OrgDtos.SetRolesRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,10 +21,12 @@ class RoleGrantService {
 
     private final OrgRepository repo;
     private final OrgAccess access;
+    private final AuditLog audit;
 
-    RoleGrantService(OrgRepository repo, OrgAccess access) {
+    RoleGrantService(OrgRepository repo, OrgAccess access, AuditLog audit) {
         this.repo = repo;
         this.access = access;
+        this.audit = audit;
     }
 
     @Transactional(readOnly = true)
@@ -40,7 +44,8 @@ class RoleGrantService {
             throw OrgProblems.notFound(); // grants never exist without a membership; invitations create both
         }
         repo.lockOrg(orgId);
-        boolean hadAdmin = repo.rolesOf(orgId, req.userId()).stream().anyMatch(r -> r.role() == Role.ORG_ADMIN);
+        List<RoleSpec> before = repo.rolesOf(orgId, req.userId());
+        boolean hadAdmin = before.stream().anyMatch(r -> r.role() == Role.ORG_ADMIN);
         boolean keepsAdmin = wanted.stream().anyMatch(r -> r.role() == Role.ORG_ADMIN);
         if (hadAdmin && !keepsAdmin && repo.otherAdmins(orgId, req.userId()) == 0) {
             throw OrgProblems.lastOrgAdmin();
@@ -51,7 +56,13 @@ class RoleGrantService {
             throw new AccessDeniedException("demoted while waiting");
         }
         repo.setRoles(orgId, req.userId(), wanted);
-        // Audit (P1.9) must record this change: actor, organisation, target, old and new roles.
+        // Recorded only when something changed. The organisation is in the detail because a SYS_ADMIN acts from the English9x context, where the
+        // record's own context is none.
+        List<String> was = before.stream().map(RoleRules::label).sorted().toList();
+        List<String> now = wanted.stream().map(RoleRules::label).distinct().sorted().toList();
+        if (!was.equals(now)) {
+            audit.record("role.change", "user", req.userId(), Map.of("orgId", orgId.toString(), "before", was, "after", now));
+        }
         return repo.members(orgId).stream().filter(m -> m.userId().equals(req.userId())).findFirst()
                 .orElseThrow(OrgProblems::notFound);
     }

@@ -51,6 +51,8 @@ public final class SweepFixtures {
         // A must neither list nor mark them, in any context (id-bearing paths of /api/me/notifications are swept like the others)
         su.update("insert into notifications(user_id,event_type,data,dedupe_key) values (?,'REVIEW_REQUESTED','{\"examCode\":\"IELTS\"}','sweep-b')", userB);
         su.update("insert into telegram_link_tokens(user_id,token_hash,expires_at) values (?,sha256('sweep-tg-b'::bytea),now()+interval '1 day')", userB);
+        // P1.9: org B's audit records (the log has no tenant endpoint at all, only the SYS_ADMIN screen; A's ORG_ADMIN must never see one)
+        su.update("insert into audit_log(actor_id,org_id,action,target_type,target_id,detail) values (?,?,'role.change','user',?,'{\"orgId\":\"b\"}')", userB, orgB, userB.toString());
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);

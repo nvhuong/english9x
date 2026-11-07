@@ -92,6 +92,8 @@
 
 ### Task P2.9: UI duyệt + so sánh phiên bản (W6) — F17, F18
 
+> **Ghi chú 2026-11-08 (từ P1.9):** gửi duyệt, duyệt và yêu cầu sửa đi qua `ReviewService` nên ĐÃ được ghi vào nhật ký (`review.*`); controller của task này không được tự ghi lần nữa. Khi màn hình duyệt thật chạy, thay `seed.reviewFlow` trong `e2e/specs/admin/F57-audit-log.spec.ts` bằng thao tác thật trên màn hình và ghi lại trong mục F57 của `e2e/partial-features.json` (phần "duyệt nội dung bằng màn hình thật"). Mọi thao tác quản trị nội dung KHÔNG đi qua `ReviewService` (lưu trữ phiên bản, nhập lô, xoá) cũng phải gọi `AuditLog#record` trong cùng giao dịch.
+
 **Files:** controller backend của luồng duyệt (xem ghi chú 2026-11-08 bên dưới), `frontend/src/features/cms/review/**` (danh sách chờ duyệt, xem cả cụm, diff JSON → hiển thị khác biệt trường theo trường, nút Yêu cầu sửa/Duyệt), E2E `F17-review-workflow.spec.ts`, `F18-versioning.spec.ts`.
 
 **Tests:** Vitest `VersionDiff.highlightsChangedFields`; E2E F17 (gồm "người duyệt không duyệt được bản mình soạn" và "đề chưa đủ câu xuất bản thì không xuất bản được"), F18 (học viên đang thi vẫn thấy bản cũ).

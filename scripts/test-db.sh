@@ -38,11 +38,14 @@ if op -v email=Boss@Example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/nu
    && [ "$(op -Atc "SELECT count(*) FROM role_grants g JOIN users u ON u.id = g.user_id WHERE u.email = 'boss@example.test' AND g.role = 'SYS_ADMIN' AND g.org_id IS NULL")" = "1" ] \
    && op -v email=boss@example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/null 2>&1 \
    && [ "$(op -Atc "SELECT count(*) FROM role_grants WHERE role = 'SYS_ADMIN'")" = "1" ]; then echo "PASS grant-sys-admin grants a verified account once (idempotent, case-insensitive)"; else echo "FAIL grant-sys-admin on a verified account"; opfail=1; fi
+# P1.9: the grant is in the audit log, as the operator (no actor), once, naming the account by id and never by address
+if [ "$(op -Atc "SELECT count(*) FROM audit_log a JOIN users u ON u.id::text = a.target_id WHERE a.action = 'sys-admin.grant' AND a.actor_kind = 'OPERATOR' AND a.actor_id IS NULL AND a.target_type = 'user' AND u.email = 'boss@example.test' AND a.detail::text NOT LIKE '%boss%'")" = "1" ] \
+   && [ "$(op -Atc "SELECT count(*) FROM audit_log")" = "1" ]; then echo "PASS grant-sys-admin records itself in the audit log once, as the operator"; else echo "FAIL grant-sys-admin audit record"; opfail=1; fi
 if op -v email=newbie@example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/null 2>&1 || op -v email=nobody@example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/null 2>&1; then
   echo "FAIL grant-sys-admin accepted an unverified or unknown account"; opfail=1
 elif [ "$(op -Atc "SELECT count(*) FROM role_grants WHERE role = 'SYS_ADMIN'")" = "1" ]; then echo "PASS grant-sys-admin refuses unverified and unknown accounts"; else echo "FAIL grant-sys-admin wrote a grant despite refusing"; opfail=1; fi
 "${PSQL[@]}" -d postgres -c "DROP DATABASE t_tmp" >/dev/null
-[ "$opfail" = "0" ] && pass=$((pass+2)) || fail=$((fail+1))
+[ "$opfail" = "0" ] && pass=$((pass+3)) || fail=$((fail+1))
 echo "== operator script: grant-sys-admin.sh names and guards its target (docker is a stub that records what it is asked)"
 if bash "$ROOT/scripts/test-grant-sys-admin-guard.sh"; then pass=$((pass+1)); else fail=$((fail+1)); fi
 echo

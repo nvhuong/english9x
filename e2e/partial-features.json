@@ -46,6 +46,11 @@
       "id": "F55",
       "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the effect of preferences on a real CMS review action and on the other §13 events (the preference screen already lists all of them).",
       "owner": "P2.9; P5.2, P4.2/P4.3, P6.2/P6.3 for the other sources"
+    },
+    {
+      "id": "F57",
+      "pending": "The acceptance line names three kinds of record: order confirmation, seat revocation and content approval. The spec covers what exists, through the real screens and the real services: organisation creation, role changes, invitation send/revoke/accept and content approval (a real ReviewService run over a stand-in e2e_doc version through seed.reviewFlow, since the CMS review screens do not exist yet), read on the real audit-log screen by the SYS_ADMIN and refused to everybody else. Pending: the order-confirmation record (billing module, no module yet) and the seat-revocation record (billing seats, P5.3, no module yet); those modules must call AuditLog#record and extend this spec with the two rows. Content approval through the real CMS review screen instead of the seed arrives with P2.9.",
+      "owner": "P5.2 (order confirm/reject), P5.3 (seat assign/revoke), P2.9 (review screen replaces seed.reviewFlow)"
     }
   ]
 }

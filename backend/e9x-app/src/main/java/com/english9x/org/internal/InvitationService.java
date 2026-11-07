@@ -1,5 +1,6 @@
 package com.english9x.org.internal;
 
+import com.english9x.audit.api.AuditLog;
 import com.english9x.identity.api.EmailNotVerifiedException;
 import com.english9x.identity.api.InvitationMailer;
 import com.english9x.identity.api.UserDirectory;
@@ -13,7 +14,9 @@ import com.english9x.org.internal.OrgDtos.RoleSpec;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,14 +49,16 @@ class InvitationService {
     private final Clock clock;
     private final InvitationMailer mailer;
     private final UserDirectory users;
+    private final AuditLog audit;
 
-    InvitationService(OrgRepository repo, OrgAccess access, OrgProperties props, Clock clock, InvitationMailer mailer, UserDirectory users) {
+    InvitationService(OrgRepository repo, OrgAccess access, OrgProperties props, Clock clock, InvitationMailer mailer, UserDirectory users, AuditLog audit) {
         this.repo = repo;
         this.access = access;
         this.props = props;
         this.clock = clock;
         this.mailer = mailer;
         this.users = users;
+        this.audit = audit;
     }
 
     /** @param orgId null = an English9x (internal) invitation, SYS_ADMIN only */
@@ -77,15 +82,21 @@ class InvitationService {
             throw OrgProblems.tooManyInvitations(3600);
         }
         repo.lockInvitee(orgId, email);
-        repo.retirePending(orgId, email, now);
+        int superseded = repo.retirePending(orgId, email, now);
         String token = InviteTokens.newToken();
         Instant expires = now.plus(props.invitationTtl());
         UUID id = repo.insertInvitation(orgId, email, roles, InviteTokens.hash(token), inviter, expires);
-        // Audit (P1.9) must record this: actor, organisation (or English9x), invited address, roles.
+        // No address here: it is personal data of someone who may never register, and the log cannot erase it. The log names the invitation
+        // (target) and the audit screen reads the address from the invitation while it exists. Never the token or its digest either.
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("orgId", orgId == null ? null : orgId.toString());
+        detail.put("roles", roles.stream().map(RoleRules::label).toList());
+        detail.put("superseded", superseded);
+        audit.record("invitation.send", "invitation", id, detail);
 
         UserView who = users.findById(inviter).orElse(null);
         String orgName = org == null ? null : org.name();
-        List<String> labels = roles.stream().map(r -> r.examCode() == null ? r.role().name() : r.role().name() + "/" + r.examCode()).toList();
+        List<String> labels = roles.stream().map(RoleRules::label).toList();
         afterCommit(() -> mailer.sendInvitation(email, who == null ? "vi" : who.locale(), who == null ? null : who.displayName(), orgName, labels, token));
         return new InvitationView(id, email, roles, OrgDtos.InvitationStatus.PENDING, now, expires);
     }
@@ -107,9 +118,11 @@ class InvitationService {
         } else {
             access.manageable(orgId);
         }
-        if (!repo.revoke(invitationId, orgId, clock.instant())) {
-            throw OrgProblems.notFound();
-        }
+        OrgRepository.Revoked revoked = repo.revoke(invitationId, orgId, clock.instant()).orElseThrow(OrgProblems::notFound);
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("orgId", orgId == null ? null : orgId.toString());
+        detail.put("roles", revoked.roles().stream().map(RoleRules::label).toList());
+        audit.record("invitation.revoke", "invitation", invitationId, detail);
     }
 
     @Transactional
@@ -120,7 +133,15 @@ class InvitationService {
         access.actingUser();
         OrgRepository.Accepted result = repo.accept(InviteTokens.hash(token), clock.instant());
         return switch (result.outcome()) {
-            case "ACCEPTED" -> new AcceptInvitationResponse("accepted", result.orgId());
+            case "ACCEPTED" -> {
+                // Written here, from Java, in the accepting person's own transaction: the definer function ran under them, so the actor is
+                // them and the owner organisation is the context they accepted in. The organisation joined is in the detail.
+                Map<String, Object> detail = new LinkedHashMap<>();
+                detail.put("orgId", result.orgId() == null ? null : result.orgId().toString());
+                detail.put("roles", result.roles().stream().map(RoleRules::label).toList());
+                audit.record("invitation.accept", "invitation", result.invitationId(), detail);
+                yield new AcceptInvitationResponse("accepted", result.orgId());
+            }
             case "EMAIL_MISMATCH" -> throw OrgProblems.invitationEmailMismatch();
             case "EMAIL_NOT_VERIFIED" -> throw new EmailNotVerifiedException();
             default -> throw OrgProblems.invitationInvalid();
