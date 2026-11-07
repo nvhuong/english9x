@@ -1,9 +1,6 @@
 package com.english9x.identity.api;
 
-/**
- * Recurring clean-up of the identity module. Nothing runs this on a schedule yet: recurring jobs start with P5.1 (see the
- * dated note in that plan), which calls it.
- */
+/** Clean-up of the identity module. The scheduled housekeeping in {@code identity.internal} runs this every 6 hours. */
 public interface AccountHousekeeping {
 
     /**

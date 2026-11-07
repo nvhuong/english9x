@@ -1,5 +1,6 @@
 package com.english9x.identity.internal;
 
+import com.english9x.identity.api.AccountHousekeeping;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -33,14 +34,19 @@ class IdentityStartupChecks {
         }
     }
 
-    /** Housekeeping: tokens expired / used / revoked more than 7 days ago are deleted. */
+    /**
+     * Housekeeping: tokens expired / used / revoked more than 7 days ago are deleted, and so are Google accounts abandoned at
+     * the consent step (see {@link AccountHousekeeping}). One failing does not stop the other. Counts only in the log.
+     */
     @Component
     static class Purge {
         private static final Logger LOG = LoggerFactory.getLogger(Purge.class);
         private final AuthRepository repo;
+        private final AccountHousekeeping accounts;
 
-        Purge(AuthRepository repo) {
+        Purge(AuthRepository repo, AccountHousekeeping accounts) {
             this.repo = repo;
+            this.accounts = accounts;
         }
 
         @Scheduled(initialDelayString = "PT10M", fixedDelayString = "PT6H")
@@ -52,6 +58,11 @@ class IdentityStartupChecks {
                 }
             } catch (RuntimeException e) {
                 LOG.warn("auth token purge failed: {}", e.getClass().getSimpleName());
+            }
+            try {
+                accounts.purgeAccountsWithoutConsent(); // logs its own count
+            } catch (RuntimeException e) {
+                LOG.warn("no-consent account purge failed: {}", e.getClass().getSimpleName());
             }
         }
     }

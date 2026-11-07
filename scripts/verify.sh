@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Full local verification (same steps as CI):
+# Local verification: the CI steps that need no running stack. CI's own jobs for what is NOT here: `db-tests`
+# (scripts/test-db.sh), `compose`, `frontend-a11y` (opt-in below) and `e2e` (scripts/e2e.sh).
 #   1. backend    mvn -B verify          (unit + Modulith + Testcontainers ITs; needs Docker)
 #   2. fakes      node --test            (fake Gemini / fake Telegram behaviour)
 #   3. frontend   pnpm lint, test, build

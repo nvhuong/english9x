@@ -98,6 +98,23 @@ jobs:
           node-version: "22"
       - run: ./scripts/e2e-gate.sh
 
+  # Playwright does not type-check the specs. Blocking, unlike the e2e job below, which needs no stack for this.
+  e2e-typecheck:
+    name: e2e specs (tsc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: e2e/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: e2e/pnpm-lock.yaml
+      - run: pnpm -C e2e install --frozen-lockfile
+      - run: pnpm -C e2e exec tsc --noEmit
+
   # Playwright against the real Compose stack (scripts/e2e.sh: clean DB, always torn down). It was green locally,
   # but has not yet run on a GitHub runner, so it does NOT block merges (continue-on-error) until W10, when
   # this flag is removed together with setting E9X_E2E_GATE=strict. Videos and traces are uploaded either way.
