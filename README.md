@@ -60,6 +60,20 @@ On an existing database volume run `01-roles.sh` by hand once with `E9X_WORKER_P
 Every transaction sets `app.user_id` / `app.org_id` / `app.e9x_staff` / `app.org_admin` with `set_config(..., true)` from the bound
 `CurrentContextHolder` (`org.api`); with no context RLS returns no rows. `/v3/api-docs` is off unless `E9X_OPENAPI_ENABLED=true`.
 
+## First SYS_ADMIN, organisations, invitations (P1.5)
+There is **no default administrator** in any migration or Compose file, and no HTTP way to become one. Operations seed the first
+SYS_ADMIN with the owner credentials, after that person registered and verified their email through the normal screens:
+```bash
+./scripts/grant-sys-admin.sh person@example.com      # runs scripts/grant-sys-admin.sql as e9x_owner inside the Compose postgres
+```
+The script refuses an unknown or unverified address. From then on that SYS_ADMIN signs in, creates organisations (`/admin/organizations`),
+invites English9x staff (`/admin/staff`) and the first ORG_ADMIN of each organisation by email; every later role change is made in
+the screens (`/org/members`, `/admin/organizations/<id>`). Invitation links are `<E9X_PUBLIC_BASE_URL>/accept-invitation?token=...`
+(single use, hashed in the database, valid `e9x.org.invitation-ttl` = 7 days; at most `e9x.org.invitation-hourly-limit` = 50 per person per hour).
+The accepting account must be signed in with the invited address, verified; a different account is told so and the link stays valid.
+A request names its organisation with `X-Org-Context: <uuid>` (absent = "Cá nhân"); a non-member, an unknown or a malformed value gets the same 403.
+`join_codes` exists with its policies and a redeem function (`org_join_code_redeem`); the endpoint and screens are P6.1 (F44).
+
 ## Fakes
 - Fake Gemini: `POST /v1beta/models/{model}:generateContent`; choose the response with `POST /__scenario {"scenario":"ok|error500|badSchema"}`; inspect calls at `GET /__requests`.
 - Fake Telegram: `POST /bot{token}/sendMessage`; read what was sent with `GET /__messages?chat_id=`.

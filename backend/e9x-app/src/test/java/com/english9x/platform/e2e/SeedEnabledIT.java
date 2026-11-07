@@ -61,6 +61,25 @@ class SeedEnabledIT {
     }
 
     @Test
+    void organisationFixturesFollowTheRealRules() {
+        ResponseEntity<String> org = post("/api/test/seed/organization", "{\"name\":\"Seed Centre\",\"type\":\"ENTERPRISE\"}", SECRET);
+        assertEquals(201, org.getStatusCode().value(), org.getBody());
+        String orgId = org.getBody().replaceAll(".*\"orgId\":\"([^\"]+)\".*", "$1");
+        ResponseEntity<String> learner = post("/api/test/seed/learner", "{\"email\":\"seed-org-member@e2e.test\"}", SECRET);
+        String userId = learner.getBody().replaceAll(".*\"userId\":\"([^\"]+)\".*", "$1");
+        String roles = "[{\"role\":\"ORG_ADMIN\"},{\"role\":\"LEARNER\"}]";
+        assertEquals(201, post("/api/test/seed/membership", "{\"orgId\":\"" + orgId + "\",\"userId\":\"" + userId + "\",\"roles\":" + roles + "}", SECRET).getStatusCode().value());
+        assertEquals(2, new JdbcTemplate(TestPostgres.superuser(DB)).queryForObject(
+                "select count(*) from role_grants where org_id = ?::uuid and user_id = ?::uuid", Integer.class, orgId, userId));
+        // the seed writes as the owner, but the database rules still hold: an ENTERPRISE cannot get a TEACHER
+        ResponseEntity<String> bad = post("/api/test/seed/membership", "{\"orgId\":\"" + orgId + "\",\"userId\":\"" + userId
+                + "\",\"roles\":[{\"role\":\"TEACHER\",\"examCode\":\"IELTS\"}]}", SECRET);
+        assertTrue(bad.getStatusCode().value() >= 400, bad.getBody());
+        ResponseEntity<String> staff = post("/api/test/seed/staff-grant", "{\"userId\":\"" + userId + "\",\"role\":\"SYS_ADMIN\"}", SECRET);
+        assertEquals(201, staff.getStatusCode().value(), staff.getBody());
+    }
+
+    @Test
     void seedBeansExistWithTheProfile() {
         assertEquals(1, context.getBeanNamesForType(SeedController.class).length);
         assertEquals(1, context.getBeanNamesForType(SeedDatabase.class).length);

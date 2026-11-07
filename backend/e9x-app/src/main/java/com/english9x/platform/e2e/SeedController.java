@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Every request needs the shared secret header (see {@link SeedSecretInterceptor}); the application does not start
  * with this profile on a real domain (see {@link E2eGuard}). It ships a health check, verified/unverified learners
- * (P1.4) and a probe of the "email must be verified" guard. Each later task adds its own seed endpoint here (a method on this class
+ * (P1.4), organisations, memberships and staff grants (P1.5) and a probe of the "email must be verified" guard. Each later task adds its own seed endpoint here (a method on this class
  * or a sibling {@code @Profile("e2e")} controller under {@code /api/test/seed/}) that inserts through
  * {@link SeedDatabase}, plus the matching function in e2e/fixtures/seed.ts.
  */
@@ -108,6 +108,48 @@ class SeedController {
             users.requireVerified(ref.userId());
         }
         return Map.of("status", "verified");
+    }
+
+    record OrgRequest(String name, String type) {}
+
+    /** An organisation (CENTER by default). Created as the table owner: the E2E fixture needs no SYS_ADMIN session for this. */
+    @PostMapping("/organization")
+    @ResponseStatus(HttpStatus.CREATED)
+    Map<String, Object> organization(@RequestBody(required = false) OrgRequest req) {
+        String suffix = UUID.randomUUID().toString().substring(0, 6);
+        String name = req != null && req.name() != null ? req.name() : "Org " + suffix;
+        String type = req != null && req.type() != null ? req.type() : "CENTER";
+        UUID id = db.jdbc().queryForObject("insert into organizations(name, type) values (?, ?) returning id", UUID.class, name, type);
+        return Map.of("orgId", id.toString(), "name", name, "type", type);
+    }
+
+    record RoleRef(String role, String examCode) {}
+
+    record MembershipRequest(UUID orgId, UUID userId, java.util.List<RoleRef> roles) {}
+
+    /** Makes the user a member of the organisation (membership FIRST, as every real path does) with the given roles. */
+    @PostMapping("/membership")
+    @ResponseStatus(HttpStatus.CREATED)
+    Map<String, Object> membership(@RequestBody MembershipRequest req) {
+        db.jdbc().update("insert into org_memberships(org_id, user_id) values (?, ?) on conflict do nothing", req.orgId(), req.userId());
+        if (req.roles() != null) {
+            for (RoleRef r : req.roles()) {
+                db.jdbc().update("insert into role_grants(user_id, org_id, exam_code, role) values (?, ?, ?, ?) on conflict on constraint role_grants_scope_uq do nothing",
+                        req.userId(), req.orgId(), r.examCode(), r.role());
+            }
+        }
+        return Map.of("status", "ok");
+    }
+
+    record StaffGrantRequest(UUID userId, String role, String examCode) {}
+
+    /** An English9x-level grant (org NULL): AUTHOR / REVIEWER / TEACHER of an exam, or SYS_ADMIN (the seed stands in for the operator's script). */
+    @PostMapping("/staff-grant")
+    @ResponseStatus(HttpStatus.CREATED)
+    Map<String, Object> staffGrant(@RequestBody StaffGrantRequest req) {
+        db.jdbc().update("insert into role_grants(user_id, org_id, exam_code, role) values (?, null, ?, ?) on conflict on constraint role_grants_scope_uq do nothing",
+                req.userId(), req.examCode(), req.role());
+        return Map.of("status", "ok");
     }
 
     /** Proves the profile is on and shows which database login the seed code writes as. */
