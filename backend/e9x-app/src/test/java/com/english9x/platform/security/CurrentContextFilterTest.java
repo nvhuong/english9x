@@ -6,9 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.english9x.org.api.CurrentContextHolder;
+import com.english9x.org.api.OrgMembershipCheck;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
@@ -23,7 +27,14 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 /** The request filter that binds the authenticated user for Row-Level Security. */
 class CurrentContextFilterTest {
 
-    private final CurrentContextFilter filter = new CurrentContextFilter(new ProblemSecurityHandlers(new ObjectMapper()));
+    /** Who belongs to what; records the binding that was in force when it was asked. */
+    private final Set<String> memberships = new HashSet<>();
+    private final AtomicReference<Optional<CurrentContextHolder.Binding>> boundWhenAsked = new AtomicReference<>();
+    private final OrgMembershipCheck membership = (user, org) -> {
+        boundWhenAsked.set(CurrentContextHolder.current());
+        return memberships.contains(user + "/" + org);
+    };
+    private final CurrentContextFilter filter = new CurrentContextFilter(new ProblemSecurityHandlers(new ObjectMapper()), membership);
 
     @AfterEach
     void clean() {
@@ -68,7 +79,60 @@ class CurrentContextFilterTest {
     }
 
     @Test
-    void anOrgContextHeaderIsRefusedBeforeAnythingRuns() throws Exception {
+    void aMembersOrganisationIsBoundForTheRequestAndUnboundAfterwards() throws Exception {
+        UUID user = UUID.randomUUID();
+        UUID org = UUID.randomUUID();
+        memberships.add(user + "/" + org);
+        authenticate(user.toString());
+        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/x");
+        req.addHeader("X-Org-Context", org.toString().toUpperCase());
+        AtomicReference<Optional<CurrentContextHolder.Binding>> seen = new AtomicReference<>();
+        filter.doFilter(req, new MockHttpServletResponse(), (rq, rs) -> seen.set(CurrentContextHolder.current()));
+        assertEquals(Optional.of(org), seen.get().orElseThrow().orgId());
+        assertEquals(user, seen.get().orElseThrow().userId());
+        assertEquals(Optional.empty(), boundWhenAsked.get().orElseThrow().orgId(), "membership is asked in the user's personal context, not the requested one");
+        assertTrue(CurrentContextHolder.current().isEmpty(), "unbound after the request");
+    }
+
+    @Test
+    void theOrganisationIsUnboundWhenTheChainThrows() {
+        UUID user = UUID.randomUUID();
+        UUID org = UUID.randomUUID();
+        memberships.add(user + "/" + org);
+        authenticate(user.toString());
+        MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/x");
+        req.addHeader("X-Org-Context", org.toString());
+        assertThrows(IllegalStateException.class, () -> filter.doFilter(req, new MockHttpServletResponse(), (rq, rs) -> { throw new IllegalStateException("boom"); }));
+        assertTrue(CurrentContextHolder.current().isEmpty());
+    }
+
+    @Test
+    void aNonMemberAndEveryMalformedValueAreRefusedBeforeAnythingRuns() throws Exception {
+        UUID member = UUID.randomUUID();
+        UUID other = UUID.randomUUID();
+        memberships.add(member + "/" + other);
+        authenticate(member.toString());
+        List<String[]> cases = List.of(
+                new String[] {UUID.randomUUID().toString()}, new String[] {""}, new String[] {" "}, new String[] {"x"},
+                new String[] {other + " "}, new String[] {other.toString(), other.toString()}, new String[] {"{" + other + "}"},
+                new String[] {other.toString().replace("-", "")});
+        for (String[] values : cases) {
+            MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/x");
+            for (String v : values) {
+                req.addHeader("X-Org-Context", v);
+            }
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            AtomicReference<Boolean> reached = new AtomicReference<>(false);
+            filter.doFilter(req, res, (rq, rs) -> reached.set(true));
+            assertFalse(reached.get(), String.join("|", values));
+            assertEquals(403, res.getStatus(), String.join("|", values));
+            assertTrue(res.getContentType().startsWith("application/problem+json"));
+            assertTrue(CurrentContextHolder.current().isEmpty());
+        }
+    }
+
+    @Test
+    void aNonMemberIsRefused() throws Exception {
         authenticate(UUID.randomUUID().toString());
         MockHttpServletRequest req = new MockHttpServletRequest("GET", "/api/x");
         req.addHeader("X-Org-Context", UUID.randomUUID().toString());

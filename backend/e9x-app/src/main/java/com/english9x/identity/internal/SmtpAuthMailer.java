@@ -1,6 +1,8 @@
 package com.english9x.identity.internal;
 
+import com.english9x.identity.api.InvitationMailer;
 import jakarta.mail.internet.MimeMessage;
+import java.util.List;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
@@ -23,7 +25,7 @@ import org.springframework.stereotype.Component;
  * Text is Vietnamese by default, English for users whose locale is "en".
  */
 @Component
-class SmtpAuthMailer implements AuthMailer, DisposableBean {
+class SmtpAuthMailer implements AuthMailer, InvitationMailer, DisposableBean {
 
     private static final Logger LOG = LoggerFactory.getLogger(SmtpAuthMailer.class);
 
@@ -103,6 +105,41 @@ class SmtpAuthMailer implements AuthMailer, DisposableBean {
                     greeting(displayName, false) + "Dùng liên kết sau để chọn mật khẩu mới (hiệu lực 1 giờ, dùng một lần):\n\n" + link
                             + "\n\nNếu bạn không yêu cầu, hãy bỏ qua email này: mật khẩu của bạn chưa thay đổi.\n");
         }
+    }
+
+    @Override
+    public void sendInvitation(String to, String locale, String inviterName, String orgName, List<String> roles, String token) {
+        String link = baseUrl + "/accept-invitation?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+        boolean en = en(locale);
+        String who = inviterName == null || inviterName.isBlank() ? null : inviterName.strip();
+        String where = orgName == null ? "English9x" : orgName.strip() + " (English9x)";
+        String what = String.join(", ", roles.stream().map(r -> roleLabel(r, en)).toList());
+        if (en) {
+            enqueue("invitation", to, "Invitation to join " + where,
+                    greeting(null, true) + (who == null ? "You" : who + " invited you") + " to join " + where + " as: " + what + ".\n\n"
+                            + "Sign in (or create an account) with THIS email address, then open the link below to accept. It works once and expires:\n\n"
+                            + link + "\n\nIf you were not expecting this, ignore this message: nothing happens until the link is opened.\n");
+        } else {
+            enqueue("invitation", to, "Lời mời tham gia " + where,
+                    greeting(null, false) + (who == null ? "Bạn" : who + " mời bạn") + " tham gia " + where + " với vai trò: " + what + ".\n\n"
+                            + "Hãy đăng nhập (hoặc tạo tài khoản) bằng ĐÚNG địa chỉ email này, rồi mở liên kết dưới đây để chấp nhận. Liên kết chỉ dùng một lần và có hạn:\n\n"
+                            + link + "\n\nNếu bạn không mong đợi lời mời này, hãy bỏ qua email: không có gì xảy ra cho đến khi liên kết được mở.\n");
+        }
+    }
+
+    private static String roleLabel(String roleAndExam, boolean en) {
+        String[] parts = roleAndExam.split("/", 2);
+        String role = parts[0];
+        String name = switch (role) {
+            case "LEARNER" -> en ? "Learner" : "Học viên";
+            case "AUTHOR" -> en ? "Author" : "Biên soạn";
+            case "REVIEWER" -> en ? "Reviewer" : "Người duyệt";
+            case "TEACHER" -> en ? "Teacher" : "Giáo viên";
+            case "ORG_ADMIN" -> en ? "Organisation admin" : "Quản trị tổ chức";
+            case "SYS_ADMIN" -> en ? "System admin" : "Quản trị hệ thống";
+            default -> role;
+        };
+        return parts.length > 1 ? name + " " + parts[1] : name;
     }
 
     private static boolean en(String locale) {

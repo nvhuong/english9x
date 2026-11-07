@@ -122,6 +122,9 @@ e9x:
       token-uri: ${E9X_GOOGLE_TOKEN_URI:https://oauth2.googleapis.com/token}
       jwk-set-uri: ${E9X_GOOGLE_JWK_SET_URI:https://www.googleapis.com/oauth2/v3/certs}
       issuer: ${E9X_GOOGLE_ISSUER:https://accounts.google.com}
+  org:
+    invitation-ttl: 7d             # how long an invitation link stays valid (assumption)
+    invitation-hourly-limit: 50    # invitations (mails) one person may send per hour (assumption)
   learning:
     streak:
       min-minutes: 10

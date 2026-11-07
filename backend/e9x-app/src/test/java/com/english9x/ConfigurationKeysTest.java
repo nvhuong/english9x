@@ -46,6 +46,8 @@ class ConfigurationKeysTest {
             {"e9x.gemini.model", "gemini-2.5-flash"},
             {"e9x.gemini.timeout", "60s"},
             {"e9x.content.media.max-upload-size", "200MB"},
+            {"e9x.org.invitation-ttl", "7d"},
+            {"e9x.org.invitation-hourly-limit", "50"},
         };
         for (String[] kv : expected) {
             Object actual = p.getProperty(kv[0]);
