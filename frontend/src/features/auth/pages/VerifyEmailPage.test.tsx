@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../../app/stores/auth';
 import { json, me, problem, renderAt, resetAuth, stubApi } from '../testUtils';
+import { rememberReturn } from '../returnTo';
 import VerifyEmailPage from './VerifyEmailPage';
 
 vi.mock('../../../api/useApi', async (orig) => {
@@ -11,7 +12,10 @@ vi.mock('../../../api/useApi', async (orig) => {
   return { ...m, useApi: () => m.createAuthedClient('http://localhost') };
 });
 
-beforeEach(resetAuth);
+beforeEach(() => {
+  resetAuth();
+  localStorage.clear();
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe('VerifyEmailPage', () => {
@@ -33,6 +37,30 @@ describe('VerifyEmailPage', () => {
     renderAt('/verify-email?token=T0KEN', '/verify-email', <VerifyEmailPage />);
     expect(await screen.findByRole('link', { name: 'Tiếp tục' })).toHaveAttribute('href', '/');
     await waitFor(() => expect(useAuthStore.getState().user?.emailVerified).toBe(true));
+  });
+
+  describe('with a way back remembered (an invitation)', () => {
+    const NEXT = '/accept-invitation?token=abc';
+    beforeEach(() => {
+      localStorage.clear();
+      rememberReturn(NEXT);
+    });
+
+    it('a visitor signs in and lands there', async () => {
+      stubApi({ 'POST /api/auth/verify-email': () => new Response(null, { status: 204 }) });
+      renderAt('/verify-email?token=T0KEN', '/verify-email', <VerifyEmailPage />);
+      expect(await screen.findByRole('link', { name: 'Đăng nhập' })).toHaveAttribute('href', `/login?next=${encodeURIComponent(NEXT)}`);
+    });
+
+    it('a signed-in person continues straight there', async () => {
+      useAuthStore.setState({ accessToken: 'a', status: 'authenticated', user: me({ emailVerified: false }) as never });
+      stubApi({
+        'POST /api/auth/verify-email': () => new Response(null, { status: 204 }),
+        'GET /api/auth/me': () => json(200, me({ emailVerified: true })),
+      });
+      renderAt('/verify-email?token=T0KEN', '/verify-email', <VerifyEmailPage />);
+      expect(await screen.findByRole('link', { name: 'Tiếp tục' })).toHaveAttribute('href', NEXT);
+    });
   });
 
   it('a bad or used link says so and offers a new one, without saying whether the address exists', async () => {

@@ -4,7 +4,7 @@ import { useApi } from '../../api/useApi';
 import { useAuthStore } from '../../app/stores/auth';
 import { publicKey, useContextStore } from '../../app/stores/context';
 import { useRoleStore } from '../../app/stores/roles';
-import { applyMeContext, resetOrgState, type MeContextBody } from './orgContext';
+import { applyMeContext, resetOrgState, useOrgStore, type MeContextBody } from './orgContext';
 
 /**
  * Keeps the role store and the organisation list in step with the server. Mounted once (providers).
@@ -39,6 +39,12 @@ export function OrgContextBootstrap() {
   useEffect(() => {
     if (userId !== null && query.data) void applyMeContext(queryClient, userId, query.data);
   }, [userId, query.data, query.dataUpdatedAt, queryClient]);
+
+  const failed = userId !== null && query.isError && !query.isFetching;
+  const { refetch } = query;
+  useEffect(() => {
+    useOrgStore.setState({ loadFailed: failed, retryLoad: () => void refetch() });
+  }, [failed, refetch]);
 
   useEffect(() => {
     if (userId === null) {

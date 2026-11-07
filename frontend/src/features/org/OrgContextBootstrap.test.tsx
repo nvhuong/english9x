@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../app/stores/auth';
 import { useContextStore, switchContext } from '../../app/stores/context';
 import { useRoleStore } from '../../app/stores/roles';
-import { json, me, stubApi } from '../auth/testUtils';
+import { json, me, problem, stubApi } from '../auth/testUtils';
 import { OrgContextBootstrap } from './OrgContextBootstrap';
 import { useOrgStore, writeStoredContext } from './orgContext';
 
@@ -31,7 +31,7 @@ function mount(client = new QueryClient()) {
 beforeEach(() => {
   useContextStore.setState({ orgId: null });
   useRoleStore.setState({ grants: null });
-  useOrgStore.setState({ orgs: [], loaded: false });
+  useOrgStore.setState({ orgs: [], loaded: false, loadFailed: false, retryLoad: null });
   useAuthStore.setState({ accessToken: 'tok', status: 'authenticated', user: me() as never });
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -89,5 +89,27 @@ describe('OrgContextBootstrap', () => {
     await new Promise((r) => setTimeout(r, 30));
     expect(calls).toHaveLength(0);
     expect(useOrgStore.getState().loaded).toBe(false);
+  });
+
+  it('a failed first load grants nothing, says it failed, and the retry loads the roles', async () => {
+    let up = false;
+    const calls = stubApi({ 'GET /api/me/context': () => (up ? json(200, body()) : problem(500, 'internal-error')) });
+    mount();
+    await waitFor(() => expect(useOrgStore.getState().loadFailed).toBe(true));
+    expect(useRoleStore.getState().grants).toBeNull();
+    expect(useOrgStore.getState().loaded).toBe(false);
+    up = true;
+    useOrgStore.getState().retryLoad!();
+    await waitFor(() => expect(useRoleStore.getState().grants).toEqual([{ role: 'TEACHER', org: A, exam: 'IELTS' }]));
+    expect(useOrgStore.getState().loadFailed).toBe(false);
+    expect(calls).toHaveLength(2);
+  });
+
+  it('signing out clears the failure', async () => {
+    stubApi({ 'GET /api/me/context': () => problem(500, 'internal-error') });
+    mount();
+    await waitFor(() => expect(useOrgStore.getState().loadFailed).toBe(true));
+    useAuthStore.setState({ accessToken: null, status: 'anonymous', user: null });
+    await waitFor(() => expect(useOrgStore.getState().loadFailed).toBe(false));
   });
 });

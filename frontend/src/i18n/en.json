@@ -4,6 +4,8 @@
     "tagline": "Learn and prepare for IELTS and TOEIC, properly",
     "skipToContent": "Skip to main content",
     "loading": "Loading…",
+    "rolesFailed": "Your permissions could not be loaded. Check your connection and try again.",
+    "retry": "Try again",
     "mainNav": "Main navigation",
     "areaNav": "Area navigation",
     "footer": "An editorial study desk for English learners"

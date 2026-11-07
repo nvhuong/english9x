@@ -8,6 +8,7 @@ import { useAuthStore } from '../../../app/stores/auth';
 import { publicKey } from '../../../app/stores/context';
 import { Button } from '../../../design';
 import { AuthCard, FormAlert } from '../../auth/components';
+import { forgetReturn, rememberReturn } from '../../auth/returnTo';
 
 function messageKey(err: unknown): string {
   if (err instanceof ApiProblemError) {
@@ -36,10 +37,15 @@ export default function AcceptInvitationPage() {
   const accept = useMutation({
     mutationFn: async (tok: string) => api.POST('/api/invitations/{token}/accept', { params: { path: { token: tok } } }),
     onSuccess: () => {
+      forgetReturn();
       // the roles just changed: ask again who I am and where I belong
       void queryClient.invalidateQueries({ queryKey: publicKey('me', 'context', user?.id ?? null) });
     },
-    onError: (err) => setError(t(messageKey(err))),
+    onError: (err) => {
+      // the mail that verifies the address opens elsewhere: it should lead back here
+      if (err instanceof ApiProblemError && err.type === 'urn:e9x:problem:email-not-verified') rememberReturn(location.pathname + location.search);
+      setError(t(messageKey(err)));
+    },
   });
 
   if (!token) {
@@ -67,7 +73,7 @@ export default function AcceptInvitationPage() {
             <Link to={`/login?next=${next}`}>{t('accept.login')}</Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link to={`/register`}>{t('accept.register')}</Link>
+            <Link to={`/register?next=${next}`}>{t('accept.register')}</Link>
           </Button>
         </div>
       </AuthCard>

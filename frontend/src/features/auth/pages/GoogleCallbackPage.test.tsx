@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../../app/stores/auth';
 import { json, me, problem, renderAt, resetAuth, stubApi, tokens } from '../testUtils';
 import { refreshStorage } from '../session';
+import { peekReturn, rememberReturn } from '../returnTo';
 import GoogleCallbackPage from './GoogleCallbackPage';
 
 vi.mock('../../../api/useApi', async (orig) => {
@@ -24,6 +25,22 @@ describe('GoogleCallbackPage', () => {
     expect(calls[0]!.body).toEqual({ code: 'ONETIMECODE' });
     expect(useAuthStore.getState().status).toBe('authenticated');
     expect(refreshStorage.get()).toBe('refresh-1');
+  });
+
+  it('returns to what was remembered before leaving for Google, once', async () => {
+    localStorage.clear();
+    rememberReturn('/accept-invitation?token=abc');
+    stubApi({ 'POST /api/auth/oauth/exchange': () => json(200, tokens(1)), 'GET /api/auth/me': () => json(200, me()) });
+    renderAt('/login/google?code=C', '/login/google', <GoogleCallbackPage />);
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/accept-invitation?token=abc'));
+    expect(peekReturn()).toBeNull();
+  });
+
+  it('never follows an off-site value found in storage', async () => {
+    localStorage.setItem('e9x.auth.returnTo', JSON.stringify({ path: '//evil.example/x', at: Date.now() }));
+    stubApi({ 'POST /api/auth/oauth/exchange': () => json(200, tokens(1)), 'GET /api/auth/me': () => json(200, me()) });
+    renderAt('/login/google?code=C', '/login/google', <GoogleCallbackPage />);
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/));
   });
 
   it('shows an error and a way back when the code is refused', async () => {

@@ -21,7 +21,8 @@
     "PENDING": "Pending",
     "ACCEPTED": "Accepted",
     "REVOKED": "Revoked",
-    "EXPIRED": "Expired"
+    "EXPIRED": "Expired",
+    "VOIDED": "Void"
   },
   "fields": {
     "email": "Email",

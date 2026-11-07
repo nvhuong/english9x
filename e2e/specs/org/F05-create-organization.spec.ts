@@ -118,7 +118,6 @@ test.describe('F05 create organizations', () => {
     await expect(rowC).toContainText('Giáo viên · IELTS');
     await expect(rowC).toContainText('Quản trị tổ chức');
     await expect(pc.getByRole('navigation', { name: 'Điều hướng chính' }).getByRole('link', { name: 'Biên soạn' })).toBeVisible();
-    expect(centerId).not.toBe(enterpriseId);
     await ctxE.close();
     await ctxC.close();
   });

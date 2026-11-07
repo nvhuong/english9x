@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../../design';
+import { useOrgStore } from '../../features/org/orgContext';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { useAuthStore } from '../stores/auth';
 import { useContextStore } from '../stores/context';
@@ -25,10 +27,20 @@ export function RequireRole({ role, exam, fallback, children }: RequireRoleProps
   const grants = useRoleStore((s) => s.grants);
   const orgId = useContextStore((s) => s.orgId);
   const status = useAuthStore((s) => s.status);
+  const loadFailed = useOrgStore((s) => s.loadFailed);
+  const retryLoad = useOrgStore((s) => s.retryLoad);
   const { t } = useTranslation();
   if (!hasRole(grants, orgId, role, exam)) {
     // The roles of a signed-in person arrive a moment after the page: say "loading", not "no access", until they have.
     const pending = status === 'loading' || (status === 'authenticated' && grants === null);
+    if (pending && loadFailed) {
+      return (
+        <div className="flex flex-col items-start gap-3 p-4">
+          <p role="alert" className="text-danger">{t('app.rolesFailed')}</p>
+          <Button variant="secondary" onClick={() => retryLoad?.()}>{t('app.retry')}</Button>
+        </div>
+      );
+    }
     if (pending) return <p role="status" className="p-4 text-muted">{t('app.loading')}</p>;
     return <>{fallback ?? <ForbiddenPage />}</>;
   }

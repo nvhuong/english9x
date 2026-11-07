@@ -4,7 +4,7 @@ import { problemFromResponseSafe } from './util';
 import { useInvitations, useRevokeInvitation } from './queries';
 import { roleLabel } from './roles';
 
-const tone: Record<string, BadgeTone> = { PENDING: 'info', ACCEPTED: 'success', REVOKED: 'neutral', EXPIRED: 'warning' };
+const tone: Record<string, BadgeTone> = { PENDING: 'info', ACCEPTED: 'success', REVOKED: 'neutral', EXPIRED: 'warning', VOIDED: 'warning' };
 
 /** Invitations of an organisation (or of English9x staff when `orgId` is null), newest first, with revoke for the pending ones. */
 export function InvitationList({ orgId }: { orgId: string | null }) {

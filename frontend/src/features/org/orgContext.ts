@@ -20,10 +20,14 @@ interface OrgState {
   orgs: OrgSummary[];
   /** false until the first answer of /api/me/context for the current person. */
   loaded: boolean;
+  /** The last attempt to load /api/me/context failed. Grants nothing: RequireRole uses it only to say so instead of loading for ever. */
+  loadFailed: boolean;
+  /** Asks again; set by OrgContextBootstrap. */
+  retryLoad: (() => void) | null;
 }
 
 /** The organisations of the signed-in person. Not a security boundary: the server checks the header on every request. */
-export const useOrgStore = create<OrgState>(() => ({ orgs: [], loaded: false }));
+export const useOrgStore = create<OrgState>(() => ({ orgs: [], loaded: false, loadFailed: false, retryLoad: null }));
 
 export function grantsFromApi(grants: MeContextBody['grants']): RoleGrant[] {
   return grants.map((g) => ({ role: g.role, org: g.orgId, exam: g.examCode }));
@@ -79,5 +83,5 @@ export async function applyMeContext(queryClient: QueryClient, userId: string, b
 
 /** Forget everything about the previous person (sign-out, another account). */
 export function resetOrgState(): void {
-  useOrgStore.setState({ orgs: [], loaded: false });
+  useOrgStore.setState({ orgs: [], loaded: false, loadFailed: false });
 }

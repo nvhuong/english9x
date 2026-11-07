@@ -3,12 +3,13 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useApi } from '../../../api/useApi';
 import { Button, Input } from '../../../design';
 import i18n from '../../../i18n';
 import { AuthCard, CheckboxField, FormAlert, FormNotice } from '../components';
-import { applyFieldErrors, problemMessage } from '../problems';
+import { applyFieldErrors, nextQuery, problemMessage, safeNext } from '../problems';
+import { rememberReturn } from '../returnTo';
 import { registerSchema, type RegisterValues } from '../schemas';
 import { useAuthConfig } from './LoginPage';
 
@@ -19,6 +20,9 @@ export default function RegisterPage() {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
   const config = useAuthConfig();
+  const location = useLocation();
+  const next = safeNext(location.search);
+  const loginLink = `/login${nextQuery(next)}`;
 
   const form = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -27,7 +31,10 @@ export default function RegisterPage() {
   const register = useMutation({
     mutationFn: async (v: RegisterValues) =>
       (await api.POST('/api/auth/register', { body: { ...v, locale: i18n.language === 'en' ? 'en' : 'vi' } })).data!,
-    onSuccess: (_data, v) => setSentTo(v.email),
+    onSuccess: (_data, v) => {
+      rememberReturn(next); // the verification mail opens in another tab
+      setSentTo(v.email);
+    },
     onError: (err) => {
       if (!applyFieldErrors(err, ['email', 'password', 'displayName', 'consent'], form.setError, t)) setFormError(problemMessage(err, t));
     },
@@ -40,7 +47,7 @@ export default function RegisterPage() {
 
   if (sentTo) {
     return (
-      <AuthCard title={t('register.sentTitle')} footer={<Link to="/login" className="font-semibold text-primary">{t('common.backToLogin')}</Link>}>
+      <AuthCard title={t('register.sentTitle')} footer={<Link to={loginLink} className="font-semibold text-primary">{t('common.backToLogin')}</Link>}>
         <p>{t('register.sentBody', { email: sentTo })}</p>
         {formError && <FormAlert>{formError}</FormAlert>}
         {resent && <FormNotice>{t('register.resent')}</FormNotice>}
@@ -59,7 +66,7 @@ export default function RegisterPage() {
       footer={
         <p>
           {t('register.haveAccount')}{' '}
-          <Link to="/login" className="font-semibold text-primary">
+          <Link to={loginLink} className="font-semibold text-primary">
             {t('register.loginLink')}
           </Link>
         </p>
@@ -94,7 +101,7 @@ export default function RegisterPage() {
         <div className="flex flex-col gap-2 border-t border-line pt-4">
           <p className="text-center text-sm text-muted">{t('common.or')}</p>
           <Button asChild variant="secondary">
-            <a href="/api/auth/oauth2/google">{t('login.google')}</a>
+            <a href="/api/auth/oauth2/google" onClick={() => rememberReturn(next)}>{t('login.google')}</a>
           </Button>
         </div>
       )}

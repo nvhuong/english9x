@@ -1,6 +1,8 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { useAuthStore, type AuthUser } from '../../app/stores/auth';
+import { useContextStore } from '../../app/stores/context';
 import { useRoleStore } from '../../app/stores/roles';
+import { forgetReturn } from './returnTo';
 
 /**
  * Where the tokens live (decision recorded in the P1.4 report):
@@ -94,6 +96,7 @@ function forgetInThisTab(): void {
   s.setUser(null);
   s.setStatus('anonymous');
   useRoleStore.getState().setGrants(null);
+  useContextStore.setState({ orgId: null }); // the next person on this tab must not start in this one's organisation
 }
 
 /** Forget the session locally (no server call): tokens, user, status. */
@@ -250,6 +253,7 @@ export async function bootstrapSession(): Promise<void> {
 export async function logout(): Promise<void> {
   const token = refreshStorage.get();
   endSession();
+  forgetReturn();
   if (token) await revokeOnServer(token);
 }
 
@@ -271,7 +275,10 @@ async function followSignInElsewhere(marker: string | null): Promise<void> {
     return;
   }
   const now = useAuthStore.getState();
-  if (previousUser !== user.id) useRoleStore.getState().setGrants(null);
+  if (previousUser !== user.id) {
+    useRoleStore.getState().setGrants(null);
+    useContextStore.setState({ orgId: null });
+  }
   now.setUser(user); // the query cache follows the user: see clearCacheOnUserChange
   now.setStatus('authenticated');
 }

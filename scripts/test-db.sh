@@ -43,6 +43,8 @@ if op -v email=newbie@example.test -f "$ROOT/scripts/grant-sys-admin.sql" >/dev/
 elif [ "$(op -Atc "SELECT count(*) FROM role_grants WHERE role = 'SYS_ADMIN'")" = "1" ]; then echo "PASS grant-sys-admin refuses unverified and unknown accounts"; else echo "FAIL grant-sys-admin wrote a grant despite refusing"; opfail=1; fi
 "${PSQL[@]}" -d postgres -c "DROP DATABASE t_tmp" >/dev/null
 [ "$opfail" = "0" ] && pass=$((pass+2)) || fail=$((fail+1))
+echo "== operator script: grant-sys-admin.sh names and guards its target (docker is a stub that records what it is asked)"
+if bash "$ROOT/scripts/test-grant-sys-admin-guard.sh"; then pass=$((pass+1)); else fail=$((fail+1)); fi
 echo
 echo "DB tests: $((pass+fail)), passed: $pass, failed: $fail"
 [ $((pass+fail)) -gt 0 ] || { echo "No DB tests found."; exit 2; }

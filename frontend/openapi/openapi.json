@@ -92,7 +92,7 @@
         "type" : "object"
       },
       "InvitationStatus" : {
-        "enum" : [ "PENDING", "ACCEPTED", "REVOKED", "EXPIRED" ],
+        "enum" : [ "PENDING", "ACCEPTED", "REVOKED", "EXPIRED", "VOIDED" ],
         "type" : "string"
       },
       "InvitationView" : {

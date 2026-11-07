@@ -1,6 +1,9 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useOrgStore } from '../../features/org/orgContext';
+import { useAuthStore } from '../stores/auth';
 import { useContextStore } from '../stores/context';
 import { useRoleStore } from '../stores/roles';
 import { RequireRole } from './RequireRole';
@@ -75,5 +78,25 @@ describe('RequireRole while the roles load', () => {
     ui();
     expect(screen.getByRole('heading', { name: 'Bạn chưa có quyền xem trang này' })).toBeInTheDocument();
     useAuthStore.setState({ status: 'anonymous', user: null });
+  });
+
+  describe('when the roles could not be loaded', () => {
+    afterEach(() => {
+      useAuthStore.setState({ status: 'anonymous', user: null });
+      useOrgStore.setState({ loadFailed: false, retryLoad: null });
+    });
+
+    it('says so with a retry instead of loading for ever, and still shows nothing guarded', async () => {
+      const retry = vi.fn();
+      useAuthStore.setState({ status: 'authenticated' });
+      useOrgStore.setState({ loadFailed: true, retryLoad: retry });
+      ui();
+      expect(screen.queryByText(secret)).not.toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('Không tải được quyền của bạn');
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Thử lại' }));
+      expect(retry).toHaveBeenCalledOnce();
+      expect(screen.queryByText(secret)).not.toBeInTheDocument();
+    });
   });
 });

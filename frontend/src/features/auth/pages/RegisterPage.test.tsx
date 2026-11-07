@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetI18n } from '../../../i18n';
 import { json, problem, renderAt, resetAuth, stubApi } from '../testUtils';
+import { peekReturn } from '../returnTo';
 import RegisterPage from './RegisterPage';
 
 vi.mock('../../../api/useApi', async (orig) => {
@@ -102,5 +103,48 @@ describe('RegisterPage', () => {
     await u.click(screen.getByRole('button', { name: 'Sign up' }));
     expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
     expect((calls.find((c) => c.path === '/api/auth/register')!.body as { locale: string }).locale).toBe('en');
+  });
+
+  describe('coming from an invitation (?next=)', () => {
+    const NEXT = '/accept-invitation?token=abc';
+    const url = `/register?next=${encodeURIComponent(NEXT)}`;
+    const q = `?next=${encodeURIComponent(NEXT)}`;
+    beforeEach(() => localStorage.clear());
+
+    it('keeps the way back on the link to sign in', async () => {
+      stubApi(base);
+      renderAt(url, '/register', <RegisterPage />);
+      expect(screen.getByRole('link', { name: 'Đăng nhập' })).toHaveAttribute('href', `/login${q}`);
+    });
+
+    it('after registering: remembers it for the mail that opens in another tab, and the sign-in link keeps it for another device', async () => {
+      stubApi({ ...base, 'POST /api/auth/register': () => json(201, { status: 'pending_verification' }) });
+      renderAt(url, '/register', <RegisterPage />);
+      const u = await fillForm();
+      await u.click(screen.getByRole('button', { name: 'Đăng ký' }));
+      expect(await screen.findByRole('heading', { name: 'Hãy kiểm tra email của bạn' })).toBeInTheDocument();
+      expect(peekReturn()).toBe(NEXT);
+      expect(screen.getByRole('link', { name: 'Quay lại đăng nhập' })).toHaveAttribute('href', `/login${q}`);
+    });
+
+    it('the Google button remembers it before leaving for Google', async () => {
+      stubApi({ 'GET /api/auth/config': () => json(200, { googleEnabled: true }) });
+      renderAt(url, '/register', <RegisterPage />);
+      const link = await screen.findByRole('link', { name: 'Đăng nhập bằng Google' });
+      link.addEventListener('click', (e) => e.preventDefault()); // jsdom cannot navigate
+      await userEvent.click(link);
+      expect(peekReturn()).toBe(NEXT);
+    });
+
+    it('an off-site next is not followed, not kept and not passed on', async () => {
+      stubApi({ ...base, 'POST /api/auth/register': () => json(201, { status: 'pending_verification' }) });
+      renderAt(`/register?next=${encodeURIComponent('//evil.example/x')}`, '/register', <RegisterPage />);
+      expect(screen.getByRole('link', { name: 'Đăng nhập' })).toHaveAttribute('href', '/login');
+      const u = await fillForm();
+      await u.click(screen.getByRole('button', { name: 'Đăng ký' }));
+      await screen.findByRole('heading', { name: 'Hãy kiểm tra email của bạn' });
+      expect(peekReturn()).toBeNull();
+      expect(screen.getByRole('link', { name: 'Quay lại đăng nhập' })).toHaveAttribute('href', '/login');
+    });
   });
 });

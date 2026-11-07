@@ -381,7 +381,7 @@ export interface components {
             role: "LEARNER" | "AUTHOR" | "REVIEWER" | "TEACHER" | "ORG_ADMIN" | "SYS_ADMIN";
         };
         /** @enum {string} */
-        InvitationStatus: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
+        InvitationStatus: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED" | "VOIDED";
         InvitationView: {
             /** Format: date-time */
             createdAt: string;

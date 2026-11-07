@@ -21,7 +21,8 @@
     "PENDING": "Đang chờ",
     "ACCEPTED": "Đã chấp nhận",
     "REVOKED": "Đã thu hồi",
-    "EXPIRED": "Hết hạn"
+    "EXPIRED": "Hết hạn",
+    "VOIDED": "Mất hiệu lực"
   },
   "fields": {
     "email": "Email",

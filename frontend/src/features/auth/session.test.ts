@@ -1,7 +1,9 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore, type AuthUser } from '../../app/stores/auth';
+import { useContextStore } from '../../app/stores/context';
 import { useRoleStore } from '../../app/stores/roles';
+import { peekReturn, rememberReturn } from './returnTo';
 import {
   bootstrapSession, clearCacheOnUserChange, endSession, logout, refreshSession, refreshStorage, startSession, syncSessionAcrossTabs,
 } from './session';
@@ -379,5 +381,30 @@ describe('query cache and users', () => {
     endSession();
     expect(qc.getQueryData(['ctx', 'personal', 'x'])).toBeUndefined();
     stop();
+  });
+});
+
+describe('signing out leaves nothing of the context or the way back', () => {
+  it('endSession resets the context store: the next person on this tab does not start in this one\'s organisation', () => {
+    useContextStore.setState({ orgId: 'aaaaaaaa-0000-0000-0000-00000000000a' });
+    endSession();
+    expect(useContextStore.getState().orgId).toBeNull();
+  });
+
+  it('a sign-out in another tab resets it too', () => {
+    const stop = syncSessionAcrossTabs();
+    useAuthStore.setState({ status: 'authenticated', user: me() as AuthUser });
+    useContextStore.setState({ orgId: 'aaaaaaaa-0000-0000-0000-00000000000a' });
+    window.dispatchEvent(new StorageEvent('storage', { key: 'e9x.auth.refresh' }));
+    expect(useContextStore.getState().orgId).toBeNull();
+    stop();
+    useContextStore.setState({ orgId: null });
+  });
+
+  it('logout forgets a remembered way back', async () => {
+    stubApi({ 'POST /api/auth/logout': () => new Response(null, { status: 204 }) });
+    rememberReturn('/accept-invitation?token=abc');
+    await logout();
+    expect(peekReturn()).toBeNull();
   });
 });

@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../app/stores/auth';
 import { Button } from '../../../design';
 import { AuthCard, CheckboxField, FormAlert } from '../components';
 import { problemMessage } from '../problems';
+import { takeReturn } from '../returnTo';
 import { googleConsentSchema, type GoogleConsentValues } from '../schemas';
 import { refreshStorage, startSession, type TokenPair } from '../session';
 
@@ -37,7 +38,7 @@ export default function GoogleCallbackPage() {
   const finish = useCallback(
     async (tokens: TokenPair) => {
       const user = await startSession(tokens);
-      if (user) void navigate('/', { replace: true });
+      if (user) void navigate(takeReturn(), { replace: true });
       else setError(t('problem.generic'));
     },
     [navigate, t],

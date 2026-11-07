@@ -3,6 +3,7 @@
 // "Có đúng quyền" is checked where a person can see it (the Biên soạn area opens for an AUTHOR, the admin area stays closed) and
 // in the grants the server reports for that person (exactly AUTHOR for IELTS, nothing for TOEIC).
 import { test, expect } from '../../fixtures';
+import { agreeToGoogleConsent, chooseGoogleAccount } from '../../helpers/google';
 
 async function openStaffInvitations(page: import('@playwright/test').Page) {
   await page.getByRole('navigation', { name: 'Điều hướng chính' }).getByRole('link', { name: 'Quản trị' }).click();
@@ -63,6 +64,77 @@ test.describe('F04 invite internal staff', () => {
     // the SYS_ADMIN sees it accepted
     await page.reload();
     await expect(page.getByRole('row', { name: new RegExp(invitee.email) })).toContainText('Đã chấp nhận');
+  });
+
+  async function inviteAuthor(page: import('@playwright/test').Page, email: string, seed: any, auth: any, mailpit: any, uniqueEmail: (l: string) => string, label: string): Promise<string> {
+    const admin = await seed.sysAdmin({ email: uniqueEmail(label) });
+    await auth.loginAs(page, admin);
+    await openStaffInvitations(page);
+    await page.getByLabel(/^Email/).fill(email);
+    await page.getByRole('checkbox', { name: 'Biên soạn · IELTS' }).check();
+    await page.getByRole('button', { name: 'Gửi lời mời' }).click();
+    await expect(page.getByText(`Đã gửi lời mời tới ${email}.`)).toBeVisible();
+    const mail = await mailpit.lastEmailTo(email, { subjectIncludes: 'Lời mời' });
+    return mailpit.linksIn(mail).find((l: string) => l.includes('/accept-invitation?token='))!;
+  }
+
+  test('F04 a new person registers from the invitation, verifies the mailbox and comes back to it without reopening the mail', async ({ page, browser, seed, auth, mailpit, uniqueEmail }) => {
+    const email = uniqueEmail('f04c-new');
+    const password = 'Correct-horse-1';
+    const link = await inviteAuthor(page, email, seed, auth, mailpit, uniqueEmail, 'f04c-admin');
+    expect(await seed.userInfo(email)).toMatchObject({ count: 0 });
+
+    // the invitation page is the only thing the person ever opens from the invitation mail
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
+    const tab = await ctx.newPage();
+    await tab.goto(link);
+    await tab.locator('#main').getByRole('link', { name: 'Tạo tài khoản' }).click();
+    await tab.getByLabel(/^Tên hiển thị/).fill('Võ Người Mới');
+    await tab.getByLabel(/^Email/).fill(email);
+    await tab.getByLabel(/^Mật khẩu/).fill(password);
+    await tab.getByRole('checkbox').check();
+    await tab.getByRole('button', { name: 'Đăng ký', exact: true }).click();
+    await expect(tab.getByRole('heading', { level: 1, name: 'Hãy kiểm tra email của bạn' })).toBeVisible();
+
+    // the verification mail opens in a new tab, as a mail client would open it
+    const verifyMail = await mailpit.lastEmailTo(email, { subjectIncludes: 'Xác thực' });
+    const verifyLink = mailpit.linksIn(verifyMail).find((l: string) => l.includes('/verify-email?token='))!;
+    const fromMail = await ctx.newPage();
+    await fromMail.goto(verifyLink);
+    await expect(fromMail.getByRole('heading', { level: 1, name: 'Email đã được xác thực' })).toBeVisible();
+    await fromMail.locator('#main').getByRole('link', { name: 'Đăng nhập' }).click();
+    await fromMail.getByLabel(/^Email/).fill(email);
+    await fromMail.getByLabel(/^Mật khẩu/).fill(password);
+    await fromMail.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
+
+    // back at the invitation, by itself
+    await expect(fromMail).toHaveURL(/\/accept-invitation\?token=/);
+    expect(fromMail.url()).toBe(link);
+    await fromMail.getByRole('button', { name: 'Chấp nhận lời mời' }).click();
+    await expect(fromMail.getByRole('heading', { level: 1, name: 'Đã tham gia' })).toBeVisible();
+    const { userId } = await seed.userInfo(email);
+    expect(await seed.authz({ userId, role: 'AUTHOR', examCode: 'IELTS' })).toMatchObject({ allowed: true });
+    // nothing of the invitation stays behind in this browser
+    expect(await fromMail.evaluate(() => localStorage.getItem('e9x.auth.returnTo'))).toBeNull();
+    await ctx.close();
+  });
+
+  test('F04 a new person using Google from the invitation comes back to it', async ({ page, browser, seed, auth, mailpit, uniqueEmail }) => {
+    const email = uniqueEmail('f04d-google');
+    const link = await inviteAuthor(page, email, seed, auth, mailpit, uniqueEmail, 'f04d-admin');
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
+    const tab = await ctx.newPage();
+    await tab.goto(link);
+    await tab.locator('#main').getByRole('link', { name: 'Tạo tài khoản' }).click();
+    await tab.getByRole('link', { name: 'Đăng nhập bằng Google' }).click();
+    await chooseGoogleAccount(tab, { email, name: 'Đỗ Dùng Google' });
+    await agreeToGoogleConsent(tab);
+    await expect(tab).toHaveURL(/\/accept-invitation\?token=/);
+    await tab.getByRole('button', { name: 'Chấp nhận lời mời' }).click();
+    await expect(tab.getByRole('heading', { level: 1, name: 'Đã tham gia' })).toBeVisible();
+    const { userId } = await seed.userInfo(email);
+    expect(await seed.authz({ userId, role: 'AUTHOR', examCode: 'IELTS' })).toMatchObject({ allowed: true });
+    await ctx.close();
   });
 
   test('F04 the link works once, and only for the invited address', async ({ page, browser, seed, auth, org, mailpit, uniqueEmail }) => {

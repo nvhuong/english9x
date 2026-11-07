@@ -65,6 +65,8 @@ There is **no default administrator** in any migration or Compose file, and no H
 SYS_ADMIN with the owner credentials, after that person registered and verified their email through the normal screens:
 ```bash
 ./scripts/grant-sys-admin.sh person@example.com      # runs scripts/grant-sys-admin.sql as e9x_owner inside the Compose postgres
+                                                      # prints the Docker context and database first; refuses DOCKER_HOST or a
+                                                      # context other than default/desktop-linux unless --allow-other-docker is passed
 ```
 The script refuses an unknown or unverified address. From then on that SYS_ADMIN signs in, creates organisations (`/admin/organizations`),
 invites English9x staff (`/admin/staff`) and the first ORG_ADMIN of each organisation by email; every later role change is made in
