@@ -7,5 +7,20 @@
 	header @public Strict-Transport-Security "max-age=31536000"
 	# Caddy puts the real client address in X-Forwarded-For (replacing any value the client sent); the app believes it
 	# only from the networks in E9X_AUTH_TRUSTED_PROXIES.
+	# Request body limits (the API never needs an unbounded body). The webhook of the Telegram bot takes a few KB, so 1MB is generous;
+	# the rest of the API allows 220MB: the largest planned upload is a media file of 200MB (e9x.content.media.max-upload-size, spec
+	# section 15.1) plus multipart overhead, and the Excel import and Speaking recordings are far smaller. The limit applies to the
+	# bytes actually received, so a lying Content-Length does not help. The app itself rejects an over-size media file with a clear error.
+	@webhook path /api/telegram/webhook
+	request_body @webhook {
+		max_size 1MB
+	}
+	@api {
+		path /api/*
+		not path /api/telegram/webhook
+	}
+	request_body @api {
+		max_size 220MB
+	}
 	reverse_proxy app:8080
 }
