@@ -32,19 +32,29 @@
 --    (subtransaction rollback) and starts again with FOR UPDATE when it finds a replay.
 --
 -- What the request role can still do. These functions narrow what SQL can touch; they do not make a compromised
--- statement of e9x_app harmless. Through them, such a statement CAN: read any user's bcrypt hash by email
--- (auth_login_lookup, because Java performs bcrypt; verifying inside the database would take pgcrypto and passwords in SQL
--- text, so it is not done), issue and confirm a password reset for any address, mint refresh tokens for any user whose
--- credentials version it has read, record consent for any user, and pass any p_now. It can NOT: read token digests or raw tokens, read
--- users.password_hash through the table, create a verified account, create an account without consent or a password hash,
--- or delete live tokens. Protection against SQL injection is parameterised statements, not this list.
+-- statement of e9x_app harmless. Called in the right order, they add up to account takeover. Through them, such a statement CAN:
+--  * read any user's bcrypt hash and credentials version by email (auth_login_lookup, because Java performs bcrypt; verifying
+--    inside the database would take pgcrypto and passwords in SQL text, so it is not done);
+--  * set any user's password: issue and confirm a password reset for any address with digests of its own choosing;
+--  * mint refresh tokens for any user whose version it has read, and pass any p_now;
+--  * create a VERIFIED account: auth_oauth_login with p_email_verified = true creates one, verified, without consent or
+--    password, and auth_create_user followed by reset issue + confirm, or by verification issue + consume, verifies one;
+--  * link any address to a Google subject of its choosing (auth_oauth_login takes the provider's word as a parameter; the
+--    checks of the ID token are in Java), which also voids that account's password and ends its sessions;
+--  * record consent for any user, which also returns that user's email; revoke any family whose raw token it holds;
+--  * delete accounts that auth_purge_no_consent would delete, sooner than configured, down to its floor of one day.
+-- It can NOT: read token digests or raw tokens; read users.password_hash through the table; UPDATE or DELETE users outside
+-- the columns granted below; create an account through auth_create_user without consent or a password hash, or verified in
+-- one step; delete live tokens, or any account holding consent or user activity.
+-- Protection against SQL injection is parameterised statements, not this list.
 
 ALTER TABLE users
   ADD COLUMN password_hash text,                      -- bcrypt; NULL for accounts that only use Google
   ADD COLUMN email_verified_at timestamptz,
   ADD COLUMN consent_at timestamptz,                  -- Decree 13/2023: when the person agreed; NULL: no token is issued
   ADD COLUMN locale text NOT NULL DEFAULT 'vi' CHECK (locale IN ('vi','en')),
-  ADD COLUMN credentials_version bigint NOT NULL DEFAULT 1; -- bumped whenever existing sign-ins must stop being honoured
+  ADD COLUMN credentials_version bigint NOT NULL DEFAULT 1, -- bumped whenever existing sign-ins must stop being honoured
+  ADD COLUMN neutralised_at timestamptz;              -- see LINKED_NEUTRALISED; the owner's consent is pending since then
 
 CREATE TABLE auth_identities (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -178,7 +188,8 @@ END $$;
 
 -- Single use, expiring. Returns the user (and the stored digest for the caller's constant-time re-check), or no row.
 -- Sessions and password are left alone: in the normal case the person who clicks is the person who registered. A click
--- cannot prove that (see LINKED in auth_oauth_login for what happens to a registrant who was not the mailbox owner).
+-- cannot prove that (see LINKED in auth_oauth_login for what happens to a registrant who was not the mailbox owner, and
+-- the verification mail, which tells a recipient who did not ask for it not to click).
 CREATE FUNCTION auth_email_verification_consume(p_token_hash bytea, p_now timestamptz)
   RETURNS TABLE (r_user_id uuid, r_stored_hash bytea)
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
@@ -329,23 +340,32 @@ BEGIN
 END $$;
 
 -- Google ---------------------------------------------------------------------------------------------------------
--- The answer to the consent step of a Google sign-in. Keeps an earlier consent.
+-- The answer to the consent step of a Google sign-in. Keeps an earlier consent. r_first_registration: this consent is what
+-- makes the account registered (a Google account agreeing for the first time), not a repeat, and not a neutralised account,
+-- which was registered through the password path long ago. No row for an account that no longer exists.
 CREATE FUNCTION auth_consent_record(p_user_id uuid, p_now timestamptz)
-  RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+  RETURNS TABLE (r_first_registration boolean, r_email text)
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+DECLARE u users%ROWTYPE;
 BEGIN
-  PERFORM 1 FROM users WHERE id = p_user_id FOR UPDATE;
+  SELECT * INTO u FROM users WHERE id = p_user_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN; END IF;
+  r_first_registration := u.consent_at IS NULL AND u.neutralised_at IS NULL;
+  r_email := u.email;
   UPDATE users SET consent_at = coalesce(consent_at, p_now) WHERE id = p_user_id;
+  RETURN NEXT;
 END $$;
 
 -- One atomic step for a sign-in with an external identity. Nobody has agreed to anything here: consent reaches the server
 -- only through auth_consent_record, and no token is issued before it. Outcomes:
 --   EXISTING             the (provider, subject) is already linked: that account
 --   EMAIL_NOT_VERIFIED   the provider does not assert email_verified: no link, no account, nothing changes
---   LINKED               a verified-email account with the same address gets the identity attached. Its sessions end: the
---                        address may have been verified by a mailbox owner clicking a link in a mail they did not ask for,
---                        for an account an attacker registered, and that attacker may be signed in. The password stays,
---                        because nothing here tells that case from a person adding Google to their own account; the
---                        caller mails the owner, who can replace it. Consent on record stays.
+--   LINKED               a verified-email account with the same address gets the identity attached. That address may have
+--                        been verified by a mailbox owner clicking a link in a mail they did not ask for, for an account
+--                        an attacker registered, and nothing here tells that case from a person adding Google to their own
+--                        account. So the password goes (either way), its sessions end and outstanding reset links are
+--                        retired; the caller mails the owner, who can set a password again through the reset mail.
+--                        Consent on record stays. An account that never linked Google keeps its password and sessions.
 --   LINKED_NEUTRALISED   same, but the local account's address was NOT verified. Whoever created that account may
 --                        be someone other than the mailbox owner (pre-hijack: an attacker registers the victim's
 --                        address with a password of their choosing, then waits for the victim to sign in with Google).
@@ -372,7 +392,7 @@ BEGIN
   SELECT * INTO u FROM users WHERE lower(email) = v_email FOR UPDATE;
   IF FOUND THEN
     IF u.email_verified_at IS NULL THEN
-      UPDATE users SET password_hash = NULL, email_verified_at = p_now, consent_at = NULL,
+      UPDATE users SET password_hash = NULL, email_verified_at = p_now, consent_at = NULL, neutralised_at = p_now,
                        display_name = nullif(btrim(p_display_name), ''), credentials_version = credentials_version + 1
        WHERE id = u.id RETURNING * INTO u;
       UPDATE password_resets SET used_at = p_now WHERE user_id = u.id AND used_at IS NULL;
@@ -380,7 +400,9 @@ BEGIN
       UPDATE refresh_tokens SET revoked_at = p_now WHERE user_id = u.id AND revoked_at IS NULL;
       r_outcome := 'LINKED_NEUTRALISED';
     ELSE
-      UPDATE users SET credentials_version = credentials_version + 1 WHERE id = u.id RETURNING * INTO u;
+      UPDATE users SET password_hash = NULL, credentials_version = credentials_version + 1 WHERE id = u.id RETURNING * INTO u;
+      UPDATE password_resets SET used_at = p_now WHERE user_id = u.id AND used_at IS NULL;
+      UPDATE email_verifications SET used_at = p_now WHERE user_id = u.id AND used_at IS NULL;
       UPDATE refresh_tokens SET revoked_at = p_now WHERE user_id = u.id AND revoked_at IS NULL;
       r_outcome := 'LINKED';
     END IF;
@@ -412,6 +434,48 @@ BEGIN
   RETURN n;
 END $$;
 
+-- Accounts nobody agreed to. Deleted when ALL of these hold:
+--  * no consent on record (so never an account that registered with a password, or agreed later);
+--  * it has a linked identity: the leftover of a Google sign-in, not a row some other flow made;
+--  * that state is older than the retention, counted from the neutralisation when there was one (that owner is on the
+--    consent step since then, however old the attacker's registration is), otherwise from the creation;
+--  * no other table refers to it: no user activity. Read from the catalog, so a table added later protects its users by
+--    having a foreign key to users. Only the identity tables below go with it (ON DELETE CASCADE).
+-- A neutralised account with activity stays, password-less and token-less, because that activity is not ours to destroy.
+-- Whoever is on the consent step holds the row or finds it gone and starts over: SKIP LOCKED, and the step answers "start
+-- again" for a missing row. At least one day whatever the caller passes, so a statement cannot wipe that step (nor can a
+-- clock: it uses its own). Users first, like everything here.
+CREATE FUNCTION auth_purge_no_consent(p_retention interval) RETURNS integer
+  LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+DECLARE
+  v_cutoff timestamptz := now() - greatest(p_retention, interval '1 day');
+  v_id uuid; v_active boolean; n integer := 0; ref record;
+BEGIN
+  FOR v_id IN
+    SELECT u.id FROM users u
+     WHERE u.consent_at IS NULL AND coalesce(u.neutralised_at, u.created_at) < v_cutoff
+       AND EXISTS (SELECT 1 FROM auth_identities i WHERE i.user_id = u.id)
+     FOR UPDATE OF u SKIP LOCKED
+  LOOP
+    v_active := false;
+    FOR ref IN
+      SELECT c.conrelid::regclass AS tbl, a.attname AS col
+        FROM pg_constraint c JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
+       WHERE c.contype = 'f' AND c.confrelid = 'users'::regclass
+         AND c.conrelid NOT IN ('auth_identities'::regclass, 'refresh_tokens'::regclass,
+                                'email_verifications'::regclass, 'password_resets'::regclass)
+    LOOP
+      EXECUTE format('SELECT EXISTS (SELECT 1 FROM %s WHERE %I = $1)', ref.tbl, ref.col) INTO v_active USING v_id;
+      EXIT WHEN v_active;
+    END LOOP;
+    IF NOT v_active THEN
+      DELETE FROM users WHERE id = v_id;
+      n := n + 1;
+    END IF;
+  END LOOP;
+  RETURN n;
+END $$;
+
 REVOKE ALL ON FUNCTION
   auth_create_user(text, text, text, text, timestamptz),
   auth_login_lookup(text),
@@ -425,7 +489,8 @@ REVOKE ALL ON FUNCTION
   auth_refresh_revoke_family(bytea, timestamptz),
   auth_consent_record(uuid, timestamptz),
   auth_oauth_login(text, text, text, boolean, text, text, timestamptz),
-  auth_purge_expired()
+  auth_purge_expired(),
+  auth_purge_no_consent(interval)
   FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION
   auth_create_user(text, text, text, text, timestamptz),
@@ -440,5 +505,6 @@ GRANT EXECUTE ON FUNCTION
   auth_refresh_revoke_family(bytea, timestamptz),
   auth_consent_record(uuid, timestamptz),
   auth_oauth_login(text, text, text, boolean, text, text, timestamptz),
-  auth_purge_expired()
+  auth_purge_expired(),
+  auth_purge_no_consent(interval)
   TO e9x_app;

@@ -227,4 +227,18 @@ class RegistrationIT extends IdentityIT {
             smtp().setDown(false);
         }
     }
+
+    /** A click confirms an account someone else may have registered: the warning comes before the link, in both languages. */
+    @Test
+    void theVerificationMailWarnsBeforeTheLinkNotToClickWhatYouDidNotAskFor() {
+        String vi = uniqueEmail();
+        register(vi, PASSWORD);
+        String body = smtp().await(vi).body();
+        assertTrue(body.indexOf("đừng bấm") >= 0 && body.indexOf("đừng bấm") < body.indexOf("/verify-email?token="), body);
+
+        String en = uniqueEmail();
+        post("/api/auth/register", Map.of("email", en, "password", PASSWORD, "displayName", "Ann", "consent", true, "locale", "en"));
+        body = smtp().await(en).body();
+        assertTrue(body.indexOf("do not click") >= 0 && body.indexOf("do not click") < body.indexOf("/verify-email?token="), body);
+    }
 }

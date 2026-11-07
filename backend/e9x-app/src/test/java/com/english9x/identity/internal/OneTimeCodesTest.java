@@ -15,7 +15,7 @@ class OneTimeCodesTest {
     private OneTimeCodes codes() {
         return new OneTimeCodes(clock, new AuthProperties("0123456789abcdef0123456789abcdef", "english9x", Duration.ofMinutes(15),
                 Duration.ofDays(30), Duration.ofSeconds(10), "10/15m", "3/1h", "5/1h", "20/1h", Duration.ofHours(24),
-                Duration.ofHours(1), Duration.ofSeconds(60), Duration.ofMinutes(15), 4, 8, java.util.List.of(), "x <x@x.test>", null));
+                Duration.ofHours(1), Duration.ofSeconds(60), Duration.ofMinutes(15), Duration.ofDays(7), 4, 8, java.util.List.of(), "x <x@x.test>", null));
     }
 
     @Test

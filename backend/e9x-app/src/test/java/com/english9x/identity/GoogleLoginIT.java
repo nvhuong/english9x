@@ -25,7 +25,18 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 /** Google sign-in against an in-JVM OpenID provider: the real redirect dance, state, nonce, PKCE, linking rules. */
+@org.springframework.context.annotation.Import(GoogleLoginIT.Registrations.class)
 class GoogleLoginIT extends IdentityIT {
+
+    /** What the rest of the application hears. */
+    static class Registrations {
+        static final java.util.List<com.english9x.identity.api.events.UserRegistered> SEEN = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+        @org.springframework.context.event.EventListener
+        void on(com.english9x.identity.api.events.UserRegistered e) {
+            SEEN.add(e);
+        }
+    }
 
     static final FakeOidcProvider IDP = new FakeOidcProvider();
 
@@ -183,7 +194,12 @@ class GoogleLoginIT extends IdentityIT {
                 "signed in as the EXISTING account");
         assertEquals(1, su.queryForObject("select count(*) from users where lower(email) = ?", Integer.class, email));
         assertEquals(s.sub, su.queryForObject("select subject from auth_identities where user_id = ?", String.class, id));
-        assertEquals(200, login(email, PASSWORD).status(), "a verified account keeps its password after linking");
+        // nothing tells a person adding Google from an owner whose address an attacker registered: the password goes either way
+        assertEquals(401, login(email, PASSWORD).status(), "the password does not survive linking");
+        post("/api/auth/password-reset/request", Map.of("email", email));
+        String token = smtp().awaitSubject(email, "Đặt lại mật khẩu").linkParam("token");
+        assertEquals(204, post("/api/auth/password-reset/confirm", Map.of("token", token, "newPassword", "Owner-new-pass-1")).status());
+        assertEquals(200, login(email, "Owner-new-pass-1").status(), "and can be set again through the reset mail");
     }
 
     @Test
@@ -373,10 +389,14 @@ class GoogleLoginIT extends IdentityIT {
     void linkingGoogleEndsEverySessionOfAnAccountAVictimVerifiedForAnAttacker() throws Exception {
         // the attacker registers the victim's address and signs in; the victim clicks the verification link
         String victim = uniqueEmail();
-        SmtpSink.Mail mail = registerUnverified(victim, "Attacker-password-1");
+        assertEquals(201, post("/api/auth/register", Map.of("email", victim, "password", "Attacker-password-1",
+                "displayName", "Name The Registrant Chose", "consent", true)).status());
+        SmtpSink.Mail mail = smtp().await(victim);
         Res attacker = login(victim, "Attacker-password-1");
         String attackerRefresh = attacker.body().get("refreshToken").asText();
         assertEquals(204, post("/api/auth/verify-email", Map.of("token", mail.linkParam("token"))).status());
+        post("/api/auth/password-reset/request", Map.of("email", victim));
+        SmtpSink.Mail pendingReset = smtp().awaitSubject(victim, "Đặt lại mật khẩu");
 
         // the victim signs in with Google: the account is verified, so it is a plain link
         Res owner = exchange(codeOf(signIn(scenario(victim, true))));
@@ -384,11 +404,15 @@ class GoogleLoginIT extends IdentityIT {
 
         assertEquals(401, post("/api/auth/refresh", Map.of("refreshToken", attackerRefresh)).status(), "no attacker session is left");
         assertEquals(200, post("/api/auth/refresh", Map.of("refreshToken", owner.body().get("refreshToken").asText())).status(), "the owner's is fine");
-        // The password stays: a verify click cannot tell this case from a normal user adding Google (linksExistingEmail).
-        // So the owner is told, in a mail that says what to do. See the report.
-        assertEquals(200, login(victim, "Attacker-password-1").status(), "documented residual: the password survives until the owner resets it");
+        assertEquals(401, login(victim, "Attacker-password-1").status(), "nor can the attacker sign in afresh");
+        assertNull(su.queryForObject("select password_hash from users where id = ?", String.class, userId(victim)));
+        assertEquals(400, post("/api/auth/password-reset/confirm", Map.of("token", pendingReset.linkParam("token"), "newPassword", "Attacker-new-pass-2")).status(),
+                "a reset link from before the link is retired");
+        // the owner is told, and told how to have a password again, without being greeted by the name the registrant chose
         SmtpSink.Mail notice = smtp().awaitSubject(victim, "liên kết");
         assertTrue(notice.body().contains("/forgot-password"), notice.body());
+        assertTrue(notice.body().contains("đặt lại mật khẩu"), notice.body());
+        assertFalse(notice.body().contains("Name The Registrant Chose"), notice.body());
     }
 
     @Test
@@ -397,6 +421,49 @@ class GoogleLoginIT extends IdentityIT {
         registerUnverified(victim, "Attacker-password-1");
         signIn(scenario(victim, true));
         assertNotNull(smtp().awaitSubject(victim, "liên kết"));
+    }
+
+    // ---- UserRegistered comes with consent -----------------------------------------------------------------------------
+
+    private long registeredEvents(UUID id) {
+        return Registrations.SEEN.stream().filter(e -> e.userId().equals(id)).count();
+    }
+
+    @Test
+    void aGoogleAccountIsRegisteredWhenItsOwnerAgreesNotBefore() throws Exception {
+        String email = uniqueEmail();
+        String code = codeOf(signIn(scenario(email, true)));
+        UUID id = userId(email);
+        assertEquals(0, registeredEvents(id), "nobody has agreed to anything yet");
+        assertEquals(403, exchange(code).status());
+        assertEquals(0, registeredEvents(id), "being asked is not agreeing");
+        assertEquals(200, consent(code, true, browser).status());
+        assertEquals(1, registeredEvents(id));
+        assertEquals(200, exchange(codeOf(signIn(scenario(email, true)))).status());
+        assertEquals(1, registeredEvents(id), "once");
+    }
+
+    @Test
+    void anAccountPurgedDuringTheConsentStepMeansStartAgainNotAnError() throws Exception {
+        String email = uniqueEmail();
+        String code = codeOf(signIn(scenario(email, true)));
+        assertEquals(403, exchange(code).status());
+        UUID id = userId(email);
+        su.update("delete from users where id = ?", id);
+        Res r = consent(code, true, browser);
+        assertEquals(400, r.status(), r.raw());
+        assertEquals("urn:e9x:problem:invalid-login-code", r.problemType());
+        assertEquals(0, registeredEvents(id));
+    }
+
+    @Test
+    void aNeutralisedAccountWasRegisteredAlreadyAndIsNotRegisteredAgain() throws Exception {
+        String victim = uniqueEmail();
+        registerUnverified(victim, "Attacker-password-1");
+        UUID id = userId(victim);
+        assertEquals(1, registeredEvents(id), "the password path: consent came with the registration");
+        assertEquals(200, finishWithConsent(codeOf(signIn(scenario(victim, true)))).status());
+        assertEquals(1, registeredEvents(id));
     }
 
     @Test

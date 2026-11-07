@@ -38,6 +38,8 @@ class AuthRepository {
      */
     enum IssueOutcome { ISSUED, STALE, CONSENT_REQUIRED }
 
+    record ConsentRecorded(boolean firstRegistration, String email) {}
+
     private final JdbcTemplate jdbc;
 
     AuthRepository(JdbcTemplate jdbc) {
@@ -100,8 +102,16 @@ class AuthRepository {
         return rows.isEmpty() ? new Rotation(RotateOutcome.INVALID, null, null, null) : rows.get(0);
     }
 
-    void recordConsent(UUID userId, Instant now) {
-        jdbc.queryForList("select auth_consent_record(?,?)", userId, ts(now));
+    /** Empty when the account no longer exists. */
+    Optional<ConsentRecorded> recordConsent(UUID userId, Instant now) {
+        return jdbc.query("select * from auth_consent_record(?,?)",
+                (rs, n) -> new ConsentRecorded(rs.getBoolean("r_first_registration"), rs.getString("r_email")),
+                userId, ts(now)).stream().findFirst();
+    }
+
+    int purgeNoConsent(Duration retention) {
+        Integer n = jdbc.queryForObject("select auth_purge_no_consent(cast(? as interval))", Integer.class, retention.toSeconds() + " seconds");
+        return n == null ? 0 : n;
     }
 
     void revokeFamily(byte[] hash, Instant now) {

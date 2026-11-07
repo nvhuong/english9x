@@ -214,11 +214,8 @@ class AuthService {
         return tx.execute(status -> {
             AuthRepository.OAuthResult res = repo.oauthLogin(provider, subject, email == null ? "" : email, emailVerified,
                     name, "en".equals(locale) ? "en" : "vi", now);
-            if (res.outcome() == AuthRepository.OAuthOutcome.CREATED) {
-                events.publishEvent(new UserRegistered(res.userId(), normalise(email), now));
-            }
             if (res.outcome() == AuthRepository.OAuthOutcome.LINKED || res.outcome() == AuthRepository.OAuthOutcome.LINKED_NEUTRALISED) {
-                afterCommit(() -> mailer.sendGoogleLinked(normalise(email), res.displayName(), res.locale()));
+                afterCommit(() -> mailer.sendGoogleLinked(normalise(email), res.locale()));
             }
             return res;
         });
@@ -245,7 +242,12 @@ class AuthService {
     /** The answer to the consent step: the person ticked the box (validated by the caller) in the browser holding the code. */
     TokenPair consentAndExchange(String code, String browserKey) {
         OneTimeCodes.Redeemed who = codes.redeem(code, browserKey).orElseThrow(AuthProblems::invalidLoginCode);
-        repo.recordConsent(who.userId(), clock.instant());
+        Instant now = clock.instant();
+        tx.executeWithoutResult(status -> repo.recordConsent(who.userId(), now).ifPresent(recorded -> {
+            if (recorded.firstRegistration()) { // a Google account is registered when its owner agrees, not when the row appears
+                events.publishEvent(new UserRegistered(who.userId(), recorded.email(), now));
+            }
+        }));
         Issued issued = issueTokens(who.userId(), who.credentialsVersion());
         if (issued.outcome() != AuthRepository.IssueOutcome.ISSUED) {
             throw AuthProblems.invalidLoginCode();

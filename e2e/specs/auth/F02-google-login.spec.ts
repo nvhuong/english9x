@@ -52,17 +52,20 @@ test.describe('F02 Google sign-in', () => {
     expect(await seed.userInfo(email)).toMatchObject({ count: 1, identities: 1, userId: firstId });
   });
 
-  test('F02 Google joins an existing verified account with the same email, which keeps its password', async ({ page, seed, uniqueEmail }) => {
+  test('F02 Google joins an existing verified account with the same email; its password goes, the owner is told how to set one', async ({ page, mailpit, seed, uniqueEmail }) => {
     const learner = await seed.verifiedLearner({ email: uniqueEmail('f02-link'), displayName: 'Phạm Quốc Cường' });
     await signInWithGoogle(page, { email: learner.email, name: 'Someone on Google' });
     await expect(page.getByText('Đã đăng nhập: Phạm Quốc Cường')).toBeVisible(); // the existing account, not a new one
-    expect(await seed.userInfo(learner.email)).toMatchObject({ count: 1, userId: learner.userId, hasPassword: true, identities: 1 });
+    expect(await seed.userInfo(learner.email)).toMatchObject({ count: 1, userId: learner.userId, hasPassword: false, identities: 1 });
+    const notice = await mailpit.lastEmailTo(learner.email, { subjectIncludes: 'liên kết' });
+    expect(notice.Text).toContain('/forgot-password');
+    expect(notice.Text).not.toContain('Phạm Quốc Cường');
     await page.getByRole('button', { name: 'Đăng xuất' }).click();
     await page.getByRole('link', { name: 'Đăng nhập' }).first().click();
     await page.getByLabel(/^Email/).fill(learner.email);
     await page.getByLabel(/^Mật khẩu/).fill(learner.password);
     await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
-    await expect(page.getByText('Đã đăng nhập: Phạm Quốc Cường')).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('Email hoặc mật khẩu chưa đúng.');
   });
 
   test('F02 an email Google does not vouch for neither links nor creates anything', async ({ page, seed, uniqueEmail }) => {

@@ -28,6 +28,8 @@
 
 > **Ghi chú 2026-11-07 (từ P1.7, vòng sửa 1):** P5.1 sở hữu việc lên lịch định kỳ (job lặp) đầu tiên: `expire_orders`, `expire_entitlements`, `plan_expiry_reminder`, `release_expired_claim` (P1.7 chỉ có hàng đợi; worker hiện không có INSERT/DELETE trên `jobs`). Cần: cột/khoá `dedupe_key` để hai instance không xếp trùng cùng một lần chạy, chính sách giữ/dọn payload và job đã xong (payload có thể chứa dữ liệu người dùng), và migration cấp quyền hẹp cho `e9x_worker` (GRANT + POLICY) cho phần dữ liệu các handler này đụng tới.
 
+> **Ghi chú 2026-11-07 (từ P1.4, vòng sửa 2):** thêm vào danh sách job định kỳ của P5.1: `purge_no_consent_accounts`, gọi `identity.api.AccountHousekeeping#purgeAccountsWithoutConsent` (hàm `auth_purge_no_consent`, tuổi giữ `e9x.auth.no-consent-retention`, mặc định 7d). Hiện chưa có gì chạy nó theo lịch: hàng đợi chưa có đường xếp job lặp nên P1.4 chỉ mở hàm. Handler chạy bằng role nào phải được chốt khi làm: EXECUTE hiện chỉ cấp cho `e9x_app`, `e9x_worker` chưa có. Tần suất gợi ý: một lần mỗi ngày.
+
 ### Task P5.2: VietQR + xác nhận thủ công (W4) — F40
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/billing/payment/**` (`PaymentAccountService`, `QrImageController`, `OrderAdminController`), migration `V202611110003__payment_accounts.sql`, `frontend/src/features/billing/{CheckoutPage,OrderStatusPage}.tsx`, `frontend/src/features/admin/{PendingOrdersPage,PaymentAccountPage}.tsx`, E2E `F40-vietqr-order.spec.ts`.

@@ -12,10 +12,10 @@ interface AuthMailer {
     void sendAlreadyRegistered(String to, String displayName, String locale);
 
     /**
-     * Google sign-in was linked to an existing account and its sessions ended. The owner must learn of it: whoever
-     * registered that account may have been someone else, and only a password reset removes a password they chose.
+     * Google sign-in was linked to an existing account: its password is void and its sessions ended. Whoever registered
+     * that account may have been someone else, so the mail is told no name: the one on the account may be theirs.
      */
-    void sendGoogleLinked(String to, String displayName, String locale);
+    void sendGoogleLinked(String to, String locale);
 
     void sendPasswordReset(String to, String displayName, String locale, String token);
 }

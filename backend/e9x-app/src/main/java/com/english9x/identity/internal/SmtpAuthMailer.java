@@ -48,12 +48,14 @@ class SmtpAuthMailer implements AuthMailer, DisposableBean {
         String link = baseUrl + "/verify-email?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
         if (en(locale)) {
             enqueue("verification", to, "Verify your English9x email",
-                    greeting(displayName, true) + "Thanks for signing up. Confirm your email address with this link (valid for 24 hours):\n\n"
-                            + link + "\n\nIf you did not create an English9x account you can ignore this message.\n");
+                    greeting(displayName, true) + "Someone signed up to English9x with this email address. Clicking the link below confirms that account. "
+                            + "If you did not sign up yourself, do not click: someone else may have registered it, and you can ignore this message.\n\n"
+                            + "If it was you, confirm your email address with this link (valid for 24 hours):\n\n" + link + "\n");
         } else {
             enqueue("verification", to, "Xác thực email tài khoản English9x",
-                    greeting(displayName, false) + "Cảm ơn bạn đã đăng ký. Hãy xác thực địa chỉ email bằng liên kết sau (có hiệu lực 24 giờ):\n\n"
-                            + link + "\n\nNếu bạn không tạo tài khoản English9x, hãy bỏ qua email này.\n");
+                    greeting(displayName, false) + "Có người vừa đăng ký English9x bằng địa chỉ email này. Bấm vào liên kết bên dưới là xác nhận tài khoản đó. "
+                            + "Nếu không phải bạn tự đăng ký, đừng bấm: có thể người khác đã đăng ký, và bạn có thể bỏ qua email này.\n\n"
+                            + "Nếu đúng là bạn, hãy xác thực địa chỉ email bằng liên kết sau (có hiệu lực 24 giờ):\n\n" + link + "\n");
         }
     }
 
@@ -74,18 +76,18 @@ class SmtpAuthMailer implements AuthMailer, DisposableBean {
     }
 
     @Override
-    public void sendGoogleLinked(String to, String displayName, String locale) {
+    public void sendGoogleLinked(String to, String locale) {
         String forgot = baseUrl + "/forgot-password";
         if (en(locale)) {
             enqueue("google-linked", to, "Google sign-in was linked to your English9x account",
-                    greeting(displayName, true) + "Google sign-in is now linked to the English9x account with this email address, and every other "
-                            + "device was signed out.\n\nIf you did not choose a password for this account yourself, someone else may have registered "
-                            + "it with your address. Replace that password here:\n\n" + forgot + "\n");
+                    greeting(null, true) + "Google sign-in is now linked to the English9x account with this email address. For your safety every other "
+                            + "device was signed out, and any password set on this account no longer works, because someone else may have registered it "
+                            + "with your address.\n\nYou can keep signing in with Google. To have a password again, reset your password here:\n\n" + forgot + "\n");
         } else {
             enqueue("google-linked", to, "Đã liên kết đăng nhập Google với tài khoản English9x",
-                    greeting(displayName, false) + "Đăng nhập bằng Google vừa được liên kết với tài khoản English9x của địa chỉ email này, và mọi thiết bị "
-                            + "khác đã được đăng xuất.\n\nNếu không phải bạn tự đặt mật khẩu cho tài khoản này, có thể người khác đã đăng ký bằng email của bạn. "
-                            + "Hãy thay mật khẩu đó tại đây:\n\n" + forgot + "\n");
+                    greeting(null, false) + "Đăng nhập bằng Google vừa được liên kết với tài khoản English9x của địa chỉ email này. Để an toàn, mọi thiết bị "
+                            + "khác đã được đăng xuất và mật khẩu đã đặt cho tài khoản này không còn dùng được, vì có thể người khác đã đăng ký bằng email của bạn."
+                            + "\n\nBạn vẫn đăng nhập được bằng Google. Muốn có lại mật khẩu, hãy đặt lại mật khẩu tại đây:\n\n" + forgot + "\n");
         }
     }
 

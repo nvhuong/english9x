@@ -13,6 +13,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param resendRateLimit / resetRateLimit / registerRateLimit requests allowed per IP + email (register: per IP)
  * @param oauthCodeTtl    how long the Google hand-over code is valid
  * @param oauthConsentTtl how long it stays valid (from its issue) once the server has asked the person for consent
+ * @param noConsentRetention how long a Google account abandoned at the consent step is kept (at least a day: see auth_purge_no_consent)
  * @param trustedProxies CIDRs of reverse proxies whose X-Forwarded-For is believed (empty: the header is ignored)
  */
 @ConfigurationProperties("e9x.auth")
@@ -30,6 +31,7 @@ public record AuthProperties(
         @DefaultValue("1h") Duration resetTtl,
         @DefaultValue("60s") Duration oauthCodeTtl,
         @DefaultValue("15m") Duration oauthConsentTtl,
+        @DefaultValue("7d") Duration noConsentRetention,
         @DefaultValue("10") int bcryptCost,
         @DefaultValue("8") int passwordMinLength,
         @DefaultValue({}) List<String> trustedProxies,

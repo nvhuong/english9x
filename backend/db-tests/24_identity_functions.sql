@@ -16,7 +16,7 @@ BEGIN
     ASSERT has_function_privilege('e9x_app', f.oid, 'EXECUTE'), f.proname || ' executable by e9x_app';
     ASSERT NOT has_function_privilege('outsider', f.oid, 'EXECUTE'), f.proname || ' must not be executable by others';
   END LOOP;
-  ASSERT n = 13, 'expected 13 auth functions, found ' || n;
+  ASSERT n = 14, 'expected 14 auth functions, found ' || n;
 END $$;
 
 -- create_user: new, duplicate (case-insensitive), locale fallback
@@ -141,11 +141,13 @@ BEGIN
   SELECT * INTO r FROM auth_oauth_login('google','sub-x','changed@example.com', true, 'Newbie', 'en', t0);
   ASSERT r.r_outcome = 'EXISTING' AND r.r_user_id = u, 'second login reuses the account (even if the email changed)';
 
-  -- verified local account with the same address: linked, password kept, its sessions ended (see the function's comment)
+  -- verified local account with the same address: linked, password void, sessions ended, resets retired (see the function's comment)
+  PERFORM auth_password_reset_issue('carol@example.com', '\x7103', t0 + interval '1 hour', t0);
   PERFORM auth_refresh_issue((SELECT r_user_id FROM auth_login_lookup('carol@example.com')), gen_random_uuid(), '\x7100', t0 + interval '30 days', t0, 1);
   SELECT * INTO r FROM auth_oauth_login('google','sub-c','carol@example.com', true, 'Carol', 'vi', t0);
   ASSERT r.r_outcome = 'LINKED';
-  ASSERT (SELECT r_password_hash FROM auth_login_lookup('carol@example.com')) = 'hash-c', 'password kept';
+  ASSERT (SELECT r_password_hash FROM auth_login_lookup('carol@example.com')) IS NULL, 'password void';
+  ASSERT (SELECT count(*) FROM auth_password_reset_confirm('\x7103', 'attacker-hash', t0)) = 0, 'an outstanding reset is retired';
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x7100', '\x7101', t0 + interval '30 days', t0, interval '10 seconds')) = 'INVALID', 'sessions ended';
   ASSERT auth_refresh_issue(r.r_user_id, gen_random_uuid(), '\x7102', t0 + interval '30 days', t0, r.r_credentials_version) = 'ISSUED', 'consent on record: no new step';
   -- IdP does not assert the email: an existing account is NOT linked (no takeover)
