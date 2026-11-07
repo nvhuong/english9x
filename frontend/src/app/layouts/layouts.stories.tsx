@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect, useState, type ReactNode } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { EmptyState, Badge, Button } from '../../design';
 import { NavContext, type NavByArea } from '../nav';
@@ -15,20 +16,24 @@ const nav: NavByArea = {
 };
 
 function Frame({ at, element, children }: { at: string; element: ReactNode; children: ReactNode }) {
+  // the header (context switcher, notification bell) reads server state: a story needs the provider, and no retries or refetching
+  const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } } }));
   useEffect(() => {
     useRoleStore.setState({ grants: [{ role: 'SYS_ADMIN', org: null, exam: null }] });
     return () => useRoleStore.setState({ grants: null });
   }, []);
   return (
-    <NavContext.Provider value={nav}>
-      <MemoryRouter initialEntries={[at]}>
-        <Routes>
-          <Route path={at} element={element}>
-            <Route index element={children} />
-          </Route>
-        </Routes>
-      </MemoryRouter>
-    </NavContext.Provider>
+    <QueryClientProvider client={client}>
+      <NavContext.Provider value={nav}>
+        <MemoryRouter initialEntries={[at]}>
+          <Routes>
+            <Route path={at} element={element}>
+              <Route index element={children} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </NavContext.Provider>
+    </QueryClientProvider>
   );
 }
 
