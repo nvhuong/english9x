@@ -81,8 +81,8 @@ END $$;
 -- the legitimate path still works: a real SYS_ADMIN grants roles and memberships
 SELECT set_config('app.user_id','a0000000-0000-0000-0000-000000000001',false),
        set_config('app.org_id','',false), set_config('app.e9x_staff','on',false), set_config('app.org_admin','',false);
-INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES ('a0000000-0000-0000-0000-000000000004','a1a1a1a1-0000-0000-0000-00000000000a',NULL,'ORG_ADMIN');
 INSERT INTO org_memberships(org_id,user_id) VALUES ('a1a1a1a1-0000-0000-0000-00000000000a','a0000000-0000-0000-0000-000000000004');
+INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES ('a0000000-0000-0000-0000-000000000004','a1a1a1a1-0000-0000-0000-00000000000a',NULL,'ORG_ADMIN');
 -- ... and the new ORG_ADMIN (real grant) then manages their own org
 SELECT set_config('app.user_id','a0000000-0000-0000-0000-000000000004',false),
        set_config('app.org_id','a1a1a1a1-0000-0000-0000-00000000000a',false), set_config('app.e9x_staff','',false), set_config('app.org_admin','on',false);
