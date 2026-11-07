@@ -52,7 +52,7 @@ class SeedDisabledIT {
         // Anonymous callers get 401 (everything under /api needs a token, so the route's absence is not even revealed);
         // an authenticated caller gets the real answer: no such route.
         HttpHeaders auth = new HttpHeaders();
-        auth.setBearerAuth(TestAuth.accessToken(java.util.UUID.randomUUID()));
+        auth.setBearerAuth(TestAuth.accessToken(TestPostgres.someUser(DB)));
         for (String path : new String[] {"/api/test/seed/ping", "/api/test/seed/anything", "/api/test/seed", "/api/test/seed/learner"}) {
             assertEquals(401, http.postForEntity(path, null, String.class).getStatusCode().value(), path);
             assertEquals(401, http.getForEntity(path, String.class).getStatusCode().value(), path);

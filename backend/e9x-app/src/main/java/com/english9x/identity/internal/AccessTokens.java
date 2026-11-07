@@ -10,9 +10,15 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Component;
 
-/** Issues the short-lived access token: {@code sub} = user id, {@code iss}, {@code iat}, {@code exp}, {@code jti}. */
+/**
+ * Issues the short-lived access token: {@code sub} = user id, {@code iss}, {@code iat}, {@code exp}, {@code jti} and
+ * {@link #CREDENTIALS_VERSION}, the version of the account's credentials it was issued under. The request filter compares that with the
+ * database on every authenticated request, so a password reset or a Google link ends every access token at once.
+ */
 @Component
 class AccessTokens {
+
+    static final String CREDENTIALS_VERSION = "credentials_version";
 
     private final JwtEncoder encoder;
     private final AuthProperties props;
@@ -24,7 +30,7 @@ class AccessTokens {
         this.clock = clock;
     }
 
-    String issue(UUID userId) {
+    String issue(UUID userId, long credentialsVersion) {
         Instant now = clock.instant();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(props.issuer())
@@ -32,6 +38,7 @@ class AccessTokens {
                 .issuedAt(now)
                 .expiresAt(now.plus(props.accessTokenTtl()))
                 .id(UUID.randomUUID().toString())
+                .claim(CREDENTIALS_VERSION, credentialsVersion)
                 .build();
         return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
     }

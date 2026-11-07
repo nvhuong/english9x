@@ -77,7 +77,7 @@ class SpaFallbackIT {
 
     @Test
     void apiPathsKeepTheirRealProblem404() {
-        String token = TestAuth.accessToken(java.util.UUID.randomUUID());
+        String token = TestAuth.accessToken(TestPostgres.someUser(DB));
         for (String path : new String[] {"/api/nope", "/api/platform/nope", "/api"}) {
             for (String accept : new String[] {BROWSER_ACCEPT, "application/json"}) {
                 // anonymous callers are refused before routing (401); an authenticated one gets the real 404 problem

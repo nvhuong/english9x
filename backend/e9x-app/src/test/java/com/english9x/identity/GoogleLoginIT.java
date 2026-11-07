@@ -8,8 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.english9x.support.FakeOidcProvider;
 import com.english9x.support.FakeOidcProvider.Scenario;
+import com.english9x.support.FakeTelegram;
 import com.english9x.support.SmtpSink;
 import com.english9x.support.TestAuth;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.http.HttpClient;
@@ -21,6 +23,7 @@ import java.util.UUID;
 import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpMethod;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -39,6 +42,8 @@ class GoogleLoginIT extends IdentityIT {
     }
 
     static final FakeOidcProvider IDP = new FakeOidcProvider();
+    static final FakeTelegram TELEGRAM = new FakeTelegram();
+    static final String WEBHOOK_SECRET = "webhook-secret-for-tests-0123456789";
 
     @DynamicPropertySource
     static void google(DynamicPropertyRegistry registry) {
@@ -48,6 +53,10 @@ class GoogleLoginIT extends IdentityIT {
         registry.add("e9x.auth.google.token-uri", () -> IDP.base() + "/token");
         registry.add("e9x.auth.google.jwk-set-uri", () -> IDP.base() + "/jwks");
         registry.add("e9x.auth.google.issuer", IDP::issuer);
+        registry.add("e9x.notification.telegram.api-base", TELEGRAM::baseUrl);
+        registry.add("e9x.notification.telegram.bot-token", () -> FakeTelegram.BOT_TOKEN);
+        registry.add("e9x.notification.telegram.bot-username", () -> "e9x_test_bot");
+        registry.add("e9x.notification.telegram.webhook-secret", () -> WEBHOOK_SECRET);
     }
 
     @LocalServerPort
@@ -253,6 +262,106 @@ class GoogleLoginIT extends IdentityIT {
         SmtpSink.Mail reset = smtp().awaitSubject(victim, "Đặt lại mật khẩu");
         assertEquals(204, post("/api/auth/password-reset/confirm", Map.of("token", reset.linkParam("token"), "newPassword", "Owner-new-pass-1")).status());
         assertEquals(200, login(victim, "Owner-new-pass-1").status());
+    }
+
+    // ---- final review I1 and M11: what the attacker chose does not survive the real owner -----------------------------------
+
+    private String linkToken(String access) {
+        Res r = send(HttpMethod.POST, "/api/me/telegram/link", null, access, Map.of());
+        assertEquals(200, r.status(), r.raw());
+        String deep = r.body().path("deepLink").asText();
+        return deep.substring(deep.indexOf("start=") + 6);
+    }
+
+    private void telegramStart(long chat, String token) {
+        Map<String, Object> update = Map.of("update_id", 1, "message", Map.of("message_id", 1, "chat", Map.of("id", chat, "type", "private"),
+                "text", "/start " + token));
+        assertEquals(200, post("/api/telegram/webhook", update, Map.of("X-Telegram-Bot-Api-Secret-Token", WEBHOOK_SECRET)).status());
+    }
+
+    private int linksOf(UUID id) {
+        return su.queryForObject("select count(*) from telegram_links where user_id = ?", Integer.class, id);
+    }
+
+    private static final Map<String, Object> EMAIL_OFF = Map.of("eventType", "SCORE_OFFICIAL", "channel", "EMAIL", "enabled", false);
+
+    @Test
+    void anUnverifiedAccountChoosesNothingAndTheRealOwnerStartsCleanWithEmailOn() throws Exception {
+        String victim = uniqueEmail();
+        registerUnverified(victim, "Attacker-password-1");
+        Res attacker = login(victim, "Attacker-password-1");
+        String attackerAccess = attacker.body().get("accessToken").asText();
+        String attackerRefresh = attacker.body().get("refreshToken").asText();
+        UUID id = userId(victim);
+
+        // through the API an unverified account can do none of it, and is told why
+        Res link = send(HttpMethod.POST, "/api/me/telegram/link", null, attackerAccess, Map.of());
+        assertEquals(403, link.status(), link.raw());
+        assertEquals("urn:e9x:problem:email-not-verified", link.problemType());
+        Res pref = send(HttpMethod.PUT, "/api/me/notification-prefs", EMAIL_OFF, attackerAccess, Map.of());
+        assertEquals(403, pref.status(), pref.raw());
+        assertEquals("urn:e9x:problem:email-not-verified", pref.problemType());
+        assertEquals(200, get("/api/me/notification-prefs", attackerAccess).status(), "reading the defaults is harmless");
+
+        // the review's measured state, as a database from before the fix holds it: a chat, an unused token, EMAIL off
+        long chat = 666_000_000L + (id.getMostSignificantBits() & 0xFFFFL);
+        String unused = "unused-token-of-the-attacker-" + id.toString().substring(0, 8);
+        su.update("insert into telegram_links(user_id,chat_id) values (?,?)", id, chat);
+        su.update("insert into telegram_link_tokens(user_id,token_hash,expires_at) values (?, sha256(?::bytea), now() + interval '1 hour')", id, unused);
+        su.update("insert into notification_prefs(user_id,event_type,channel,enabled) values (?,'SCORE_OFFICIAL','EMAIL',false)", id);
+
+        // the real owner arrives
+        String code = codeOf(signIn(scenario(victim, true)));
+        assertEquals(0, linksOf(id), "the attacker's chat is gone");
+        assertEquals(0, su.queryForObject("select count(*) from telegram_link_tokens where user_id = ?", Integer.class, id));
+        assertEquals(0, su.queryForObject("select count(*) from notification_prefs where user_id = ?", Integer.class, id));
+        telegramStart(chat + 1, unused);
+        assertEquals(0, linksOf(id), "the unused token links nothing");
+
+        // the attacker's access token is dead everywhere, including the one thing it was still good for
+        assertEquals(401, send(HttpMethod.POST, "/api/me/telegram/link", null, attackerAccess, Map.of()).status());
+        assertEquals(401, get("/api/auth/me", attackerAccess).status());
+        assertEquals(401, post("/api/auth/refresh", Map.of("refreshToken", attackerRefresh)).status());
+
+        // the owner has email on, and a new notification goes by mail only
+        Res owner = finishWithConsent(code);
+        assertEquals(200, owner.status(), owner.raw());
+        String ownerAccess = owner.body().get("accessToken").asText();
+        JsonNode events = get("/api/me/notification-prefs", ownerAccess).body().path("events");
+        boolean found = false;
+        for (JsonNode e : events) {
+            if ("SCORE_OFFICIAL".equals(e.path("type").asText())) {
+                found = e.path("email").asBoolean();
+            }
+        }
+        assertTrue(found, "email is enabled again by default: " + events);
+        assertEquals(java.util.List.of("EMAIL"), su.queryForList(
+                "select r_channel from notification_create(?, 'SCORE_OFFICIAL', '{}', 'after-takeover', now())", String.class, id));
+        assertEquals(204, send(HttpMethod.PUT, "/api/me/notification-prefs", EMAIL_OFF, ownerAccess, Map.of()).status(), "the owner may choose");
+    }
+
+    @Test
+    void aVerifiedAccountLinkedToGoogleLosesTheChatAndTokensButKeepsThePreferences() throws Exception {
+        // the attacker registers, the victim clicks the mail: verified, and the attacker holds a live session
+        String victim = uniqueEmail();
+        SmtpSink.Mail mail = registerUnverified(victim, "Attacker-password-1");
+        String access = login(victim, "Attacker-password-1").body().get("accessToken").asText();
+        assertEquals(204, post("/api/auth/verify-email", Map.of("token", mail.linkParam("token"))).status());
+        UUID id = userId(victim);
+
+        long chat = 667_000_000L + (id.getMostSignificantBits() & 0xFFFFL);
+        telegramStart(chat, linkToken(access));
+        assertEquals(1, linksOf(id), "a positive control: this token does link");
+        String unused = linkToken(access);
+        assertEquals(204, send(HttpMethod.PUT, "/api/me/notification-prefs", EMAIL_OFF, access, Map.of()).status());
+
+        assertEquals(200, exchange(codeOf(signIn(scenario(victim, true)))).status());
+
+        assertEquals(0, linksOf(id));
+        telegramStart(chat + 1, unused);
+        assertEquals(0, linksOf(id), "the unused token links nothing");
+        assertEquals(401, send(HttpMethod.POST, "/api/me/telegram/link", null, access, Map.of()).status(), "the old access token is dead");
+        assertEquals(1, su.queryForObject("select count(*) from notification_prefs where user_id = ? and not enabled", Integer.class, id));
     }
 
     // ---- the code belongs to the browser that finished the sign-in (login CSRF) -----------------------------------

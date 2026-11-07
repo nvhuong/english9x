@@ -31,15 +31,35 @@ public final class TestAuth {
         registry.add("spring.mail.port", () -> String.valueOf(SMTP.port()));
     }
 
-    /** A valid 15-minute access token for {@code userId}, signed with the test secret. */
+    /** The version of a fresh account (users.credentials_version defaults to 1). */
+    public static final long FRESH_CREDENTIALS_VERSION = 1;
+
+    /** A valid 15-minute access token for {@code userId}, signed with the test secret, for an account whose credentials never changed. */
     public static String accessToken(UUID userId) {
-        return token(userId.toString(), ISSUER, Instant.now().plus(Duration.ofMinutes(15)), JWSAlgorithm.HS256, JWT_SECRET);
+        return accessToken(userId, FRESH_CREDENTIALS_VERSION);
+    }
+
+    public static String accessToken(UUID userId, long credentialsVersion) {
+        return signed(userId.toString(), ISSUER, Instant.now().plus(Duration.ofMinutes(15)), JWSAlgorithm.HS256, JWT_SECRET, credentialsVersion);
+    }
+
+    /** A token as issued before access tokens carried the credentials version: otherwise perfectly valid. */
+    public static String accessTokenWithoutCredentialsVersion(UUID userId) {
+        return signed(userId.toString(), ISSUER, Instant.now().plus(Duration.ofMinutes(15)), JWSAlgorithm.HS256, JWT_SECRET, null);
     }
 
     public static String token(String subject, String issuer, Instant expires, JWSAlgorithm alg, String secret) {
+        return signed(subject, issuer, expires, alg, secret, FRESH_CREDENTIALS_VERSION);
+    }
+
+    private static String signed(String subject, String issuer, Instant expires, JWSAlgorithm alg, String secret, Long credentialsVersion) {
         try {
-            JWTClaimsSet claims = new JWTClaimsSet.Builder().subject(subject).issuer(issuer)
-                    .issueTime(Date.from(Instant.now().minusSeconds(1))).expirationTime(Date.from(expires)).build();
+            JWTClaimsSet.Builder b = new JWTClaimsSet.Builder().subject(subject).issuer(issuer)
+                    .issueTime(Date.from(Instant.now().minusSeconds(1))).expirationTime(Date.from(expires));
+            if (credentialsVersion != null) {
+                b.claim("credentials_version", credentialsVersion);
+            }
+            JWTClaimsSet claims = b.build();
             SignedJWT jwt = new SignedJWT(new JWSHeader(alg), claims);
             jwt.sign(new MACSigner(secret.getBytes(StandardCharsets.UTF_8)));
             return jwt.serialize();
