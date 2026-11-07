@@ -98,6 +98,13 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 **Tests:** `ReviewServiceIT.authorCannotApproveOwnVersion`, `.changesRequestedReturnsToDraftWithComment`, `.approveBlockedByUnpublishedDependency`, `.bundleApprovesAllOrNothing`, `.publishedVersionIsImmutable` (UPDATE bị trigger chặn).
 
+> **Ghi chú 2026-11-08 (P1.6 đã làm; việc cho P2.x và P4.1):**
+> - API công khai ở `com.english9x.workflow.api` (named interface `api`): `ReviewService`, `ReviewableType` (cổng mỗi loại nội dung triển khai, một bean mỗi loại), `Reviewable`, `VersionRef`, `BundleRef`, `ReviewView`, `ContentStatus`, các ngoại lệ (`ReviewNotFoundException` 404, `ReviewConflictException` 409, `UnpublishedDependencyException` 409 kèm `missing()`, `SelfReviewException` là `AccessDeniedException` 403). Chưa có controller và chưa ánh xạ ngoại lệ sang problem+json: màn hình duyệt (P2.9) tự thêm; ngoại lệ chưa ánh xạ ra 500.
+> - Sự kiện `ContentPublished(String type, UUID versionId, Optional<UUID> ownerOrgId, String examCode)` theo `events.md` (không phải `ContentPublished(VersionRef)` của brief); phát trong transaction duyệt, sau mọi thay đổi trạng thái của lời gọi, mỗi phiên bản một lần. Chưa nối event publication registry (P4.1).
+> - Mỗi bảng `*_versions` của P2 gắn trigger chung: `CREATE TRIGGER <bảng>_lifecycle BEFORE UPDATE OR DELETE ON <bảng> FOR EACH ROW EXECUTE FUNCTION e9x_guard_version_lifecycle('updated_at')` (cột `status text` mang tên `ContentStatus`; đối số = cột được đổi cùng lúc với đổi trạng thái). Bản `IN_REVIEW` bị đóng băng, `PUBLISHED` chỉ sang `ARCHIVED`, không nhảy thẳng sang `PUBLISHED`. P2 tự đặt `status DEFAULT 'DRAFT'` + CHECK cho INSERT.
+> - Sau `requestChanges` phiên bản ở `CHANGES_REQUESTED` (sửa được như DRAFT, đúng spec §7.1); gửi duyệt lại tạo review mới, review cũ giữ lịch sử.
+> - Kho chung (F21: khoá đã xuất bản của trung tâm vào hàng duyệt của English9x) CHƯA có trong workflow: review hiện thuộc đúng ngữ cảnh của nội dung (`owner_org_id` của nội dung). P2.x/F21 cần quyết định mô hình riêng (ví dụ một review English9x trỏ tới phiên bản của trung tâm) và migration của nó; không nới policy `review_requests` thành "mọi nhân viên".
+
 ### Task P1.7: Hàng đợi nền (W1)
 
 > **Ghi chú 2026-11-07 (từ P1.3):** quyết định của controller: ngữ cảnh worker là một login role riêng `e9x_worker_login` với pool nhỏ riêng, chỉ các handler của `platform.jobs` dùng, không bao giờ truy cập được từ HTTP, không có GUC `app.system`, quyền hạn hẹp nhất có thể. Việc không có ngữ cảnh người dùng khiến job thấy 0 dòng; không giải quyết bằng cờ.

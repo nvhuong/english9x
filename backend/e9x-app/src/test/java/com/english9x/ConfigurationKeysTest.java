@@ -48,6 +48,7 @@ class ConfigurationKeysTest {
             {"e9x.content.media.max-upload-size", "200MB"},
             {"e9x.org.invitation-ttl", "7d"},
             {"e9x.org.invitation-hourly-limit", "50"},
+            {"e9x.workflow.max-bundle-size", "2000"},
         };
         for (String[] kv : expected) {
             Object actual = p.getProperty(kv[0]);

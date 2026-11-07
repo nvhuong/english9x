@@ -125,6 +125,8 @@ e9x:
   org:
     invitation-ttl: 7d             # how long an invitation link stays valid (assumption)
     invitation-hourly-limit: 50    # invitations (mails) one person may send per hour (assumption)
+  workflow:
+    max-bundle-size: 2000          # versions one review bundle may hold; keep >= e9x.content.import.max-rows (assumption)
   learning:
     streak:
       min-minutes: 10
