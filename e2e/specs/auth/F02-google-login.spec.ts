@@ -138,7 +138,7 @@ test.describe('F02 Google sign-in', () => {
     const { verifyLink } = await auth.registerLearner(page, attacker);
     const { token } = await org.apiLogin(attacker);
     await page.goto(verifyLink);
-    await expect(page.getByRole('heading', { level: 1, name: /xác thực/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Email đã được xác thực' })).toBeVisible(); // the outcome, not the 'verifying' heading before it
 
     const tokenFrom = (deepLink: string) => deepLink.split('start=')[1]!;
     const first = await org.api(token, 'POST', '/api/me/telegram/link');
