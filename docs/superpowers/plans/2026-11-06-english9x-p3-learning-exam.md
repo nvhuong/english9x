@@ -28,6 +28,8 @@
 
 > **Ghi chú 2026-11-08 (review cuối P1, M1, M2):** `courses_*` chưa được thu hẹp: đo được phiên staff chỉ có TEACHER TOEIC đặt được `status=PUBLISHED`, `shared_status=APPROVED`. Thay bằng policy theo vai trò và kỳ thi trước endpoint đầu tiên, phần kho chung phối hợp với P6.5.
 
+> **Ghi chú 2026-11-08 (rà soát lại P1, m2):** fixture đọc có ô chuỗi (ví dụ `courseCodeB` cho `GET /api/catalog/courses/{code}`) phải có đối chứng dương (cùng route trả 200 với mã của chính tenant) hoặc được kiểm với danh mục, vì `catalog.texts()` hiện chỉ được thu thập chứ không được gửi (`SweepFixtures.java:230`, `ForeignIdSweep.java:66`): `Fixture.read(... "bogus")` vẫn qua với 404 mà không chứng minh gì.
+
 > **Ghi chú 2026-11-08 (review cuối P1, quét rò rỉ):** `GET /api/catalog/courses/{code}` khoá riêng theo mã chính là ca F08. Không miễn: thêm fixture với slot chuỗi `FIXTURES.courseCodeB` (`SweepFixtures`). Mọi route ghi mới của P2 đến P6 đều cần fixture có body hợp lệ và positive control, thiếu là `RlsLeakSweepIT` đỏ.
 
 > **Ghi chú 2026-11-08 (review cuối P1, triage ledger 80):** mockup 02 trùng nhãn: xử lý khi dựng màn này.
