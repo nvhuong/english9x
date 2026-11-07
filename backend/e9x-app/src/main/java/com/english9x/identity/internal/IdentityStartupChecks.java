@@ -3,7 +3,6 @@ package com.english9x.identity.internal;
 import com.english9x.identity.api.AccountHousekeeping;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
@@ -12,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 /** Settings without a safe default are checked at startup, so a misconfigured instance fails fast instead of mailing broken links. */
 @Configuration(proxyBeanMethods = false)
-@EnableScheduling
 class IdentityStartupChecks {
 
     private final String publicBaseUrl;
