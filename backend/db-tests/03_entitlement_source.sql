@@ -14,8 +14,9 @@ BEGIN
     RAISE EXCEPTION 'both sources null should fail';
   EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN
-    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_order_id,source_seat_id)
-     VALUES ('11111111-0000-0000-0000-000000000001','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid(),gen_random_uuid());
+    -- with the issuing organisation present, so this can only fail for having both sources
+    INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_order_id,source_seat_id,source_org_id)
+     VALUES ('11111111-0000-0000-0000-000000000001','dddddddd-0000-0000-0000-00000000000d',now(),now()+interval '1 day',gen_random_uuid(),gen_random_uuid(),'a1a1a1a1-0000-0000-0000-00000000000a');
     RAISE EXCEPTION 'both sources set should fail';
   EXCEPTION WHEN check_violation THEN NULL; END;
   BEGIN

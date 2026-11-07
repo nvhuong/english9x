@@ -22,19 +22,19 @@ BEGIN
   ASSERT (SELECT id FROM organizations) = 'aaaaaaaa-0000-0000-0000-000000000001', 'org A visible via membership';
   BEGIN
     INSERT INTO org_memberships(org_id,user_id) VALUES ('bbbbbbbb-0000-0000-0000-000000000002','11111111-0000-0000-0000-000000000001');
-    RAISE EXCEPTION 'plain user self-membership should fail';
+    RAISE EXCEPTION 'no membership in B from the personal context, even for an ORG_ADMIN of A';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN
     INSERT INTO role_grants(user_id,org_id,role) VALUES ('11111111-0000-0000-0000-000000000001',NULL,'SYS_ADMIN');
-    RAISE EXCEPTION 'plain user self role grant should fail';
+    RAISE EXCEPTION 'no global role for oneself from the personal context, even for an ORG_ADMIN of A';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN
     INSERT INTO role_grants(user_id,org_id,role) VALUES ('11111111-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-000000000001','ORG_ADMIN');
-    RAISE EXCEPTION 'plain user self org role grant should fail';
+    RAISE EXCEPTION 'no grant in A from the personal context, even for an ORG_ADMIN of A: it takes that context';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 
--- org admin of A
+-- the real ORG_ADMIN of A, in the context of A
 SELECT set_config('app.org_id','aaaaaaaa-0000-0000-0000-000000000001',false);
 SELECT set_config('app.org_admin','on',false);
 INSERT INTO org_memberships(org_id,user_id) VALUES ('aaaaaaaa-0000-0000-0000-000000000001','22222222-0000-0000-0000-000000000002');

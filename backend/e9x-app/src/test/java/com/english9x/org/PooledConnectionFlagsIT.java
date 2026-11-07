@@ -84,6 +84,38 @@ class PooledConnectionFlagsIT {
     }
 
     @Test
+    void aFlaggedTransactionThatRollsBackLeavesNoFlagAndNoRow() {
+        JdbcTemplate su = new JdbcTemplate(TestPostgres.superuser(DB));
+        UUID org = UUID.randomUUID();
+        UUID admin = UUID.randomUUID();
+        UUID doomed = UUID.randomUUID();
+        su.update("insert into organizations(id,name,type) values (?,'Rollback','CENTER')", org);
+        su.update("insert into users(id,email) values (?,?)", admin, admin + "@x.test");
+        su.update("insert into org_memberships(org_id,user_id) values (?,?)", org, admin);
+        su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", admin, org);
+
+        TransactionTemplate tx = new TransactionTemplate(tm);
+        Map<String, Object> first;
+        try (var scope = CurrentContextHolder.bind(admin, org)) {
+            first = tx.execute(st -> {
+                Map<String, Object> inside = snapshot();
+                jdbc.update("insert into classes(id,owner_org_id,name) values (?,?,'doomed')", doomed, org);
+                st.setRollbackOnly();
+                return inside;
+            });
+        }
+        assertEquals("on", first.get("org_admin"), "the transaction really was flagged");
+
+        Map<String, Object> next = tx.execute(st -> snapshot()); // no context bound
+        assertEquals(first.get("pid"), next.get("pid"), "the same physical connection");
+        assertEquals("", next.get("org_admin"));
+        assertEquals("", next.get("org_id"));
+        assertEquals("", next.get("user_id"));
+        assertEquals(0, su.queryForObject("select count(*) from classes where id = ?", Integer.class, doomed), "the write went with it");
+        assertEquals("", snapshot().get("org_admin"), "and outside any transaction");
+    }
+
+    @Test
     void aFlagSetAtSessionLevelByBuggyCodeIsStillClearedAtTheNextTransactionStart() {
         TransactionTemplate tx = new TransactionTemplate(tm);
         tx.execute(st -> {

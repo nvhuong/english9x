@@ -1008,5 +1008,8 @@ class ReviewServiceIT {
         assertEquals(Set.of("IN_REVIEW"), Set.copyOf(reviewIdsOfBundle(bundlePending).stream().map(ReviewServiceIT::reviewStatus).toList()));
         assertEquals("DRAFT", status(fresh), "a refused submit left the version a draft");
         assertEquals("DRAFT", status(m2));
+        // the positive control: with the grant back the same submit goes through, so what failed above was the record and nothing else
+        UUID reviewOfFresh = as(AUTHOR_D, ORG_D, () -> reviews.submit(ref(fresh)));
+        assertEquals("IN_REVIEW", reviewStatus(reviewOfFresh));
     }
 }
