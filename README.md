@@ -67,7 +67,7 @@ $R up -d --wait postgres                                                        
 $R run --rm --no-deps -v "$PWD/restore:/restore:ro" --entrypoint /usr/local/bin/restore.sh backup /restore/pg-<stamp>.sql.gz
 $R up --build -d --wait                                                           # the app's Flyway validates what was restored and goes on from there
 ```
-Exactly this was run from a fresh clone: `final-fix-report` of the P1 review has the output. To keep the old project name, remove the old volume only after checking the new stack; that in-place step has not been drilled yet (W10).
+This path was drilled from a fresh clone, on the real images. To keep the old project name, remove the old volume only after checking the new stack; that in-place step has not been drilled yet (W10).
 `restore.sh` takes one file, runs in one transaction and refuses a database that already has tables. `BackupRestoreIT` (in `mvn verify`, so in `verify.sh` and CI's `backend`) backs up, restores into a fresh volume and starts the application on it. The MinIO half is a directory copy and has no drill yet: owner W10, see the plan.
 
 ## Threat model: what `e9x_app` can do

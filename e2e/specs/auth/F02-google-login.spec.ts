@@ -149,7 +149,6 @@ test.describe('F02 Google sign-in', () => {
     const unused = tokenFrom((await org.api(token, 'POST', '/api/me/telegram/link')).body.deepLink);
     expect((await org.api(token, 'PUT', '/api/me/notification-prefs', { body: { eventType: 'REVIEW_REQUESTED', channel: 'EMAIL', enabled: false } })).status).toBe(204);
 
-    await page.getByRole('button', { name: 'Đăng xuất' }).click().catch(() => {});
     await signInWithGoogle(page, { email: attacker.email, name: 'Chủ thật' });
     await expect(page.getByText(/Đã đăng nhập/)).toBeVisible();
     await mailpit.lastEmailTo(attacker.email, { subjectIncludes: 'liên kết' });
