@@ -129,7 +129,7 @@ describe('LoginPage', () => {
       const u = userEvent.setup();
       await u.type(screen.getByLabelText(/Email/), 'an@example.test');
       await u.type(screen.getByLabelText(/Mật khẩu/), 'Correct-horse-1');
-      await u.click(screen.getByRole('button', { name: 'Đăng nhập', exact: true }));
+      await u.click(screen.getByRole('button', { name: 'Đăng nhập' }));
     }
 
     it('a plain sign-in returns to what was remembered, once', async () => {

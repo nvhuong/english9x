@@ -112,7 +112,7 @@ test.describe('F04 invite internal staff', () => {
     expect(fromMail.url()).toBe(link);
     await fromMail.getByRole('button', { name: 'Chấp nhận lời mời' }).click();
     await expect(fromMail.getByRole('heading', { level: 1, name: 'Đã tham gia' })).toBeVisible();
-    const { userId } = await seed.userInfo(email);
+    const userId = (await seed.userInfo(email)).userId!;
     expect(await seed.authz({ userId, role: 'AUTHOR', examCode: 'IELTS' })).toMatchObject({ allowed: true });
     // nothing of the invitation stays behind in this browser
     expect(await fromMail.evaluate(() => localStorage.getItem('e9x.auth.returnTo'))).toBeNull();
@@ -132,7 +132,7 @@ test.describe('F04 invite internal staff', () => {
     await expect(tab).toHaveURL(/\/accept-invitation\?token=/);
     await tab.getByRole('button', { name: 'Chấp nhận lời mời' }).click();
     await expect(tab.getByRole('heading', { level: 1, name: 'Đã tham gia' })).toBeVisible();
-    const { userId } = await seed.userInfo(email);
+    const userId = (await seed.userInfo(email)).userId!;
     expect(await seed.authz({ userId, role: 'AUTHOR', examCode: 'IELTS' })).toMatchObject({ allowed: true });
     await ctx.close();
   });
