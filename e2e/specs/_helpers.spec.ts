@@ -129,7 +129,7 @@ test.describe('seed API and not-yet-built fixtures', () => {
   });
 
   test('the seed API refuses a request without the shared secret', async () => {
-    for (const headers of [{}, { 'x-e2e-seed-secret': 'wrong' }]) {
+    for (const headers of [{}, { 'x-e2e-seed-secret': 'wrong' }] as Array<Record<string, string>>) {
       const r = await request(`${env.baseURL}/api/test/seed/ping`, { method: 'POST', headers });
       expect(r.status).toBe(403);
     }
