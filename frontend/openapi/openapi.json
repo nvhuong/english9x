@@ -1,6 +1,41 @@
 {
   "components" : {
     "schemas" : {
+      "AcceptInvitationResponse" : {
+        "properties" : {
+          "orgId" : {
+            "description" : "The organisation joined, null for an English9x invitation",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "example" : "accepted",
+            "type" : "string"
+          }
+        },
+        "required" : [ "status" ],
+        "type" : "object"
+      },
+      "AdminOrgView" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/OrgType"
+          }
+        },
+        "required" : [ "createdAt", "id", "name", "type" ],
+        "type" : "object"
+      },
       "AuthConfig" : {
         "properties" : {
           "googleEnabled" : {
@@ -9,6 +44,20 @@
           }
         },
         "required" : [ "googleEnabled" ],
+        "type" : "object"
+      },
+      "CreateOrganizationRequest" : {
+        "properties" : {
+          "name" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/OrgType"
+          }
+        },
+        "required" : [ "name", "type" ],
         "type" : "object"
       },
       "EmailRequest" : {
@@ -21,6 +70,79 @@
           }
         },
         "required" : [ "email" ],
+        "type" : "object"
+      },
+      "GrantView" : {
+        "properties" : {
+          "examCode" : {
+            "description" : "null = every exam",
+            "type" : "string"
+          },
+          "orgId" : {
+            "description" : "null = English9x-wide",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "LEARNER", "AUTHOR", "REVIEWER", "TEACHER", "ORG_ADMIN", "SYS_ADMIN" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "role" ],
+        "type" : "object"
+      },
+      "InvitationStatus" : {
+        "enum" : [ "PENDING", "ACCEPTED", "REVOKED", "EXPIRED" ],
+        "type" : "string"
+      },
+      "InvitationView" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "roles" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RoleSpec"
+            },
+            "type" : "array"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/InvitationStatus"
+          }
+        },
+        "required" : [ "createdAt", "email", "expiresAt", "id", "roles", "status" ],
+        "type" : "object"
+      },
+      "InviteRequest" : {
+        "properties" : {
+          "email" : {
+            "format" : "email",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "roles" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RoleSpec"
+            },
+            "maxItems" : 20,
+            "minItems" : 0,
+            "type" : "array"
+          }
+        },
+        "required" : [ "email", "roles" ],
         "type" : "object"
       },
       "LoginRequest" : {
@@ -62,6 +184,63 @@
         "required" : [ "email", "emailVerified", "id", "locale" ],
         "type" : "object"
       },
+      "MeContext" : {
+        "properties" : {
+          "contextOrgId" : {
+            "description" : "The organisation the server applied to THIS request (null = personal)",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "grants" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GrantView"
+            },
+            "type" : "array"
+          },
+          "organizations" : {
+            "items" : {
+              "$ref" : "#/components/schemas/OrgView"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "grants", "organizations" ],
+        "type" : "object"
+      },
+      "MemberView" : {
+        "properties" : {
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "roles" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RoleSpec"
+            },
+            "type" : "array"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "email", "roles", "userId" ],
+        "type" : "object"
+      },
+      "MembersView" : {
+        "properties" : {
+          "members" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MemberView"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "members" ],
+        "type" : "object"
+      },
       "OAuthCodeRequest" : {
         "properties" : {
           "code" : {
@@ -85,6 +264,26 @@
           }
         },
         "required" : [ "code", "consent" ],
+        "type" : "object"
+      },
+      "OrgType" : {
+        "enum" : [ "CENTER", "ENTERPRISE" ],
+        "type" : "string"
+      },
+      "OrgView" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/OrgType"
+          }
+        },
+        "required" : [ "id", "name", "type" ],
         "type" : "object"
       },
       "Pong" : {
@@ -214,6 +413,40 @@
         "required" : [ "newPassword", "token" ],
         "type" : "object"
       },
+      "RoleSpec" : {
+        "properties" : {
+          "examCode" : {
+            "description" : "IELTS | TOEIC; required for AUTHOR, REVIEWER, TEACHER, absent for the others",
+            "maxLength" : 32,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "LEARNER", "AUTHOR", "REVIEWER", "TEACHER", "ORG_ADMIN", "SYS_ADMIN" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "role" ],
+        "type" : "object"
+      },
+      "SetRolesRequest" : {
+        "properties" : {
+          "roles" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RoleSpec"
+            },
+            "maxItems" : 20,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "roles", "userId" ],
+        "type" : "object"
+      },
       "TokenPair" : {
         "properties" : {
           "accessToken" : {
@@ -254,6 +487,170 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/admin/invitations" : {
+      "get" : {
+        "operationId" : "staffInvitations",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/InvitationView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      },
+      "post" : {
+        "operationId" : "inviteStaff",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/InviteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InvitationView"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/admin/invitations/{invitationId}" : {
+      "delete" : {
+        "operationId" : "revokeStaff",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "invitationId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/admin/organizations" : {
+      "get" : {
+        "operationId" : "list_2",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminOrgView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "org-controller" ]
+      },
+      "post" : {
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateOrganizationRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminOrgView"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "org-controller" ]
+      }
+    },
     "/api/auth/config" : {
       "get" : {
         "operationId" : "config",
@@ -353,7 +750,7 @@
     },
     "/api/auth/me" : {
       "get" : {
-        "operationId" : "me",
+        "operationId" : "me_1",
         "responses" : {
           "200" : {
             "content" : {
@@ -653,6 +1050,275 @@
           }
         },
         "tags" : [ "auth-controller" ]
+      }
+    },
+    "/api/invitations/{token}/accept" : {
+      "post" : {
+        "operationId" : "accept",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AcceptInvitationResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/me/context" : {
+      "get" : {
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeContext"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "org-controller" ]
+      }
+    },
+    "/api/orgs/{id}/invitations" : {
+      "get" : {
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/InvitationView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      },
+      "post" : {
+        "operationId" : "invite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/InviteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InvitationView"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/orgs/{id}/invitations/{invitationId}" : {
+      "delete" : {
+        "operationId" : "revoke",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "invitationId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/orgs/{id}/role-grants" : {
+      "get" : {
+        "operationId" : "list",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MembersView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "role-grant-controller" ]
+      },
+      "put" : {
+        "operationId" : "set",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetRolesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MemberView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "role-grant-controller" ]
       }
     },
     "/api/platform/ping" : {

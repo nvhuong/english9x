@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
+import { useAuthStore } from '../stores/auth';
 import { useContextStore } from '../stores/context';
 import { hasRole, useRoleStore, type Role } from '../stores/roles';
 
@@ -22,6 +24,13 @@ export interface RequireRoleProps {
 export function RequireRole({ role, exam, fallback, children }: RequireRoleProps) {
   const grants = useRoleStore((s) => s.grants);
   const orgId = useContextStore((s) => s.orgId);
-  if (!hasRole(grants, orgId, role, exam)) return <>{fallback ?? <ForbiddenPage />}</>;
+  const status = useAuthStore((s) => s.status);
+  const { t } = useTranslation();
+  if (!hasRole(grants, orgId, role, exam)) {
+    // The roles of a signed-in person arrive a moment after the page: say "loading", not "no access", until they have.
+    const pending = status === 'loading' || (status === 'authenticated' && grants === null);
+    if (pending) return <p role="status" className="p-4 text-muted">{t('app.loading')}</p>;
+    return <>{fallback ?? <ForbiddenPage />}</>;
+  }
   return <>{children}</>;
 }

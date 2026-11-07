@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { ToastProvider } from '../design';
 import { ApiProblemError } from '../api/problem';
 import { AuthBootstrap } from '../features/auth/AuthBootstrap';
+import { OrgContextBootstrap } from '../features/org/OrgContextBootstrap';
 import { clearCacheOnUserChange } from '../features/auth/session';
 import { guardContextWrites } from './stores/context';
 
@@ -31,6 +32,7 @@ export function AppProviders({ children, client }: { children: ReactNode; client
     <QueryClientProvider client={qc}>
       <ToastProvider>
         <AuthBootstrap />
+        <OrgContextBootstrap />
         {children}
       </ToastProvider>
     </QueryClientProvider>

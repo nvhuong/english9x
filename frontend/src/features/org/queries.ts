@@ -1,0 +1,102 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useApi } from '../../api/useApi';
+import type { components } from '../../api/generated/client';
+import { ctxKey, useContextStore } from '../../app/stores/context';
+import { choicesToRoles } from './roles';
+
+export type MemberView = components['schemas']['MemberView'];
+export type InvitationView = components['schemas']['InvitationView'];
+export type AdminOrgView = components['schemas']['AdminOrgView'];
+
+/** The wire shape of a role: `examCode` is omitted, never null, for roles that apply to every exam. */
+export const toWire = (keys: readonly string[]) =>
+  choicesToRoles(keys).map((r) => (r.examCode ? { role: r.role, examCode: r.examCode } : { role: r.role }));
+
+/** Every organisation (SYS_ADMIN). Context-keyed like everything the server answers per context. */
+export function useAllOrganizations() {
+  const api = useApi();
+  const ctx = useContextStore((s) => s.orgId);
+  const parts = ['org', 'all'] as const;
+  return useQuery({
+    queryKey: ctxKey(ctx, ...parts),
+    queryFn: async () => (await api.GET('/api/admin/organizations')).data as AdminOrgView[],
+  });
+}
+
+export function useMembers(orgId: string) {
+  const api = useApi();
+  const ctx = useContextStore((s) => s.orgId);
+  const parts = ['org', orgId, 'members'] as const;
+  return useQuery({
+    queryKey: ctxKey(ctx, ...parts),
+    retry: false,
+    queryFn: async () => (await api.GET('/api/orgs/{id}/role-grants', { params: { path: { id: orgId } } })).data!.members,
+  });
+}
+
+export function useSetRoles(orgId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const ctx = useContextStore((s) => s.orgId);
+  const parts = ['org', orgId, 'members'] as const;
+  return useMutation({
+    mutationFn: async (v: { userId: string; keys: string[] }) =>
+      (await api.PUT('/api/orgs/{id}/role-grants', { params: { path: { id: orgId } }, body: { userId: v.userId, roles: toWire(v.keys) } })).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ctxKey(ctx, ...parts) }),
+  });
+}
+
+/** Invitations of an organisation, or of English9x staff when `orgId` is null. */
+export function useInvitations(orgId: string | null) {
+  const api = useApi();
+  const ctx = useContextStore((s) => s.orgId);
+  const parts = ['org', orgId ?? 'staff', 'invitations'] as const;
+  return useQuery({
+    queryKey: ctxKey(ctx, ...parts),
+    queryFn: async () =>
+      orgId
+        ? ((await api.GET('/api/orgs/{id}/invitations', { params: { path: { id: orgId } } })).data as InvitationView[])
+        : ((await api.GET('/api/admin/invitations')).data as InvitationView[]),
+  });
+}
+
+export function useInvite(orgId: string | null) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const ctx = useContextStore((s) => s.orgId);
+  const parts = ['org', orgId ?? 'staff', 'invitations'] as const;
+  return useMutation({
+    mutationFn: async (v: { email: string; keys: string[] }) => {
+      const body = { email: v.email, roles: toWire(v.keys) };
+      return orgId
+        ? (await api.POST('/api/orgs/{id}/invitations', { params: { path: { id: orgId } }, body })).data
+        : (await api.POST('/api/admin/invitations', { body })).data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ctxKey(ctx, ...parts) }),
+  });
+}
+
+export function useRevokeInvitation(orgId: string | null) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const ctx = useContextStore((s) => s.orgId);
+  const parts = ['org', orgId ?? 'staff', 'invitations'] as const;
+  return useMutation({
+    mutationFn: async (invitationId: string) =>
+      orgId
+        ? api.DELETE('/api/orgs/{id}/invitations/{invitationId}', { params: { path: { id: orgId, invitationId } } })
+        : api.DELETE('/api/admin/invitations/{invitationId}', { params: { path: { invitationId } } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ctxKey(ctx, ...parts) }),
+  });
+}
+
+export function useCreateOrganization() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const ctx = useContextStore((s) => s.orgId);
+  const parts = ['org', 'all'] as const;
+  return useMutation({
+    mutationFn: async (body: { name: string; type: 'CENTER' | 'ENTERPRISE' }) => (await api.POST('/api/admin/organizations', { body })).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ctxKey(ctx, ...parts) }),
+  });
+}

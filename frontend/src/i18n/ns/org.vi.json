@@ -1,0 +1,129 @@
+{
+  "nav": {
+    "organizations": "Tổ chức",
+    "staff": "Tài khoản nội bộ",
+    "members": "Thành viên"
+  },
+  "roles": {
+    "LEARNER": "Học viên",
+    "AUTHOR": "Biên soạn",
+    "REVIEWER": "Người duyệt",
+    "TEACHER": "Giáo viên",
+    "ORG_ADMIN": "Quản trị tổ chức",
+    "SYS_ADMIN": "Quản trị hệ thống"
+  },
+  "roleWithExam": "{{role}} · {{exam}}",
+  "types": {
+    "CENTER": "Trung tâm",
+    "ENTERPRISE": "Doanh nghiệp"
+  },
+  "status": {
+    "PENDING": "Đang chờ",
+    "ACCEPTED": "Đã chấp nhận",
+    "REVOKED": "Đã thu hồi",
+    "EXPIRED": "Hết hạn"
+  },
+  "fields": {
+    "email": "Email",
+    "orgName": "Tên tổ chức",
+    "orgType": "Loại tổ chức"
+  },
+  "validation": {
+    "required": "Vui lòng nhập thông tin này.",
+    "email": "Địa chỉ email chưa hợp lệ.",
+    "roleRequired": "Hãy chọn ít nhất một vai trò.",
+    "orgName": "Vui lòng nhập tên tổ chức.",
+    "nameLong": "Tên quá dài (tối đa 120 ký tự).",
+    "orgType": "Hãy chọn loại tổ chức."
+  },
+  "problem": {
+    "generic": "Có lỗi xảy ra. Vui lòng thử lại.",
+    "network": "Không kết nối được máy chủ. Vui lòng thử lại.",
+    "roleNotAllowed": "Tổ chức doanh nghiệp không có biên soạn, người duyệt hoặc giáo viên.",
+    "tooManyInvitations": "Bạn đã gửi quá nhiều lời mời. Hãy thử lại sau.",
+    "lastOrgAdmin": "Tổ chức phải còn ít nhất một quản trị viên.",
+    "Email": "Địa chỉ email chưa hợp lệ.",
+    "NotBlank": "Vui lòng nhập thông tin này.",
+    "Size": "Giá trị quá dài.",
+    "NotNull": "Vui lòng nhập thông tin này.",
+    "NotEmpty": "Hãy chọn ít nhất một vai trò."
+  },
+  "invite": {
+    "title": "Mời bằng email",
+    "description": "Người được mời nhận một liên kết dùng một lần. Họ phải đăng nhập bằng đúng địa chỉ email này để chấp nhận.",
+    "legend": "Vai trò",
+    "submit": "Gửi lời mời",
+    "sent": "Đã gửi lời mời tới {{email}}."
+  },
+  "invitations": {
+    "title": "Lời mời",
+    "empty": "Chưa có lời mời nào.",
+    "email": "Email",
+    "roles": "Vai trò",
+    "status": "Trạng thái",
+    "expires": "Hết hạn",
+    "revoke": "Thu hồi",
+    "revokeOf": "Thu hồi lời mời gửi {{email}}",
+    "revoked": "Đã thu hồi lời mời."
+  },
+  "members": {
+    "title": "Thành viên và vai trò",
+    "caption": "Thành viên của tổ chức",
+    "member": "Thành viên",
+    "roles": "Vai trò",
+    "actions": "Thao tác",
+    "noRoles": "Chưa có vai trò",
+    "edit": "Sửa vai trò",
+    "editOf": "Sửa vai trò của {{name}}",
+    "editTitle": "Sửa vai trò",
+    "editDescription": "Chọn các vai trò của {{name}} trong tổ chức này. Người này phải là thành viên; muốn thêm người mới, hãy mời bằng email.",
+    "save": "Lưu",
+    "cancel": "Huỷ",
+    "saved": "Đã lưu vai trò.",
+    "loading": "Đang tải thành viên…",
+    "retry": "Thử lại",
+    "loadFailed": "Không tải được danh sách thành viên."
+  },
+  "orgs": {
+    "title": "Tổ chức",
+    "create": {
+      "title": "Tạo tổ chức",
+      "submit": "Tạo tổ chức",
+      "created": "Đã tạo tổ chức {{name}}."
+    },
+    "empty": "Chưa có tổ chức nào.",
+    "caption": "Các tổ chức",
+    "name": "Tên",
+    "type": "Loại",
+    "createdAt": "Ngày tạo",
+    "loadFailed": "Không tải được danh sách tổ chức.",
+    "open": "Mở {{name}}"
+  },
+  "detail": {
+    "back": "Tất cả tổ chức",
+    "invite": "Mời quản trị hoặc thành viên"
+  },
+  "staff": {
+    "title": "Tài khoản nội bộ",
+    "description": "Mời biên soạn, người duyệt, giáo viên của English9x theo từng kỳ thi, hoặc quản trị hệ thống."
+  },
+  "orgPage": {
+    "title": "Thành viên của {{name}}",
+    "type": "Loại tổ chức: {{type}}"
+  },
+  "accept": {
+    "title": "Lời mời tham gia English9x",
+    "visitor": "Hãy đăng nhập hoặc tạo tài khoản bằng đúng địa chỉ email nhận được lời mời, rồi quay lại trang này để chấp nhận.",
+    "signedIn": "Bạn đang đăng nhập là {{email}}. Chấp nhận để nhận các vai trò trong lời mời gửi tới địa chỉ này.",
+    "login": "Đăng nhập",
+    "register": "Tạo tài khoản",
+    "submit": "Chấp nhận lời mời",
+    "doneTitle": "Đã tham gia",
+    "doneBody": "Vai trò trong lời mời đã được thêm vào tài khoản của bạn.",
+    "home": "Về trang chủ",
+    "invalid": "Lời mời không hợp lệ, đã được dùng, đã bị thu hồi hoặc đã hết hạn.",
+    "noToken": "Lời mời không hợp lệ: liên kết thiếu mã.",
+    "mismatch": "Lời mời này gửi cho một địa chỉ email khác. Hãy đăng xuất rồi đăng nhập bằng đúng địa chỉ trong thư mời.",
+    "unverified": "Hãy xác thực email của bạn (xem thư xác thực đã gửi khi đăng ký) rồi quay lại liên kết này."
+  }
+}

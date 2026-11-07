@@ -56,3 +56,24 @@ describe('RequireRole', () => {
     expect(screen.getByText('riêng')).toBeInTheDocument();
   });
 });
+
+describe('RequireRole while the roles load', () => {
+  it('shows a loading note, not "no access", for a signed-in person whose roles have not arrived yet', async () => {
+    const { useAuthStore } = await import('../stores/auth');
+    useAuthStore.setState({ status: 'authenticated', user: { id: 'u', email: 'a@x.test', displayName: null, emailVerified: true, locale: 'vi' } });
+    ui();
+    expect(screen.queryByText(secret)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Bạn chưa có quyền xem trang này' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Đang tải');
+    useAuthStore.setState({ status: 'anonymous', user: null });
+  });
+
+  it('still says "no access" to a signed-in person once the roles are known and do not match', async () => {
+    const { useAuthStore } = await import('../stores/auth');
+    useAuthStore.setState({ status: 'authenticated', user: { id: 'u', email: 'a@x.test', displayName: null, emailVerified: true, locale: 'vi' } });
+    useRoleStore.setState({ grants: [{ role: 'LEARNER', org: null, exam: null }] });
+    ui();
+    expect(screen.getByRole('heading', { name: 'Bạn chưa có quyền xem trang này' })).toBeInTheDocument();
+    useAuthStore.setState({ status: 'anonymous', user: null });
+  });
+});
