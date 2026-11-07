@@ -72,6 +72,23 @@
         "required" : [ "email" ],
         "type" : "object"
       },
+      "EventPrefs" : {
+        "properties" : {
+          "audience" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "boolean"
+          },
+          "telegram" : {
+            "type" : "boolean"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "GrantView" : {
         "properties" : {
           "examCode" : {
@@ -145,6 +162,29 @@
         "required" : [ "email", "roles" ],
         "type" : "object"
       },
+      "Item" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "read" : {
+            "type" : "boolean"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "JsonNode" : { },
       "LoginRequest" : {
         "properties" : {
           "email" : {
@@ -286,10 +326,59 @@
         "required" : [ "id", "name", "type" ],
         "type" : "object"
       },
+      "Page" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Item"
+            },
+            "type" : "array"
+          },
+          "unread" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "Pong" : {
         "properties" : {
           "status" : {
             "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PrefRequest" : {
+        "properties" : {
+          "channel" : {
+            "minLength" : 1,
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "eventType" : {
+            "minLength" : 1,
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel", "enabled", "eventType" ],
+        "type" : "object"
+      },
+      "Prefs" : {
+        "properties" : {
+          "channels" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "events" : {
+            "items" : {
+              "$ref" : "#/components/schemas/EventPrefs"
+            },
+            "type" : "array"
           }
         },
         "type" : "object"
@@ -447,6 +536,29 @@
         "required" : [ "roles", "userId" ],
         "type" : "object"
       },
+      "TelegramLink" : {
+        "properties" : {
+          "deepLink" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "TelegramStatus" : {
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "linked" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
       "TokenPair" : {
         "properties" : {
           "accessToken" : {
@@ -477,6 +589,15 @@
           }
         },
         "required" : [ "token" ],
+        "type" : "object"
+      },
+      "UnreadCount" : {
+        "properties" : {
+          "count" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
         "type" : "object"
       }
     }
@@ -1116,6 +1237,264 @@
         "tags" : [ "org-controller" ]
       }
     },
+    "/api/me/notification-prefs" : {
+      "get" : {
+        "operationId" : "prefs",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Prefs"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      },
+      "put" : {
+        "operationId" : "setPref",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PrefRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/me/notifications" : {
+      "get" : {
+        "operationId" : "list_3",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "offset",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Page"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/me/notifications/read-all" : {
+      "post" : {
+        "operationId" : "markAllRead",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/me/notifications/unread-count" : {
+      "get" : {
+        "operationId" : "unread",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UnreadCount"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/me/notifications/{id}/read" : {
+      "post" : {
+        "operationId" : "markRead",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/me/telegram" : {
+      "delete" : {
+        "operationId" : "unlink",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      },
+      "get" : {
+        "operationId" : "telegram",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TelegramStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/me/telegram/link" : {
+      "post" : {
+        "operationId" : "link",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TelegramLink"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "notification-controller" ]
+      }
+    },
     "/api/orgs/{id}/invitations" : {
       "get" : {
         "operationId" : "list_1",
@@ -1347,6 +1726,52 @@
           }
         },
         "tags" : [ "platform-controller" ]
+      }
+    },
+    "/api/telegram/webhook" : {
+      "post" : {
+        "operationId" : "receive",
+        "parameters" : [ {
+          "in" : "header",
+          "name" : "X-Telegram-Bot-Api-Secret-Token",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "string"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "additionalProperties" : { },
+                  "type" : "object"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "telegram-webhook-controller" ]
       }
     }
   }

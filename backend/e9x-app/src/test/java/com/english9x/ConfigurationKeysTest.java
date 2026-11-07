@@ -49,11 +49,24 @@ class ConfigurationKeysTest {
             {"e9x.org.invitation-ttl", "7d"},
             {"e9x.org.invitation-hourly-limit", "50"},
             {"e9x.workflow.max-bundle-size", "2000"},
+            {"e9x.events.redelivery-after", "2m"},
+            {"e9x.notification.telegram.api-base", "${E9X_TELEGRAM_API_BASE:https://api.telegram.org}"},
+            {"e9x.notification.telegram.link-ttl", "15m"},
         };
         for (String[] kv : expected) {
             Object actual = p.getProperty(kv[0]);
             assertEquals(kv[1], String.valueOf(actual), "default of " + kv[0]);
         }
+    }
+
+    @Test
+    void telegramSecretsHaveNoDefaultAndTheBotIsOffUntilConfigured() throws Exception {
+        PropertySource<?> p = load();
+        assertEquals("${E9X_TELEGRAM_BOT_TOKEN:}", String.valueOf(p.getProperty("e9x.notification.telegram.bot-token")), "the bot token has no default value");
+        assertEquals("${E9X_TELEGRAM_WEBHOOK_SECRET:}", String.valueOf(p.getProperty("e9x.notification.telegram.webhook-secret")),
+                "an empty secret makes the webhook refuse every call");
+        assertEquals("${E9X_TELEGRAM_BOT_USERNAME:}", String.valueOf(p.getProperty("e9x.notification.telegram.bot-username")));
+        assertEquals("delete", String.valueOf(p.getProperty("spring.modulith.events.completion-mode")), "completed event publications do not linger");
     }
 
     @Test

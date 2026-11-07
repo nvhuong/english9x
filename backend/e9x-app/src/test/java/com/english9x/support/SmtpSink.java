@@ -23,7 +23,12 @@ import java.util.regex.Pattern;
 /** A minimal SMTP server that keeps what it receives, so tests exercise the real mail path (JavaMail over a socket). */
 public final class SmtpSink implements AutoCloseable {
 
-    public record Mail(String to, String subject, String body) {
+    /** {@code body} is the plain-text part; {@code html} is the text/html part of a multipart mail, or null when there is none. */
+    public record Mail(String to, String subject, String body, String html) {
+        public Mail(String to, String subject, String body) {
+            this(to, subject, body, null);
+        }
+
         /** The first http(s) link in the body. */
         public String link() {
             Matcher m = Pattern.compile("https?://[^\\s\"'<>)]+").matcher(body);
@@ -194,12 +199,27 @@ public final class SmtpSink implements AutoCloseable {
         try {
             MimeMessage msg = new MimeMessage(Session.getInstance(new Properties()),
                     new ByteArrayInputStream(raw.getBytes(StandardCharsets.ISO_8859_1)));
-            String body = String.valueOf(msg.getContent());
+            String[] parts = new String[2]; // plain, html
+            collect(msg, parts);
+            String body = parts[0] != null ? parts[0] : String.valueOf(msg.getContent());
             for (String r : recipients) {
-                mails.add(new Mail(r, msg.getSubject(), body));
+                mails.add(new Mail(r, msg.getSubject(), body, parts[1]));
             }
         } catch (Exception e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    private static void collect(jakarta.mail.Part part, String[] out) throws Exception {
+        if (part.isMimeType("multipart/*")) {
+            jakarta.mail.Multipart mp = (jakarta.mail.Multipart) part.getContent();
+            for (int i = 0; i < mp.getCount(); i++) {
+                collect(mp.getBodyPart(i), out);
+            }
+        } else if (part.isMimeType("text/plain") && out[0] == null) {
+            out[0] = String.valueOf(part.getContent());
+        } else if (part.isMimeType("text/html") && out[1] == null) {
+            out[1] = String.valueOf(part.getContent());
         }
     }
 

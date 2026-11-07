@@ -15,10 +15,24 @@ spring:
     port: ${E9X_SMTP_PORT:587}
     username: ${E9X_SMTP_USER:}
     password: ${E9X_SMTP_PASSWORD:}
+    properties:
+      # a mail server that stops answering must not hold a worker thread (or a request) for ever
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 15000
+      mail.smtp.writetimeout: 15000
   flyway:
     # Migrations run as the table owner e9x_owner, never as the runtime login. No default password either.
     user: ${E9X_FLYWAY_USER:e9x_owner}
     password: ${E9X_FLYWAY_PASSWORD}
+  modulith:
+    events:
+      # spec §6: module events are persisted in the publisher's transaction (event_publication, Flyway-owned) and delivered at
+      # least once; consumers are idempotent. A completed publication is deleted, so events with ids/addresses do not linger.
+      completion-mode: delete
+      republish-outstanding-events-on-restart: true
+      jdbc:
+        schema-initialization:
+          enabled: false
   jpa:
     open-in-view: false
     hibernate:
@@ -54,6 +68,8 @@ e9x:
   security:
     # Content-Security-Policy of the SPA and API (same origin only). Tasks that load media from elsewhere extend it here.
     csp: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+  events:
+    redelivery-after: 2m             # a module event whose listener has not completed is resubmitted once it is this old (and at start-up)
   jobs:
     poll-interval: 2s
     workers: 2                       # general threads, each claims any job type
@@ -134,6 +150,15 @@ e9x:
     idle-timeout: 2m
   notification:
     session-reminder: 1h
+    mail-from: ${E9X_MAIL_FROM:English9x <no-reply@english9x.vn>}
+    telegram:
+      # The bot is off until bot-token is set (no default). webhook-secret is the value Telegram echoes in
+      # X-Telegram-Bot-Api-Secret-Token (set it with setWebhook secret_token); the webhook refuses every call without it.
+      api-base: ${E9X_TELEGRAM_API_BASE:https://api.telegram.org}
+      bot-token: ${E9X_TELEGRAM_BOT_TOKEN:}
+      bot-username: ${E9X_TELEGRAM_BOT_USERNAME:}
+      webhook-secret: ${E9X_TELEGRAM_WEBHOOK_SECRET:}
+      link-ttl: 15m                # how long the one-time /start token of a link stays valid
   backup:
     retention: 14
   gemini:
