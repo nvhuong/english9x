@@ -4,6 +4,9 @@ import { refreshSession } from '../features/auth/session';
 import { createApiClient } from './generated/client';
 import { problemFromResponse } from './problem';
 
+/** Internal marker: the request is sent without X-Org-Context, and the marker itself never leaves the browser. */
+const NO_CONTEXT_HEADER = 'x-e9x-no-context';
+
 /**
  * The generated OpenAPI client plus:
  *  - `Authorization: Bearer <token>` from the auth store (filled by P1.4), omitted when signed out;
@@ -23,7 +26,10 @@ export function createAuthedClient(baseUrl = '') {
       const token = useAuthStore.getState().accessToken;
       const orgId = useContextStore.getState().orgId;
       if (token) request.headers.set('Authorization', `Bearer ${token}`);
-      if (orgId) request.headers.set('X-Org-Context', orgId);
+      // GET /api/me/context asks who the person is and where they belong: it must never carry a context that may be stale.
+      const skipContext = request.headers.has(NO_CONTEXT_HEADER);
+      request.headers.delete(NO_CONTEXT_HEADER);
+      if (orgId && !skipContext) request.headers.set('X-Org-Context', orgId);
       if (token) copies.set(request, request.clone());
       return request;
     },

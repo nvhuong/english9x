@@ -1,9 +1,12 @@
 import { AREAS, type Area } from './areas';
+import type { Role } from './stores/roles';
 import type { AreaRouteDef, NavMeta } from './routeTypes';
 
 export type RouteModules = Record<string, { default: AreaRouteDef[] }>;
 export interface NavItem extends NavMeta {
   to: string;
+  /** The route's own guard: the menu hides the entry from people who would only see "no access" (convenience, not security). */
+  role?: Role | readonly Role[];
 }
 
 /**
@@ -32,6 +35,6 @@ export function groupByArea(modules: RouteModules): Record<Area, AreaRouteDef[]>
 export function navOf(base: string, routes: AreaRouteDef[]): NavItem[] {
   return routes
     .filter((r) => r.nav)
-    .map((r) => ({ ...r.nav!, to: `${base.replace(/\/$/, '')}/${r.path ?? ''}`.replace(/\/$/, '') || '/' }))
+    .map((r) => ({ ...r.nav!, ...(r.role ? { role: r.role } : {}), to: `${base.replace(/\/$/, '')}/${r.path ?? ''}`.replace(/\/$/, '') || '/' }))
     .sort((a, b) => (a.order ?? 100) - (b.order ?? 100));
 }

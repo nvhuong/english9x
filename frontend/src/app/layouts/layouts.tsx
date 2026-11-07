@@ -7,6 +7,8 @@ import { AppHeader, SkipLink } from '../components/AppHeader';
 import { VerifyEmailBanner } from '../../features/auth/VerifyEmailBanner';
 import { RequireRole } from '../guards/RequireRole';
 import { useAreaNav } from '../nav';
+import { useContextStore } from '../stores/context';
+import { hasRole, useRoleStore } from '../stores/roles';
 
 /** Area-level guard around the page outlet (the chrome stays visible so the user can navigate away). */
 function Guarded({ area }: { area: Area }) {
@@ -22,7 +24,10 @@ function Guarded({ area }: { area: Area }) {
 
 function NavItems({ area, vertical }: { area: Area; vertical?: boolean }) {
   const { t } = useTranslation();
-  const items = useAreaNav(area);
+  const all = useAreaNav(area);
+  const grants = useRoleStore((s) => s.grants);
+  const orgId = useContextStore((s) => s.orgId);
+  const items = all.filter((it) => !it.role || hasRole(grants, orgId, it.role));
   if (items.length === 0) return null;
   return (
     <nav aria-label={t('app.areaNav')} className={cn('flex gap-1', vertical ? 'flex-col' : 'flex-wrap')}>

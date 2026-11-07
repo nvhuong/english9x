@@ -55,8 +55,7 @@ class RlsLeakSweepDetectsLeakIT {
                 Map.of("/api/sweep/classes/{classId}/members/{userId}",
                         List.of(Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userB))), (template, path) -> {
             HttpHeaders h = new HttpHeaders();
-            h.add("X-Test-User", FIXTURES.userA.toString());
-            h.add("X-Test-Org", FIXTURES.orgA.toString());
+            h.add("X-Org-Context", FIXTURES.orgA.toString());
             h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA));
             return http.exchange(path, HttpMethod.GET, new HttpEntity<>(h), String.class).getStatusCode().value();
         });

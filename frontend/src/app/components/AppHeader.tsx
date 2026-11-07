@@ -4,6 +4,7 @@ import { cn } from '../../design';
 import { AREAS, AREA_PATH, AREA_ROLES, type Area } from '../areas';
 import { AuthMenu } from '../../features/auth/AuthMenu';
 import { useContextStore } from '../stores/context';
+import { ContextSwitcher } from '../ContextSwitcher';
 import { hasRole, useRoleStore } from '../stores/roles';
 import { LanguageSwitch } from './LanguageSwitch';
 import { ThemeSwitch } from './ThemeSwitch';
@@ -22,17 +23,6 @@ function useVisibleAreas(): Area[] {
   const grants = useRoleStore((s) => s.grants);
   const orgId = useContextStore((s) => s.orgId);
   return AREAS.filter((a) => a !== 'exam' && (AREA_ROLES[a] === undefined || hasRole(grants, orgId, AREA_ROLES[a]!)));
-}
-
-/** Read-only for now: P1.5 replaces this with the ContextSwitcher (personal / organisation). */
-function ContextLabel() {
-  const { t } = useTranslation();
-  const orgId = useContextStore((s) => s.orgId);
-  return (
-    <p className="text-sm text-muted">
-      <span className="font-semibold text-ink">{t('context.label')}:</span> {orgId ?? t('context.personal')}
-    </p>
-  );
 }
 
 export function AppHeader({ area, dense }: { area: Area; dense?: boolean }) {
@@ -58,7 +48,7 @@ export function AppHeader({ area, dense }: { area: Area; dense?: boolean }) {
           ))}
         </nav>
         <div className="ml-auto flex flex-wrap items-center gap-3">
-          <ContextLabel />
+          <ContextSwitcher />
           <LanguageSwitch />
           <ThemeSwitch />
           <AuthMenu />

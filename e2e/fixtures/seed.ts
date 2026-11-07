@@ -59,7 +59,33 @@ export const seed = {
   publishedIeltsTest: (_opts: { variant: 'AC' | 'GT' }): Promise<SeededTest> =>
     notImplemented('seed.publishedIeltsTest', 'P2.6 (test assembly) and P3.3 (exam backend)'),
 
-  /** A centre with teachers and learners. Needs org (P1.5) and classroom modules. */
+  /**
+   * An organisation, created as the table owner (no SYS_ADMIN session needed to set the scene). To test the real creation
+   * flow drive the admin screen instead (F05).
+   */
+  organization: (opts: { name?: string; type?: 'CENTER' | 'ENTERPRISE' } = {}) =>
+    post<{ orgId: string; name: string; type: string }>('organization', opts),
+
+  /** Makes a person a member of an organisation with the given roles (the membership row first, like every real path). */
+  member: (opts: { orgId: string; userId: string; roles?: Array<{ role: string; examCode?: string | null }> }) =>
+    post<{ status: string }>('membership', { ...opts, roles: (opts.roles ?? []).map((r) => ({ role: r.role, examCode: r.examCode ?? null })) }),
+
+  /** An English9x-level role (no organisation): AUTHOR / REVIEWER / TEACHER of an exam, or SYS_ADMIN. */
+  staffGrant: (opts: { userId: string; role: string; examCode?: string | null }) =>
+    post<{ status: string }>('staff-grant', { ...opts, examCode: opts.examCode ?? null }),
+
+  /** What the server's own Authz (used by the CMS and every module) answers for "role R, optionally for exam X" for that person in that context. */
+  authz: (opts: { userId: string; orgId?: string | null; role: string; examCode?: string | null }) =>
+    post<{ allowed: boolean; canReviewOwnVersion: boolean }>('authz', { orgId: null, examCode: null, ...opts }),
+
+  /** A verified person who holds SYS_ADMIN, who can sign in through the real login screen. The operator's script does this in production. */
+  sysAdmin: async (opts: { email?: string; password?: string; displayName?: string } = {}): Promise<SeededLearner> => {
+    const learner = await seed.verifiedLearner({ displayName: 'Quản trị hệ thống', ...opts });
+    await seed.staffGrant({ userId: learner.userId, role: 'SYS_ADMIN' });
+    return learner;
+  },
+
+  /** A centre with teachers and learners (classes, members). Needs the classroom module. */
   center: (_opts: { teachers: number; learners: number }): Promise<SeededCenter> =>
-    notImplemented('seed.center', 'P1.5 (org), then P6.1 (members)'),
+    notImplemented('seed.center', 'P6.1 (members and classes); organisations themselves exist since P1.5 (seed.organization, seed.member)'),
 };

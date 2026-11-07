@@ -46,8 +46,22 @@ export function applyFieldErrors<T extends FieldValues>(
   return placed;
 }
 
-/** A post-login destination from `?next=`: same-site paths only (no scheme, no `//host`). */
+/**
+ * A same-site path: no scheme, no `//host`. Control characters are refused as well, because a browser drops a tab or a
+ * newline from a URL and `/<tab>/host` would become `//host`.
+ */
+export function isSafePath(path: string): boolean {
+  // eslint-disable-next-line no-control-regex
+  return /^\/(?![/\\])/.test(path) && !/[\u0000-\u001f\u007f]/.test(path);
+}
+
+/** A post-login destination from `?next=`, or `/`. */
 export function safeNext(search: string): string {
   const next = new URLSearchParams(search).get('next');
-  return next && /^\/(?![/\\])/.test(next) ? next : '/';
+  return next && isSafePath(next) ? next : '/';
+}
+
+/** `?next=...` to carry a destination on to the next page, or nothing when there is none worth carrying. */
+export function nextQuery(next: string): string {
+  return next === '/' ? '' : `?next=${encodeURIComponent(next)}`;
 }

@@ -5,7 +5,6 @@ import { env, json, request } from '../helpers/env';
 import { NotImplementedError } from '../fixtures/notImplemented';
 import { paidOrder } from '../fixtures/billing';
 import { publishedQuestion } from '../fixtures/content';
-import { switchContext } from '../fixtures/org';
 import { test, expect } from '../fixtures';
 
 const generate = (model = 'gemini-2.5-flash') =>
@@ -150,13 +149,12 @@ test.describe('seed API and not-yet-built fixtures', () => {
     expect(await seed.requireVerified(pending.userId)).toBe(403);
   });
 
-  test('seed functions of unbuilt modules throw a clear error instead of faking data', async ({ seed, page }) => {
+  test('seed functions of unbuilt modules throw a clear error instead of faking data', async ({ seed }) => {
     const calls: Array<[string, () => unknown, RegExp]> = [
       ['seed.learnerWithPlan', () => seed.learnerWithPlan({ courses: ['ielts-ac'] }), /seed\.learnerWithPlan is not implemented until P5\.1/],
       ['seed.publishedToeicTest', () => seed.publishedToeicTest(), /not implemented until P2\.6/],
       ['seed.publishedIeltsTest', () => seed.publishedIeltsTest({ variant: 'AC' }), /not implemented until P2\.6/],
-      ['seed.center', () => seed.center({ teachers: 1, learners: 2 }), /not implemented until P1\.5/],
-      ['org.switchContext', () => switchContext(page, null), /not implemented until P1\.5/],
+      ['seed.center', () => seed.center({ teachers: 1, learners: 2 }), /not implemented until P6\.1/],
       ['content.publishedQuestion', () => publishedQuestion('mcq'), /not implemented until P2\.3/],
       ['billing.paidOrder', () => paidOrder('x', 'y'), /not implemented until P5\.2/],
     ];

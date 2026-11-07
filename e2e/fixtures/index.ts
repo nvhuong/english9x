@@ -3,6 +3,7 @@ import { acquireGeminiLock, gemini as geminiHelper } from '../helpers/gemini';
 import { mailpit } from '../helpers/mailpit';
 import { telegram } from '../helpers/telegram';
 import { loginAs, registerLearner } from './auth';
+import { acceptInvitation, api, apiLogin, switchContext } from './org';
 import { seed } from './seed';
 
 /**
@@ -13,6 +14,8 @@ import { seed } from './seed';
  *    that asks for it (cross-process lock) and resets the fake (scenario 'ok', no recorded requests) before and after.
  *  - seed: test-data factory (POST /api/test/seed/*, with the shared secret header).
  *  - auth: loginAs(page, user) and registerLearner(page, user) drive the real sign-in / sign-up screens.
+ *  - org: switchContext(page, orgName|null) drives the header switcher; acceptInvitation(page, link, person) follows a mailed
+ *    invitation through the real screens; apiLogin / api make HTTP calls as a signed-in person (assertions next to UI steps).
  */
 export const test = base.extend<{
   uniqueEmail: (label?: string) => string;
@@ -21,12 +24,14 @@ export const test = base.extend<{
   gemini: typeof geminiHelper;
   seed: typeof seed;
   auth: { loginAs: typeof loginAs; registerLearner: typeof registerLearner };
+  org: { switchContext: typeof switchContext; acceptInvitation: typeof acceptInvitation; apiLogin: typeof apiLogin; api: typeof api };
 }>({
   uniqueEmail: async ({}, use) => { await use((label) => mailpit.uniqueEmail(label)); },
   mailpit: async ({}, use) => { await use(mailpit); },
   telegram: async ({}, use) => { await use(telegram); },
   seed: async ({}, use) => { await use(seed); },
   auth: async ({}, use) => { await use({ loginAs, registerLearner }); },
+  org: async ({}, use) => { await use({ switchContext, acceptInvitation, apiLogin, api }); },
   gemini: async ({}, use) => {
     const release = await acquireGeminiLock();
     try {

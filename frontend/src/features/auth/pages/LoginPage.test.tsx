@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../app/stores/auth';
 import { resetI18n } from '../../../i18n';
 import { json, me, problem, renderAt, resetAuth, stubApi, tokens } from '../testUtils';
 import { refreshStorage } from '../session';
+import { peekReturn, rememberReturn } from '../returnTo';
 import LoginPage from './LoginPage';
 
 vi.mock('../../../api/useApi', async (orig) => {
@@ -117,5 +118,45 @@ describe('LoginPage', () => {
     renderAt('/login', '/login', <LoginPage />);
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Forgot your password?' })).toBeInTheDocument();
+  });
+
+  describe('the way back', () => {
+    const NEXT = '/accept-invitation?token=abc';
+    beforeEach(() => localStorage.clear());
+    const routes = { ...{ 'GET /api/auth/config': () => json(200, { googleEnabled: true }) }, 'POST /api/auth/login': () => json(200, tokens(1)), 'GET /api/auth/me': () => json(200, me()) };
+
+    async function signIn() {
+      const u = userEvent.setup();
+      await u.type(screen.getByLabelText(/Email/), 'an@example.test');
+      await u.type(screen.getByLabelText(/Mật khẩu/), 'Correct-horse-1');
+      await u.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+    }
+
+    it('a plain sign-in returns to what was remembered, once', async () => {
+      stubApi(routes);
+      rememberReturn(NEXT);
+      renderAt('/login', '/login', <LoginPage />);
+      await signIn();
+      await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(NEXT));
+      expect(peekReturn()).toBeNull();
+    });
+
+    it('?next= wins and the remembered one is spent with it', async () => {
+      stubApi(routes);
+      rememberReturn('/somewhere-else');
+      renderAt(`/login?next=${encodeURIComponent(NEXT)}`, '/login', <LoginPage />);
+      await signIn();
+      await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(NEXT));
+      expect(peekReturn()).toBeNull();
+    });
+
+    it('the Google button remembers ?next= before leaving for Google', async () => {
+      stubApi(routes);
+      renderAt(`/login?next=${encodeURIComponent(NEXT)}`, '/login', <LoginPage />);
+      const link = await screen.findByRole('link', { name: 'Đăng nhập bằng Google' });
+      link.addEventListener('click', (e) => e.preventDefault()); // jsdom cannot navigate
+      await userEvent.click(link);
+      expect(peekReturn()).toBe(NEXT);
+    });
   });
 });

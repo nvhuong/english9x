@@ -8,7 +8,8 @@ import { useApi } from '../../../api/useApi';
 import { useAuthStore } from '../../../app/stores/auth';
 import { Button, Input } from '../../../design';
 import { AuthCard, FormAlert, FormNotice } from '../components';
-import { problemMessage } from '../problems';
+import { nextQuery, problemMessage } from '../problems';
+import { forgetReturn, peekReturn } from '../returnTo';
 import { resendSchema, type ResendValues } from '../schemas';
 import { reloadUser } from '../session';
 
@@ -57,11 +58,16 @@ export default function VerifyEmailPage() {
     );
   }
   if (state === 'ok') {
+    const back = peekReturn(); // for instance the invitation this person registered from, in another tab
     return (
       <AuthCard title={t('verify.successTitle')}>
         <FormNotice>{t('verify.successBody')}</FormNotice>
         <Button asChild>
-          <Link to={status === 'authenticated' ? '/' : '/login'}>{status === 'authenticated' ? t('verify.continue') : t('verify.login')}</Link>
+          {status === 'authenticated' ? (
+            <Link to={back ?? '/'} onClick={forgetReturn}>{t('verify.continue')}</Link>
+          ) : (
+            <Link to={`/login${nextQuery(back ?? '/')}`}>{t('verify.login')}</Link>
+          )}
         </Button>
       </AuthCard>
     );

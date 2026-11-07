@@ -1,0 +1,131 @@
+{
+  "nav": {
+    "organizations": "Organizations",
+    "staff": "Internal accounts",
+    "members": "Members"
+  },
+  "roles": {
+    "LEARNER": "Learner",
+    "AUTHOR": "Author",
+    "REVIEWER": "Reviewer",
+    "TEACHER": "Teacher",
+    "ORG_ADMIN": "Organization admin",
+    "SYS_ADMIN": "System admin"
+  },
+  "roleWithExam": "{{role}} · {{exam}}",
+  "types": {
+    "CENTER": "Center",
+    "ENTERPRISE": "Enterprise"
+  },
+  "status": {
+    "PENDING": "Pending",
+    "ACCEPTED": "Accepted",
+    "REVOKED": "Revoked",
+    "EXPIRED": "Expired",
+    "VOIDED": "Void"
+  },
+  "fields": {
+    "email": "Email",
+    "orgName": "Organization name",
+    "orgType": "Organization type"
+  },
+  "validation": {
+    "required": "Please fill in this field.",
+    "email": "This email address is not valid.",
+    "roleRequired": "Choose at least one role.",
+    "orgName": "Please enter the organization name.",
+    "nameLong": "Name too long (120 characters at most).",
+    "orgType": "Choose the organization type."
+  },
+  "problem": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Cannot reach the server. Please try again.",
+    "roleNotAllowed": "An enterprise has no authors, reviewers or teachers.",
+    "tooManyInvitations": "You sent too many invitations. Try again later.",
+    "lastOrgAdmin": "An organization must keep at least one admin.",
+    "Email": "This email address is not valid.",
+    "NotBlank": "Please fill in this field.",
+    "Size": "Value too long.",
+    "NotNull": "Please fill in this field.",
+    "NotEmpty": "Choose at least one role."
+  },
+  "invite": {
+    "title": "Invite by email",
+    "description": "The invitee gets a single-use link. They must sign in with this exact email address to accept.",
+    "legend": "Roles",
+    "submit": "Send invitation",
+    "sent": "Invitation sent to {{email}}."
+  },
+  "invitations": {
+    "title": "Invitations",
+    "empty": "No invitations yet.",
+    "email": "Email",
+    "roles": "Roles",
+    "status": "Status",
+    "expires": "Expires",
+    "revoke": "Revoke",
+    "revokeOf": "Revoke the invitation sent to {{email}}",
+    "revoked": "Invitation revoked.",
+    "loading": "Loading invitations…"
+  },
+  "members": {
+    "title": "Members and roles",
+    "caption": "Members of the organization",
+    "member": "Member",
+    "roles": "Roles",
+    "actions": "Actions",
+    "noRoles": "No roles yet",
+    "edit": "Edit roles",
+    "editOf": "Edit roles of {{name}}",
+    "editTitle": "Edit roles",
+    "editDescription": "Choose the roles of {{name}} in this organization. The person must already be a member; to add someone new, invite them by email.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Roles saved.",
+    "loading": "Loading members…",
+    "retry": "Try again",
+    "loadFailed": "Could not load the members."
+  },
+  "orgs": {
+    "title": "Organizations",
+    "create": {
+      "title": "Create an organization",
+      "submit": "Create organization",
+      "created": "Organization {{name}} created."
+    },
+    "empty": "No organizations yet.",
+    "caption": "Organizations",
+    "name": "Name",
+    "type": "Type",
+    "createdAt": "Created",
+    "loadFailed": "Could not load the organizations.",
+    "open": "Open {{name}}"
+  },
+  "detail": {
+    "back": "All organizations",
+    "invite": "Invite an admin or a member"
+  },
+  "staff": {
+    "title": "Internal accounts",
+    "description": "Invite English9x authors, reviewers and teachers per exam, or system admins."
+  },
+  "orgPage": {
+    "title": "Members of {{name}}",
+    "type": "Organization type: {{type}}"
+  },
+  "accept": {
+    "title": "Invitation to join English9x",
+    "visitor": "Sign in or create an account with the exact email address that received the invitation, then come back to this page to accept.",
+    "signedIn": "You are signed in as {{email}}. Accept to receive the roles in the invitation sent to this address.",
+    "login": "Sign in",
+    "register": "Create an account",
+    "submit": "Accept invitation",
+    "doneTitle": "You have joined",
+    "doneBody": "The roles in the invitation were added to your account.",
+    "home": "Back to home",
+    "invalid": "The invitation is not valid, was already used, was revoked or has expired.",
+    "noToken": "The invitation is not valid: the link has no code.",
+    "mismatch": "This invitation was sent to a different email address. Sign out, then sign in with the address in the invitation.",
+    "unverified": "Verify your email first (see the verification mail sent when you registered), then come back to this link."
+  }
+}

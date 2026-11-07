@@ -7,6 +7,8 @@
 // !! annotation. Tracking: docs/superpowers/plans/2026-11-06-english9x-p1-foundation.md, task P1.12 note, referenced
 // !! from the W10 completion criteria. Do not delete the pending list to make it look done.
 //
+// Scanned today, signed in (P1.5): the admin area (empty state), organisations, one organisation's members + invitations, staff
+// invitations, and the organisation admin's members page in its context. Both languages, light and dark.
 // Scanned today (reachable without signing in): learner home, display preferences, exam area (empty state), the
 // access-denied screen as shown for /cms, /org and /admin, the not-found screen, and (P1.4) the sign-in family: login,
 // register, forgot password, reset password (with a token), the verify-email failure screen, and the two steps of a Google
@@ -34,6 +36,8 @@ const SCREENS: Screen[] = [
   { name: 'forgot password', path: '/forgot-password', heading: { vi: /^Quên mật khẩu$/, en: /^Forgot your password$/ } },
   { name: 'reset password', path: '/reset-password?token=axe-scan-token', heading: { vi: /^Đặt mật khẩu mới$/, en: /^Choose a new password$/ } },
   { name: 'verify email (broken link)', path: '/verify-email', heading: { vi: /^Không xác thực được$/, en: /^Could not verify$/ } },
+  // P1.5: the invitation page as a visitor sees it (the signed-in organisation screens are scanned in their own test below)
+  { name: 'accept invitation (visitor)', path: '/accept-invitation?token=axe-scan-token', heading: { vi: /^Lời mời tham gia English9x$/, en: /^Invitation to join English9x$/ } },
 ];
 
 // The 8 main screens of the design mockups (docs/superpowers/design/mockups/01..08) and the task that builds each.
@@ -99,6 +103,44 @@ for (const lang of ['vi', 'en'] as const) {
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(GOOGLE_STEP_HEADINGS.replace[lang]);
       await expect(page.locator('html')).toHaveAttribute('lang', lang);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await scan(page);
+    });
+  }
+}
+
+for (const lang of ['vi', 'en'] as const) {
+  for (const theme of THEMES) {
+    test(`F58 axe: signed-in admin and organisation screens in ${lang}, ${theme} mode`, async ({ page, auth, seed, uniqueEmail }) => {
+      const orgName = `Trung tâm Axe ${Date.now().toString(36)}`;
+      const admin = await seed.sysAdmin({ email: uniqueEmail('f58-sys') });
+      const center = await seed.organization({ name: orgName, type: 'CENTER' });
+      await seed.member({ orgId: center.orgId, userId: admin.userId, roles: [{ role: 'ORG_ADMIN' }] });
+      const learner = await seed.verifiedLearner({ email: uniqueEmail('f58-member'), displayName: 'Học viên Axe' });
+      await seed.member({ orgId: center.orgId, userId: learner.userId, roles: [{ role: 'LEARNER' }] });
+      await auth.loginAs(page, admin);
+      await page.evaluate((v) => {
+        localStorage.setItem('e9x.theme', v.theme);
+        localStorage.setItem('e9x.lang', v.lang);
+      }, { theme, lang });
+      const screens: Array<[string, string, RegExp]> = [
+        ['admin home', '/admin', lang === 'vi' ? /^Chưa có mục quản trị nào$/ : /^No admin tools yet$/],
+        ['organisations', '/admin/organizations', lang === 'vi' ? /^Tổ chức$/ : /^Organizations$/],
+        ['one organisation', `/admin/organizations/${center.orgId}`, lang === 'vi' ? new RegExp(`^Thành viên của ${orgName}$`) : new RegExp(`^Members of ${orgName}$`)],
+        ['staff invitations', '/admin/staff', lang === 'vi' ? /^Tài khoản nội bộ$/ : /^Internal accounts$/],
+      ];
+      for (const [name, path, heading] of screens) {
+        await page.goto(path);
+        await expect(page.getByRole('heading', { level: 1 }), name).toHaveText(heading);
+        await expect(page.locator('html')).toHaveAttribute('lang', lang);
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect(page.getByText(/Đang tải|Loading/)).toHaveCount(0);
+        await scan(page);
+      }
+      // the organisation admin's own page, in its context (the switcher restores the remembered choice)
+      await page.evaluate(([userId, orgId]) => localStorage.setItem('e9x.context', JSON.stringify({ userId, orgId })), [admin.userId, center.orgId]);
+      await page.goto('/org/members');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(lang === 'vi' ? new RegExp(`^Thành viên của ${orgName}$`) : new RegExp(`^Members of ${orgName}$`));
+      await expect(page.getByRole('row', { name: /Học viên Axe/ })).toBeVisible();
       await scan(page);
     });
   }

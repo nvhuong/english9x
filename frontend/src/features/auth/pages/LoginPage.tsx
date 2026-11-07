@@ -10,6 +10,7 @@ import { publicKey } from '../../../app/stores/context';
 import { Button, Input } from '../../../design';
 import { AuthCard, FormAlert } from '../components';
 import { applyFieldErrors, problemMessage, safeNext } from '../problems';
+import { forgetReturn, rememberReturn, takeReturn } from '../returnTo';
 import { loginSchema, type LoginValues } from '../schemas';
 import { startSession } from '../session';
 
@@ -39,7 +40,12 @@ export default function LoginPage() {
     mutationFn: async (values: LoginValues) => (await api.POST('/api/auth/login', { body: values })).data!,
     onSuccess: async (tokens) => {
       const user = await startSession(tokens);
-      if (user) void navigate(next, { replace: true });
+      if (user) {
+        // ?next= says where this sign-in was asked for; otherwise whatever a detour through the mailbox left behind
+        const target = next === '/' ? takeReturn() : next;
+        forgetReturn();
+        void navigate(target, { replace: true });
+      }
       else setFormError(t('problem.generic'));
     },
     onError: (err) => {
@@ -103,7 +109,7 @@ export default function LoginPage() {
           <p className="text-center text-sm text-muted">{t('common.or')}</p>
           {/* a full-page navigation: the server redirects to Google and back; no script handles any token */}
           <Button asChild variant="secondary">
-            <a href={googleHref}>{t('login.google')}</a>
+            <a href={googleHref} onClick={() => rememberReturn(next)}>{t('login.google')}</a>
           </Button>
         </div>
       )}

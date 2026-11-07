@@ -1,5 +1,6 @@
 package com.english9x.platform.security;
 
+import com.english9x.org.api.OrgMembershipCheck;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
@@ -52,7 +53,7 @@ class SecurityConfiguration {
     @Bean
     @Order(100)
     SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, JwtDecoder jwtDecoder, ProblemSecurityHandlers problems,
-            Environment env, @Value("${e9x.security.csp}") String csp) throws Exception {
+            Environment env, OrgMembershipCheck membership, @Value("${e9x.security.csp}") String csp) throws Exception {
         RequestMatcher seedApi = new AntPathRequestMatcher("/api/test/seed/**");
         boolean e2e = env.acceptsProfiles(Profiles.of("e2e"));
         http
@@ -75,7 +76,7 @@ class SecurityConfiguration {
                         .jwt(j -> j.decoder(jwtDecoder))
                         .authenticationEntryPoint(problems)
                         .accessDeniedHandler(problems))
-                .addFilterAfter(new CurrentContextFilter(problems), BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(new CurrentContextFilter(problems, membership), BearerTokenAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> {
                     a.requestMatchers(HttpMethod.POST, PUBLIC_POST).permitAll();
                     a.requestMatchers(HttpMethod.GET, PUBLIC_GET).permitAll();

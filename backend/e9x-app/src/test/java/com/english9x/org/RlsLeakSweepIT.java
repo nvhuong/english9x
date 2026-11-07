@@ -44,10 +44,16 @@ class RlsLeakSweepIT {
     /** Tables with an id that carry no tenant data to sweep, each with its reason. None yet. */
     static final Map<String, String> EXEMPT_TABLES = Map.of();
 
-    /** Typed fixtures for templates with several path parameters: every slot filled with a foreign id of its kind. */
+    /**
+     * Typed fixtures for templates with several path parameters, each slot filled with an id of its kind. All three mixes of
+     * "mine" and "foreign" are tried: both foreign, my own parent with a foreign child (an endpoint that authorises the
+     * parent and trusts the child id), and a foreign parent with my own child.
+     */
     static Map<String, List<Map<String, UUID>>> typedFixtures() {
-        return Map.of("/api/sweep/classes/{classId}/members/{userId}",
-                List.of(Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userB)));
+        return Map.of("/api/sweep/classes/{classId}/members/{userId}", List.of(
+                Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userB),
+                Map.of("classId", FIXTURES.classA, "userId", FIXTURES.userB),
+                Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userA)));
     }
 
     @DynamicPropertySource
@@ -65,9 +71,9 @@ class RlsLeakSweepIT {
 
     private int getAsOrgA(String path) {
         HttpHeaders h = new HttpHeaders();
-        h.add("X-Test-User", FIXTURES.userA.toString());
-        h.add("X-Test-Org", FIXTURES.orgA.toString());
-        h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA)); // the sweep goes through real authentication
+        // the real request path: a signed token for A's member and the real X-Org-Context header (no test filter)
+        h.add("X-Org-Context", FIXTURES.orgA.toString());
+        h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA));
         return http.exchange(path, HttpMethod.GET, new HttpEntity<>(h), String.class).getStatusCode().value();
     }
 
@@ -82,6 +88,8 @@ class RlsLeakSweepIT {
         assertEquals(200, getAsOrgA("/api/sweep/classes/" + FIXTURES.classA), "positive control");
         String openApi = http.getForObject("/v3/api-docs", String.class);
         assertEquals(200, getAsOrgA("/api/sweep/classes/" + FIXTURES.classA + "/members/" + FIXTURES.userA), "positive control, two parameters");
+        assertEquals(200, getAsOrgA("/api/orgs/" + FIXTURES.orgA + "/role-grants"), "positive control: A's admin lists A's members");
+        assertEquals(200, getAsOrgA("/api/orgs/" + FIXTURES.orgA + "/invitations"), "positive control: A's admin lists A's invitations");
         SweepFixtures.Catalog catalog = FIXTURES.foreignIds(EXEMPT_TABLES);
         assertEquals(List.of(), catalog.problems(), "every table with an id must have a foreign row or a reason");
         List<UUID> foreign = catalog.ids();
@@ -91,6 +99,8 @@ class RlsLeakSweepIT {
 
         assertTrue(r.visited().contains("/api/sweep/classes/{id}"), "the sweep must reach the test endpoint, visited " + r.visited());
         assertTrue(r.visited().contains("/api/sweep/classes/{classId}/members/{userId}"), "multi-parameter endpoint swept: " + r.visited());
+        assertTrue(r.visited().containsAll(List.of("/api/orgs/{id}/role-grants", "/api/orgs/{id}/invitations")),
+                "the org endpoints of P1.5 are swept through the real X-Org-Context binding: " + r.visited());
         assertFalse(r.visited().isEmpty(), "a sweep that visits nothing proves nothing");
         assertEquals(List.of(), r.unsweepable());
         assertEquals(List.of(), r.leaks());
