@@ -30,7 +30,7 @@ class AuthServiceTest {
     private AuthService service() {
         AuthProperties props = new AuthProperties("0123456789abcdef0123456789abcdef", "english9x", Duration.ofMinutes(15),
                 Duration.ofDays(30), Duration.ofSeconds(10), "10/15m", "3/1h", "5/1h", "20/1h", Duration.ofHours(24),
-                Duration.ofHours(1), Duration.ofSeconds(60), 4, 8, List.of(), "x <x@x.test>", null);
+                Duration.ofHours(1), Duration.ofSeconds(60), Duration.ofMinutes(15), 4, 8, List.of(), "x <x@x.test>", null);
         return new AuthService(repo, hasher, mock(AccessTokens.class), props, clock, mock(AuthMailer.class),
                 mock(ApplicationEventPublisher.class), mock(PlatformTransactionManager.class), new OneTimeCodes(clock, props));
     }
@@ -74,7 +74,7 @@ class AuthServiceTest {
         when(tm.getTransaction(any())).thenReturn(mock(org.springframework.transaction.TransactionStatus.class));
         AuthProperties props = new AuthProperties("0123456789abcdef0123456789abcdef", "english9x", Duration.ofMinutes(15),
                 Duration.ofDays(30), Duration.ofSeconds(10), "10/15m", "3/1h", "5/1h", "20/1h", Duration.ofHours(24),
-                Duration.ofHours(1), Duration.ofSeconds(60), 4, 8, List.of(), "x <x@x.test>", null);
+                Duration.ofHours(1), Duration.ofSeconds(60), Duration.ofMinutes(15), 4, 8, List.of(), "x <x@x.test>", null);
         AuthService s = new AuthService(repo, hasher, mock(AccessTokens.class), props, clock, mock(AuthMailer.class),
                 mock(ApplicationEventPublisher.class), tm, new OneTimeCodes(clock, props));
         s.register(new AuthDtos.RegisterRequest("dup@example.test", "Some-pass-123", "Dup", true, "vi"), "1.1.1.1");

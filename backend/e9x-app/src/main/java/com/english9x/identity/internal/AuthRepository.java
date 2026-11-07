@@ -32,8 +32,11 @@ class AuthRepository {
 
     record OAuthResult(OAuthOutcome outcome, UUID userId, String displayName, String locale, long credentialsVersion) {}
 
-    /** ISSUED: a refresh token was stored. STALE: the credentials changed since they were verified (nothing stored). */
-    enum IssueOutcome { ISSUED, STALE }
+    /**
+     * ISSUED: a refresh token was stored. STALE: the credentials changed since they were verified. CONSENT_REQUIRED: the
+     * user has no consent on record. Nothing is stored in the last two.
+     */
+    enum IssueOutcome { ISSUED, STALE, CONSENT_REQUIRED }
 
     private final JdbcTemplate jdbc;
 
@@ -95,6 +98,10 @@ class AuthRepository {
                         rs.getBytes("r_stored_hash")),
                 oldHash, newHash, ts(newExpires), ts(now), grace.toMillis() + " milliseconds");
         return rows.isEmpty() ? new Rotation(RotateOutcome.INVALID, null, null, null) : rows.get(0);
+    }
+
+    void recordConsent(UUID userId, Instant now) {
+        jdbc.queryForList("select auth_consent_record(?,?)", userId, ts(now));
     }
 
     void revokeFamily(byte[] hash, Instant now) {

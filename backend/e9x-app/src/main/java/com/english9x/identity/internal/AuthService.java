@@ -132,7 +132,13 @@ class AuthService {
         loginLimiter.reset(key);
         // The version read before bcrypt goes along: a password change while bcrypt ran is refused here. Same answer as a
         // wrong password, which is what it now is.
-        return issueTokens(row.get().userId(), row.get().credentialsVersion()).orElseThrow(AuthProblems::invalidCredentials);
+        Issued issued = issueTokens(row.get().userId(), row.get().credentialsVersion());
+        return switch (issued.outcome()) {
+            case ISSUED -> issued.tokens();
+            case STALE -> throw AuthProblems.invalidCredentials();
+            // only a Google account that has not agreed yet, and got a password by mail: the Google sign-in asks
+            case CONSENT_REQUIRED -> throw AuthProblems.consentRequired();
+        };
     }
 
     TokenPair refresh(String refreshToken) {
@@ -162,16 +168,18 @@ class AuthService {
         }
     }
 
-    /** A new token family, or empty when the credentials changed since {@code credentialsVersion} was read. */
-    private Optional<TokenPair> issueTokens(UUID userId, long credentialsVersion) {
+    private record Issued(AuthRepository.IssueOutcome outcome, TokenPair tokens) {}
+
+    /** A new token family, when the database agrees: see {@link AuthRepository.IssueOutcome}. */
+    private Issued issueTokens(UUID userId, long credentialsVersion) {
         Instant now = clock.instant();
         String refresh = TokenCodec.newToken();
         AuthRepository.IssueOutcome outcome = repo.issueRefresh(userId, UUID.randomUUID(), TokenCodec.hash(refresh),
                 now.plus(props.refreshTokenTtl()), now, credentialsVersion);
         if (outcome != AuthRepository.IssueOutcome.ISSUED) {
-            return Optional.empty();
+            return new Issued(outcome, null);
         }
-        return Optional.of(new TokenPair(accessTokens.issue(userId), refresh, props.accessTokenTtl().toSeconds(), "Bearer"));
+        return new Issued(outcome, new TokenPair(accessTokens.issue(userId), refresh, props.accessTokenTtl().toSeconds(), "Bearer"));
     }
 
     // ---- password reset ----------------------------------------------------------------------------------------------------
@@ -209,17 +217,40 @@ class AuthService {
             if (res.outcome() == AuthRepository.OAuthOutcome.CREATED) {
                 events.publishEvent(new UserRegistered(res.userId(), normalise(email), now));
             }
+            if (res.outcome() == AuthRepository.OAuthOutcome.LINKED || res.outcome() == AuthRepository.OAuthOutcome.LINKED_NEUTRALISED) {
+                afterCommit(() -> mailer.sendGoogleLinked(normalise(email), res.displayName(), res.locale()));
+            }
             return res;
         });
     }
 
-    String issueLoginCode(UUID userId, long credentialsVersion) {
+    OneTimeCodes.Issued issueLoginCode(UUID userId, long credentialsVersion) {
         return codes.issue(userId, credentialsVersion);
     }
 
-    TokenPair exchangeLoginCode(String code) {
-        OneTimeCodes.Redeemed who = codes.redeem(code).orElseThrow(AuthProblems::invalidLoginCode);
-        return issueTokens(who.userId(), who.credentialsVersion()).orElseThrow(AuthProblems::invalidLoginCode);
+    /** @param browserKey the value of the browser-binding cookie (null when the browser has none) */
+    TokenPair exchangeLoginCode(String code, String browserKey) {
+        OneTimeCodes.Redeemed who = codes.redeem(code, browserKey).orElseThrow(AuthProblems::invalidLoginCode);
+        Issued issued = issueTokens(who.userId(), who.credentialsVersion());
+        return switch (issued.outcome()) {
+            case ISSUED -> issued.tokens();
+            case STALE -> throw AuthProblems.invalidLoginCode();
+            case CONSENT_REQUIRED -> {
+                codes.holdForConsent(code, browserKey, who); // the same code answers the consent step
+                throw AuthProblems.consentRequired();
+            }
+        };
+    }
+
+    /** The answer to the consent step: the person ticked the box (validated by the caller) in the browser holding the code. */
+    TokenPair consentAndExchange(String code, String browserKey) {
+        OneTimeCodes.Redeemed who = codes.redeem(code, browserKey).orElseThrow(AuthProblems::invalidLoginCode);
+        repo.recordConsent(who.userId(), clock.instant());
+        Issued issued = issueTokens(who.userId(), who.credentialsVersion());
+        if (issued.outcome() != AuthRepository.IssueOutcome.ISSUED) {
+            throw AuthProblems.invalidLoginCode();
+        }
+        return issued.tokens();
     }
 
     // ---- helpers ---------------------------------------------------------------------------------------------------------------

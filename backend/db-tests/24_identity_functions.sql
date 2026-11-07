@@ -16,7 +16,7 @@ BEGIN
     ASSERT has_function_privilege('e9x_app', f.oid, 'EXECUTE'), f.proname || ' executable by e9x_app';
     ASSERT NOT has_function_privilege('outsider', f.oid, 'EXECUTE'), f.proname || ' must not be executable by others';
   END LOOP;
-  ASSERT n = 12, 'expected 12 auth functions, found ' || n;
+  ASSERT n = 13, 'expected 13 auth functions, found ' || n;
 END $$;
 
 -- create_user: new, duplicate (case-insensitive), locale fallback
@@ -131,14 +131,23 @@ BEGIN
 
   SELECT * INTO r FROM auth_oauth_login('google','sub-x','newbie@example.com', true, 'Newbie', 'en', t0);
   ASSERT r.r_outcome = 'CREATED' AND r.r_user_id IS NOT NULL;
+  -- nobody agreed to anything: no token until the consent step (auth_consent_record)
+  ASSERT auth_refresh_issue(r.r_user_id, gen_random_uuid(), '\x7000', t0 + interval '30 days', t0, r.r_credentials_version) = 'CONSENT_REQUIRED';
+  ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x7000', '\x7001', t0 + interval '30 days', t0, interval '10 seconds')) = 'INVALID', 'and nothing was stored';
+  PERFORM auth_consent_record(r.r_user_id, t0);
+  ASSERT auth_refresh_issue(r.r_user_id, gen_random_uuid(), '\x7002', t0 + interval '30 days', t0, r.r_credentials_version) = 'ISSUED';
   ASSERT (SELECT r_email_verified FROM auth_login_lookup('newbie@example.com')) AND (SELECT r_password_hash FROM auth_login_lookup('newbie@example.com')) IS NULL;
   u := r.r_user_id;
   SELECT * INTO r FROM auth_oauth_login('google','sub-x','changed@example.com', true, 'Newbie', 'en', t0);
   ASSERT r.r_outcome = 'EXISTING' AND r.r_user_id = u, 'second login reuses the account (even if the email changed)';
 
-  -- verified local account with the same address: linked, password kept
+  -- verified local account with the same address: linked, password kept, its sessions ended (see the function's comment)
+  PERFORM auth_refresh_issue((SELECT r_user_id FROM auth_login_lookup('carol@example.com')), gen_random_uuid(), '\x7100', t0 + interval '30 days', t0, 1);
   SELECT * INTO r FROM auth_oauth_login('google','sub-c','carol@example.com', true, 'Carol', 'vi', t0);
   ASSERT r.r_outcome = 'LINKED';
+  ASSERT (SELECT r_password_hash FROM auth_login_lookup('carol@example.com')) = 'hash-c', 'password kept';
+  ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x7100', '\x7101', t0 + interval '30 days', t0, interval '10 seconds')) = 'INVALID', 'sessions ended';
+  ASSERT auth_refresh_issue(r.r_user_id, gen_random_uuid(), '\x7102', t0 + interval '30 days', t0, r.r_credentials_version) = 'ISSUED', 'consent on record: no new step';
   -- IdP does not assert the email: an existing account is NOT linked (no takeover)
   SELECT * INTO r FROM auth_oauth_login('google','sub-evil','carol@example.com', false, 'Mallory', 'vi', t0);
   ASSERT r.r_outcome = 'EMAIL_NOT_VERIFIED';
@@ -151,6 +160,9 @@ BEGIN
   PERFORM auth_email_verification_issue(u, '\x5002', t0 + interval '1 day', t0);
   SELECT * INTO r FROM auth_oauth_login('google','sub-victim','victim@example.com', true, 'Victim', 'vi', t0);
   ASSERT r.r_outcome = 'LINKED_NEUTRALISED' AND r.r_user_id = u;
+  ASSERT r.r_display_name = 'Victim', 'the name the attacker chose is gone';
+  ASSERT auth_refresh_issue(u, gen_random_uuid(), '\x5004', t0 + interval '30 days', t0, r.r_credentials_version) = 'CONSENT_REQUIRED', 'and so is their consent';
+  ASSERT auth_refresh_issue(u, gen_random_uuid(), '\x5005', t0 + interval '30 days', t0, 1) = 'STALE', 'a login that verified the old password is refused';
   ASSERT (SELECT r_password_hash FROM auth_login_lookup('victim@example.com')) IS NULL, 'attacker password removed';
   ASSERT (SELECT r_email_verified FROM auth_login_lookup('victim@example.com'));
   ASSERT (SELECT r_outcome FROM auth_refresh_rotate('\x5001', '\x5003', t0 + interval '30 days', t0, interval '10 seconds')) = 'INVALID', 'attacker session revoked';

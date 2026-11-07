@@ -35,14 +35,14 @@
 -- statement of e9x_app harmless. Through them, such a statement CAN: read any user's bcrypt hash by email
 -- (auth_login_lookup, because Java performs bcrypt; verifying inside the database would take pgcrypto and passwords in SQL
 -- text, so it is not done), issue and confirm a password reset for any address, mint refresh tokens for any user whose
--- credentials version it has read, record consent, and pass any p_now. It can NOT: read token digests or raw tokens, read
+-- credentials version it has read, record consent for any user, and pass any p_now. It can NOT: read token digests or raw tokens, read
 -- users.password_hash through the table, create a verified account, create an account without consent or a password hash,
 -- or delete live tokens. Protection against SQL injection is parameterised statements, not this list.
 
 ALTER TABLE users
   ADD COLUMN password_hash text,                      -- bcrypt; NULL for accounts that only use Google
   ADD COLUMN email_verified_at timestamptz,
-  ADD COLUMN consent_at timestamptz,                  -- Decree 13/2023: when the person agreed to data processing
+  ADD COLUMN consent_at timestamptz,                  -- Decree 13/2023: when the person agreed; NULL: no token is issued
   ADD COLUMN locale text NOT NULL DEFAULT 'vi' CHECK (locale IN ('vi','en')),
   ADD COLUMN credentials_version bigint NOT NULL DEFAULT 1; -- bumped whenever existing sign-ins must stop being honoured
 
@@ -236,15 +236,19 @@ END $$;
 
 -- Refresh tokens -----------------------------------------------------------------------------------------------
 -- A new sign-in. p_credentials_version is what the caller verified against: when the credentials changed since (or
--- the user is gone) nothing is issued and the answer is STALE. Otherwise ISSUED.
+-- the user is gone) nothing is issued and the answer is STALE. A user with no consent on record gets CONSENT_REQUIRED and
+-- nothing is issued either. Otherwise ISSUED.
 CREATE FUNCTION auth_refresh_issue(p_user_id uuid, p_family_id uuid, p_token_hash bytea, p_expires timestamptz, p_now timestamptz,
                                    p_credentials_version bigint)
   RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
-DECLARE v_version bigint;
+DECLARE v_version bigint; v_consent timestamptz;
 BEGIN
-  SELECT credentials_version INTO v_version FROM users WHERE id = p_user_id FOR SHARE;
+  SELECT credentials_version, consent_at INTO v_version, v_consent FROM users WHERE id = p_user_id FOR SHARE;
   IF NOT FOUND OR v_version IS DISTINCT FROM p_credentials_version THEN
     RETURN 'STALE';
+  END IF;
+  IF v_consent IS NULL THEN
+    RETURN 'CONSENT_REQUIRED';
   END IF;
   INSERT INTO refresh_tokens (user_id, family_id, token_hash, expires_at, created_at)
   VALUES (p_user_id, p_family_id, p_token_hash, p_expires, p_now);
@@ -252,7 +256,7 @@ BEGIN
 END $$;
 
 -- Rotation. Outcomes:
---   INVALID            unknown, expired or revoked token: nothing changes
+--   INVALID            unknown, expired or revoked token, or a user with no consent on record: nothing changes
 --   ROTATED            first use: the token is marked rotated and a successor is issued in the same family
 --   ROTATED_CONCURRENT the token was already rotated, but less than p_grace ago: two tabs refreshed together. A second
 --                      successor is issued in the same family (both stay valid) and nothing is revoked
@@ -269,7 +273,7 @@ END $$;
 CREATE FUNCTION auth_refresh_rotate(p_old_hash bytea, p_new_hash bytea, p_new_expires timestamptz, p_now timestamptz, p_grace interval)
   RETURNS TABLE (r_outcome text, r_user_id uuid, r_family_id uuid, r_stored_hash bytea)
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
-DECLARE t refresh_tokens%ROWTYPE; v_user uuid; v_exclusive boolean := false;
+DECLARE t refresh_tokens%ROWTYPE; v_user uuid; v_consent timestamptz; v_exclusive boolean := false;
 BEGIN
   SELECT user_id INTO v_user FROM refresh_tokens WHERE token_hash = p_old_hash;
   IF v_user IS NULL THEN
@@ -278,12 +282,12 @@ BEGIN
   LOOP
     BEGIN
       IF v_exclusive THEN
-        PERFORM 1 FROM users WHERE id = v_user FOR UPDATE;
+        SELECT consent_at INTO v_consent FROM users WHERE id = v_user FOR UPDATE;
       ELSE
-        PERFORM 1 FROM users WHERE id = v_user FOR SHARE;
+        SELECT consent_at INTO v_consent FROM users WHERE id = v_user FOR SHARE;
       END IF;
       SELECT * INTO t FROM refresh_tokens WHERE token_hash = p_old_hash FOR UPDATE;
-      IF NOT FOUND OR t.revoked_at IS NOT NULL OR t.expires_at <= p_now THEN
+      IF NOT FOUND OR t.revoked_at IS NOT NULL OR t.expires_at <= p_now OR v_consent IS NULL THEN
         r_outcome := 'INVALID'; RETURN NEXT; RETURN;
       END IF;
       r_user_id := t.user_id; r_family_id := t.family_id; r_stored_hash := t.token_hash;
@@ -325,16 +329,30 @@ BEGIN
 END $$;
 
 -- Google ---------------------------------------------------------------------------------------------------------
--- One atomic step for a sign-in with an external identity. Outcomes:
+-- The answer to the consent step of a Google sign-in. Keeps an earlier consent.
+CREATE FUNCTION auth_consent_record(p_user_id uuid, p_now timestamptz)
+  RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+BEGIN
+  PERFORM 1 FROM users WHERE id = p_user_id FOR UPDATE;
+  UPDATE users SET consent_at = coalesce(consent_at, p_now) WHERE id = p_user_id;
+END $$;
+
+-- One atomic step for a sign-in with an external identity. Nobody has agreed to anything here: consent reaches the server
+-- only through auth_consent_record, and no token is issued before it. Outcomes:
 --   EXISTING             the (provider, subject) is already linked: that account
 --   EMAIL_NOT_VERIFIED   the provider does not assert email_verified: no link, no account, nothing changes
---   LINKED               a verified-email account with the same address gets the identity attached
+--   LINKED               a verified-email account with the same address gets the identity attached. Its sessions end: the
+--                        address may have been verified by a mailbox owner clicking a link in a mail they did not ask for,
+--                        for an account an attacker registered, and that attacker may be signed in. The password stays,
+--                        because nothing here tells that case from a person adding Google to their own account; the
+--                        caller mails the owner, who can replace it. Consent on record stays.
 --   LINKED_NEUTRALISED   same, but the local account's address was NOT verified. Whoever created that account may
 --                        be someone other than the mailbox owner (pre-hijack: an attacker registers the victim's
 --                        address with a password of their choosing, then waits for the victim to sign in with Google).
---                        So the local password is removed, every refresh token revoked and pending tokens retired;
+--                        So what they chose goes: the password, the display name (replaced by the provider's) and their
+--                        consent (the owner gives their own); every refresh token revoked and pending tokens retired;
 --                        the real owner keeps Google and can set a password through the reset mail.
---   CREATED              no account with that address: created verified, without a password
+--   CREATED              no account with that address: created verified, without a password, without consent
 CREATE FUNCTION auth_oauth_login(
   p_provider text, p_subject text, p_email text, p_email_verified boolean, p_display_name text, p_locale text, p_now timestamptz)
   RETURNS TABLE (r_outcome text, r_user_id uuid, r_display_name text, r_locale text, r_credentials_version bigint)
@@ -354,21 +372,24 @@ BEGIN
   SELECT * INTO u FROM users WHERE lower(email) = v_email FOR UPDATE;
   IF FOUND THEN
     IF u.email_verified_at IS NULL THEN
-      UPDATE users SET password_hash = NULL, email_verified_at = p_now, credentials_version = credentials_version + 1
+      UPDATE users SET password_hash = NULL, email_verified_at = p_now, consent_at = NULL,
+                       display_name = nullif(btrim(p_display_name), ''), credentials_version = credentials_version + 1
        WHERE id = u.id RETURNING * INTO u;
       UPDATE password_resets SET used_at = p_now WHERE user_id = u.id AND used_at IS NULL;
       UPDATE email_verifications SET used_at = p_now WHERE user_id = u.id AND used_at IS NULL;
       UPDATE refresh_tokens SET revoked_at = p_now WHERE user_id = u.id AND revoked_at IS NULL;
       r_outcome := 'LINKED_NEUTRALISED';
     ELSE
+      UPDATE users SET credentials_version = credentials_version + 1 WHERE id = u.id RETURNING * INTO u;
+      UPDATE refresh_tokens SET revoked_at = p_now WHERE user_id = u.id AND revoked_at IS NULL;
       r_outcome := 'LINKED';
     END IF;
     INSERT INTO auth_identities (user_id, provider, subject, email, created_at) VALUES (u.id, p_provider, p_subject, v_email, p_now);
     r_user_id := u.id; r_display_name := u.display_name; r_locale := u.locale; r_credentials_version := u.credentials_version;
     RETURN NEXT; RETURN;
   END IF;
-  INSERT INTO users (email, display_name, locale, consent_at, email_verified_at)
-  VALUES (v_email, nullif(btrim(p_display_name), ''), CASE WHEN p_locale IN ('vi','en') THEN p_locale ELSE 'vi' END, p_now, p_now)
+  INSERT INTO users (email, display_name, locale, email_verified_at)
+  VALUES (v_email, nullif(btrim(p_display_name), ''), CASE WHEN p_locale IN ('vi','en') THEN p_locale ELSE 'vi' END, p_now)
   RETURNING * INTO u;
   INSERT INTO auth_identities (user_id, provider, subject, email, created_at) VALUES (u.id, p_provider, p_subject, v_email, p_now);
   r_outcome := 'CREATED'; r_user_id := u.id; r_display_name := u.display_name; r_locale := u.locale;
@@ -402,6 +423,7 @@ REVOKE ALL ON FUNCTION
   auth_refresh_issue(uuid, uuid, bytea, timestamptz, timestamptz, bigint),
   auth_refresh_rotate(bytea, bytea, timestamptz, timestamptz, interval),
   auth_refresh_revoke_family(bytea, timestamptz),
+  auth_consent_record(uuid, timestamptz),
   auth_oauth_login(text, text, text, boolean, text, text, timestamptz),
   auth_purge_expired()
   FROM PUBLIC;
@@ -416,6 +438,7 @@ GRANT EXECUTE ON FUNCTION
   auth_refresh_issue(uuid, uuid, bytea, timestamptz, timestamptz, bigint),
   auth_refresh_rotate(bytea, bytea, timestamptz, timestamptz, interval),
   auth_refresh_revoke_family(bytea, timestamptz),
+  auth_consent_record(uuid, timestamptz),
   auth_oauth_login(text, text, text, boolean, text, text, timestamptz),
   auth_purge_expired()
   TO e9x_app;

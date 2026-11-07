@@ -33,7 +33,7 @@ class JwtSecretRequiredTest {
         IllegalStateException e = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
                 () -> new AuthProperties(null, "english9x", java.time.Duration.ofMinutes(15), java.time.Duration.ofDays(30),
                         java.time.Duration.ofSeconds(10), "10/15m", "3/1h", "5/1h", "20/1h", java.time.Duration.ofHours(24),
-                        java.time.Duration.ofHours(1), java.time.Duration.ofSeconds(60), 4, 8, java.util.List.of(), "x <x@x.test>", null));
+                        java.time.Duration.ofHours(1), java.time.Duration.ofSeconds(60), java.time.Duration.ofMinutes(15), 4, 8, java.util.List.of(), "x <x@x.test>", null));
         assertTrue(e.getMessage().contains("E9X_JWT_SECRET"), e.getMessage());
         runner.withPropertyValues("e9x.auth.jwt-secret=").run(ctx -> {
             assertNotNull(ctx.getStartupFailure(), "the context must fail to start");

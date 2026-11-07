@@ -44,6 +44,11 @@ final class AuthDtos {
     @Schema(name = "OAuthCodeRequest")
     record OAuthCodeRequest(@NotBlank @Size(max = 200) String code) {}
 
+    @Schema(name = "OAuthConsentRequest")
+    record OAuthConsentRequest(
+            @NotBlank @Size(max = 200) String code,
+            @NotNull @AssertTrue(message = "consent to personal data processing is required") Boolean consent) {}
+
     @Schema(name = "TokenPair")
     record TokenPair(
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String accessToken,

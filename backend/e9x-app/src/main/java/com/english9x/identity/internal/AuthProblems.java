@@ -28,6 +28,11 @@ final class AuthProblems {
         return of(HttpStatus.BAD_REQUEST, "invalid-login-code", "Invalid sign-in code", "Start the sign-in again.", null);
     }
 
+    static ErrorResponseException consentRequired() {
+        return of(HttpStatus.FORBIDDEN, "consent-required", "Consent required",
+                "Consent to personal data processing is required before signing in.", null);
+    }
+
     static ErrorResponseException tooManyAttempts(long retryAfterSeconds) {
         HttpHeaders h = new HttpHeaders();
         h.set(HttpHeaders.RETRY_AFTER, Long.toString(retryAfterSeconds));

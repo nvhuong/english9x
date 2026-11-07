@@ -79,7 +79,7 @@ class SeedController {
     @PostMapping("/user-info")
     Map<String, Object> userInfo(@RequestBody EmailRef ref) {
         var rows = db.jdbc().queryForList(
-                "select id::text as id, password_hash is not null as has_password, email_verified_at is not null as verified, "
+                "select id::text as id, password_hash is not null as has_password, email_verified_at is not null as verified, consent_at is not null as has_consent, display_name, "
                         + "(select count(*) from auth_identities i where i.user_id = u.id) as identities "
                         + "from users u where lower(email) = lower(?)", ref.email());
         Map<String, Object> out = new LinkedHashMap<>();
@@ -89,6 +89,8 @@ class SeedController {
             out.put("userId", r.get("id"));
             out.put("hasPassword", r.get("has_password"));
             out.put("emailVerified", r.get("verified"));
+            out.put("hasConsent", r.get("has_consent"));
+            out.put("displayName", r.get("display_name"));
             out.put("identities", ((Number) r.get("identities")).intValue());
         }
         return out;

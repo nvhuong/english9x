@@ -43,7 +43,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
  *       (everything else in the application is stateless); the session is invalidated as soon as the callback ends.
  *   <li>Without {@code e9x.auth.google.client-id} / {@code client-secret} nothing here exists: the route answers 404 and
  *       {@code GET /api/auth/config} says {@code googleEnabled:false}, so the SPA hides the button. Startup is unaffected.
- *   <li>The finished sign-in goes back to the SPA as a one-time code in the redirect (see {@link OneTimeCodes}).
+ *   <li>The finished sign-in goes back to the SPA as a one-time code in the redirect (see {@link OneTimeCodes}), bound to
+ *       this browser by a cookie set on the same response (see {@link LoginBrowserCookie}).
  * </ul>
  */
 @Configuration(proxyBeanMethods = false)
@@ -83,7 +84,7 @@ class GoogleLoginConfiguration {
     @Bean
     @Order(1)
     SecurityFilterChain oauthSecurityFilterChain(HttpSecurity http,
-            org.springframework.beans.factory.ObjectProvider<ClientRegistrationRepository> registrations, AuthService auth,
+            org.springframework.beans.factory.ObjectProvider<ClientRegistrationRepository> registrations, AuthService auth, AuthProperties props,
             @Value("${e9x.public-base-url}") String baseUrl) throws Exception {
         http.securityMatcher("/api/auth/oauth2/**")
                 .csrf(c -> c.disable()) // GET-only redirects; state + the session bind callback to the start
@@ -100,14 +101,14 @@ class GoogleLoginConfiguration {
                     .loginPage("/login")
                     .authorizationEndpoint(a -> a.baseUri("/api/auth/oauth2").authorizationRequestResolver(resolver))
                     .redirectionEndpoint(r -> r.baseUri("/api/auth/oauth2/callback/*"))
-                    .successHandler(successHandler(auth, trim(baseUrl)))
+                    .successHandler(successHandler(auth, trim(baseUrl), props.oauthConsentTtl()))
                     .failureHandler(failureHandler(trim(baseUrl))));
         }
         return http.build();
     }
     }
 
-    private static AuthenticationSuccessHandler successHandler(AuthService auth, String baseUrl) {
+    private static AuthenticationSuccessHandler successHandler(AuthService auth, String baseUrl, java.time.Duration bindingLifetime) {
         return (HttpServletRequest request, HttpServletResponse response, Authentication authentication) -> {
             String target;
             try {
@@ -124,7 +125,9 @@ class GoogleLoginConfiguration {
                         LOG.warn("google sign-in linked an unverified local account {}: its password was removed and its sessions revoked",
                                 result.userId());
                     }
-                    target = baseUrl + "/login/google?code=" + URLEncoder.encode(auth.issueLoginCode(result.userId(), result.credentialsVersion()), StandardCharsets.UTF_8);
+                    OneTimeCodes.Issued issued = auth.issueLoginCode(result.userId(), result.credentialsVersion());
+                    LoginBrowserCookie.set(response, issued.browserKey(), bindingLifetime);
+                    target = baseUrl + "/login/google?code=" + URLEncoder.encode(issued.code(), StandardCharsets.UTF_8);
                 }
             } catch (RuntimeException e) {
                 LOG.warn("google sign-in failed: {}", e.getClass().getSimpleName());

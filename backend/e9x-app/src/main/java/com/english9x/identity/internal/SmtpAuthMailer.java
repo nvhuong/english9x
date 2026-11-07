@@ -74,6 +74,22 @@ class SmtpAuthMailer implements AuthMailer, DisposableBean {
     }
 
     @Override
+    public void sendGoogleLinked(String to, String displayName, String locale) {
+        String forgot = baseUrl + "/forgot-password";
+        if (en(locale)) {
+            enqueue("google-linked", to, "Google sign-in was linked to your English9x account",
+                    greeting(displayName, true) + "Google sign-in is now linked to the English9x account with this email address, and every other "
+                            + "device was signed out.\n\nIf you did not choose a password for this account yourself, someone else may have registered "
+                            + "it with your address. Replace that password here:\n\n" + forgot + "\n");
+        } else {
+            enqueue("google-linked", to, "Đã liên kết đăng nhập Google với tài khoản English9x",
+                    greeting(displayName, false) + "Đăng nhập bằng Google vừa được liên kết với tài khoản English9x của địa chỉ email này, và mọi thiết bị "
+                            + "khác đã được đăng xuất.\n\nNếu không phải bạn tự đặt mật khẩu cho tài khoản này, có thể người khác đã đăng ký bằng email của bạn. "
+                            + "Hãy thay mật khẩu đó tại đây:\n\n" + forgot + "\n");
+        }
+    }
+
+    @Override
     public void sendPasswordReset(String to, String displayName, String locale, String token) {
         String link = baseUrl + "/reset-password?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
         if (en(locale)) {

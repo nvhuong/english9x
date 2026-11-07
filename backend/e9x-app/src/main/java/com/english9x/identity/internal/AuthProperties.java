@@ -11,6 +11,8 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param jwtSecret      HS256 signing key, at least 32 bytes. NO default: the application does not start without it.
  * @param loginRateLimit failed logins allowed per IP + email, "10/15m" (count/window)
  * @param resendRateLimit / resetRateLimit / registerRateLimit requests allowed per IP + email (register: per IP)
+ * @param oauthCodeTtl    how long the Google hand-over code is valid
+ * @param oauthConsentTtl how long it stays valid (from its issue) once the server has asked the person for consent
  * @param trustedProxies CIDRs of reverse proxies whose X-Forwarded-For is believed (empty: the header is ignored)
  */
 @ConfigurationProperties("e9x.auth")
@@ -27,6 +29,7 @@ public record AuthProperties(
         @DefaultValue("24h") Duration verificationTtl,
         @DefaultValue("1h") Duration resetTtl,
         @DefaultValue("60s") Duration oauthCodeTtl,
+        @DefaultValue("15m") Duration oauthConsentTtl,
         @DefaultValue("10") int bcryptCost,
         @DefaultValue("8") int passwordMinLength,
         @DefaultValue({}) List<String> trustedProxies,

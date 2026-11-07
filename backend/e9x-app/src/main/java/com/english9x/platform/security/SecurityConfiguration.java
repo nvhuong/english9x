@@ -30,7 +30,8 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  *   <li>CSRF protection is off, which is acceptable ONLY because nothing authenticates through a cookie: the browser
  *       never sends the token by itself, a forged cross-site request carries no credential. Do not add cookie
  *       authentication without turning CSRF on. (The Google redirect chain uses a short-lived session cookie for the
- *       OAuth {@code state}; it grants no API access.)
+ *       OAuth {@code state}, and the hand-over code is bound to a SameSite=Strict cookie that is worthless without that
+ *       code; neither grants API access.)
  *   <li>CORS is off: the SPA is served from the same origin as the API, so no cross-origin response header is ever sent.
  *   <li>401/403 render as problem+json via {@link ProblemSecurityHandlers}.
  * </ul>
@@ -44,7 +45,7 @@ class SecurityConfiguration {
     static final String[] PUBLIC_POST = {
         "/api/auth/register", "/api/auth/verify-email", "/api/auth/verify-email/resend", "/api/auth/login",
         "/api/auth/refresh", "/api/auth/logout", "/api/auth/password-reset/request", "/api/auth/password-reset/confirm",
-        "/api/auth/oauth/exchange"
+        "/api/auth/oauth/exchange", "/api/auth/oauth/consent"
     };
     static final String[] PUBLIC_GET = {"/api/platform/ping", "/api/auth/config", "/v3/api-docs", "/v3/api-docs/**"};
 

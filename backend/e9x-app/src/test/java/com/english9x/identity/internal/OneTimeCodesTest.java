@@ -15,32 +15,60 @@ class OneTimeCodesTest {
     private OneTimeCodes codes() {
         return new OneTimeCodes(clock, new AuthProperties("0123456789abcdef0123456789abcdef", "english9x", Duration.ofMinutes(15),
                 Duration.ofDays(30), Duration.ofSeconds(10), "10/15m", "3/1h", "5/1h", "20/1h", Duration.ofHours(24),
-                Duration.ofHours(1), Duration.ofSeconds(60), 4, 8, java.util.List.of(), "x <x@x.test>", null));
+                Duration.ofHours(1), Duration.ofSeconds(60), Duration.ofMinutes(15), 4, 8, java.util.List.of(), "x <x@x.test>", null));
     }
 
     @Test
-    void aCodeIsRedeemableOnce() {
+    void aCodeIsRedeemableOnceInItsBrowser() {
         OneTimeCodes c = codes();
         UUID id = UUID.randomUUID();
-        String code = c.issue(id, 7);
-        assertEquals(new OneTimeCodes.Redeemed(id, 7), c.redeem(code).orElseThrow());
-        assertTrue(c.redeem(code).isEmpty(), "second use");
+        OneTimeCodes.Issued i = c.issue(id, 7);
+        OneTimeCodes.Redeemed who = c.redeem(i.code(), i.browserKey()).orElseThrow();
+        assertEquals(id, who.userId());
+        assertEquals(7, who.credentialsVersion());
+        assertTrue(c.redeem(i.code(), i.browserKey()).isEmpty(), "second use");
+    }
+
+    @Test
+    void anotherBrowserGetsNothingAndBurnsNothing() {
+        OneTimeCodes c = codes();
+        OneTimeCodes.Issued mine = c.issue(UUID.randomUUID(), 1);
+        OneTimeCodes.Issued theirs = c.issue(UUID.randomUUID(), 1);
+        assertTrue(c.redeem(mine.code(), theirs.browserKey()).isEmpty());
+        assertTrue(c.redeem(mine.code(), null).isEmpty());
+        assertTrue(c.redeem(mine.code(), "x").isEmpty());
+        assertTrue(c.redeem(mine.code(), mine.browserKey()).isPresent(), "the rightful browser still can");
     }
 
     @Test
     void aCodeExpiresAfterItsTtl() {
         OneTimeCodes c = codes();
-        String code = c.issue(UUID.randomUUID(), 1);
+        OneTimeCodes.Issued i = c.issue(UUID.randomUUID(), 1);
         clock.advance(Duration.ofSeconds(61));
-        assertTrue(c.redeem(code).isEmpty());
+        assertTrue(c.redeem(i.code(), i.browserKey()).isEmpty());
+    }
+
+    @Test
+    void aCodeHeldForConsentOutlivesItsTtlButNotTheConsentWindowEvenIfHeldAgain() {
+        OneTimeCodes c = codes();
+        OneTimeCodes.Issued i = c.issue(UUID.randomUUID(), 1);
+        OneTimeCodes.Redeemed who = c.redeem(i.code(), i.browserKey()).orElseThrow();
+        c.holdForConsent(i.code(), i.browserKey(), who);
+        clock.advance(Duration.ofMinutes(14));
+        who = c.redeem(i.code(), i.browserKey()).orElseThrow();
+        c.holdForConsent(i.code(), i.browserKey(), who); // asked again: the window is counted from the issue
+        clock.advance(Duration.ofMinutes(2));
+        assertTrue(c.redeem(i.code(), i.browserKey()).isEmpty());
+        c.holdForConsent(i.code(), i.browserKey(), who); // past the window: not even put back
+        assertTrue(c.redeem(i.code(), i.browserKey()).isEmpty());
     }
 
     @Test
     void guessesAndGarbageFail() {
         OneTimeCodes c = codes();
-        c.issue(UUID.randomUUID(), 1);
-        assertTrue(c.redeem("A".repeat(43)).isEmpty());
-        assertTrue(c.redeem("x").isEmpty());
-        assertTrue(c.redeem(null).isEmpty());
+        OneTimeCodes.Issued i = c.issue(UUID.randomUUID(), 1);
+        assertTrue(c.redeem("A".repeat(43), i.browserKey()).isEmpty());
+        assertTrue(c.redeem("x", i.browserKey()).isEmpty());
+        assertTrue(c.redeem(null, i.browserKey()).isEmpty());
     }
 }

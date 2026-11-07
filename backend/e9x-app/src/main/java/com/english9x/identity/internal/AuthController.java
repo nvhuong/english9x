@@ -6,6 +6,7 @@ import com.english9x.identity.internal.AuthDtos.EmailRequest;
 import com.english9x.identity.internal.AuthDtos.LoginRequest;
 import com.english9x.identity.internal.AuthDtos.Me;
 import com.english9x.identity.internal.AuthDtos.OAuthCodeRequest;
+import com.english9x.identity.internal.AuthDtos.OAuthConsentRequest;
 import com.english9x.identity.internal.AuthDtos.RefreshRequest;
 import com.english9x.identity.internal.AuthDtos.RegisterRequest;
 import com.english9x.identity.internal.AuthDtos.RegisterResponse;
@@ -13,6 +14,7 @@ import com.english9x.identity.internal.AuthDtos.ResetConfirmRequest;
 import com.english9x.identity.internal.AuthDtos.TokenPair;
 import com.english9x.identity.internal.AuthDtos.TokenRequest;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -94,10 +96,24 @@ class AuthController {
         auth.confirmPasswordReset(body);
     }
 
-    /** Redeems the one-time code that the Google callback put in the SPA redirect. */
+    /**
+     * Redeems the one-time code that the Google callback put in the SPA redirect, in the browser that finished the sign-in
+     * (see {@link LoginBrowserCookie}). 403 {@code urn:e9x:problem:consent-required}: the person has no consent on record;
+     * ask, then answer through {@code /oauth/consent} with the same code.
+     */
     @PostMapping("/oauth/exchange")
-    TokenPair exchange(@Valid @RequestBody OAuthCodeRequest body) {
-        return auth.exchangeLoginCode(body.code());
+    TokenPair exchange(@Valid @RequestBody OAuthCodeRequest body, HttpServletRequest request, HttpServletResponse response) {
+        TokenPair tokens = auth.exchangeLoginCode(body.code(), LoginBrowserCookie.read(request));
+        LoginBrowserCookie.clear(response);
+        return tokens;
+    }
+
+    /** Records the consent of a Google sign-in (the box must be ticked) and only then issues the tokens. */
+    @PostMapping("/oauth/consent")
+    TokenPair consent(@Valid @RequestBody OAuthConsentRequest body, HttpServletRequest request, HttpServletResponse response) {
+        TokenPair tokens = auth.consentAndExchange(body.code(), LoginBrowserCookie.read(request));
+        LoginBrowserCookie.clear(response);
+        return tokens;
     }
 
     /** The signed-in user (authenticated). */

@@ -107,6 +107,7 @@ e9x:
     verification-ttl: 24h
     reset-ttl: 1h
     oauth-code-ttl: 60s         # the one-time code handed to the SPA after Google sign-in
+    oauth-consent-ttl: 15m      # how long that code lives once the consent screen is showing
     bcrypt-cost: 10
     password-min-length: 8
     # CIDRs of reverse proxies whose X-Forwarded-For is believed (Caddy). Empty = header ignored.
