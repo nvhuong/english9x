@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
  * Review Focus #1. Reads an OpenAPI document, finds every GET operation with path parameters, calls it as a member
  * of org A with ids that belong to org B, and records every answer other than 403 / 404 as a leak.
  *
- * <p>The caller supplies how a request is made ({@code call}: path -> HTTP status); P1.5 plugs in real tokens.
+ * <p>The caller supplies how a request is made ({@code call}: path -> HTTP status); the ITs use real signed tokens and the real
+ * {@code X-Org-Context} header.
  */
 public final class ForeignIdSweep {
 

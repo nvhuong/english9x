@@ -1,17 +1,8 @@
 package com.english9x.org.sweep;
 
-import com.english9x.org.api.CurrentContextHolder;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.UUID;
 import javax.sql.DataSource;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,40 +11,22 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Test-only endpoints for the leak sweep. They live in test sources (never in the production jar) and are only
  * registered under the profiles below, so no other test context and no production OpenAPI ever sees them.
+ *
+ * <p>The sweep calls them through the REAL request path: a signed access token and the {@code X-Org-Context} header, bound by
+ * {@code CurrentContextFilter} like any production request (since P1.5 there is no test filter standing in for it).
+ *
+ * <p>An endpoint with a parent and a child in its path must check BOTH against the caller's context: authorising the
+ * parent and trusting the child id is the classic hole. The typed fixtures of {@code RlsLeakSweepIT} therefore try the
+ * parent of the caller's own organisation with a child of another one, as well as the reverse and both foreign.
  */
 public final class SweepEndpoints {
 
     private SweepEndpoints() {}
-
-    /** Stand-in for P1.5's request filter: binds the acting user / org from test headers. */
-    @Configuration
-    @Profile("rls-sweep")
-    static class TestContextConfig {
-        @Bean
-        OncePerRequestFilter testContextFilter() {
-            return new OncePerRequestFilter() {
-                @Override
-                protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
-                        throws ServletException, IOException {
-                    String user = req.getHeader("X-Test-User");
-                    String org = req.getHeader("X-Test-Org");
-                    if (user == null) {
-                        chain.doFilter(req, res);
-                        return;
-                    }
-                    try (var scope = CurrentContextHolder.bind(UUID.fromString(user), org == null ? null : UUID.fromString(org))) {
-                        chain.doFilter(req, res);
-                    }
-                }
-            };
-        }
-    }
 
     /** A correct endpoint: reads an RLS-protected table through the application connection. */
     @RestController
@@ -74,7 +47,10 @@ public final class SweepEndpoints {
         }
     }
 
-    /** Two path parameters: the class is read through RLS, so a foreign class is 404 whoever the member is. */
+    /**
+     * Two path parameters, parent and child. The class is read through RLS (a foreign class is 404), and the member must
+     * belong to the organisation that owns that class, also read through RLS (a foreign user under an own class is 404).
+     */
     @RestController
     @Profile("rls-sweep")
     static class MemberController {
@@ -90,6 +66,12 @@ public final class SweepEndpoints {
             jdbc.queryForList("select name from classes where id = ?", String.class, classId).stream()
                     .findFirst()
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+            boolean belongs = Boolean.TRUE.equals(jdbc.queryForObject(
+                    "select exists (select 1 from org_memberships m join classes c on c.owner_org_id = m.org_id where c.id = ? and m.user_id = ?)",
+                    Boolean.class, classId, userId));
+            if (!belongs) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            }
             return userId.toString();
         }
     }

@@ -35,6 +35,13 @@ public final class SweepFixtures {
         su.update("insert into questions(owner_org_id,exam_code,content,answer_key,status) values (?,'IELTS','{}','{}','DRAFT')", orgB);
         su.update("insert into exam_attempts(user_id,owner_org_id,test_version_id,status) values (?,?,gen_random_uuid(),'IN_PROGRESS')", userB, orgB);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userB, orgB);
+        // A's member is A's ORG_ADMIN, so the org-admin endpoints (/api/orgs/{id}/...) have a positive control
+        su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userA, orgA);
+        su.update("insert into invitations(org_id,email,grants,token_hash,invited_by,expires_at) values (?,?,'[{\"role\":\"LEARNER\",\"exam\":null}]',sha256('sweep-b'::bytea),?,now()+interval '1 day')",
+                orgB, "invited-b@x.test", userB);
+        su.update("insert into invitations(org_id,email,grants,token_hash,invited_by,expires_at) values (?,?,'[{\"role\":\"LEARNER\",\"exam\":null}]',sha256('sweep-a'::bytea),?,now()+interval '1 day')",
+                orgA, "invited-a@x.test", userA);
+        su.update("insert into join_codes(org_id,code_hash,created_by,expires_at) values (?,sha256('sweep-code-b'::bytea),?,now()+interval '1 day')", orgB, userB);
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
