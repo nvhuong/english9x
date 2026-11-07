@@ -1,0 +1,32 @@
+{
+  "expectedErrorPath": "content.selectCount",
+  "content": {
+    "stem": "Which TWO things does the speaker mention?",
+    "options": [
+      {
+        "key": "A",
+        "text": "one"
+      },
+      {
+        "key": "B",
+        "text": "two"
+      },
+      {
+        "key": "C",
+        "text": "three"
+      },
+      {
+        "key": "D",
+        "text": "four"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "A",
+        "C"
+      ]
+    ]
+  }
+}

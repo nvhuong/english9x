@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../app/stores/auth';
-import { json, me, problem, renderAt, resetAuth, stubApi } from '../auth/testUtils';
+import { catalogExams, json, me, problem, renderAt, resetAuth, stubApi } from '../auth/testUtils';
 import { MembersPanel } from './MembersPanel';
 
 vi.mock('../../api/useApi', async (orig) => {
@@ -30,7 +30,7 @@ const show = (type: 'CENTER' | 'ENTERPRISE' = 'CENTER') => renderAt('/', '/', <M
 
 describe('MembersPanel', () => {
   it('lists the members of the organisation with their roles', async () => {
-    stubApi({ [`GET /api/orgs/${ORG}/role-grants`]: () => json(200, members) });
+    stubApi({ ...catalogExams, [`GET /api/orgs/${ORG}/role-grants`]: () => json(200, members) });
     show();
     const row = (await screen.findByRole('row', { name: /Minh Giáo Viên/ }));
     expect(within(row).getByText('Giáo viên · IELTS')).toBeInTheDocument();
@@ -40,6 +40,7 @@ describe('MembersPanel', () => {
   it('edits the roles of one member with PUT and shows the new roles', async () => {
     let current: { members: Array<Record<string, unknown>> } = members;
     const calls = stubApi({
+      ...catalogExams,
       [`GET /api/orgs/${ORG}/role-grants`]: () => json(200, current),
       [`PUT /api/orgs/${ORG}/role-grants`]: (c) => {
         const body = c.body as { userId: string; roles: Array<{ role: string; examCode: string | null }> };
@@ -60,7 +61,7 @@ describe('MembersPanel', () => {
   });
 
   it('an enterprise offers no teacher role to edit', async () => {
-    stubApi({ [`GET /api/orgs/${ORG}/role-grants`]: () => json(200, members) });
+    stubApi({ ...catalogExams, [`GET /api/orgs/${ORG}/role-grants`]: () => json(200, members) });
     show('ENTERPRISE');
     const row = await screen.findByRole('row', { name: /Lan Quản Trị/ });
     await userEvent.click(within(row).getByRole('button', { name: /Sửa vai trò/ }));
@@ -70,20 +71,21 @@ describe('MembersPanel', () => {
   });
 
   it('shows "not found" for an organisation the server does not show to this person (404), without any member data', async () => {
-    stubApi({ [`GET /api/orgs/${ORG}/role-grants`]: () => problem(404, 'not-found') });
+    stubApi({ ...catalogExams, [`GET /api/orgs/${ORG}/role-grants`]: () => problem(404, 'not-found') });
     show();
     expect(await screen.findByRole('heading', { name: 'Không tìm thấy trang' })).toBeInTheDocument();
     expect(screen.queryByText(/example.test/)).not.toBeInTheDocument();
   });
 
   it('shows "no access" on 403', async () => {
-    stubApi({ [`GET /api/orgs/${ORG}/role-grants`]: () => problem(403, 'forbidden') });
+    stubApi({ ...catalogExams, [`GET /api/orgs/${ORG}/role-grants`]: () => problem(403, 'forbidden') });
     show();
     expect(await screen.findByRole('heading', { name: 'Bạn chưa có quyền xem trang này' })).toBeInTheDocument();
   });
 
   it('explains the last-admin rule when the server refuses', async () => {
     stubApi({
+      ...catalogExams,
       [`GET /api/orgs/${ORG}/role-grants`]: () => json(200, members),
       [`PUT /api/orgs/${ORG}/role-grants`]: () => problem(409, 'last-org-admin'),
     });

@@ -1,0 +1,12 @@
+{
+  "content": {
+    "statement": "The bridge was finished in 1932."
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "NOT GIVEN"
+      ]
+    ]
+  }
+}

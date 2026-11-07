@@ -1,0 +1,94 @@
+{
+  "code": "TOEIC_P4_TALK",
+  "content": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "TOEIC Part 4 Talks",
+    "type": "object",
+    "properties": {
+      "stem": {
+        "title": "Question",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000,
+        "pattern": "\\S"
+      },
+      "options": {
+        "title": "Options",
+        "type": "array",
+        "minItems": 4,
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "title": "Option key",
+              "type": "string",
+              "pattern": "^[A-Za-z0-9]{1,4}$"
+            },
+            "text": {
+              "title": "Option text",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "key",
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "audioMediaId": {
+        "title": "Audio media id",
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "imageMediaId": {
+        "title": "Image media id",
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "transcript": {
+        "title": "Transcript",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20000,
+        "pattern": "\\S"
+      }
+    },
+    "required": [
+      "stem",
+      "options"
+    ],
+    "additionalProperties": false
+  },
+  "answerKey": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Correct option",
+    "type": "object",
+    "properties": {
+      "slots": {
+        "title": "Accepted answers",
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 1,
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{1,4}$"
+          }
+        }
+      }
+    },
+    "required": [
+      "slots"
+    ],
+    "additionalProperties": false
+  }
+}

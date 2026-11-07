@@ -97,6 +97,7 @@ e9x:
       schema-retry: 1
       daily-cost-alert: 500000       # VND per day; alert only, never blocks
     claim-timeout: 24h
+    default-mode: AI                 # AI | TEACHER | BOTH: for an exam with no policy row of its own (the administrator's row wins); catalog.api.GradingPolicies
   exam:
     default-max-resumes: 2
     autosave-interval: 5s

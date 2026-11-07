@@ -1,0 +1,9 @@
+{
+  "expectedErrorPath": "answerKey.slots",
+  "content": {
+    "stem": "What is the main cause of the problem?"
+  },
+  "answerKey": {
+    "maxWords": 2
+  }
+}

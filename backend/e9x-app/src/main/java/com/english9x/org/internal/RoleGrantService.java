@@ -1,6 +1,7 @@
 package com.english9x.org.internal;
 
 import com.english9x.audit.api.AuditLog;
+import com.english9x.catalog.api.Exams;
 import com.english9x.org.api.Role;
 import com.english9x.org.internal.OrgDtos.MemberView;
 import com.english9x.org.internal.OrgDtos.MembersView;
@@ -22,11 +23,13 @@ class RoleGrantService {
     private final OrgRepository repo;
     private final OrgAccess access;
     private final AuditLog audit;
+    private final Exams exams;
 
-    RoleGrantService(OrgRepository repo, OrgAccess access, AuditLog audit) {
+    RoleGrantService(OrgRepository repo, OrgAccess access, AuditLog audit, Exams exams) {
         this.repo = repo;
         this.access = access;
         this.audit = audit;
+        this.exams = exams;
     }
 
     @Transactional(readOnly = true)
@@ -39,7 +42,7 @@ class RoleGrantService {
     public MemberView set(UUID orgId, SetRolesRequest req) {
         OrgView org = access.manageable(orgId);
         // the same rule the database enforces, with a precise answer: 400 for the shape, 409 for an ENTERPRISE
-        List<RoleSpec> wanted = RoleRules.check(Optional.of(org.type()), req.roles());
+        List<RoleSpec> wanted = RoleRules.check(Optional.of(org.type()), req.roles(), exams::exists);
         if (!repo.isMember(orgId, req.userId())) {
             throw OrgProblems.notFound(); // grants never exist without a membership; invitations create both
         }

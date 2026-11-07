@@ -1,0 +1,32 @@
+{
+  "content": {
+    "stem": "Which TWO things does the speaker mention?",
+    "selectCount": 2,
+    "options": [
+      {
+        "key": "A",
+        "text": "one"
+      },
+      {
+        "key": "B",
+        "text": "two"
+      },
+      {
+        "key": "C",
+        "text": "three"
+      },
+      {
+        "key": "D",
+        "text": "four"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "A",
+        "C"
+      ]
+    ]
+  }
+}

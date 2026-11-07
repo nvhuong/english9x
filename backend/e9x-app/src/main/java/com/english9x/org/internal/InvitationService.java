@@ -1,6 +1,7 @@
 package com.english9x.org.internal;
 
 import com.english9x.audit.api.AuditLog;
+import com.english9x.catalog.api.Exams;
 import com.english9x.identity.api.EmailNotVerifiedException;
 import com.english9x.identity.api.InvitationMailer;
 import com.english9x.identity.api.UserDirectory;
@@ -50,8 +51,9 @@ class InvitationService {
     private final InvitationMailer mailer;
     private final UserDirectory users;
     private final AuditLog audit;
+    private final Exams exams;
 
-    InvitationService(OrgRepository repo, OrgAccess access, OrgProperties props, Clock clock, InvitationMailer mailer, UserDirectory users, AuditLog audit) {
+    InvitationService(OrgRepository repo, OrgAccess access, OrgProperties props, Clock clock, InvitationMailer mailer, UserDirectory users, AuditLog audit, Exams exams) {
         this.repo = repo;
         this.access = access;
         this.props = props;
@@ -59,6 +61,7 @@ class InvitationService {
         this.mailer = mailer;
         this.users = users;
         this.audit = audit;
+        this.exams = exams;
     }
 
     /** @param orgId null = an English9x (internal) invitation, SYS_ADMIN only */
@@ -72,7 +75,7 @@ class InvitationService {
             org = access.manageable(orgId);
             type = Optional.of(org.type());
         }
-        List<RoleSpec> roles = RoleRules.check(type, req.roles());
+        List<RoleSpec> roles = RoleRules.check(type, req.roles(), exams::exists);
         String email = req.email().strip().toLowerCase(Locale.ROOT);
         UUID inviter = access.actingUser();
         Instant now = clock.instant();

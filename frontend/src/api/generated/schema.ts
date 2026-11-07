@@ -272,6 +272,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/exams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["exams"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invitations/{token}/accept": {
         parameters: {
             query?: never;
@@ -573,6 +589,21 @@ export interface components {
         EmailRequest: {
             /** Format: email */
             email: string;
+        };
+        ExamInfo: {
+            code?: string;
+            name?: string;
+            scoreSkills?: string[];
+            sections?: components["schemas"]["ExamSection"][];
+            variants?: string[];
+        };
+        ExamSection: {
+            code?: string;
+            /** Format: int32 */
+            itemCount?: number;
+            /** Format: int32 */
+            position?: number;
+            skill?: string;
         };
         GrantView: {
             /** @description null = every exam */
@@ -1367,6 +1398,35 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    exams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExamInfo"][];
+                };
             };
             /** @description Error (RFC 7807 problem details) */
             default: {

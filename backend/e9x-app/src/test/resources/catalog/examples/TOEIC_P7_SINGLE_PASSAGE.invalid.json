@@ -1,0 +1,32 @@
+{
+  "expectedErrorPath": "answerKey.slots[0]",
+  "content": {
+    "stem": "What is the purpose of the email?",
+    "options": [
+      {
+        "key": "A",
+        "text": "one"
+      },
+      {
+        "key": "B",
+        "text": "two"
+      },
+      {
+        "key": "C",
+        "text": "three"
+      },
+      {
+        "key": "D",
+        "text": "four"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "C",
+        "D"
+      ]
+    ]
+  }
+}

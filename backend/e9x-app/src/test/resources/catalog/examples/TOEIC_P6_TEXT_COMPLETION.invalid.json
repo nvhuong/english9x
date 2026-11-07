@@ -1,0 +1,30 @@
+{
+  "expectedErrorPath": "content.gapNumber",
+  "content": {
+    "options": [
+      {
+        "key": "A",
+        "text": "one"
+      },
+      {
+        "key": "B",
+        "text": "two"
+      },
+      {
+        "key": "C",
+        "text": "three"
+      },
+      {
+        "key": "D",
+        "text": "four"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "A"
+      ]
+    ]
+  }
+}

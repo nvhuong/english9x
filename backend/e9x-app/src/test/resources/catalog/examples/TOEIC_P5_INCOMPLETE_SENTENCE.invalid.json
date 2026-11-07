@@ -1,0 +1,31 @@
+{
+  "expectedErrorPath": "content.stem",
+  "content": {
+    "stem": "   ",
+    "options": [
+      {
+        "key": "A",
+        "text": "one"
+      },
+      {
+        "key": "B",
+        "text": "two"
+      },
+      {
+        "key": "C",
+        "text": "three"
+      },
+      {
+        "key": "D",
+        "text": "four"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "D"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "expectedErrorPath": "content.speakSeconds",
+  "content": {
+    "topic": "Describe a place you like to visit.",
+    "bulletPoints": [
+      "where it is",
+      "how often you go"
+    ],
+    "speakSeconds": 600
+  },
+  "answerKey": {}
+}

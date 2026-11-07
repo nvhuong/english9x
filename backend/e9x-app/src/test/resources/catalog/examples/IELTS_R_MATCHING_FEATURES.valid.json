@@ -1,0 +1,36 @@
+{
+  "content": {
+    "items": [
+      {
+        "text": "Paragraph A"
+      },
+      {
+        "text": "Paragraph B"
+      }
+    ],
+    "choices": [
+      {
+        "key": "i",
+        "text": "heading one"
+      },
+      {
+        "key": "ii",
+        "text": "heading two"
+      },
+      {
+        "key": "iii",
+        "text": "heading three"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "ii"
+      ],
+      [
+        "i"
+      ]
+    ]
+  }
+}

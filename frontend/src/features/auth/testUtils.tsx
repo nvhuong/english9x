@@ -30,6 +30,15 @@ export const me = (over: Record<string, unknown> = {}) => ({
   id: '11111111-1111-1111-1111-111111111111', email: 'an@example.test', displayName: 'An', emailVerified: true, locale: 'vi', ...over,
 });
 
+/** The catalogue's exams, as GET /api/catalog/exams answers them: what every screen that lets somebody choose an exam fetches. */
+export const catalogExams: Record<string, Handler> = {
+  'GET /api/catalog/exams': () =>
+    json(200, [
+      { code: 'IELTS', name: 'IELTS', variants: ['AC', 'GT'], scoreSkills: [], sections: [] },
+      { code: 'TOEIC', name: 'TOEIC Listening & Reading', variants: [], scoreSkills: [], sections: [] },
+    ]),
+};
+
 /** Replaces fetch: routes by "METHOD /path"; unknown routes fail the test loudly. Returns the recorded calls. */
 export function stubApi(routes: Record<string, Handler>): Call[] {
   const calls: Call[] = [];

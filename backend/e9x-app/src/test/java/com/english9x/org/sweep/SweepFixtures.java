@@ -74,6 +74,15 @@ public final class SweepFixtures {
         su.update("insert into telegram_links(user_id,chat_id) values (?,424242)", userB);
         // P1.9: org B's audit records (the log has no tenant endpoint at all, only the SYS_ADMIN screen; A's ORG_ADMIN must never see one)
         su.update("insert into audit_log(actor_id,org_id,action,target_type,target_id,detail) values (?,?,'role.change','user',?,'{\"orgId\":\"b\"}')", userB, orgB, userB.toString());
+        // P2.1: org B's catalog rows (a score table with a published version, a grading skill with a published version, a grading policy);
+        // no catalog endpoint takes an id yet, P2.5 adds them and the sweep then covers them
+        UUID scoreTableB = UUID.randomUUID();
+        su.update("insert into score_tables(id,owner_org_id,exam_code,skill,scope,test_version_id) values (?,?,'IELTS','LISTENING','TEST',gen_random_uuid())", scoreTableB, orgB);
+        su.update("insert into score_table_versions(score_table_id,owner_org_id,exam_code,version_no,status) values (?,?,'IELTS',1,'PUBLISHED')", scoreTableB, orgB);
+        UUID skillB = UUID.randomUUID();
+        su.update("insert into grading_skills(id,owner_org_id,exam_code,question_type_code) values (?,?,'IELTS','IELTS_W_TASK2')", skillB, orgB);
+        su.update("insert into grading_skill_versions(grading_skill_id,owner_org_id,exam_code,version_no,status) values (?,?,'IELTS',1,'PUBLISHED')", skillB, orgB);
+        su.update("insert into grading_policies(owner_org_id,exam_code,scope,mode) values (?,'IELTS','ORG','BOTH')", orgB);
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
@@ -166,7 +175,10 @@ public final class SweepFixtures {
             Map.entry("password_resets", "P1.4: as refresh_tokens"),
             Map.entry("notification_deliveries", "P1.8: RLS on with no policy, no privilege for the request role, only the delivery functions touch it"),
             Map.entry("event_publication", "P1.8: Spring Modulith's registry of module events: ids, no tenant column, no endpoint reads it"),
-            Map.entry("exams", "reference data every tenant shares (IELTS, TOEIC), the same for everybody"));
+            Map.entry("exams", "reference data every tenant shares (IELTS, TOEIC), the same for everybody; read-only for the application (P2.1)"),
+            Map.entry("exam_sections", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"),
+            Map.entry("interaction_kinds", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"),
+            Map.entry("question_types", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"));
 
     /**
      * Walks every public table, whatever its key looks like. A table must be either explicit ({@code users}, {@code organizations}), exempt with a reason,

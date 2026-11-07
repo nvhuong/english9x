@@ -1,0 +1,14 @@
+{
+  "content": {
+    "stem": "What is the main cause of the problem?"
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "pollution",
+        "air pollution"
+      ]
+    ],
+    "maxWords": 2
+  }
+}

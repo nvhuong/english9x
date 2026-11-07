@@ -300,3 +300,13 @@ BEGIN
   ASSERT public.t_attempt('INSERT INTO grading_policies(owner_org_id,exam_code,scope,mode) VALUES (NULL,''TOEIC'',''EXAM'',''AI'')') = 'err:42501', 'the grader writes nothing';
   ASSERT public.t_attempt('UPDATE score_table_versions SET status = ''ARCHIVED''') = 'err:42501';
 END $$;
+
+-- ---- role_grants.exam_code is an exam of the catalog (the constant KNOWN_EXAMS is gone) -----------------------------------------------
+RESET ROLE;
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES ('c1000000-0000-0000-0000-000000000003',NULL,'GMAT','AUTHOR');
+    ASSERT false, 'a grant for an exam that is not in the catalog was accepted';
+  EXCEPTION WHEN foreign_key_violation THEN NULL; END;
+END $$;

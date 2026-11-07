@@ -1,0 +1,87 @@
+{
+  "code": "TOEIC_P1_PHOTO",
+  "content": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "TOEIC Part 1 Photographs",
+    "type": "object",
+    "properties": {
+      "audioMediaId": {
+        "title": "Audio media id",
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "imageMediaId": {
+        "title": "Image media id",
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "options": {
+        "title": "Options (heard, not printed)",
+        "type": "array",
+        "minItems": 4,
+        "maxItems": 4,
+        "items": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "title": "Option key",
+              "type": "string",
+              "pattern": "^[A-Za-z0-9]{1,4}$"
+            },
+            "text": {
+              "title": "Option text",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "key"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "transcript": {
+        "title": "Transcript",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20000,
+        "pattern": "\\S"
+      }
+    },
+    "required": [
+      "audioMediaId",
+      "imageMediaId",
+      "options"
+    ],
+    "additionalProperties": false
+  },
+  "answerKey": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Correct option",
+    "type": "object",
+    "properties": {
+      "slots": {
+        "title": "Accepted answers",
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 1,
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{1,4}$"
+          }
+        }
+      }
+    },
+    "required": [
+      "slots"
+    ],
+    "additionalProperties": false
+  }
+}
