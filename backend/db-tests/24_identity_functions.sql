@@ -11,8 +11,8 @@ BEGIN
             WHERE s.nspname = 'public' AND p.proname LIKE 'auth\_%' LOOP
     n := n + 1;
     ASSERT f.prosecdef, f.proname || ' must be SECURITY DEFINER';
-    ASSERT f.proconfig IS NOT NULL AND EXISTS (SELECT 1 FROM unnest(f.proconfig) c WHERE c LIKE 'search_path=pg_catalog%'),
-           f.proname || ' must pin search_path';
+    ASSERT f.proconfig IS NOT NULL AND 'search_path=pg_catalog, public, pg_temp' = ANY (f.proconfig),
+           f.proname || ' must pin search_path with pg_temp last';
     ASSERT has_function_privilege('e9x_app', f.oid, 'EXECUTE'), f.proname || ' executable by e9x_app';
     ASSERT NOT has_function_privilege('outsider', f.oid, 'EXECUTE'), f.proname || ' must not be executable by others';
   END LOOP;
