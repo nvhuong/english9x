@@ -98,6 +98,15 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 **Tests:** `ReviewServiceIT.authorCannotApproveOwnVersion`, `.changesRequestedReturnsToDraftWithComment`, `.approveBlockedByUnpublishedDependency`, `.bundleApprovesAllOrNothing`, `.publishedVersionIsImmutable` (UPDATE bị trigger chặn).
 
+> **Ghi chú 2026-11-08 (P1.6 đã làm; sửa vòng 1 cùng ngày; việc cho P2.x, P1.8, P1.9, P4.1, P6.5):**
+> - API công khai ở `com.english9x.workflow.api` (named interface `api`): `ReviewService`, `ReviewableType` (cổng mỗi loại nội dung triển khai, một bean mỗi loại), `Reviewable`, `VersionRef`, `BundleRef`, `ReviewView`, `ReviewQueueEntry`, `ContentStatus`. Hàng chờ `open(offset, limit)` trả một dòng cho mỗi cụm (kèm kích thước) và một dòng cho mỗi review lẻ; `members(bundleId, offset, limit)` có phân trang.
+> - Ngoại lệ là `ErrorResponseException`, `ProblemDetailsAdvice` tự render problem+json: `ReviewNotFoundException` 404, `ReviewConflictException` 409, `UnpublishedDependencyException` 409 (thân có `dependencies: [{type, versionId}]`, với cụm là của mọi phần tử), `InvalidReviewInputException` 400, `SelfReviewException` là `AccessDeniedException` 403. P2.9 không cần tự ánh xạ.
+> - Sự kiện (xem `events.md`): `ContentPublished(String type, UUID versionId, Optional<UUID> ownerOrgId, String examCode)` (không phải `ContentPublished(VersionRef)` của brief), thêm `ReviewRequested`, `ReviewChangesRequested`, `ReviewApproved` (hai loại sau có `authorId`) cho thông báo spec §13. Phát trong transaction duyệt, sau mọi thay đổi trạng thái; chưa nối event publication registry (P4.1).
+> - Mỗi bảng `*_versions` của P2 gắn trigger chung: `CREATE TRIGGER <bảng>_lifecycle BEFORE INSERT OR UPDATE OR DELETE ON <bảng> FOR EACH ROW EXECUTE FUNCTION e9x_guard_version_lifecycle('updated_at')` (cột `status text` mang tên `ContentStatus`; đối số = cột được đổi cùng lúc với đổi trạng thái). Bản `IN_REVIEW` bị đóng băng, `PUBLISHED` chỉ sang `ARCHIVED`, không nhảy thẳng sang `PUBLISHED`; role ứng dụng chỉ INSERT được bản `DRAFT` (owner/Flyway và superuser thì không bị chặn). Không dùng cột stored generated trên bảng được bảo vệ (trong trigger BEFORE giá trị là NULL nên so sánh "không đổi gì khác" sai); bảng thiếu cột `status` bị từ chối ở mọi thao tác. Trạng thái của hàng nội dung không có liên kết CSDL tới `review_requests`: quy tắc "có review mới được PUBLISHED" nằm ở service.
+> - Hợp đồng `ReviewableType`: RLS của bảng version phải cho REVIEWER của kỳ thi, trong ngữ cảnh của nội dung, vừa đọc vừa khoá (chính sách SELECT và UPDATE) hàng version, nếu không `lockForReview` trả rỗng. Phụ thuộc: thử `lockStatus` (FOR SHARE) rồi `readStatus` (SELECT thường). Phụ thuộc khác chủ (nội dung English9x đã xuất bản mà tổ chức dùng) chỉ cần PUBLISHED và không bị khoá; phụ thuộc không tồn tại hoặc không đọc được thì được tính là chưa xuất bản.
+> - Sau `requestChanges` phiên bản ở `CHANGES_REQUESTED` (sửa được như DRAFT, đúng spec §7.1); gửi duyệt lại tạo review mới, review cũ giữ lịch sử. Điểm ghi nhật ký (P1.9) đã có chú thích `Audit (P1.9)` trong `ReviewServiceImpl`.
+> - Kho chung (F21) CHƯA có trong workflow: xem ghi chú ở P6.5.
+
 ### Task P1.7: Hàng đợi nền (W1)
 
 > **Ghi chú 2026-11-07 (từ P1.3):** quyết định của controller: ngữ cảnh worker là một login role riêng `e9x_worker_login` với pool nhỏ riêng, chỉ các handler của `platform.jobs` dùng, không bao giờ truy cập được từ HTTP, không có GUC `app.system`, quyền hạn hẹp nhất có thể. Việc không có ngữ cảnh người dùng khiến job thấy 0 dòng; không giải quyết bằng cờ.
@@ -126,6 +135,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 
 **Tests:** `NotificationServiceIT.respectsPrefsPerEventAndChannel`, `TelegramLinkIT.tokenSingleUse`, `EmailChannelIT.rendersVietnameseTemplate`. E2E F52–F55 (mailpit, fake-telegram).
 
+> **Ghi chú 2026-11-08 (từ P1.6, nguồn thông báo duyệt, spec §13):** workflow phát `ReviewRequested` (cho REVIEWER của kỳ thi, trong ngữ cảnh của nội dung), `ReviewChangesRequested` và `ReviewApproved` (cho tác giả, có `authorId`); xem `events.md`. Từ ngữ cảnh một request không thể liệt kê REVIEWER vì RLS của `role_grants` chỉ cho thấy dòng của chính mình, nên P1.8 cần một hàm tra cứu `SECURITY DEFINER` hẹp để lấy người nhận (REVIEWER của kỳ thi, trong đúng ngữ cảnh của nội dung, đối số `org`/`exam` không cho dò người khác).
+
 ### Task P1.9: Nhật ký (W2) — F57
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/platform/audit/**`, migration `V202611080004__audit_log.sql`, trang `frontend/src/features/admin/AuditLogPage.tsx`, E2E `e2e/specs/admin/F57-audit-log.spec.ts`.
@@ -135,6 +146,8 @@ Khi có mạng: chạy `mvn -pl e9x-domain test` để xác nhận cùng bộ te
 **Tests:** `AuditLogIT.appendOnly`, `.recordsActorAndContext`.
 
 > **Ghi chú 2026-11-07 (từ P1.5, các điểm ghi nhật ký còn thiếu — P1.9 phải nối vào):** `AuditLog` chưa tồn tại nên P1.5 chỉ để chú thích `Audit (P1.9)` tại đúng chỗ trong mã. Các điểm cần ghi (actor = `CurrentContext#userId`, ngữ cảnh = `orgId`): (1) tạo tổ chức — `org.internal.OrganizationService#create` (id, tên, loại); (2) đổi vai trò — `org.internal.RoleGrantService#set` (tổ chức, người bị đổi, vai trò cũ → mới); (3) gửi và thu hồi lời mời — `org.internal.InvitationService#invite` / `#revoke` (tổ chức hoặc English9x, email, vai trò); (4) chấp nhận lời mời — `InvitationService#accept` (người nhận, tổ chức, vai trò đã cấp; hàm `org_invitation_accept` chỉ trả `org_id`, nên đọc vai trò từ lời mời trước khi gọi hoặc mở rộng hàm trả về); (5) dùng mã tham gia — hàm `org_join_code_redeem` (P6.1 gắn endpoint thì ghi); (6) cấp SYS_ADMIN đầu tiên — `scripts/grant-sys-admin.sql` chạy bằng tay ngoài ứng dụng: P1.9 thêm một dòng `INSERT INTO audit_log` vào chính script đó; (7) đổi loại tổ chức (`organizations.type`) hiện chỉ làm được bằng SQL của SYS_ADMIN, chưa có endpoint: khi thêm endpoint phải ghi. Không ghi các endpoint seed `/api/test/seed/**`.
+
+> **Ghi chú 2026-11-08 (từ P1.6, các điểm ghi nhật ký còn thiếu — P1.9 phải nối vào):** `ReviewServiceImpl` có chú thích `Audit (P1.9)` tại: gửi duyệt (`review.submit`, `review.submit-bundle`), duyệt (`review.approve`, `review.approve-bundle`) và yêu cầu sửa (`review.request-changes`, `review.request-bundle-changes`). Actor = người dùng trong ngữ cảnh, đích = id review hoặc cụm, chi tiết = loại, versionId, kỳ thi (không ghi nội dung nhận xét, chỉ độ dài). F57 cần các điểm này.
 
 ### Task P1.10: Frontend shell, design system, i18n, a11y (W1) — F58 (+ nền F07)
 

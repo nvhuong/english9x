@@ -42,6 +42,11 @@ public final class SweepFixtures {
         su.update("insert into invitations(org_id,email,grants,token_hash,invited_by,expires_at) values (?,?,'[{\"role\":\"LEARNER\",\"exam\":null}]',sha256('sweep-a'::bytea),?,now()+interval '1 day')",
                 orgA, "invited-a@x.test", userA);
         su.update("insert into join_codes(org_id,code_hash,created_by,expires_at) values (?,sha256('sweep-code-b'::bytea),?,now()+interval '1 day')", orgB, userB);
+        // P1.6: org B's review bundle and review (org A's ORG_ADMIN, the sweep's caller, must find neither; no review endpoint exists yet, P2.9 adds it and the sweep then covers it)
+        UUID bundleB = UUID.randomUUID();
+        su.update("insert into review_bundles(id,owner_org_id,submitted_by,member_count) values (?,?,?,1)", bundleB, orgB, userB);
+        su.update("insert into review_requests(bundle_id,content_type,version_id,owner_org_id,exam_code,author_id,submitted_by) "
+                + "values (?,'item',gen_random_uuid(),?,'IELTS',?,?)", bundleB, orgB, userB, userB);
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
