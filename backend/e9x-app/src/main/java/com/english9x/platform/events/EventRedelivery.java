@@ -5,7 +5,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,8 +25,8 @@ import org.springframework.stereotype.Component;
  * (see docs/superpowers/design/events.md): a resubmission may repeat work that had in fact finished.
  *
  * <p>Each publication is handled on its own. One that cannot be read back (the record changed shape, the class is gone, the row was
- * damaged) is logged as an error with its id, event type and listener (never the payload) and skipped; the others are delivered in the
- * same cycle. One that has not completed within {@code e9x.events.publication-max-age} is logged as an error and deleted, so a failing
+ * damaged) is skipped and the others are delivered in the same cycle. It is logged as an error with its id, event type and listener (never the payload)
+ * once per process, so a bad row does not page somebody every two minutes for 30 days; each cycle then warns with how many there are. One that has not completed within {@code e9x.events.publication-max-age} is logged as an error and deleted, so a failing
  * row cannot keep personal data for ever. Every cycle also warns with the number of rows older than twice the redelivery age.
  */
 @Component
@@ -37,6 +39,9 @@ class EventRedelivery {
     private final Clock clock;
     private final Duration olderThan;
     private final Duration maxAge;
+    /** Rows already named at ERROR in this process. Bounded: they leave when deleted at {@code publication-max-age}. */
+    private final Set<UUID> reported = ConcurrentHashMap.newKeySet();
+    private int unreadableThisCycle;
 
     EventRedelivery(IncompleteEventPublications incomplete, JdbcTemplate jdbc, Clock clock,
                     @Value("${e9x.events.redelivery-after:2m}") Duration olderThan,
@@ -52,7 +57,11 @@ class EventRedelivery {
     void resubmit() {
         step("deleting expired event publications", this::deleteExpired);
         step("counting stale event publications", this::warnStale);
+        unreadableThisCycle = 0;
         step("resubmitting incomplete event publications", () -> incomplete.resubmitIncompletePublications(this::deliverable));
+        if (unreadableThisCycle > 0) {
+            LOG.warn("{} event publications cannot be read back and were skipped (each is named once at ERROR since start-up)", unreadableThisCycle);
+        }
     }
 
     private static void step(String what, Runnable action) {
@@ -78,6 +87,10 @@ class EventRedelivery {
     }
 
     private void logUnreadable(UUID id, RuntimeException e) {
+        unreadableThisCycle++;
+        if (!reported.add(id)) {
+            return;
+        }
         // the class only: a deserialization message quotes the payload
         Throwable root = e;
         while (root.getCause() != null && root.getCause() != root) {
@@ -105,6 +118,7 @@ class EventRedelivery {
                 (rs, i) -> new Object[] {rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3)}, cutoff);
         for (Object[] row : expired) {
             int gone = jdbc.update("delete from event_publication where id = ? and completion_date is null", row[0]);
+            reported.remove((UUID) row[0]);
             if (gone == 1) {
                 LOG.error("event publication {} (type {}, listener {}) never completed within {} and is deleted", row[0], row[1], row[2], maxAge);
             }
