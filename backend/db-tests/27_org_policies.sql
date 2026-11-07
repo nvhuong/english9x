@@ -97,3 +97,24 @@ BEGIN
   ASSERT (SELECT type FROM organizations WHERE id = 'bbbbbbbb-0000-0000-0000-00000000000b') = 'ENTERPRISE';
   UPDATE organizations SET type = 'CENTER' WHERE id = 'bbbbbbbb-0000-0000-0000-00000000000b';
 END $$;
+
+-- 5b. the same refusal while a PENDING invitation for those roles exists (a live link would grant TEACHER inside an
+-- ENTERPRISE after the change). Revoked, expired and accepted invitations and other roles do not block it.
+DO $$
+DECLARE sys uuid := 'a0000000-0000-0000-0000-000000000001'; b uuid := 'bbbbbbbb-0000-0000-0000-00000000000b';
+BEGIN
+  INSERT INTO invitations(org_id,email,grants,token_hash,invited_by,expires_at)
+    VALUES (b,'t@x.test','[{"role":"TEACHER","exam":"IELTS"}]',sha256('retype-1'::bytea),sys,now()+interval '1 day');
+  BEGIN
+    UPDATE organizations SET type = 'ENTERPRISE' WHERE id = b;
+    RAISE EXCEPTION 'a pending TEACHER invitation must block the retype';
+  EXCEPTION WHEN check_violation THEN NULL; END;
+  ASSERT (SELECT type FROM organizations WHERE id = b) = 'CENTER';
+  UPDATE invitations SET revoked_at = now() WHERE org_id = b;
+  -- an expired one does not block, nor does a compatible role
+  INSERT INTO invitations(org_id,email,grants,token_hash,invited_by,expires_at)
+    VALUES (b,'t2@x.test','[{"role":"REVIEWER","exam":"IELTS"}]',sha256('retype-2'::bytea),sys,now()-interval '1 minute'),
+           (b,'l@x.test','[{"role":"LEARNER","exam":null}]',sha256('retype-3'::bytea),sys,now()+interval '1 day');
+  UPDATE organizations SET type = 'ENTERPRISE' WHERE id = b;
+  ASSERT (SELECT type FROM organizations WHERE id = b) = 'ENTERPRISE', 'revoked, expired and learner invitations do not block';
+END $$;

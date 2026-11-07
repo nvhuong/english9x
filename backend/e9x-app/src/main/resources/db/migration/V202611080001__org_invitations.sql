@@ -3,9 +3,11 @@
 --  * organizations: INSERT / SELECT-all / UPDATE for a real SYS_ADMIN only (flag AND grant, e9x_is_sys_admin()). A staff
 --    flag alone, as every AUTHOR / REVIEWER / TEACHER carries it, authorises nothing here. Changing the type to
 --    ENTERPRISE is refused while AUTHOR / REVIEWER / TEACHER grants (or pending invitations for those roles) exist.
---  * Every grant inside an organisation needs a membership row of the same user: BEFORE triggers on role_grants and
---    org_memberships (definer functions, so they see the rows whatever the caller's RLS view). Insert the membership
---    FIRST, delete the grants FIRST. An ORG_ADMIN without a membership is impossible by any path.
+--  * org_memberships, role_grants, users: SELECT is the caller's own rows, the current organisation's rows, or everything for
+--    a real SYS_ADMIN. The bare staff flag these policies used to end in is also carried by AUTHOR / REVIEWER / TEACHER.
+--  * Every grant inside an organisation needs a membership row of the same user: an AFTER trigger on role_grants and a
+--    BEFORE trigger on org_memberships (definer functions, so they see the rows whatever the caller's RLS view). Insert the
+--    membership FIRST, delete the grants FIRST. An ORG_ADMIN without a membership is impossible by any path.
 --  * invitations / join_codes: written by the request role through the real SYS_ADMIN / ORG_ADMIN policies, but the token
 --    digests are not even selectable and the only column an update may touch is revoked_at. The person who ACCEPTS has
 --    no flag and no role yet, so accepting is one narrow SECURITY DEFINER function per table: it finds the row by the digest
@@ -14,6 +16,32 @@
 --    names a role, an organisation or a user: the user is the session's app.user_id, the rest comes from the row.
 --  * Like the identity functions, they narrow what SQL can touch; a compromised statement of e9x_app can still pass any
 --    p_now and forge app.user_id (the trusted-setter limit of P1.3), but it cannot choose what is granted.
+
+-- ---- who may read other people's memberships, grants and accounts ------------------------------------------------------
+-- e9x_is_sys_admin() cannot be used in a policy of role_grants: it runs as the caller and reads role_grants, so the policy
+-- would call itself. This helper is SECURITY DEFINER and owned by the table owner, which RLS exempts because none of these
+-- tables use FORCE ROW LEVEL SECURITY (db-test 31 asserts that, and RlsIT runs it against a schema Flyway migrated as the
+-- non-superuser e9x_owner). No argument: it can only answer about the person bound to the session, and the flag must be on too.
+CREATE FUNCTION e9x_caller_is_sys_admin() RETURNS boolean
+  LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+  SELECT e9x_is_staff() AND EXISTS (SELECT 1 FROM role_grants g
+                                     WHERE g.user_id = e9x_current_user() AND g.role = 'SYS_ADMIN' AND g.org_id IS NULL) $$;
+REVOKE ALL ON FUNCTION e9x_caller_is_sys_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION e9x_caller_is_sys_admin() TO e9x_app;  -- the only non-owner role that reads these three tables
+
+DROP POLICY org_memberships_select ON org_memberships;
+CREATE POLICY org_memberships_select ON org_memberships FOR SELECT USING (
+  user_id = e9x_current_user() OR org_id = e9x_current_org() OR e9x_caller_is_sys_admin());
+DROP POLICY role_grants_select ON role_grants;
+CREATE POLICY role_grants_select ON role_grants FOR SELECT USING (
+  user_id = e9x_current_user() OR org_id = e9x_current_org() OR e9x_caller_is_sys_admin());
+DROP POLICY users_select ON users;
+CREATE POLICY users_select ON users FOR SELECT USING (
+  id = e9x_current_user()
+  OR (e9x_current_org() IS NOT NULL
+      AND EXISTS (SELECT 1 FROM org_memberships m
+                   WHERE m.user_id = users.id AND m.org_id = e9x_current_org()))
+  OR e9x_caller_is_sys_admin());
 
 -- ---- organizations --------------------------------------------------------------------------------------------------
 CREATE POLICY organizations_insert ON organizations FOR INSERT WITH CHECK (e9x_is_sys_admin());
@@ -178,6 +206,35 @@ CREATE TRIGGER organizations_type_guard
   BEFORE UPDATE OF type ON organizations
   FOR EACH ROW EXECUTE FUNCTION organizations_guard_type_change();
 
+-- ---- reading what RLS must not widen ----------------------------------------------------------------------------------
+-- The inviter's authority: SYS_ADMIN, or ORG_ADMIN of the invitation's organisation. One rule for accepting and for listing.
+-- Internal: not executable by any request role, because it answers about any person. The definer functions below call it as owner.
+CREATE FUNCTION e9x_inviter_holds_authority(p_inviter uuid, p_org uuid) RETURNS boolean
+  LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+  SELECT EXISTS (SELECT 1 FROM role_grants rg
+                  WHERE rg.user_id = p_inviter
+                    AND ((rg.role = 'SYS_ADMIN' AND rg.org_id IS NULL)
+                         OR (p_org IS NOT NULL AND rg.role = 'ORG_ADMIN' AND rg.org_id = p_org))) $$;
+REVOKE ALL ON FUNCTION e9x_inviter_holds_authority(uuid, uuid) FROM PUBLIC;
+
+-- For the invitation lists: can this invitation still be accepted as far as its inviter goes? An ORG_ADMIN cannot see the
+-- SYS_ADMIN grant of the person who invited, hence a definer. NULL unless the caller may see the invitation (the same test
+-- as invitations_select), so it is no oracle about other organisations.
+CREATE FUNCTION e9x_invitation_inviter_active(p_invitation uuid) RETURNS boolean
+  LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+  SELECT e9x_inviter_holds_authority(i.invited_by, i.org_id) FROM invitations i
+   WHERE i.id = p_invitation
+     AND (e9x_is_sys_admin() OR (i.org_id IS NOT NULL AND i.org_id = e9x_current_org() AND e9x_is_current_org_admin())) $$;
+
+-- The hourly limit is per person across every organisation (spec section 15.1); RLS would show only the current one.
+-- No user argument: the count is the session's own.
+CREATE FUNCTION e9x_invitations_sent_since(p_since timestamptz) RETURNS bigint
+  LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+  SELECT count(*) FROM invitations i WHERE i.invited_by = e9x_current_user() AND i.created_at > p_since $$;
+
+REVOKE ALL ON FUNCTION e9x_invitation_inviter_active(uuid), e9x_invitations_sent_since(timestamptz) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION e9x_invitation_inviter_active(uuid), e9x_invitations_sent_since(timestamptz) TO e9x_app;
+
 -- ---- accepting an invitation ------------------------------------------------------------------------------------------
 -- Outcomes: ACCEPTED, INVALID (forged / unknown / used / expired / revoked / inviter without authority / no user),
 -- EMAIL_MISMATCH (the signed-in account is not the invited address; nothing is consumed), EMAIL_NOT_VERIFIED
@@ -198,10 +255,7 @@ BEGIN
   END IF;
   SELECT * INTO inv FROM invitations i WHERE i.token_hash = p_token_hash FOR UPDATE;
   IF NOT FOUND OR inv.accepted_at IS NOT NULL OR inv.revoked_at IS NOT NULL OR inv.expires_at <= p_now
-     OR NOT EXISTS (SELECT 1 FROM role_grants rg
-                     WHERE rg.user_id = inv.invited_by
-                       AND ((rg.role = 'SYS_ADMIN' AND rg.org_id IS NULL)
-                            OR (inv.org_id IS NOT NULL AND rg.role = 'ORG_ADMIN' AND rg.org_id = inv.org_id))) THEN
+     OR NOT e9x_inviter_holds_authority(inv.invited_by, inv.org_id) THEN
     RETURN QUERY SELECT 'INVALID'::text, NULL::uuid;
     RETURN;
   END IF;

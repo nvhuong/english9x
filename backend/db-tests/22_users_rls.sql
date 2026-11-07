@@ -1,4 +1,4 @@
--- P1.4: Row-Level Security on users. SELECT: yourself, a member of the current organisation, or staff.
+-- P1.4: Row-Level Security on users. SELECT: yourself, a member of the current organisation, or a real SYS_ADMIN (P1.5).
 -- UPDATE: yourself, display_name / locale only. INSERT / DELETE: never by the request role.
 INSERT INTO organizations(id,name,type) VALUES
  ('a1a1a1a1-0000-0000-0000-00000000000a','A','CENTER'),
@@ -96,11 +96,12 @@ DO $$ BEGIN
   ASSERT (SELECT count(*) FROM users) = 1 AND (SELECT email FROM users) = 'u3@x.test', 'org B sees only its own member';
 END $$;
 
--- staff in the personal context see every user (the flag is derived from role data by server code)
+-- the staff flag alone (P1.5, review I1: every AUTHOR / REVIEWER / TEACHER carries it) reads only the person's own row;
+-- a real SYS_ADMIN sees every user: 31_staff_select_policies.sql
 SELECT set_config('app.user_id','00000005-0000-0000-0000-000000000005',false);
 SELECT set_config('app.org_id','',false);
 SELECT set_config('app.e9x_staff','on',false);
-DO $$ BEGIN ASSERT (SELECT count(*) FROM users) = 5, 'staff see all users'; END $$;
+DO $$ BEGIN ASSERT (SELECT array_agg(email) FROM users) = ARRAY['staff@x.test'], 'the flag alone reads the own row only'; END $$;
 -- ...but staff still cannot update someone else
 DO $$
 DECLARE n int;

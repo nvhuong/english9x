@@ -292,3 +292,55 @@ BEGIN
 END $$;
 RESET ROLE;
 DROP ROLE inv_outsider;
+
+-- ---- the hourly limit counts one person across every organisation (spec section 15.1), whatever RLS shows ------------------
+RESET ROLE;
+DELETE FROM invitations WHERE invited_by = 'a0000000-0000-0000-0000-000000000002';  -- what the earlier sections left
+INSERT INTO org_memberships(org_id,user_id) VALUES ('bbbbbbbb-0000-0000-0000-00000000000b','a0000000-0000-0000-0000-000000000002');
+INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES
+ ('a0000000-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-00000000000a',NULL,'ORG_ADMIN'),  -- lost above, back for this section
+ ('a0000000-0000-0000-0000-000000000002','bbbbbbbb-0000-0000-0000-00000000000b',NULL,'ORG_ADMIN');
+INSERT INTO invitations(id,org_id,email,grants,token_hash,invited_by,expires_at,created_at) VALUES
+ ('c1c1c1c1-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-00000000000a','c1@x.test','[{"role":"LEARNER","exam":null}]',sha256('count-1'::bytea),'a0000000-0000-0000-0000-000000000002',now()+interval '1 day',now()),
+ (gen_random_uuid(),'bbbbbbbb-0000-0000-0000-00000000000b','c2@x.test','[{"role":"LEARNER","exam":null}]',sha256('count-2'::bytea),'a0000000-0000-0000-0000-000000000002',now()+interval '1 day',now()),
+ (gen_random_uuid(),'bbbbbbbb-0000-0000-0000-00000000000b','c3@x.test','[{"role":"LEARNER","exam":null}]',sha256('count-3'::bytea),'a0000000-0000-0000-0000-000000000002',now()+interval '1 day',now()-interval '2 hours'),
+ (gen_random_uuid(),'bbbbbbbb-0000-0000-0000-00000000000b','c4@x.test','[{"role":"LEARNER","exam":null}]',sha256('count-4'::bytea),'a0000000-0000-0000-0000-000000000003',now()+interval '1 day',now());
+SET ROLE e9x_app;
+SELECT set_config('app.user_id','a0000000-0000-0000-0000-000000000002',false), set_config('app.org_id','aaaaaaaa-0000-0000-0000-00000000000a',false),
+       set_config('app.e9x_staff','',false), set_config('app.org_admin','on',false);
+DO $$
+BEGIN
+  ASSERT (SELECT count(*) FROM invitations WHERE email LIKE 'c_@x.test') = 1, 'RLS shows this admin one of them in this context';
+  ASSERT e9x_invitations_sent_since(now() - interval '1 hour') = 2, 'one in A plus one in B; not the older one, not the other inviter''s';
+END $$;
+SELECT set_config('app.user_id','',false);
+DO $$ BEGIN ASSERT e9x_invitations_sent_since(now() - interval '1 hour') = 0, 'nobody bound counts nothing'; END $$;
+
+-- ---- whether the inviter still holds the authority: answered only about invitations the caller may see --------------------
+RESET ROLE;
+DELETE FROM role_grants WHERE user_id = 'a0000000-0000-0000-0000-000000000002' AND org_id = 'bbbbbbbb-0000-0000-0000-00000000000b';
+SET ROLE e9x_app;
+SELECT set_config('app.user_id','a0000000-0000-0000-0000-000000000003',false), set_config('app.org_id','bbbbbbbb-0000-0000-0000-00000000000b',false),
+       set_config('app.e9x_staff','',false), set_config('app.org_admin','on',false);
+DO $$
+DECLARE i_gone uuid; i_kept uuid; i_foreign uuid;
+BEGIN
+  SELECT id INTO i_gone FROM invitations WHERE email = 'c2@x.test';
+  SELECT id INTO i_kept FROM invitations WHERE email = 'c4@x.test';
+  ASSERT e9x_invitation_inviter_active(i_gone) = false, 'the inviter lost ORG_ADMIN of B';
+  ASSERT e9x_invitation_inviter_active(i_kept) = true, 'this inviter still holds it';
+  ASSERT e9x_invitation_inviter_active(gen_random_uuid()) IS NULL, 'unknown id: no answer';
+  ASSERT e9x_invitation_inviter_active('c1c1c1c1-0000-0000-0000-000000000001') IS NULL, 'another organisation''s invitation: no answer, however it was learned';
+END $$;
+RESET ROLE;
+DO $$
+DECLARE f record;
+BEGIN
+  FOR f IN SELECT p.oid, p.proname, p.prosecdef, p.proconfig FROM pg_proc p
+            WHERE p.proname IN ('e9x_invitations_sent_since','e9x_invitation_inviter_active') LOOP
+    ASSERT f.prosecdef AND 'search_path=pg_catalog, public, pg_temp' = ANY (f.proconfig), f.proname || ' is a pinned definer';
+    ASSERT has_function_privilege('e9x_app', f.oid, 'EXECUTE') AND NOT has_function_privilege('e9x_worker', f.oid, 'EXECUTE'), f.proname || ' for e9x_app only';
+  END LOOP;
+  -- the shared rule is internal: no request role may ask about an arbitrary person
+  ASSERT NOT has_function_privilege('e9x_app', 'e9x_inviter_holds_authority(uuid,uuid)', 'EXECUTE');
+END $$;
