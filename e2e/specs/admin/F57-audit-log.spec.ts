@@ -25,7 +25,7 @@ async function filterBy(page: Page, fields: { actor?: string; action?: string; t
     await page.getByRole('combobox', { name: 'Hành động' }).click();
     await page.getByRole('option', { name: fields.action, exact: true }).click();
   }
-  await page.getByRole('button', { name: 'Lọc' }).click();
+  await page.getByRole('button', { name: 'Lọc', exact: true }).click();
 }
 
 const rowsOf = (page: Page) => page.getByTestId('audit-row');
