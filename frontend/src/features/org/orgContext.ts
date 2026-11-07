@@ -71,7 +71,9 @@ export async function applyMeContext(queryClient: QueryClient, userId: string, b
   const target = resolveContext(readStoredContext(userId), current, body.organizations);
   // the context first, the roles after: a page guarded by a role never sees "my roles, but the wrong context" for a moment
   if (target !== current) await switchContext(queryClient, target);
-  if (target === null && current !== null) writeStoredContext(userId, null);
+  // forget a remembered choice that is no longer valid (also when it was only ever in storage)
+  const stored = readStoredContext(userId);
+  if (stored !== null && stored !== target) writeStoredContext(userId, target);
   useRoleStore.getState().setGrants(grantsFromApi(body.grants));
 }
 

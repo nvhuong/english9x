@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../../api/useApi';
 import type { components } from '../../api/generated/client';
-import { ctxKey, useContextStore } from '../../app/stores/context';
+import { useAuthStore } from '../../app/stores/auth';
+import { ctxKey, publicKey, useContextStore } from '../../app/stores/context';
 import { choicesToRoles } from './roles';
 
 export type MemberView = components['schemas']['MemberView'];
@@ -42,7 +43,11 @@ export function useSetRoles(orgId: string) {
   return useMutation({
     mutationFn: async (v: { userId: string; keys: string[] }) =>
       (await api.PUT('/api/orgs/{id}/role-grants', { params: { path: { id: orgId } }, body: { userId: v.userId, roles: toWire(v.keys) } })).data,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ctxKey(ctx, ...parts) }),
+    onSuccess: () => {
+      // an admin may have changed their own roles: the role store follows the server
+      void queryClient.invalidateQueries({ queryKey: publicKey('me', 'context', useAuthStore.getState().user?.id ?? null) });
+      return queryClient.invalidateQueries({ queryKey: ctxKey(ctx, ...parts) });
+    },
   });
 }
 

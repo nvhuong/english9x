@@ -11,7 +11,7 @@ export function InvitationList({ orgId }: { orgId: string | null }) {
   const { t, i18n } = useTranslation('org');
   const list = useInvitations(orgId);
   const revoke = useRevokeInvitation(orgId);
-  if (list.isPending) return <p role="status" className="text-muted">{t('members.loading')}</p>;
+  if (list.isPending) return <p role="status" className="text-muted">{t('invitations.loading')}</p>;
   if (list.isError) return <p role="alert" className="text-danger">{problemFromResponseSafe(list.error, t)}</p>;
   if (list.data.length === 0) return <p className="text-muted">{t('invitations.empty')}</p>;
   const fmt = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' });

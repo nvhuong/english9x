@@ -64,7 +64,8 @@
     "expires": "Hết hạn",
     "revoke": "Thu hồi",
     "revokeOf": "Thu hồi lời mời gửi {{email}}",
-    "revoked": "Đã thu hồi lời mời."
+    "revoked": "Đã thu hồi lời mời.",
+    "loading": "Đang tải lời mời…"
   },
   "members": {
     "title": "Thành viên và vai trò",

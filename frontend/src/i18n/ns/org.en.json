@@ -64,7 +64,8 @@
     "expires": "Expires",
     "revoke": "Revoke",
     "revokeOf": "Revoke the invitation sent to {{email}}",
-    "revoked": "Invitation revoked."
+    "revoked": "Invitation revoked.",
+    "loading": "Loading invitations…"
   },
   "members": {
     "title": "Members and roles",
