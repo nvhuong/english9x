@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Test-data API for the Playwright suite: {@code POST /api/test/seed/*}. Exists only under the Spring profile
  * {@code e2e} (see SeedDisabledIT: without it the route is a 404 and this bean is not in the context).
  *
- * <p>Every request needs the shared secret header (see {@link SeedSecretFilter}); the application does not start
+ * <p>Every request needs the shared secret header (see {@link SeedSecretInterceptor}); the application does not start
  * with this profile on a real domain (see {@link E2eGuard}). It ships a health check, verified/unverified learners
  * (P1.4) and a probe of the "email must be verified" guard. Each later task adds its own seed endpoint here (a method on this class
  * or a sibling {@code @Profile("e2e")} controller under {@code /api/test/seed/}) that inserts through

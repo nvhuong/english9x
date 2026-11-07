@@ -1,6 +1,7 @@
 package com.english9x.platform.e2e;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.english9x.support.TestPostgres;
@@ -37,6 +38,9 @@ class SeedEnabledIT {
         registry.add("e9x.public-base-url", () -> "https://localhost");
         registry.add("e9x.e2e.seed-secret", () -> SECRET);
     }
+
+    @org.springframework.boot.test.web.server.LocalServerPort
+    int port;
 
     @Autowired
     TestRestTemplate http;
@@ -85,6 +89,26 @@ class SeedEnabledIT {
         ResponseEntity<String> r = post("/api/test/seed/learner", "{}", "nope");
         assertEquals(403, r.getStatusCode().value());
         assertTrue(r.getHeaders().getContentType().isCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON), r.getHeaders().toString());
+    }
+
+    /**
+     * Security and MVC match the DECODED path, so a guard that compared the raw URI could be walked around by spelling
+     * the same route differently. Whatever the spelling, if it reaches a seed controller it needs the secret.
+     */
+    @Test
+    void noSpellingOfASeedRouteGetsPastTheSecret() throws Exception {
+        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+        for (String path : new String[] {"/api/test/%73eed/ping", "/api/test/s%65ed/learner", "/api/test/seed/%70ing", "/%61pi/test/seed/ping",
+                "/api/%74est/seed/ping", "/api/test/seed/ping;x=y", "/api/test/seed/ping/", "/api/test/seed//ping", "/api/test/./seed/ping",
+                "/api/test/seed/%6cearner", "/api/test/%53EED/ping"}) {
+            java.net.http.HttpResponse<String> r = client.send(
+                    java.net.http.HttpRequest.newBuilder(java.net.URI.create("http://localhost:" + port + path))
+                            .header("Content-Type", "application/json")
+                            .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{}")).build(),
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            assertTrue(r.statusCode() >= 400 && r.statusCode() != 500, "POST " + path + " without the secret answered " + r.statusCode() + ": " + r.body());
+            assertFalse(r.body().contains("seedLogin") || r.body().contains("userId"), "POST " + path + " reached the seed code: " + r.body());
+        }
     }
 
     @Test
