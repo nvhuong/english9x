@@ -350,6 +350,14 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.learning.heartbeat-interval` | `30s` | Chu kỳ gửi tín hiệu đang học | Cấu hình |
 | `e9x.learning.idle-timeout` | `2m` | Không tương tác quá thời gian này thì ngừng tính giờ | Cấu hình |
 | `e9x.notification.session-reminder` | `1h` | Nhắc trước buổi học | Quản trị |
+| `e9x.notification.telegram.api-base` | `https://api.telegram.org` | Địa chỉ Bot API (E2E trỏ tới fake Telegram) | Cấu hình |
+| `e9x.notification.telegram.bot-token` | không có mặc định | Token của bot; để trống = tắt kênh Telegram. Không bao giờ vào log, thân lỗi hay mã nguồn | Cấu hình (biến môi trường) |
+| `e9x.notification.telegram.bot-username` | không có mặc định | Tên bot, dùng dựng liên kết `https://t.me/<tên>?start=<token>` | Cấu hình |
+| `e9x.notification.telegram.webhook-secret` | không có mặc định | Giá trị Telegram gửi lại trong `X-Telegram-Bot-Api-Secret-Token`; webhook từ chối mọi lời gọi thiếu hoặc sai (so sánh thời gian hằng); để trống = từ chối tất cả | Cấu hình (biến môi trường) |
+| `e9x.notification.telegram.link-ttl` | `15m` | Hạn của token liên kết Telegram một lần (256 bit, lưu dạng băm) | Cấu hình |
+| `e9x.notification.mail-from` | `English9x <no-reply@english9x.vn>` | Người gửi của email thông báo (thư bảo mật dùng `e9x.auth.mail-from`, cùng giá trị mặc định) | Cấu hình |
+| `e9x.events.redelivery-after` | `2m` | Event module mà listener chưa hoàn tất được gửi lại khi đủ tuổi này (giao ít nhất một lần, §6) | Cấu hình |
+| `e9x.events.publication-max-age` | `30d` | Event module chưa hoàn tất quá tuổi này bị ghi log lỗi và xoá, để một dòng hỏng không giữ dữ liệu cá nhân mãi (§6) | Cấu hình |
 | `e9x.backup.retention` | `14` | Số bản sao lưu giữ lại | Cấu hình |
 | `e9x.grading.ai.daily-cost-alert` | `500000` (VND/ngày) | Ngưỡng chi phí Gemini mỗi ngày để cảnh báo quản trị (chỉ cảnh báo, không chặn) | Quản trị |
 | `e9x.gemini.model` | `gemini-2.5-flash` | Model dùng để chấm | Cấu hình |

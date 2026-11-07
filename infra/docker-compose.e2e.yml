@@ -92,3 +92,7 @@ services:
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: "1025"
       E9X_TELEGRAM_API_BASE: http://fake-telegram:8080
+      # E2E-only values for the bot (the specs read the same secret from E9X_E2E_TELEGRAM_WEBHOOK_SECRET to act as Telegram)
+      E9X_TELEGRAM_BOT_TOKEN: "100200300:E2E-fake-bot-token"
+      E9X_TELEGRAM_BOT_USERNAME: e9x_e2e_bot
+      E9X_TELEGRAM_WEBHOOK_SECRET: ${E9X_E2E_TELEGRAM_WEBHOOK_SECRET:-}

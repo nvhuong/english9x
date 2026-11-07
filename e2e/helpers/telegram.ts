@@ -1,4 +1,4 @@
-import { env, json, poll, type PollOptions } from './env';
+import { env, json, poll, request, type PollOptions } from './env';
 
 export interface TelegramMessage {
   message_id: number;
@@ -36,4 +36,22 @@ export function uniqueChatId(): string {
   return String(7_000_000_000 + Math.floor(Math.random() * 1_000_000_000));
 }
 
-export const telegram = { messagesFor, waitForMessages, sendAsBot, uniqueChatId };
+/**
+ * Plays Telegram: delivers an update to the app's webhook the way Telegram does (POST with the secret token header).
+ * `secret` defaults to the right one; pass another string, or null for no header, to test refusals. Resolves to the HTTP status.
+ */
+export async function deliverUpdate(
+  update: unknown,
+  secret: string | null = env.telegramWebhookSecret,
+): Promise<number> {
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (secret !== null) headers['x-telegram-bot-api-secret-token'] = secret;
+  return (await request(`${env.baseURL}/api/telegram/webhook`, { method: 'POST', headers, body: JSON.stringify(update) })).status;
+}
+
+/** The update Telegram sends when a person presses Start on a deep link: `/start <token>` in their private chat. */
+export function startUpdate(chatId: string | number, token: string): unknown {
+  return { update_id: Math.floor(Math.random() * 1e9), message: { message_id: 1, chat: { id: Number(chatId), type: 'private' }, text: `/start ${token}` } };
+}
+
+export const telegram = { messagesFor, waitForMessages, sendAsBot, uniqueChatId, deliverUpdate, startUpdate };

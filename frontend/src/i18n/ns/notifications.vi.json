@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "title": "Thông báo",
+    "preferences": "Tuỳ chọn thông báo"
+  },
+  "bell": {
+    "none": "Thông báo, không có thông báo chưa đọc",
+    "withUnread": "Thông báo, {{count}} chưa đọc"
+  },
+  "list": {
+    "title": "Trung tâm thông báo",
+    "description": "Mọi thông báo của bạn ở một nơi, dù bạn đang ở ngữ cảnh nào.",
+    "signedOut": "Vui lòng đăng nhập để xem thông báo.",
+    "signIn": "Đăng nhập",
+    "loading": "Đang tải thông báo…",
+    "loadFailed": "Không tải được thông báo.",
+    "retry": "Thử lại",
+    "empty": "Chưa có thông báo nào",
+    "emptyHint": "Khi có việc mới cần bạn biết, thông báo sẽ hiện ở đây.",
+    "unread": "Chưa đọc",
+    "read": "Đã đọc",
+    "markRead": "Đánh dấu đã đọc",
+    "markReadOf": "Đánh dấu đã đọc: {{title}}",
+    "markAll": "Đánh dấu tất cả đã đọc",
+    "more": "Xem thêm",
+    "unreadCount": "{{count}} chưa đọc",
+    "allRead": "Bạn đã đọc hết",
+    "caption": "Danh sách thông báo",
+    "markFailed": "Chưa đánh dấu được đã đọc. Hãy thử lại.",
+    "markAllFailed": "Chưa đánh dấu được tất cả đã đọc. Hãy thử lại."
+  },
+  "prefs": {
+    "title": "Tuỳ chọn thông báo",
+    "description": "Chọn kênh nhận cho từng loại sự kiện. Thông báo trong ứng dụng luôn bật. Email bảo mật (xác thực email, đặt lại mật khẩu) luôn được gửi.",
+    "loading": "Đang tải tuỳ chọn…",
+    "loadFailed": "Không tải được tuỳ chọn.",
+    "retry": "Thử lại",
+    "saveFailed": "Chưa lưu được thay đổi. Hãy thử lại.",
+    "caption": "Kênh nhận thông báo theo sự kiện",
+    "event": "Sự kiện",
+    "inApp": "Trong ứng dụng",
+    "email": "Email",
+    "telegram": "Telegram",
+    "alwaysOn": "Luôn bật",
+    "toggle": "{{channel}}: {{event}}",
+    "telegramNotLinked": "Telegram chưa được liên kết nên chưa nhận được tin.",
+    "audience": "Dành cho {{role}}"
+  },
+  "telegram": {
+    "title": "Kết nối Telegram",
+    "description": "Nhận thông báo qua Telegram: tạo liên kết, mở trong Telegram và bấm Start. Liên kết chỉ dùng một lần và có hạn.",
+    "unavailable": "Telegram chưa được bật trên máy chủ này.",
+    "linked": "Đã kết nối Telegram",
+    "notLinked": "Chưa kết nối Telegram",
+    "create": "Tạo liên kết kết nối",
+    "recreate": "Kết nối lại với cuộc trò chuyện khác",
+    "creating": "Đang tạo liên kết…",
+    "open": "Mở trong Telegram",
+    "expires": "Liên kết dùng một lần, hết hạn lúc {{time}}.",
+    "afterOpen": "Sau khi bấm Start trong Telegram, quay lại đây và bấm “Kiểm tra”.",
+    "check": "Kiểm tra",
+    "unlink": "Huỷ kết nối",
+    "unlinkFailed": "Chưa huỷ được kết nối. Hãy thử lại.",
+    "createFailed": "Chưa tạo được liên kết. Hãy thử lại.",
+    "rule": "Một cuộc trò chuyện chỉ kết nối được với một tài khoản. Nếu cuộc trò chuyện này đang gắn với tài khoản khác, hãy huỷ kết nối ở tài khoản đó trước.",
+    "statusFailed": "Không tải được trạng thái Telegram.",
+    "retryStatus": "Thử lại trạng thái Telegram",
+    "failing": "Telegram đã kết nối nhưng tin gần nhất không gửi được (ví dụ bạn đã chặn bot). Hãy bỏ chặn bot hoặc kết nối lại với cuộc trò chuyện khác."
+  },
+  "audience": {
+    "SYS_ADMIN": "Quản trị hệ thống",
+    "LEARNER": "Học viên",
+    "TEACHER": "Giáo viên",
+    "REVIEWER": "Người duyệt",
+    "AUTHOR": "Biên soạn"
+  },
+  "event": {
+    "ORDER_PENDING": {
+      "title": "Có đơn hàng mới chờ xác nhận",
+      "body": "Có một đơn hàng đang chờ bạn xác nhận thanh toán."
+    },
+    "ORDER_CONFIRMED": {
+      "title": "Đơn hàng đã được xác nhận",
+      "body": "Đơn hàng của bạn đã được xác nhận. Bạn có thể bắt đầu học ngay."
+    },
+    "ORDER_REJECTED": {
+      "title": "Đơn hàng không được xác nhận",
+      "body": "Đơn hàng của bạn không được xác nhận. Lý do: {{reason}}"
+    },
+    "PLAN_EXPIRING": {
+      "title": "Gói học sắp hết hạn",
+      "body": "Gói học của bạn còn khoảng 7 ngày nữa là hết hạn."
+    },
+    "PLAN_EXPIRED": {
+      "title": "Gói học đã hết hạn",
+      "body": "Gói học của bạn đã hết hạn. Gia hạn để tiếp tục học."
+    },
+    "SCORE_PRELIMINARY": {
+      "title": "Bài làm của bạn đã có điểm sơ bộ",
+      "body": "Điểm sơ bộ (do AI chấm) đã có. Điểm chính thức sẽ được thông báo sau."
+    },
+    "SCORE_OFFICIAL": {
+      "title": "Bài làm của bạn đã có điểm chính thức",
+      "body": "Điểm chính thức của bài làm đã có. Mở kết quả để xem và chữa bài."
+    },
+    "GRADING_QUEUE_NEW": {
+      "title": "Có bài mới trong hàng chờ chấm",
+      "body": "Có bài mới đang chờ giáo viên chấm."
+    },
+    "GRADING_CLAIM_DUE": {
+      "title": "Bài bạn nhận sắp quá hạn chấm",
+      "body": "Một bài bạn đã nhận sắp quá hạn chấm. Hãy chấm hoặc trả bài về hàng chờ."
+    },
+    "REVIEW_REQUESTED": {
+      "title": "Có nội dung chờ duyệt",
+      "body": "Một nội dung ({{contentType}}) của kỳ thi {{examCode}} đang chờ bạn duyệt."
+    },
+    "REVIEW_CHANGES_REQUESTED": {
+      "title": "Nội dung bị yêu cầu sửa",
+      "body": "Người duyệt yêu cầu bạn sửa một nội dung ({{contentType}}) của kỳ thi {{examCode}}."
+    },
+    "CONTENT_PUBLISHED": {
+      "title": "Nội dung đã được xuất bản",
+      "body": "Nội dung ({{contentType}}) của kỳ thi {{examCode}} do bạn soạn đã được duyệt và xuất bản."
+    },
+    "ASSIGNMENT_NEW": {
+      "title": "Bạn có bài được giao mới",
+      "body": "Giáo viên vừa giao cho bạn một bài mới. Mở bài được giao để xem hạn nộp."
+    },
+    "ASSIGNMENT_DUE_SOON": {
+      "title": "Bài được giao sắp đến hạn",
+      "body": "Một bài được giao của bạn sắp đến hạn nộp."
+    },
+    "SESSION_REMINDER": {
+      "title": "Sắp đến buổi học",
+      "body": "Buổi học của bạn bắt đầu sau khoảng 1 giờ."
+    },
+    "AI_GRADING_FAILED": {
+      "title": "Chấm AI bị lỗi",
+      "body": "Chấm AI cho một bài làm đã lỗi sau mọi lần thử lại. Cần quản trị viên kiểm tra."
+    }
+  }
+}

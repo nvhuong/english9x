@@ -9,6 +9,8 @@
 //
 // Scanned today, signed in (P1.5): the admin area (empty state), organisations, one organisation's members + invitations, staff
 // invitations, and the organisation admin's members page in its context. Both languages, light and dark.
+// Scanned today, signed in (P1.8): the notification centre with a notification in it, and the notification preferences with the
+// Telegram panel. Both languages, light and dark.
 // Scanned today (reachable without signing in): learner home, display preferences, exam area (empty state), the
 // access-denied screen as shown for /cms, /org and /admin, the not-found screen, and (P1.4) the sign-in family: login,
 // register, forgot password, reset password (with a token), the verify-email failure screen, and the two steps of a Google
@@ -19,6 +21,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures';
 import { chooseGoogleAccount } from '../../helpers/google';
+import { reviewWorld } from '../notify/_world';
 
 interface Screen { name: string; path: string; heading: { vi: RegExp; en: RegExp } }
 
@@ -103,6 +106,32 @@ for (const lang of ['vi', 'en'] as const) {
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(GOOGLE_STEP_HEADINGS.replace[lang]);
       await expect(page.locator('html')).toHaveAttribute('lang', lang);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await scan(page);
+    });
+  }
+}
+
+for (const lang of ['vi', 'en'] as const) {
+  for (const theme of THEMES) {
+    test(`F58 axe: signed-in notification screens in ${lang}, ${theme} mode`, async ({ page, auth, seed, uniqueEmail }) => {
+      const w = await reviewWorld(seed, uniqueEmail, 'f58n');
+      await w.requested();
+      await auth.loginAs(page, w.reviewer);
+      await page.evaluate((v) => {
+        localStorage.setItem('e9x.theme', v.theme);
+        localStorage.setItem('e9x.lang', v.lang);
+      }, { theme, lang });
+      const title = { vi: 'Có nội dung chờ duyệt', en: 'Content is waiting for review' }[lang];
+      await expect(async () => {
+        await page.goto('/notifications');
+        await expect(page.getByRole('heading', { level: 2, name: title })).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 40_000 });
+      await expect(page.locator('html')).toHaveAttribute('lang', lang);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await scan(page);
+      await page.goto('/notifications/preferences');
+      await expect(page.getByRole('heading', { level: 1, name: { vi: 'Tuỳ chọn thông báo', en: 'Notification preferences' }[lang] })).toBeVisible();
+      await expect(page.getByRole('checkbox').first()).toBeVisible();
       await scan(page);
     });
   }

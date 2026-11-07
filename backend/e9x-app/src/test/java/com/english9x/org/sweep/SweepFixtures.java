@@ -47,6 +47,10 @@ public final class SweepFixtures {
         su.update("insert into review_bundles(id,owner_org_id,submitted_by,member_count) values (?,?,?,1)", bundleB, orgB, userB);
         su.update("insert into review_requests(bundle_id,content_type,version_id,owner_org_id,exam_code,author_id,submitted_by) "
                 + "values (?,'item',gen_random_uuid(),?,'IELTS',?,?)", bundleB, orgB, userB, userB);
+        // P1.8: org B's member has a notification (and an unused Telegram link token): the notification endpoints are per person, so
+        // A must neither list nor mark them, in any context (id-bearing paths of /api/me/notifications are swept like the others)
+        su.update("insert into notifications(user_id,event_type,data,dedupe_key) values (?,'REVIEW_REQUESTED','{\"examCode\":\"IELTS\"}','sweep-b')", userB);
+        su.update("insert into telegram_link_tokens(user_id,token_hash,expires_at) values (?,sha256('sweep-tg-b'::bytea),now()+interval '1 day')", userB);
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
@@ -65,7 +69,9 @@ public final class SweepFixtures {
      */
     private static final Set<String> INFRASTRUCTURE = Set.of("jobs",
             // P1.4: the request role has no privilege at all on these (only the SECURITY DEFINER auth_* functions touch them)
-            "refresh_tokens", "email_verifications", "password_resets");
+            "refresh_tokens", "email_verifications", "password_resets",
+            // P1.8: Spring Modulith's registry of module events (ids; no tenant column, no request-role reachable endpoint)
+            "event_publication");
 
     /**
      * Walks every public table that has an {@code id uuid}. A table must be either explicit ({@code users},

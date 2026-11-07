@@ -46,7 +46,9 @@ class SecurityConfiguration {
     static final String[] PUBLIC_POST = {
         "/api/auth/register", "/api/auth/verify-email", "/api/auth/verify-email/resend", "/api/auth/login",
         "/api/auth/refresh", "/api/auth/logout", "/api/auth/password-reset/request", "/api/auth/password-reset/confirm",
-        "/api/auth/oauth/exchange", "/api/auth/oauth/consent"
+        "/api/auth/oauth/exchange", "/api/auth/oauth/consent",
+        // Telegram's updates: no token exists on that side; the call is accepted only with the secret header (notification module)
+        "/api/telegram/webhook"
     };
     static final String[] PUBLIC_GET = {"/api/platform/ping", "/api/auth/config", "/v3/api-docs", "/v3/api-docs/**"};
 

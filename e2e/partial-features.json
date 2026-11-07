@@ -26,6 +26,26 @@
       "id": "F58",
       "pending": "The 8 main screens of the design mockups are not built yet: 01 course catalogue, 02 chapter map, 03 lesson, 04 exam room Reading, 05 exam room Speaking, 06 result, 07 CMS review queue, 08 admin QR orders. They move from PENDING_MAIN_SCREENS to SCREENS in the spec as they appear (see its header and the P1.12 note in the foundation plan).",
       "owner": "P3.1 (01, 02), P3.2 (03), P3.4 (04, 05), P4.4 (06), P2.9 (07), P5.4 (08)"
+    },
+    {
+      "id": "F52",
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the same scenario started by a real submit/approve/request-changes in the CMS, and the other spec §13 events (orders, plan expiry, scores, grading queue, assignments, session reminders), whose source modules do not exist yet.",
+      "owner": "P2.9 (CMS review queue); sources: P5.1/P5.2 (orders, plan), P4.2/P4.3 (scores, grading), P6.2/P6.3 (assignments, sessions)"
+    },
+    {
+      "id": "F53",
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the mail for a real CMS review action and for the other §13 events.",
+      "owner": "P2.9; P5.2, P4.2/P4.3, P6.2/P6.3 for the other sources"
+    },
+    {
+      "id": "F54",
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: Telegram messages for a real CMS review action and the other §13 events. Telegram's own delivery of /start to the webhook is played by the spec (the real bot cannot be reached from CI).",
+      "owner": "P2.9; P5.2, P4.2/P4.3, P6.2/P6.3 for the other sources"
+    },
+    {
+      "id": "F55",
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the effect of preferences on a real CMS review action and on the other §13 events (the preference screen already lists all of them).",
+      "owner": "P2.9; P5.2, P4.2/P4.3, P6.2/P6.3 for the other sources"
     }
   ]
 }

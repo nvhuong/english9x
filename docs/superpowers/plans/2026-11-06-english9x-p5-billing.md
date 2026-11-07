@@ -14,6 +14,11 @@
 
 ### Task P5.1: gói + đơn + quyền học (W3) — F39, F41
 
+> **Ghi chú 2026-11-08 (từ P1.8, quyết định về quyền của role request):** event là **gợi ý**, không phải bằng chứng. Role `e9x_app` có INSERT/UPDATE/DELETE `event_publication` và INSERT `jobs` (thư viện Modulith buộc phải cấp), nên một câu lệnh SQL bị chiếm quyền dựng được event giả hợp lệ hình dạng. Listener của task này phải **đọc lại dòng nguồn** (lượt thi, đơn, suất ...) và kiểm tra khớp với event trước khi làm việc quan trọng; không tin id/giá trị mang trong event. Xem `docs/superpowers/design/events.md`.
+
+> **Ghi chú 2026-11-08 (từ P1.8):** Nguồn thông báo của task này (spec §13), do P1.8 khai báo `EventType` + mẫu vi/en nhưng CHƯA có nguồn (không dựng nguồn giả): `PLAN_EXPIRING` (còn `e9x.billing.expiry-reminder` = 7 ngày) và `PLAN_EXPIRED` cho học viên, phát từ job định kỳ `plan_expiry_reminder`/`expire_entitlements` bằng `NotificationService.notify(EventType.PLAN_EXPIRING, userId, data, "plan-expiring:" + entitlementId)` (khoá chống trùng theo entitlement, job chạy lại không báo hai lần). Worker không đọc được `users`: job chỉ cần userId trong payload và gọi `notify` (qua `JobQueue`/transaction chính). Dữ liệu `data` chỉ là id/mã, không tiêu đề khoá.
+
+
 **Files:** `backend/e9x-app/src/main/java/com/english9x/billing/{plan,order,entitlement}/**`, migration `V202611100004__billing_plans_orders.sql` (`plans`, `orders`, `order_items`; dùng `entitlements` của L1d), job `expire_orders`, `expire_entitlements` (đánh dấu hết hạn, thông báo), `plan_expiry_reminder`, E2E `F39-b2c-plan.spec.ts`, `F41-entitlement-access.spec.ts`.
 
 **Interfaces (Produces):**
@@ -29,6 +34,9 @@
 > **Ghi chú 2026-11-07 (từ P1.7, vòng sửa 1):** P5.1 sở hữu việc lên lịch định kỳ (job lặp) đầu tiên: `expire_orders`, `expire_entitlements`, `plan_expiry_reminder`, `release_expired_claim` (P1.7 chỉ có hàng đợi; worker hiện không có INSERT/DELETE trên `jobs`). Cần: cột/khoá `dedupe_key` để hai instance không xếp trùng cùng một lần chạy, chính sách giữ/dọn payload và job đã xong (payload có thể chứa dữ liệu người dùng), và migration cấp quyền hẹp cho `e9x_worker` (GRANT + POLICY) cho phần dữ liệu các handler này đụng tới.
 
 ### Task P5.2: VietQR + xác nhận thủ công (W4) — F40
+
+> **Ghi chú 2026-11-08 (từ P1.8):** Nguồn thông báo của task này (spec §13), do P1.8 khai báo `EventType` + mẫu vi/en nhưng CHƯA có nguồn (không dựng nguồn giả): `ORDER_PENDING` (cho mọi SYS_ADMIN: cần hàm tra cứu `SECURITY DEFINER` hẹp để liệt kê SYS_ADMIN, giống `notification_reviewers_of_review`, không cấp đọc `role_grants` rộng), `ORDER_CONFIRMED` (từ `OrderConfirmed`, người nhận `userId` của đơn; đơn của tổ chức thì ORG_ADMIN), `ORDER_REJECTED` (từ `OrderRejected`; `data.reason` là chữ do quản trị nhập, được escape theo kênh nhưng đừng đưa chuỗi dài > 500 ký tự). Nối bằng `@ApplicationModuleListener` trong `notification.internal` (theo mẫu `ReviewNotifications`) hoặc gọi `NotificationService.notify` từ listener của billing; E2E F52–F55 đang ghi `partial-features.json` chờ nguồn này.
+
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/billing/payment/**` (`PaymentAccountService`, `QrImageController`, `OrderAdminController`), migration `V202611110003__payment_accounts.sql`, `frontend/src/features/billing/{CheckoutPage,OrderStatusPage}.tsx`, `frontend/src/features/admin/{PendingOrdersPage,PaymentAccountPage}.tsx`, E2E `F40-vietqr-order.spec.ts`.
 

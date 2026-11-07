@@ -9,6 +9,8 @@ export const env = {
   geminiURL: process.env.E2E_GEMINI_URL ?? `http://localhost:${process.env.E9X_FAKE_GEMINI_PORT ?? '8082'}`,
   /** The fake "Google" (OpenID provider) as the BROWSER reaches it. */
   oidcURL: process.env.E2E_OIDC_URL ?? `http://localhost:${process.env.E9X_FAKE_OIDC_PORT ?? '8083'}`,
+  /** The secret the app expects in X-Telegram-Bot-Api-Secret-Token (scripts/e2e.sh generates one per run): the specs act as Telegram with it. */
+  telegramWebhookSecret: process.env.E9X_E2E_TELEGRAM_WEBHOOK_SECRET ?? '',
   /** Shared secret of the seed API (X-E2E-Seed-Secret). scripts/e2e.sh generates one per run and exports it. */
   seedSecret: process.env.E9X_E2E_SEED_SECRET ?? process.env.E2E_SEED_SECRET ?? '',
 };

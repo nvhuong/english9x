@@ -61,6 +61,22 @@ class SeedEnabledIT {
     }
 
     @Test
+    void reviewEventsGoThroughTheRealRegistryAndListenersToTheRecipients() throws Exception {
+        String reviewer = post("/api/test/seed/learner", "{\"email\":\"seed-reviewer@e2e.test\"}", SECRET).getBody().replaceAll(".*\"userId\":\"([^\"]+)\".*", "$1");
+        String author = post("/api/test/seed/learner", "{\"email\":\"seed-author@e2e.test\"}", SECRET).getBody().replaceAll(".*\"userId\":\"([^\"]+)\".*", "$1");
+        assertEquals(201, post("/api/test/seed/staff-grant", "{\"userId\":\"" + reviewer + "\",\"role\":\"REVIEWER\",\"examCode\":\"IELTS\"}", SECRET).getStatusCode().value());
+        ResponseEntity<String> requested = post("/api/test/seed/review-event", "{\"kind\":\"requested\",\"examCode\":\"IELTS\",\"authorId\":\"" + author + "\"}", SECRET);
+        assertEquals(201, requested.getStatusCode().value(), requested.getBody());
+        assertEquals(201, post("/api/test/seed/review-event", "{\"kind\":\"approved\",\"examCode\":\"IELTS\",\"authorId\":\"" + author + "\"}", SECRET).getStatusCode().value());
+        assertEquals(400, post("/api/test/seed/review-event", "{\"kind\":\"nope\",\"authorId\":\"" + author + "\"}", SECRET).getStatusCode().value());
+        JdbcTemplate su = new JdbcTemplate(TestPostgres.superuser(DB));
+        org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(20)).untilAsserted(() -> {
+            assertEquals(1, su.queryForObject("select count(*) from notifications where user_id = ?::uuid and event_type = 'REVIEW_REQUESTED'", Integer.class, reviewer));
+            assertEquals(1, su.queryForObject("select count(*) from notifications where user_id = ?::uuid and event_type = 'CONTENT_PUBLISHED'", Integer.class, author));
+        });
+    }
+
+    @Test
     void organisationFixturesFollowTheRealRules() {
         ResponseEntity<String> org = post("/api/test/seed/organization", "{\"name\":\"Seed Centre\",\"type\":\"ENTERPRISE\"}", SECRET);
         assertEquals(201, org.getStatusCode().value(), org.getBody());

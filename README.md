@@ -76,6 +76,14 @@ The accepting account must be signed in with the invited address, verified; a di
 A request names its organisation with `X-Org-Context: <uuid>` (absent = "Cá nhân"); a non-member, an unknown or a malformed value gets the same 403.
 `join_codes` exists with its policies and a redeem function (`org_join_code_redeem`); the endpoint and screens are P6.1 (F44).
 
+## Notifications (P1.8)
+In-app (always on), email and Telegram, per event and channel (`/notifications`, `/notifications/preferences`). Email goes through the same SMTP
+settings as account mail (`E9X_SMTP_*`). Telegram is off until the operator creates a bot with @BotFather and sets `E9X_TELEGRAM_BOT_TOKEN`,
+`E9X_TELEGRAM_BOT_USERNAME` and a random `E9X_TELEGRAM_WEBHOOK_SECRET` (1-256 characters of `A-Za-z0-9_-`), then registers the webhook once:
+`curl -X POST https://api.telegram.org/bot<TOKEN>/setWebhook -d url=https://<domain>/api/telegram/webhook -d secret_token=<SECRET>`.
+Delivery runs as the job `send_notification` (retry delays `e9x.jobs.send_notification.retry-delays`, default 30s,2m,10m); a failed
+send never removes the in-app notification. Security mail (verify email, password reset, "already registered") is separate and ignores the preferences.
+
 ## Fakes
 - Fake Gemini: `POST /v1beta/models/{model}:generateContent`; choose the response with `POST /__scenario {"scenario":"ok|error500|badSchema"}`; inspect calls at `GET /__requests`.
 - Fake Telegram: `POST /bot{token}/sendMessage`; read what was sent with `GET /__messages?chat_id=`.

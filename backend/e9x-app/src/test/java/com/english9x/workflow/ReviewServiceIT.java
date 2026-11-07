@@ -136,6 +136,20 @@ class ReviewServiceIT {
             committed.add(e);
         }
 
+        // Accessors, not field reads: since P1.8 the event registry proxies every bean that has a transactional listener, and a
+        // field read on the proxy would see its own (null) field instead of this object's.
+        List<ContentPublished> committed() {
+            return committed;
+        }
+
+        List<Boolean> publishedInsideTransaction() {
+            return publishedInsideTransaction;
+        }
+
+        List<Object> workflowEvents() {
+            return workflowEvents;
+        }
+
         List<ContentPublished> forVersion(UUID id) {
             return committed.stream().filter(e -> e.versionId().equals(id)).toList();
         }
@@ -208,9 +222,9 @@ class ReviewServiceIT {
 
     @BeforeEach
     void reset() {
-        recorder.committed.clear();
-        recorder.workflowEvents.clear();
-        recorder.publishedInsideTransaction.clear();
+        recorder.committed().clear();
+        recorder.workflowEvents().clear();
+        recorder.publishedInsideTransaction().clear();
         items.afterDependencyLocked = id -> {};
     }
 
@@ -289,7 +303,7 @@ class ReviewServiceIT {
                 "nor may they send it back to themselves");
         assertEquals("IN_REVIEW", status(mine));
         assertEquals("IN_REVIEW", reviewStatus(review));
-        assertEquals(List.of(), recorder.committed);
+        assertEquals(List.of(), recorder.committed());
 
         // wrote by one person, submitted by another: neither of them may approve
         UUID theirs = item(ORG_A, "IELTS", DUAL_A, "DRAFT");
@@ -305,7 +319,7 @@ class ReviewServiceIT {
         UUID review3 = submitted(SYS_DUAL, null, sys);
         assertThrows(SelfReviewException.class, () -> asDo(SYS_DUAL, null, () -> reviews.approve(review3)));
         assertEquals("IN_REVIEW", status(sys));
-        assertEquals(List.of(), recorder.committed);
+        assertEquals(List.of(), recorder.committed());
 
         // an independent reviewer approves it
         asDo(E9_REVIEWER, null, () -> reviews.approve(review3));
@@ -329,7 +343,7 @@ class ReviewServiceIT {
         assertEquals(Optional.of("Option C is also correct"), v.comment());
         assertEquals(Optional.of(REVIEWER_A), v.reviewerId());
         assertTrue(v.decidedAt().isPresent());
-        assertEquals(List.of(), recorder.committed, "nothing was published");
+        assertEquals(List.of(), recorder.committed(), "nothing was published");
 
         // the author edits (allowed in this state), submits again: a new review, then approval publishes it once
         su.update("update test_items set body = 'v2' where id = ?", it);
@@ -338,15 +352,15 @@ class ReviewServiceIT {
         assertEquals("IN_REVIEW", status(it));
         asDo(REVIEWER_A, ORG_A, () -> reviews.approve(second));
         assertEquals("PUBLISHED", status(it));
-        assertEquals(List.of(new ContentPublished("item", it, Optional.of(ORG_A), "IELTS")), recorder.committed);
-        assertEquals(List.of(true), recorder.publishedInsideTransaction, "published inside the transaction of the approval");
+        assertEquals(List.of(new ContentPublished("item", it, Optional.of(ORG_A), "IELTS")), recorder.committed());
+        assertEquals(List.of(true), recorder.publishedInsideTransaction(), "published inside the transaction of the approval");
         // the earlier review keeps its history
         assertEquals("CHANGES_REQUESTED", reviewStatus(review));
 
         // a decided review is final
         assertThrows(ReviewConflictException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approve(review)));
         assertThrows(ReviewConflictException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approve(second)));
-        assertEquals(1, recorder.committed.size());
+        assertEquals(1, recorder.committed().size());
     }
 
     @Test
@@ -363,7 +377,7 @@ class ReviewServiceIT {
         assertEquals(Set.of(ref(draftDep), ref(reviewDep), ref(missingDep)), Set.copyOf(e.missing()), "every unpublished dependency is listed, the published one is not");
         assertEquals("IN_REVIEW", status(test));
         assertEquals("IN_REVIEW", reviewStatus(review));
-        assertEquals(List.of(), recorder.committed);
+        assertEquals(List.of(), recorder.committed());
 
         su.update("delete from test_item_deps where item_id = ?", test);
         su.update("insert into test_item_deps(item_id,dep_id) values (?,?)", test, okDep);
@@ -382,13 +396,13 @@ class ReviewServiceIT {
         assertEquals(Set.of("IN_REVIEW"), Set.copyOf(List.of(status(q), status(lesson), status(course))));
         asDo(REVIEWER_A, ORG_A, () -> reviews.approveBundle(bundle));
         assertEquals(List.of("PUBLISHED", "PUBLISHED", "PUBLISHED"), List.of(status(q), status(lesson), status(course)));
-        assertEquals(3, recorder.committed.size());
-        assertEquals(Set.of(q, lesson, course), Set.copyOf(recorder.committed.stream().map(ContentPublished::versionId).toList()));
+        assertEquals(3, recorder.committed().size());
+        assertEquals(Set.of(q, lesson, course), Set.copyOf(recorder.committed().stream().map(ContentPublished::versionId).toList()));
         assertThrows(ReviewConflictException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approveBundle(bundle)), "once");
-        assertEquals(3, recorder.committed.size());
+        assertEquals(3, recorder.committed().size());
 
         // one member depends on something unpublished outside the bundle: nothing is published, no event
-        recorder.committed.clear();
+        recorder.committed().clear();
         UUID outside = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         UUID m1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         UUID m2 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
@@ -398,7 +412,7 @@ class ReviewServiceIT {
         assertEquals(List.of(ref(outside)), e.missing());
         assertEquals(List.of("IN_REVIEW", "IN_REVIEW", "IN_REVIEW"), List.of(status(m1), status(m2), status(m3)));
         assertEquals(Set.of("IN_REVIEW"), Set.copyOf(reviewIdsOfBundle(b2).stream().map(ReviewServiceIT::reviewStatus).toList()));
-        assertEquals(List.of(), recorder.committed);
+        assertEquals(List.of(), recorder.committed());
 
         // one member was written by the reviewer: none is published
         UUID n1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
@@ -406,7 +420,7 @@ class ReviewServiceIT {
         UUID b3 = as(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(n1), ref(n2)))));
         assertThrows(SelfReviewException.class, () -> asDo(DUAL_A, ORG_A, () -> reviews.approveBundle(b3)));
         assertEquals(List.of("IN_REVIEW", "IN_REVIEW"), List.of(status(n1), status(n2)));
-        assertEquals(List.of(), recorder.committed);
+        assertEquals(List.of(), recorder.committed());
 
         // a member of an exam the reviewer does not review: refused as a whole (they cannot even see that member)
         UUID i1 = item(ORG_A, "IELTS", AUTHOR_A_BOTH, "DRAFT");
@@ -415,7 +429,7 @@ class ReviewServiceIT {
         assertThrows(AccessDeniedException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approveBundle(b4)));
         assertThrows(AccessDeniedException.class, () -> asDo(REVIEWER_A_TOEIC, ORG_A, () -> reviews.approveBundle(b4)));
         assertEquals(List.of("IN_REVIEW", "IN_REVIEW"), List.of(status(i1), status(t1)));
-        assertEquals(List.of(), recorder.committed);
+        assertEquals(List.of(), recorder.committed());
         // ... and the whole bundle can be sent back, or decided by someone who may decide all of it
         assertThrows(AccessDeniedException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.requestBundleChanges(b4, "no")));
         assertEquals(List.of("IN_REVIEW", "IN_REVIEW"), List.of(status(i1), status(t1)));
@@ -499,7 +513,7 @@ class ReviewServiceIT {
         assertThrows(ReviewNotFoundException.class, () -> asDo(AUTHOR_B, ORG_B, () -> reviews.approve(review)));
         assertEquals("IN_REVIEW", status(it));
         assertEquals("IN_REVIEW", reviewStatus(review));
-        assertEquals(List.of(), recorder.committed);
+        assertEquals(List.of(), recorder.committed());
         // the same call from inside the right organisation works (the positive control)
         assertEquals(1, queue(REVIEWER_A, ORG_A).stream().filter(v -> v.reviewId().equals(Optional.of(review))).count());
     }
@@ -526,7 +540,7 @@ class ReviewServiceIT {
         }
         assertEquals("IN_REVIEW", status(e9));
         assertEquals("IN_REVIEW", status(a));
-        assertEquals(List.of(), recorder.committed);
+        assertEquals(List.of(), recorder.committed());
         // the open queues are separate
         List<ReviewQueueEntry> queue = queue(E9_REVIEWER, null);
         assertTrue(queue.stream().anyMatch(v -> v.reviewId().equals(Optional.of(e9Review))));
@@ -534,7 +548,7 @@ class ReviewServiceIT {
         assertTrue(queue(REVIEWER_A, ORG_A).stream().noneMatch(v -> v.reviewId().equals(Optional.of(e9Review))));
         // English9x publication carries no owner
         asDo(E9_REVIEWER, null, () -> reviews.approve(e9Review));
-        assertEquals(List.of(new ContentPublished("item", e9, Optional.empty(), "IELTS")), recorder.committed);
+        assertEquals(List.of(new ContentPublished("item", e9, Optional.empty(), "IELTS")), recorder.committed());
     }
 
     @Test
@@ -773,24 +787,24 @@ class ReviewServiceIT {
         UUID it = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         // a refused submission: nothing
         assertThrows(AccessDeniedException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.submit(ref(it))));
-        assertEquals(List.of(), recorder.workflowEvents);
+        assertEquals(List.of(), recorder.workflowEvents());
         UUID review = submitted(AUTHOR_A, ORG_A, it);
-        assertEquals(List.of(new ReviewRequested("item", it, Optional.of(ORG_A), "IELTS", review, Optional.empty())), recorder.workflowEvents);
-        recorder.workflowEvents.clear();
+        assertEquals(List.of(new ReviewRequested("item", it, Optional.of(ORG_A), "IELTS", review, Optional.empty())), recorder.workflowEvents());
+        recorder.workflowEvents().clear();
         // refused decisions: nothing
         assertThrows(AccessDeniedException.class, () -> asDo(AUTHOR_A, ORG_A, () -> reviews.approve(review)));
         assertThrows(ReviewNotFoundException.class, () -> asDo(REVIEWER_B, ORG_B, () -> reviews.requestChanges(review, "x")));
         assertThrows(InvalidReviewInputException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, " ")));
-        assertEquals(List.of(), recorder.workflowEvents);
+        assertEquals(List.of(), recorder.workflowEvents());
         asDo(REVIEWER_A, ORG_A, () -> reviews.requestChanges(review, "again"));
-        assertEquals(List.of(new ReviewChangesRequested("item", it, Optional.of(ORG_A), "IELTS", review, Optional.empty(), AUTHOR_A)), recorder.workflowEvents);
-        recorder.workflowEvents.clear();
+        assertEquals(List.of(new ReviewChangesRequested("item", it, Optional.of(ORG_A), "IELTS", review, Optional.empty(), AUTHOR_A)), recorder.workflowEvents());
+        recorder.workflowEvents().clear();
         UUID second = submitted(AUTHOR_A, ORG_A, it);
-        recorder.workflowEvents.clear();
+        recorder.workflowEvents().clear();
         asDo(REVIEWER_A, ORG_A, () -> reviews.approve(second));
-        assertEquals(List.of(new ReviewApproved("item", it, Optional.of(ORG_A), "IELTS", second, Optional.empty(), AUTHOR_A)), recorder.workflowEvents);
+        assertEquals(List.of(new ReviewApproved("item", it, Optional.of(ORG_A), "IELTS", second, Optional.empty(), AUTHOR_A)), recorder.workflowEvents());
         assertThrows(ReviewConflictException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approve(second)));
-        assertEquals(1, recorder.workflowEvents.size());
+        assertEquals(1, recorder.workflowEvents().size());
         assertEquals(1, recorder.forVersion(it).size());
     }
 
@@ -800,38 +814,38 @@ class ReviewServiceIT {
         UUID i2 = item(ORG_A, "IELTS", AUTHOR_A_BOTH, "DRAFT");
         UUID t1 = item(ORG_A, "TOEIC", AUTHOR_A_BOTH, "DRAFT");
         UUID bundle = as(AUTHOR_A_BOTH, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(i1), ref(i2), ref(t1)))));
-        List<ReviewRequested> requested = recorder.workflowEvents.stream().map(ReviewRequested.class::cast).toList();
+        List<ReviewRequested> requested = recorder.workflowEvents().stream().map(ReviewRequested.class::cast).toList();
         assertEquals(Set.of("IELTS", "TOEIC"), Set.copyOf(requested.stream().map(ReviewRequested::examCode).toList()));
         assertEquals(2, requested.size());
         assertTrue(requested.stream().allMatch(e -> e.bundleId().equals(Optional.of(bundle))));
-        recorder.workflowEvents.clear();
+        recorder.workflowEvents().clear();
 
         UUID j1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         UUID j2 = item(ORG_A, "IELTS", AUTHOR_A_BOTH, "DRAFT");
         UUID j3 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         // two authors' versions submitted by one person who may submit them: AUTHOR_A_BOTH submits all three
         UUID b2 = as(AUTHOR_A_BOTH, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(j1), ref(j2), ref(j3)))));
-        recorder.workflowEvents.clear();
+        recorder.workflowEvents().clear();
         asDo(REVIEWER_A, ORG_A, () -> reviews.approveBundle(b2));
-        List<ReviewApproved> approved = recorder.workflowEvents.stream().map(ReviewApproved.class::cast).toList();
+        List<ReviewApproved> approved = recorder.workflowEvents().stream().map(ReviewApproved.class::cast).toList();
         assertEquals(Set.of(AUTHOR_A, AUTHOR_A_BOTH), Set.copyOf(approved.stream().map(ReviewApproved::authorId).toList()));
         assertEquals(2, approved.size(), "one per author, not per member");
-        assertEquals(3, recorder.committed.size(), "ContentPublished is still one per version");
+        assertEquals(3, recorder.committed().size(), "ContentPublished is still one per version");
 
         UUID k1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         UUID k2 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         UUID b3 = as(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(k1), ref(k2)))));
-        recorder.workflowEvents.clear();
+        recorder.workflowEvents().clear();
         asDo(REVIEWER_A, ORG_A, () -> reviews.requestBundleChanges(b3, "redo"));
-        assertEquals(1, recorder.workflowEvents.size());
-        assertInstanceOf(ReviewChangesRequested.class, recorder.workflowEvents.get(0));
+        assertEquals(1, recorder.workflowEvents().size());
+        assertInstanceOf(ReviewChangesRequested.class, recorder.workflowEvents().get(0));
         // a refused bundle decision publishes nothing
         UUID m1 = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         UUID m2 = item(ORG_A, "IELTS", DUAL_A, "DRAFT");
         UUID b4 = as(AUTHOR_A, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(m1), ref(m2)))));
-        recorder.workflowEvents.clear();
+        recorder.workflowEvents().clear();
         assertThrows(SelfReviewException.class, () -> asDo(DUAL_A, ORG_A, () -> reviews.approveBundle(b4)));
-        assertEquals(List.of(), recorder.workflowEvents);
+        assertEquals(List.of(), recorder.workflowEvents());
     }
 
     @Test
@@ -871,15 +885,15 @@ class ReviewServiceIT {
     void anOuterTransactionRolledBackAfterPublicationDeliversNothing() {
         UUID it = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
         UUID review = submitted(AUTHOR_A, ORG_A, it);
-        recorder.workflowEvents.clear();
+        recorder.workflowEvents().clear();
         as(REVIEWER_A, ORG_A, () -> new TransactionTemplate(tm).execute(st -> {
             reviews.approve(review);
             st.setRollbackOnly();
             return null;
         }));
-        assertEquals(List.of(true), recorder.publishedInsideTransaction, "it was published inside the transaction ...");
-        assertEquals(List.of(), recorder.committed, "... and an AFTER_COMMIT listener never saw it");
-        assertEquals(List.of(), recorder.workflowEvents);
+        assertEquals(List.of(true), recorder.publishedInsideTransaction(), "it was published inside the transaction ...");
+        assertEquals(List.of(), recorder.committed(), "... and an AFTER_COMMIT listener never saw it");
+        assertEquals(List.of(), recorder.workflowEvents());
         assertEquals("IN_REVIEW", status(it));
         assertEquals("IN_REVIEW", reviewStatus(review));
     }
