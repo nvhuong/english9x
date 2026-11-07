@@ -85,6 +85,14 @@ export const seed = {
     return learner;
   },
 
+  /**
+   * Publishes the event the review workflow publishes ('requested' | 'changes' | 'approved') through the real event registry, so the
+   * real notification listeners, jobs, mail and Telegram take over. A stand-in for the CMS review screens (P2.9); `orgId` omitted =
+   * an English9x review. 'requested' goes to the REVIEWERs of `examCode` in that context; the other two to `authorId`.
+   */
+  reviewEvent: (opts: { kind: 'requested' | 'changes' | 'approved'; authorId: string; examCode?: string; orgId?: string | null }) =>
+    post<{ reviewId: string; kind: string }>('review-event', { examCode: 'IELTS', orgId: null, ...opts }),
+
   /** A centre with teachers and learners (classes, members). Needs the classroom module. */
   center: (_opts: { teachers: number; learners: number }): Promise<SeededCenter> =>
     notImplemented('seed.center', 'P6.1 (members and classes); organisations themselves exist since P1.5 (seed.organization, seed.member)'),

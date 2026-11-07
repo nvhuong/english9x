@@ -29,6 +29,14 @@ Nguồn: spec §5.3, §10.4, §11, §12 và plan P1.11. Hình dạng bản ghi *
 
 "Consumer dự kiến" theo plan các dự án con P2-P6; module thật sự đăng ký listener khi đến task tương ứng.
 
+## Giao ít nhất một lần: đã nối (P1.8)
+
+Từ P1.8 Spring Modulith ghi bảng `event_publication` (migration `V202611080004__event_publication.sql`, `spring-modulith-starter-jdbc`) trong transaction của bên phát; mỗi listener `@ApplicationModuleListener` có một dòng cho đến khi nó chạy xong (`spring.modulith.events.completion-mode=delete`: xong là xoá, không lưu lâu dữ liệu). Event chưa xong được gửi lại khi khởi động (`republish-outstanding-events-on-restart`) và định kỳ khi đủ tuổi `e9x.events.redelivery-after` (`platform.events.EventRedelivery`). Hệ quả cho người viết consumer:
+- **Idempotent bằng khoá tự nhiên.** `notification` dùng `(userId, "<loại>:<reviewId>")` làm khoá chống trùng trong `NotificationService.notify`.
+- Listener chạy trên luồng async **không có ngữ cảnh người dùng** (`platform.events.AsyncContextCleaner` xoá/khôi phục binding ở đầu và cuối mỗi tác vụ). Cần RLS của một người thì tự `CurrentContextHolder.bind` TRƯỚC khi mở transaction.
+- Bean có listener giao dịch bị Modulith bọc proxy (CGLIB): không đọc field `public` của bean đó từ ngoài, dùng phương thức.
+- Event còn dòng chưa xong chứa dữ liệu event (id; `UserRegistered` có email) đến khi listener hoàn tất: giữ event nhỏ, không bí mật.
+
 ## Lỗi API (liên quan)
 
 Mọi phản hồi lỗi là `application/problem+json`: `type` (`urn:e9x:problem:<slug>`), `title`, `status`, `detail`, `errors[]` (luôn có; mỗi phần tử `field`, `row`, `code`, `message`). `ProblemDetailsAdvice` ở `com.english9x.platform.web`.

@@ -497,12 +497,6 @@ export interface components {
             /** Format: email */
             email: string;
         };
-        EventPrefs: {
-            audience?: string;
-            email?: boolean;
-            telegram?: boolean;
-            type?: string;
-        };
         GrantView: {
             /** @description null = every exam */
             examCode?: string;
@@ -531,15 +525,6 @@ export interface components {
             /** Format: email */
             email: string;
             roles: components["schemas"]["RoleSpec"][];
-        };
-        Item: {
-            /** Format: date-time */
-            createdAt?: string;
-            data?: components["schemas"]["JsonNode"];
-            /** Format: uuid */
-            id?: string;
-            read?: boolean;
-            type?: string;
         };
         JsonNode: unknown;
         LoginRequest: {
@@ -574,6 +559,39 @@ export interface components {
         MembersView: {
             members: components["schemas"]["MemberView"][];
         };
+        NotificationEventPrefs: {
+            audience?: string;
+            email?: boolean;
+            telegram?: boolean;
+            type?: string;
+        };
+        NotificationItem: {
+            /** Format: date-time */
+            createdAt?: string;
+            data?: components["schemas"]["JsonNode"];
+            /** Format: uuid */
+            id?: string;
+            read?: boolean;
+            type?: string;
+        };
+        NotificationPage: {
+            items?: components["schemas"]["NotificationItem"][];
+            /** Format: int32 */
+            unread?: number;
+        };
+        NotificationPrefRequest: {
+            channel: string;
+            enabled: boolean;
+            eventType: string;
+        };
+        NotificationPrefs: {
+            channels?: string[];
+            events?: components["schemas"]["NotificationEventPrefs"][];
+        };
+        NotificationUnreadCount: {
+            /** Format: int32 */
+            count?: number;
+        };
         OAuthCodeRequest: {
             code: string;
         };
@@ -589,22 +607,8 @@ export interface components {
             name: string;
             type: components["schemas"]["OrgType"];
         };
-        Page: {
-            items?: components["schemas"]["Item"][];
-            /** Format: int32 */
-            unread?: number;
-        };
         Pong: {
             status?: string;
-        };
-        PrefRequest: {
-            channel: string;
-            enabled: boolean;
-            eventType: string;
-        };
-        Prefs: {
-            channels?: string[];
-            events?: components["schemas"]["EventPrefs"][];
         };
         /** @description RFC 7807 problem details; errors[] lists invalid fields/rows, empty otherwise */
         Problem: {
@@ -689,10 +693,6 @@ export interface components {
         };
         TokenRequest: {
             token: string;
-        };
-        UnreadCount: {
-            /** Format: int32 */
-            count?: number;
         };
     };
     responses: never;
@@ -1309,7 +1309,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Prefs"];
+                    "*/*": components["schemas"]["NotificationPrefs"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -1332,7 +1332,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PrefRequest"];
+                "application/json": components["schemas"]["NotificationPrefRequest"];
             };
         };
         responses: {
@@ -1372,7 +1372,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["Page"];
+                    "*/*": components["schemas"]["NotificationPage"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -1428,7 +1428,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["UnreadCount"];
+                    "*/*": components["schemas"]["NotificationUnreadCount"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

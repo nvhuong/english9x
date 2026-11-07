@@ -4,6 +4,7 @@ import com.english9x.notification.api.Channel;
 import com.english9x.notification.api.EventType;
 import com.english9x.notification.internal.InboxService.Page;
 import com.english9x.notification.internal.InboxService.Prefs;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,8 +28,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 class NotificationController {
 
+    @Schema(name = "NotificationUnreadCount")
     record UnreadCount(int count) {}
 
+    @Schema(name = "NotificationPrefRequest")
     record PrefRequest(@NotBlank String eventType, @NotBlank String channel, @NotNull Boolean enabled) {}
 
     record TelegramStatus(boolean enabled, boolean linked) {}

@@ -4,6 +4,7 @@ import com.english9x.notification.api.Channel;
 import com.english9x.notification.api.EventType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
@@ -23,12 +24,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class InboxService {
 
+    @Schema(name = "NotificationItem")
     record Item(UUID id, String type, JsonNode data, Instant createdAt, boolean read) {}
 
+    @Schema(name = "NotificationPage")
     record Page(List<Item> items, int unread) {}
 
+    @Schema(name = "NotificationEventPrefs")
     record EventPrefs(String type, String audience, boolean email, boolean telegram) {}
 
+    @Schema(name = "NotificationPrefs")
     record Prefs(List<String> channels, List<EventPrefs> events) {}
 
     private final JdbcTemplate jdbc;

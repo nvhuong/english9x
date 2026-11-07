@@ -72,23 +72,6 @@
         "required" : [ "email" ],
         "type" : "object"
       },
-      "EventPrefs" : {
-        "properties" : {
-          "audience" : {
-            "type" : "string"
-          },
-          "email" : {
-            "type" : "boolean"
-          },
-          "telegram" : {
-            "type" : "boolean"
-          },
-          "type" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "GrantView" : {
         "properties" : {
           "examCode" : {
@@ -160,28 +143,6 @@
           }
         },
         "required" : [ "email", "roles" ],
-        "type" : "object"
-      },
-      "Item" : {
-        "properties" : {
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          },
-          "data" : {
-            "$ref" : "#/components/schemas/JsonNode"
-          },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "read" : {
-            "type" : "boolean"
-          },
-          "type" : {
-            "type" : "string"
-          }
-        },
         "type" : "object"
       },
       "JsonNode" : { },
@@ -281,6 +242,103 @@
         "required" : [ "members" ],
         "type" : "object"
       },
+      "NotificationEventPrefs" : {
+        "properties" : {
+          "audience" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "boolean"
+          },
+          "telegram" : {
+            "type" : "boolean"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationItem" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "read" : {
+            "type" : "boolean"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/NotificationItem"
+            },
+            "type" : "array"
+          },
+          "unread" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationPrefRequest" : {
+        "properties" : {
+          "channel" : {
+            "minLength" : 1,
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "eventType" : {
+            "minLength" : 1,
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel", "enabled", "eventType" ],
+        "type" : "object"
+      },
+      "NotificationPrefs" : {
+        "properties" : {
+          "channels" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "events" : {
+            "items" : {
+              "$ref" : "#/components/schemas/NotificationEventPrefs"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "NotificationUnreadCount" : {
+        "properties" : {
+          "count" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "OAuthCodeRequest" : {
         "properties" : {
           "code" : {
@@ -326,59 +384,10 @@
         "required" : [ "id", "name", "type" ],
         "type" : "object"
       },
-      "Page" : {
-        "properties" : {
-          "items" : {
-            "items" : {
-              "$ref" : "#/components/schemas/Item"
-            },
-            "type" : "array"
-          },
-          "unread" : {
-            "format" : "int32",
-            "type" : "integer"
-          }
-        },
-        "type" : "object"
-      },
       "Pong" : {
         "properties" : {
           "status" : {
             "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "PrefRequest" : {
-        "properties" : {
-          "channel" : {
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "enabled" : {
-            "type" : "boolean"
-          },
-          "eventType" : {
-            "minLength" : 1,
-            "type" : "string"
-          }
-        },
-        "required" : [ "channel", "enabled", "eventType" ],
-        "type" : "object"
-      },
-      "Prefs" : {
-        "properties" : {
-          "channels" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          },
-          "events" : {
-            "items" : {
-              "$ref" : "#/components/schemas/EventPrefs"
-            },
-            "type" : "array"
           }
         },
         "type" : "object"
@@ -589,15 +598,6 @@
           }
         },
         "required" : [ "token" ],
-        "type" : "object"
-      },
-      "UnreadCount" : {
-        "properties" : {
-          "count" : {
-            "format" : "int32",
-            "type" : "integer"
-          }
-        },
         "type" : "object"
       }
     }
@@ -1245,7 +1245,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Prefs"
+                  "$ref" : "#/components/schemas/NotificationPrefs"
                 }
               }
             },
@@ -1270,7 +1270,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/PrefRequest"
+                "$ref" : "#/components/schemas/NotificationPrefRequest"
               }
             }
           },
@@ -1321,7 +1321,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Page"
+                  "$ref" : "#/components/schemas/NotificationPage"
                 }
               }
             },
@@ -1370,7 +1370,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/UnreadCount"
+                  "$ref" : "#/components/schemas/NotificationUnreadCount"
                 }
               }
             },

@@ -15,6 +15,8 @@
 ### Task P4.1: chấm tự động + quy đổi (W6) — F33, F25/F26 (điểm), F15 (áp dụng bảng)
 
 > **Ghi chú 2026-11-07 (từ P1.11):** listener đầu tiên (`@ApplicationModuleListener` trên `AttemptSubmitted`) chính là thứ chứng minh quy tắc liên module (`exam::events`) qua `ModularityTest`; P1.11 chỉ kiểm tra phía phát hành. P4.1 phải nối persistence của `spring-modulith-events` (bảng `event_publication`, spec §6), vì giao ít nhất một lần mới chỉ được ghi trong `docs/superpowers/design/events.md`.
+>
+> **Cập nhật 2026-11-08: ĐÃ XONG ở P1.8** (P1.8 là consumer đầu tiên của event module). Persistence đã nối: `spring-modulith-starter-jdbc`, migration `V202611080004__event_publication.sql` (bảng `event_publication`, RLS bật với một policy cho `e9x_app`), `completion-mode=delete`, gửi lại khi khởi động và định kỳ (`platform.events.EventRedelivery`, `e9x.events.redelivery-after`), luồng listener không mang ngữ cảnh người dùng (`platform.events.AsyncContextCleaner`). P4.1 chỉ cần viết `@ApplicationModuleListener` idempotent và `ModularityTest` đã kiểm tra phía consumer (xem `notification.internal.ReviewNotifications` làm mẫu; ghi chú ở `events.md`). Lưu ý: listener cho `AttemptSubmitted` cần tự `CurrentContextHolder.bind(userId, orgId)` TRƯỚC khi mở transaction nếu đọc dữ liệu qua RLS.
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/grading/auto/**`, migration `V202611130003__scores.sql` (`scores`), E2E `F33-auto-scoring.spec.ts`.
 
@@ -23,6 +25,9 @@
 **Tests:** `AutoGradingIT.toeicScoresWithTestOverrideTable`, `.ieltsListeningReadingBands`, `.interruptedAttemptScoredAndFlagged`, `.scoreTableVersionRecorded`, `.idempotentOnDuplicateEvent`.
 
 ### Task P4.2: chấm AI bằng Gemini (W7) — F34, F37
+
+> **Ghi chú 2026-11-08 (từ P1.8):** Nguồn thông báo của task này (spec §13), do P1.8 khai báo `EventType` + mẫu vi/en nhưng CHƯA có nguồn (không dựng nguồn giả): `SCORE_PRELIMINARY` từ `AttemptScored(official=false)` và `AI_GRADING_FAILED` (cho SYS_ADMIN, gọi từ `JobExecutor#onExhausted` của job `ai_grade`; cần danh sách SYS_ADMIN qua hàm `SECURITY DEFINER` hẹp). Idempotent: khoá `"score-preliminary:" + attemptId`.
+
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/grading/ai/**` (`AiGrader`, `GeminiAiGrader`, `AiGradeJobHandler`, `PromptRenderer`), migration `V202611140002__ai_evaluations.sql`, E2E `F34-ai-grading.spec.ts`, `F37-gemini-failure.spec.ts`; contract test `backend/e9x-app/src/test/java/com/english9x/grading/ai/GeminiContractIT.java` (chỉ chạy khi có `GEMINI_API_KEY`).
 
@@ -37,6 +42,9 @@
 **Tests:** `GeminiAiGraderTest` (fake HTTP server) `.validJsonParsed`, `.schemaViolationRetriedOnceWithErrors`, `.serverErrorRetriedWithConfiguredDelays`, `AiGradeJobIT.exhaustedRetriesMarksAiFailedAndNotifiesAdmin`, `.dailyLimitZeroMeansUnlimited`, `.dailyLimitPositiveRoutesToTeacherQueue`.
 
 ### Task P4.3: hàng chờ giáo viên + chế độ Cả hai (W8) — F35, F36
+
+> **Ghi chú 2026-11-08 (từ P1.8):** Nguồn thông báo của task này (spec §13), do P1.8 khai báo `EventType` + mẫu vi/en nhưng CHƯA có nguồn (không dựng nguồn giả): `SCORE_OFFICIAL` từ `AttemptScored(official=true)` (học viên), `GRADING_QUEUE_NEW` (TEACHER của kỳ thi khi có bài vào hàng chờ) và `GRADING_CLAIM_DUE` (TEACHER, sắp quá `e9x.grading.claim-timeout`). Người nhận TEACHER cần hàm tra cứu `SECURITY DEFINER` hẹp theo mã hàng chờ/bài (không theo tổ chức), như `notification_reviewers_of_review`.
+
 
 **Files:** `backend/e9x-app/src/main/java/com/english9x/grading/teacher/**`, migration `V202611150001__grading_queue.sql` (`grading_queue_items`, `teacher_reviews`), job `release_expired_claim`, `frontend/src/features/teacher/{QueuePage,GradingPage}.tsx`, E2E `F35-teacher-queue.spec.ts`, `F36-both-mode.spec.ts`.
 

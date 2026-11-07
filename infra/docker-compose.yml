@@ -74,6 +74,10 @@ services:
       E9X_SMTP_USER: ${E9X_SMTP_USER:-}
       E9X_SMTP_PASSWORD: ${E9X_SMTP_PASSWORD:-}
       E9X_MAIL_FROM: ${E9X_MAIL_FROM:-English9x <no-reply@english9x.vn>}
+      # Telegram (P1.8): the bot is off until the token and the bot's username are set; the webhook refuses everything without the secret
+      E9X_TELEGRAM_BOT_TOKEN: ${E9X_TELEGRAM_BOT_TOKEN:-}
+      E9X_TELEGRAM_BOT_USERNAME: ${E9X_TELEGRAM_BOT_USERNAME:-}
+      E9X_TELEGRAM_WEBHOOK_SECRET: ${E9X_TELEGRAM_WEBHOOK_SECRET:-}
       # Real SMTP usually needs: SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true and SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
       # Caddy is the only thing that reaches the app (port 8080 is not published), so its Docker-network address is the
       # trusted proxy whose X-Forwarded-For is believed for the login rate limit.

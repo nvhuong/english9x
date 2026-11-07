@@ -51,6 +51,15 @@ export async function hasNoEmailTo(email: string): Promise<boolean> {
   return (await find(email)) === undefined;
 }
 
+/** How many messages to `email` exist right now, optionally only those whose subject contains `subjectIncludes` (a single check). */
+export async function countEmailsTo(email: string, subjectIncludes?: string): Promise<number> {
+  const q = encodeURIComponent(`to:"${email}"`);
+  const res = await json<{ messages?: MailSummary[] }>(`${env.mailpitURL}/api/v1/search?query=${q}`);
+  return (res.messages ?? []).filter(
+    (m) => m.To?.some((t) => t.Address.toLowerCase() === email.toLowerCase()) && (subjectIncludes === undefined || m.Subject.includes(subjectIncludes)),
+  ).length;
+}
+
 /** http(s) links in a message, in order, trailing punctuation removed. */
 export function linksIn(mail: Mail): string[] {
   const found = `${mail.Text}\n${mail.HTML}`.match(/https?:\/\/[^\s"'<>)]+/g) ?? [];
@@ -72,4 +81,4 @@ export async function deleteEmailsTo(email: string): Promise<void> {
   await json(`${env.mailpitURL}/api/v1/search?query=${q}`, { method: 'DELETE' });
 }
 
-export const mailpit = { lastEmailTo, hasNoEmailTo, linksIn, uniqueEmail, sendTestEmail, deleteEmailsTo };
+export const mailpit = { lastEmailTo, hasNoEmailTo, countEmailsTo, linksIn, uniqueEmail, sendTestEmail, deleteEmailsTo };

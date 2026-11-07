@@ -4,13 +4,20 @@ import com.english9x.identity.api.UserDirectory;
 import com.english9x.org.api.Authz;
 import com.english9x.org.api.CurrentContextHolder;
 import com.english9x.org.api.Role;
+import com.english9x.workflow.api.events.ReviewApproved;
+import com.english9x.workflow.api.events.ReviewChangesRequested;
+import com.english9x.workflow.api.events.ReviewRequested;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,10 +45,15 @@ class SeedController {
     // a low cost keeps seeding fast; the application verifies whatever cost the hash carries
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(6);
 
-    SeedController(SeedDatabase db, UserDirectory users, Authz authz) {
+    private final ApplicationEventPublisher events;
+    private final TransactionTemplate tx;
+
+    SeedController(SeedDatabase db, UserDirectory users, Authz authz, ApplicationEventPublisher events, PlatformTransactionManager tm) {
         this.db = db;
         this.users = users;
         this.authz = authz;
+        this.events = events;
+        this.tx = new TransactionTemplate(tm);
     }
 
     record LearnerRequest(String email, String password, String displayName, Boolean verified, String locale) {}
@@ -170,6 +182,38 @@ class SeedController {
             out.put("canReviewOwnVersion", authz.canReviewOwnVersion());
             return out;
         }
+    }
+
+    record ReviewEventRequest(String kind, UUID orgId, String examCode, UUID authorId) {}
+
+    /**
+     * Stands in for the CMS review screens (P2.9) until they exist: publishes the very event the review workflow publishes
+     * ({@code requested} = ReviewRequested, {@code changes} = ReviewChangesRequested, {@code approved} = ReviewApproved), inside a
+     * transaction on the application's own transaction manager, so it goes through the real event registry and the real notification
+     * listeners, jobs, mail and Telegram. {@code requested} first inserts the open review (as the table owner) the listener looks the
+     * reviewers up by; the author and submitter are {@code authorId}. Not a notification shortcut: nothing here creates a notification.
+     */
+    @PostMapping("/review-event")
+    @ResponseStatus(HttpStatus.CREATED)
+    Map<String, Object> reviewEvent(@RequestBody ReviewEventRequest req) {
+        String exam = req.examCode() != null ? req.examCode() : "IELTS";
+        db.jdbc().update("insert into exams(code, name) values (?, ?) on conflict do nothing", exam, exam);
+        UUID reviewId = UUID.randomUUID();
+        UUID versionId = UUID.randomUUID();
+        Optional<UUID> org = Optional.ofNullable(req.orgId());
+        switch (req.kind()) {
+            case "requested" -> {
+                db.jdbc().update("insert into review_requests(id, content_type, version_id, owner_org_id, exam_code, author_id, submitted_by) "
+                        + "values (?, 'e2e_item', ?, ?, ?, ?, ?)", reviewId, versionId, req.orgId(), exam, req.authorId(), req.authorId());
+                tx.executeWithoutResult(s -> events.publishEvent(new ReviewRequested("e2e_item", versionId, org, exam, reviewId, Optional.empty())));
+            }
+            case "changes" -> tx.executeWithoutResult(s -> events.publishEvent(
+                    new ReviewChangesRequested("e2e_item", versionId, org, exam, reviewId, Optional.empty(), req.authorId())));
+            case "approved" -> tx.executeWithoutResult(s -> events.publishEvent(
+                    new ReviewApproved("e2e_item", versionId, org, exam, reviewId, Optional.empty(), req.authorId())));
+            default -> throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST, "kind: requested | changes | approved");
+        }
+        return Map.of("reviewId", reviewId.toString(), "kind", req.kind());
     }
 
     /** Proves the profile is on and shows which database login the seed code writes as. */

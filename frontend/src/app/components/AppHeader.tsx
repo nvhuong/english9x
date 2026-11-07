@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { cn } from '../../design';
 import { AREAS, AREA_PATH, AREA_ROLES, type Area } from '../areas';
 import { AuthMenu } from '../../features/auth/AuthMenu';
+import { NotificationBell } from '../../features/notifications/NotificationBell';
 import { useContextStore } from '../stores/context';
 import { ContextSwitcher } from '../ContextSwitcher';
 import { hasRole, useRoleStore } from '../stores/roles';
@@ -48,6 +49,7 @@ export function AppHeader({ area, dense }: { area: Area; dense?: boolean }) {
           ))}
         </nav>
         <div className="ml-auto flex flex-wrap items-center gap-3">
+          <NotificationBell />
           <ContextSwitcher />
           <LanguageSwitch />
           <ThemeSwitch />

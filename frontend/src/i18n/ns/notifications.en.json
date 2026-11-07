@@ -1,0 +1,138 @@
+{
+  "nav": {
+    "title": "Notifications",
+    "preferences": "Notification preferences"
+  },
+  "bell": {
+    "none": "Notifications, none unread",
+    "withUnread": "Notifications, {{count}} unread"
+  },
+  "list": {
+    "title": "Notification centre",
+    "description": "All your notifications in one place, whichever context you are in.",
+    "signedOut": "Please sign in to see your notifications.",
+    "signIn": "Sign in",
+    "loading": "Loading notifications…",
+    "loadFailed": "Could not load notifications.",
+    "retry": "Try again",
+    "empty": "No notifications yet",
+    "emptyHint": "When something needs your attention it will show up here.",
+    "unread": "Unread",
+    "read": "Read",
+    "markRead": "Mark as read",
+    "markReadOf": "Mark as read: {{title}}",
+    "markAll": "Mark all as read",
+    "more": "Show more",
+    "unreadCount": "{{count}} unread",
+    "allRead": "You are all caught up",
+    "caption": "Notification list"
+  },
+  "prefs": {
+    "title": "Notification preferences",
+    "description": "Choose the channels for each kind of event. In-app notifications are always on. Security email (email verification, password reset) is always sent.",
+    "loading": "Loading preferences…",
+    "loadFailed": "Could not load preferences.",
+    "retry": "Try again",
+    "saveFailed": "Could not save the change. Please try again.",
+    "caption": "Notification channels by event",
+    "event": "Event",
+    "inApp": "In the app",
+    "email": "Email",
+    "telegram": "Telegram",
+    "alwaysOn": "Always on",
+    "toggle": "{{channel}}: {{event}}",
+    "telegramNotLinked": "Telegram is not linked yet, so nothing can be delivered there.",
+    "audience": "For {{role}}"
+  },
+  "telegram": {
+    "title": "Connect Telegram",
+    "description": "Get notifications on Telegram: create a link, open it in Telegram and press Start. The link works once and expires.",
+    "unavailable": "Telegram is not enabled on this server.",
+    "linked": "Telegram is connected",
+    "notLinked": "Telegram is not connected",
+    "create": "Create connection link",
+    "recreate": "Connect another chat",
+    "creating": "Creating the link…",
+    "open": "Open in Telegram",
+    "expires": "One-time link, expires at {{time}}.",
+    "afterOpen": "After pressing Start in Telegram, come back here and press “Check”.",
+    "check": "Check",
+    "unlink": "Disconnect",
+    "unlinkFailed": "Could not disconnect. Please try again.",
+    "createFailed": "Could not create the link. Please try again.",
+    "rule": "A chat can be connected to one account only. If this chat is connected to another account, disconnect it there first."
+  },
+  "audience": {
+    "SYS_ADMIN": "System admin",
+    "LEARNER": "Learner",
+    "TEACHER": "Teacher",
+    "REVIEWER": "Reviewer",
+    "AUTHOR": "Author"
+  },
+  "event": {
+    "ORDER_PENDING": {
+      "title": "A new order is waiting for confirmation",
+      "body": "An order is waiting for you to confirm the payment."
+    },
+    "ORDER_CONFIRMED": {
+      "title": "Your order was confirmed",
+      "body": "Your order was confirmed. You can start learning now."
+    },
+    "ORDER_REJECTED": {
+      "title": "Your order was not confirmed",
+      "body": "Your order was not confirmed. Reason: {{reason}}"
+    },
+    "PLAN_EXPIRING": {
+      "title": "Your plan is about to expire",
+      "body": "Your plan expires in about 7 days."
+    },
+    "PLAN_EXPIRED": {
+      "title": "Your plan has expired",
+      "body": "Your plan has expired. Renew it to keep learning."
+    },
+    "SCORE_PRELIMINARY": {
+      "title": "A preliminary score is ready",
+      "body": "The preliminary (AI) score of your attempt is ready. The official score will follow."
+    },
+    "SCORE_OFFICIAL": {
+      "title": "Your official score is ready",
+      "body": "The official score of your attempt is ready. Open the result to review your answers."
+    },
+    "GRADING_QUEUE_NEW": {
+      "title": "A new submission is in the grading queue",
+      "body": "A new submission is waiting for a teacher to grade it."
+    },
+    "GRADING_CLAIM_DUE": {
+      "title": "A submission you claimed is almost overdue",
+      "body": "A submission you claimed is about to pass its grading deadline. Grade it or release it back to the queue."
+    },
+    "REVIEW_REQUESTED": {
+      "title": "Content is waiting for review",
+      "body": "A content item ({{contentType}}) of the {{examCode}} exam is waiting for your review."
+    },
+    "REVIEW_CHANGES_REQUESTED": {
+      "title": "Changes were requested on your content",
+      "body": "The reviewer asked you to change a content item ({{contentType}}) of the {{examCode}} exam."
+    },
+    "CONTENT_PUBLISHED": {
+      "title": "Your content was published",
+      "body": "The content item ({{contentType}}) of the {{examCode}} exam that you wrote was approved and published."
+    },
+    "ASSIGNMENT_NEW": {
+      "title": "You have a new assignment",
+      "body": "Your teacher just gave you a new assignment. Open your assignments to see the due date."
+    },
+    "ASSIGNMENT_DUE_SOON": {
+      "title": "An assignment is due soon",
+      "body": "One of your assignments is about to be due."
+    },
+    "SESSION_REMINDER": {
+      "title": "A class starts soon",
+      "body": "Your class starts in about 1 hour."
+    },
+    "AI_GRADING_FAILED": {
+      "title": "AI grading failed",
+      "body": "AI grading of an attempt failed after every retry. An administrator needs to look at it."
+    }
+  }
+}

@@ -92,6 +92,7 @@ echo "ports: https 443, mailpit $E9X_MAILPIT_PORT, fake-telegram $E9X_FAKE_TELEG
 # The Playwright process below inherits E9X_E2E_SEED_SECRET.
 export E9X_JWT_SECRET="${E9X_JWT_SECRET:-$(openssl rand -hex 32)}"
 export E9X_E2E_SEED_SECRET="${E9X_E2E_SEED_SECRET:-$(openssl rand -hex 24)}"
+export E9X_E2E_TELEGRAM_WEBHOOK_SECRET="${E9X_E2E_TELEGRAM_WEBHOOK_SECRET:-$(openssl rand -hex 16)}"   # the specs play Telegram with it
 
 say "installing e2e dependencies"
 pnpm -C e2e install --frozen-lockfile >/dev/null || die "pnpm install failed in e2e/"
