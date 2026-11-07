@@ -65,7 +65,7 @@ public final class SweepEndpoints {
             this.jdbc = jdbc;
         }
 
-        @GetMapping("/sweep/classes/{id}")
+        @GetMapping("/api/sweep/classes/{id}")
         @Transactional(readOnly = true)
         String get(@PathVariable UUID id) {
             return jdbc.queryForList("select name from classes where id = ?", String.class, id).stream()
@@ -84,7 +84,7 @@ public final class SweepEndpoints {
             this.jdbc = jdbc;
         }
 
-        @GetMapping("/sweep/classes/{classId}/members/{userId}")
+        @GetMapping("/api/sweep/classes/{classId}/members/{userId}")
         @Transactional(readOnly = true)
         String get(@PathVariable UUID classId, @PathVariable UUID userId) {
             jdbc.queryForList("select name from classes where id = ?", String.class, classId).stream()
@@ -106,7 +106,7 @@ public final class SweepEndpoints {
             this.privileged = new JdbcTemplate(ds);
         }
 
-        @GetMapping("/sweep-leaky/classes/{id}")
+        @GetMapping("/api/sweep-leaky/classes/{id}")
         String get(@PathVariable UUID id) {
             return privileged.queryForList("select name from classes where id = ?", String.class, id).stream()
                     .findFirst()

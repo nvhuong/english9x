@@ -1,0 +1,120 @@
+{
+  "nav": {
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "logout": "Đăng xuất",
+    "account": "Tài khoản",
+    "signedInAs": "Đã đăng nhập: {{name}}"
+  },
+  "common": {
+    "or": "hoặc",
+    "backToLogin": "Quay lại đăng nhập",
+    "loading": "Đang xử lý…",
+    "tryAgain": "Thử lại"
+  },
+  "fields": {
+    "email": "Email",
+    "password": "Mật khẩu",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Nhập lại mật khẩu mới",
+    "displayName": "Tên hiển thị"
+  },
+  "hints": {
+    "passwordPolicy": "Tối thiểu 8 ký tự, tối đa 72 byte."
+  },
+  "validation": {
+    "required": "Vui lòng nhập thông tin này.",
+    "email": "Địa chỉ email chưa hợp lệ.",
+    "passwordShort": "Mật khẩu cần ít nhất 8 ký tự.",
+    "passwordLong": "Mật khẩu quá dài (tối đa 72 byte; ký tự có dấu chiếm nhiều byte hơn).",
+    "passwordMismatch": "Hai mật khẩu chưa giống nhau.",
+    "consent": "Bạn cần đồng ý để tạo tài khoản.",
+    "consentGoogle": "Bạn cần đồng ý để tiếp tục.",
+    "nameLong": "Tên quá dài (tối đa 100 ký tự)."
+  },
+  "problem": {
+    "invalidCredentials": "Email hoặc mật khẩu chưa đúng.",
+    "tooManyAttempts": "Bạn đã thử quá nhiều lần. Vui lòng đợi một lúc rồi thử lại.",
+    "invalidToken": "Liên kết không hợp lệ, đã được dùng hoặc đã hết hạn.",
+    "generic": "Có lỗi xảy ra. Vui lòng thử lại.",
+    "network": "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.",
+    "consentRequired": "Tài khoản này chưa đồng ý cho xử lý dữ liệu cá nhân. Hãy đăng nhập bằng Google một lần để đồng ý.",
+    "NotBlank": "Vui lòng nhập thông tin này.",
+    "Email": "Địa chỉ email chưa hợp lệ.",
+    "Size": "Giá trị chưa đúng độ dài cho phép.",
+    "AssertTrue": "Bạn cần đồng ý để tạo tài khoản.",
+    "NotNull": "Vui lòng nhập thông tin này.",
+    "PasswordMinLength": "Mật khẩu quá ngắn.",
+    "Utf8MaxBytes": "Mật khẩu quá dài (tối đa 72 byte)."
+  },
+  "login": {
+    "title": "Đăng nhập",
+    "description": "Tiếp tục học và luyện thi với tài khoản English9x của bạn.",
+    "submit": "Đăng nhập",
+    "forgot": "Quên mật khẩu?",
+    "noAccount": "Chưa có tài khoản?",
+    "registerLink": "Đăng ký",
+    "google": "Đăng nhập bằng Google",
+    "errorGoogle": "Đăng nhập bằng Google không thành công. Vui lòng thử lại.",
+    "errorGoogleUnverified": "Google chưa xác nhận địa chỉ email này, nên chúng tôi không thể liên kết hay tạo tài khoản. Hãy xác thực email với Google hoặc đăng nhập bằng email và mật khẩu.",
+    "alreadySignedIn": "Bạn đang đăng nhập."
+  },
+  "register": {
+    "title": "Tạo tài khoản",
+    "description": "Đăng ký để học các khoá IELTS và TOEIC trên English9x.",
+    "submit": "Đăng ký",
+    "consent": "Tôi đồng ý để English9x thu thập và xử lý dữ liệu cá nhân của tôi (họ tên, email, kết quả học tập) cho việc cung cấp dịch vụ, theo Nghị định 13/2023/NĐ-CP.",
+    "haveAccount": "Đã có tài khoản?",
+    "loginLink": "Đăng nhập",
+    "sentTitle": "Hãy kiểm tra email của bạn",
+    "sentBody": "Nếu địa chỉ này có thể dùng để đăng ký, một email có liên kết xác thực đã được gửi tới {{email}}. Bấm vào liên kết trong email để hoàn tất. Liên kết có hiệu lực 24 giờ.",
+    "resend": "Gửi lại email xác thực",
+    "resent": "Nếu tài khoản này còn chờ xác thực, một email mới đã được gửi."
+  },
+  "verify": {
+    "title": "Xác thực email",
+    "working": "Đang xác thực email của bạn…",
+    "successTitle": "Email đã được xác thực",
+    "successBody": "Cảm ơn bạn. Tài khoản của bạn đã sẵn sàng.",
+    "failTitle": "Không xác thực được",
+    "failBody": "Liên kết không hợp lệ, đã được dùng hoặc đã hết hạn. Nhập email để nhận liên kết mới.",
+    "missingToken": "Liên kết xác thực bị thiếu thông tin. Nhập email để nhận liên kết mới.",
+    "login": "Đăng nhập",
+    "continue": "Tiếp tục",
+    "resend": "Gửi liên kết mới"
+  },
+  "forgot": {
+    "title": "Quên mật khẩu",
+    "description": "Nhập email của tài khoản. Chúng tôi sẽ gửi liên kết để đặt mật khẩu mới.",
+    "submit": "Gửi liên kết",
+    "sentTitle": "Hãy kiểm tra email của bạn",
+    "sentBody": "Nếu có tài khoản dùng email này, một liên kết đặt lại mật khẩu đã được gửi. Liên kết có hiệu lực 1 giờ và chỉ dùng được một lần."
+  },
+  "reset": {
+    "title": "Đặt mật khẩu mới",
+    "description": "Chọn mật khẩu mới cho tài khoản của bạn. Mọi phiên đăng nhập cũ sẽ bị đăng xuất.",
+    "submit": "Đặt mật khẩu",
+    "missingToken": "Liên kết đặt lại mật khẩu bị thiếu thông tin. Hãy yêu cầu liên kết mới.",
+    "requestNew": "Yêu cầu liên kết mới",
+    "doneTitle": "Đã đổi mật khẩu",
+    "doneBody": "Bạn có thể đăng nhập bằng mật khẩu mới.",
+    "failTitle": "Không đặt lại được mật khẩu"
+  },
+  "google": {
+    "consentTitle": "Còn một bước nữa",
+    "consentBody": "Trước khi dùng tài khoản, English9x cần bạn đồng ý cho xử lý dữ liệu cá nhân.",
+    "consentSubmit": "Đồng ý và tiếp tục",
+    "replaceTitle": "Bạn đang đăng nhập",
+    "replaceBody": "Trình duyệt này đang đăng nhập với tên {{name}}. Có phải bạn vừa tự đăng nhập bằng Google? Nếu bạn mở liên kết do người khác gửi, hãy giữ phiên hiện tại.",
+    "replaceBodyNoName": "Trình duyệt này đang có một phiên đăng nhập. Có phải bạn vừa tự đăng nhập bằng Google? Nếu bạn mở liên kết do người khác gửi, hãy giữ phiên hiện tại.",
+    "replaceContinue": "Tiếp tục với tài khoản Google",
+    "replaceStay": "Giữ phiên hiện tại",
+    "working": "Đang hoàn tất đăng nhập bằng Google…",
+    "failTitle": "Đăng nhập bằng Google không thành công"
+  },
+  "banner": {
+    "unverified": "Email của bạn chưa được xác thực. Bạn có thể học, nhưng cần xác thực email trước khi mua gói.",
+    "resend": "Gửi lại email xác thực",
+    "resent": "Đã gửi email xác thực. Hãy kiểm tra hộp thư."
+  }
+}

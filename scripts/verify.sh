@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Full local verification (same steps as CI):
+# Local verification: the CI steps that need no running stack. CI's own jobs for what is NOT here: `db-tests`
+# (scripts/test-db.sh), `compose`, `frontend-a11y` (opt-in below) and `e2e` (scripts/e2e.sh).
 #   1. backend    mvn -B verify          (unit + Modulith + Testcontainers ITs; needs Docker)
 #   2. fakes      node --test            (fake Gemini / fake Telegram behaviour)
 #   3. frontend   pnpm lint, test, build
-#   4. e2e gate   node scripts/check-e2e-coverage.mjs
+#   4. e2e        tsc --noEmit on the specs, then the gate node scripts/check-e2e-coverage.mjs
 #   (opt-in) E9X_A11Y=1  also runs the Storybook axe scan (needs Playwright Chromium: `pnpm -C frontend exec playwright install chromium`);
 #            CI always runs it as its own job, `frontend-a11y`.
 #
@@ -34,6 +35,10 @@ if [ "${E9X_A11Y:-0}" = "1" ]; then
 else
   echo "frontend: storybook axe scan SKIPPED (set E9X_A11Y=1 to run it here; CI job frontend-a11y always runs it)"
 fi
+
+step "e2e: tsc --noEmit (Playwright itself does not type-check)"
+pnpm -C e2e install --frozen-lockfile
+pnpm -C e2e exec tsc --noEmit
 
 step "e2e coverage gate"
 ./scripts/e2e-gate.sh

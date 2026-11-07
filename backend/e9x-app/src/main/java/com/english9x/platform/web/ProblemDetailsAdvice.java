@@ -18,6 +18,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -36,7 +38,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * <p>Spring's own MVC exceptions (404, 405, 406, 415, malformed body, type mismatch ...) are mapped by the base
  * class; this class normalises their {@code type} and adds {@code errors}. Anything unexpected becomes a generic
  * 500: the exception goes to the log, never to the client. Access refusals become 403 without ids or messages.
- * Spring Security's AccessDeniedException (P1.4) is not on the classpath yet; P1.4 maps it in this advice.
+ * Spring Security's AccessDeniedException / AuthenticationException thrown inside MVC are mapped here (403 / 401); the ones
+ * raised by the filter chain itself are rendered in the same shape by {@code platform.security.ProblemSecurityHandlers}.
  */
 @RestControllerAdvice
 public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
@@ -108,6 +111,21 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     }
 
     // ---- access and unexpected errors ----------------------------------------------------------------------------
+
+    /** Thrown inside MVC (method security, a service): same 403 as the filter-level handler, no detail. */
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<Object> accessDenied(AccessDeniedException ex) {
+        return respond(forbidden(), new HttpHeaders());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    ResponseEntity<Object> unauthenticated(AuthenticationException ex) {
+        ProblemDetail p = problem(HttpStatus.UNAUTHORIZED, "unauthorized", "Unauthorized", "Authentication is required.");
+        p.setProperty("errors", List.of());
+        HttpHeaders h = new HttpHeaders();
+        h.set(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+        return respond(p, h);
+    }
 
     /**
      * Catch-all. The org-context refusal can arrive bare or wrapped (a transaction manager wraps a failure while

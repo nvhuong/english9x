@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.english9x.org.sweep.ForeignIdSweep;
 import com.english9x.org.sweep.SweepFixtures;
+import com.english9x.support.TestAuth;
 import com.english9x.support.TestPostgres;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,7 @@ class RlsLeakSweepIT {
 
     /** Typed fixtures for templates with several path parameters: every slot filled with a foreign id of its kind. */
     static Map<String, List<Map<String, UUID>>> typedFixtures() {
-        return Map.of("/sweep/classes/{classId}/members/{userId}",
+        return Map.of("/api/sweep/classes/{classId}/members/{userId}",
                 List.of(Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userB)));
     }
 
@@ -66,20 +67,21 @@ class RlsLeakSweepIT {
         HttpHeaders h = new HttpHeaders();
         h.add("X-Test-User", FIXTURES.userA.toString());
         h.add("X-Test-Org", FIXTURES.orgA.toString());
+        h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA)); // the sweep goes through real authentication
         return http.exchange(path, HttpMethod.GET, new HttpEntity<>(h), String.class).getStatusCode().value();
     }
 
     @Test
     void positiveControlOwnOrgRowIsServed() {
-        assertEquals(200, getAsOrgA("/sweep/classes/" + FIXTURES.classA), "the endpoint works for the caller's own org");
+        assertEquals(200, getAsOrgA("/api/sweep/classes/" + FIXTURES.classA), "the endpoint works for the caller's own org");
     }
 
     @Test
     void everyGetEndpointRejectsForeignOrgIds() throws Exception {
         // a 404 for every foreign id means nothing unless the same endpoint answers 200 for the caller's own org
-        assertEquals(200, getAsOrgA("/sweep/classes/" + FIXTURES.classA), "positive control");
+        assertEquals(200, getAsOrgA("/api/sweep/classes/" + FIXTURES.classA), "positive control");
         String openApi = http.getForObject("/v3/api-docs", String.class);
-        assertEquals(200, getAsOrgA("/sweep/classes/" + FIXTURES.classA + "/members/" + FIXTURES.userA), "positive control, two parameters");
+        assertEquals(200, getAsOrgA("/api/sweep/classes/" + FIXTURES.classA + "/members/" + FIXTURES.userA), "positive control, two parameters");
         SweepFixtures.Catalog catalog = FIXTURES.foreignIds(EXEMPT_TABLES);
         assertEquals(List.of(), catalog.problems(), "every table with an id must have a foreign row or a reason");
         List<UUID> foreign = catalog.ids();
@@ -87,8 +89,8 @@ class RlsLeakSweepIT {
 
         ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, foreign, EXEMPT, typedFixtures(), (template, path) -> getAsOrgA(path));
 
-        assertTrue(r.visited().contains("/sweep/classes/{id}"), "the sweep must reach the test endpoint, visited " + r.visited());
-        assertTrue(r.visited().contains("/sweep/classes/{classId}/members/{userId}"), "multi-parameter endpoint swept: " + r.visited());
+        assertTrue(r.visited().contains("/api/sweep/classes/{id}"), "the sweep must reach the test endpoint, visited " + r.visited());
+        assertTrue(r.visited().contains("/api/sweep/classes/{classId}/members/{userId}"), "multi-parameter endpoint swept: " + r.visited());
         assertFalse(r.visited().isEmpty(), "a sweep that visits nothing proves nothing");
         assertEquals(List.of(), r.unsweepable());
         assertEquals(List.of(), r.leaks());

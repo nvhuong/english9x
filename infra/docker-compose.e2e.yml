@@ -1,8 +1,8 @@
 # E2E / dev overlay:  docker compose -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml up --build
-# Adds Mailpit (captures email) and the fake Telegram / Gemini servers, points the app at them and activates the
+# Adds Mailpit (captures email), a fake OpenID provider ("Google") and the fake Telegram / Gemini servers, points the app at them and activates the
 # Spring profile `e2e` (the test-data API POST /api/test/seed/*, which does not exist without it).
 # Normally driven by scripts/e2e.sh (project name e9x-e2e, clean database, always torn down with `down -v`).
-# Host ports are overridable: E9X_MAILPIT_PORT (8025), E9X_FAKE_TELEGRAM_PORT (8081), E9X_FAKE_GEMINI_PORT (8082).
+# Host ports are overridable: E9X_MAILPIT_PORT (8025), E9X_FAKE_TELEGRAM_PORT (8081), E9X_FAKE_GEMINI_PORT (8082), E9X_FAKE_OIDC_PORT (8083).
 services:
   mailpit:
     image: axllent/mailpit:v1.33.0@sha256:9b3a463be15354c0f0eba91697d80e3e0d8a5623ef0e627cacc836bc17fd5231
@@ -42,9 +42,32 @@ services:
       timeout: 3s
       retries: 20
 
+  # Fake "Google" (OpenID Connect provider). The browser is sent to it on the host port, the app talks to it on the
+  # Compose network; both name the same issuer so the ID token validates. Behaviour is covered by fakes/oidc/server.test.mjs.
+  fake-oidc:
+    image: node:22.23.4-alpine3.24@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202
+    working_dir: /fake
+    command: ["node", "server.mjs"]
+    environment:
+      FAKE_OIDC_ISSUER: http://localhost:${E9X_FAKE_OIDC_PORT:-8083}
+      FAKE_OIDC_CLIENT_ID: fake-google-client
+      FAKE_OIDC_CLIENT_SECRET: fake-google-secret-e2e-only
+      FAKE_OIDC_REDIRECT_URI: https://localhost/api/auth/oauth2/callback/google
+    volumes:
+      - ./fakes/oidc:/fake:ro
+    ports:
+      - "${E9X_FAKE_OIDC_PORT:-8083}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/__health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   app:
     depends_on:
       mailpit:
+        condition: service_healthy
+      fake-oidc:
         condition: service_healthy
       fake-telegram:
         condition: service_healthy
@@ -52,6 +75,18 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: e2e
+      # the seed API needs this secret in the X-E2E-Seed-Secret header (scripts/e2e.sh generates one per run), and the
+      # app refuses to start with the e2e profile on any domain but localhost
+      E9X_E2E_SEED_SECRET: ${E9X_E2E_SEED_SECRET:-}
+      E9X_SMTP_HOST: mailpit
+      E9X_SMTP_PORT: "1025"
+      E9X_AUTH_REGISTER_RATE_LIMIT: 1000/1h
+      E9X_GOOGLE_CLIENT_ID: fake-google-client
+      E9X_GOOGLE_CLIENT_SECRET: fake-google-secret-e2e-only
+      E9X_GOOGLE_AUTHORIZATION_URI: http://localhost:${E9X_FAKE_OIDC_PORT:-8083}/authorize
+      E9X_GOOGLE_TOKEN_URI: http://fake-oidc:8080/token
+      E9X_GOOGLE_JWK_SET_URI: http://fake-oidc:8080/jwks
+      E9X_GOOGLE_ISSUER: http://localhost:${E9X_FAKE_OIDC_PORT:-8083}
       E9X_GEMINI_BASE_URL: http://fake-gemini:8080
       E9X_GEMINI_API_KEY: fake-key
       SPRING_MAIL_HOST: mailpit

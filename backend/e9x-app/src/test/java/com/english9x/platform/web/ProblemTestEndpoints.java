@@ -25,29 +25,29 @@ class ProblemTestEndpoints {
 
     record Form(@NotBlank String name, @Email String email, @Valid List<Row> rows) {}
 
-    @PostMapping("/problem-test/form")
+    @PostMapping("/api/problem-test/form")
     String form(@Valid @RequestBody Form form) {
         return "ok";
     }
 
-    @GetMapping("/problem-test/boom")
+    @GetMapping("/api/problem-test/boom")
     String boom() {
         throw new IllegalStateException("secret-internal-detail jdbc:postgresql://db.internal:5432/e9x password=hunter2");
     }
 
-    @GetMapping("/problem-test/denied")
+    @GetMapping("/api/problem-test/denied")
     String denied() {
         throw new OrgContextDeniedException(UUID.randomUUID(), UUID.randomUUID());
     }
 
-    @GetMapping("/problem-test/denied-wrapped")
+    @GetMapping("/api/problem-test/denied-wrapped")
     String deniedWrapped() {
         throw new CannotCreateTransactionException(
                 "Could not open JPA EntityManager for transaction",
                 new OrgContextDeniedException(UUID.randomUUID(), UUID.randomUUID()));
     }
 
-    @GetMapping("/problem-test/missing")
+    @GetMapping("/api/problem-test/missing")
     String missing() {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "no such thing");
     }

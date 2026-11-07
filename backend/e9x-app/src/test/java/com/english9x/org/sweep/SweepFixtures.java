@@ -27,6 +27,8 @@ public final class SweepFixtures {
         su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER')", orgA, orgB);
         su.update("insert into users(id,email) values (?,'a@x.test'),(?,'b@x.test')", userA, userB);
         su.update("insert into org_memberships(org_id,user_id) values (?,?),(?,?)", orgA, userA, orgB, userB);
+        // identities are readable by their owner only (policy auth_identities_select); B's row must stay invisible to A
+        su.update("insert into auth_identities(user_id,provider,subject,email) values (?,'google','sweep-sub-b','b@x.test')", userB);
         su.update("insert into classes(id,owner_org_id,name) values (?,?,'class A'),(?,?,'class B')", classA, orgA, classB, orgB);
         su.update("insert into exams(code,name) values ('IELTS','IELTS') on conflict do nothing");
         su.update("insert into courses(owner_org_id,exam_code,code,title,status) values (?,'IELTS','B00001','B draft','DRAFT')", orgB);
@@ -46,9 +48,12 @@ public final class SweepFixtures {
 
     /**
      * Infrastructure tables that hold no tenant data a request can reach: `jobs` (P1.7) grants the request role
-     * INSERT only, no SELECT, and only the worker login reads it, so no endpoint can return a foreign row.
+     * INSERT only, no SELECT, and only the worker login reads it, so no endpoint can return a foreign row. The three
+     * token tables of P1.4 are in the same position (no table privilege for the request role).
      */
-    private static final Set<String> INFRASTRUCTURE = Set.of("jobs");
+    private static final Set<String> INFRASTRUCTURE = Set.of("jobs",
+            // P1.4: the request role has no privilege at all on these (only the SECURITY DEFINER auth_* functions touch them)
+            "refresh_tokens", "email_verifications", "password_resets");
 
     /**
      * Walks every public table that has an {@code id uuid}. A table must be either explicit ({@code users},

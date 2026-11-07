@@ -64,6 +64,24 @@ services:
       E9X_WORKER_DB_USER: e9x_worker_login
       E9X_WORKER_DB_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
       E9X_GEMINI_API_KEY: ${E9X_GEMINI_API_KEY:-}
+      # Identity (P1.4). The JWT secret and the SMTP host have NO default: the app refuses to start without them.
+      # Generate the secret with `openssl rand -hex 32`. Dev/E2E: scripts/e2e.sh does it for you.
+      E9X_DOMAIN: ${E9X_DOMAIN:-localhost}
+      E9X_PUBLIC_BASE_URL: https://${E9X_DOMAIN:-localhost}
+      E9X_JWT_SECRET: ${E9X_JWT_SECRET:-}
+      E9X_SMTP_HOST: ${E9X_SMTP_HOST:-}
+      E9X_SMTP_PORT: ${E9X_SMTP_PORT:-587}
+      E9X_SMTP_USER: ${E9X_SMTP_USER:-}
+      E9X_SMTP_PASSWORD: ${E9X_SMTP_PASSWORD:-}
+      E9X_MAIL_FROM: ${E9X_MAIL_FROM:-English9x <no-reply@english9x.vn>}
+      # Real SMTP usually needs: SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true and SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+      # Caddy is the only thing that reaches the app (port 8080 is not published), so its Docker-network address is the
+      # trusted proxy whose X-Forwarded-For is believed for the login rate limit.
+      E9X_AUTH_TRUSTED_PROXIES: ${E9X_AUTH_TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
+      # Google sign-in is off unless both are set (Google Cloud console: OAuth client, redirect URI
+      # https://<domain>/api/auth/oauth2/callback/google)
+      E9X_GOOGLE_CLIENT_ID: ${E9X_GOOGLE_CLIENT_ID:-}
+      E9X_GOOGLE_CLIENT_SECRET: ${E9X_GOOGLE_CLIENT_SECRET:-}
       LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness | grep -q UP"]

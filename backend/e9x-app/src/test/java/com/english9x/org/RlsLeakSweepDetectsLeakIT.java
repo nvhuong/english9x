@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.english9x.org.sweep.ForeignIdSweep;
 import com.english9x.org.sweep.SweepFixtures;
+import com.english9x.support.TestAuth;
 import com.english9x.support.TestPostgres;
 import java.util.List;
 import java.util.Map;
@@ -51,17 +52,18 @@ class RlsLeakSweepDetectsLeakIT {
     void sweepFailsWhenAnEndpointLeaks() throws Exception {
         String openApi = http.getForObject("/v3/api-docs", String.class);
         ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, FIXTURES.foreignIds(Map.of()).ids(), Map.of(),
-                Map.of("/sweep/classes/{classId}/members/{userId}",
+                Map.of("/api/sweep/classes/{classId}/members/{userId}",
                         List.of(Map.of("classId", FIXTURES.classB, "userId", FIXTURES.userB))), (template, path) -> {
             HttpHeaders h = new HttpHeaders();
             h.add("X-Test-User", FIXTURES.userA.toString());
             h.add("X-Test-Org", FIXTURES.orgA.toString());
+            h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA));
             return http.exchange(path, HttpMethod.GET, new HttpEntity<>(h), String.class).getStatusCode().value();
         });
 
-        assertTrue(r.visited().containsAll(List.of("/sweep/classes/{id}", "/sweep-leaky/classes/{id}")), r.visited().toString());
+        assertTrue(r.visited().containsAll(List.of("/api/sweep/classes/{id}", "/api/sweep-leaky/classes/{id}")), r.visited().toString());
         assertEquals(1, r.leaks().size(), "exactly the leaky class row: " + r.leaks());
-        assertTrue(r.leaks().get(0).contains("/sweep-leaky/classes/{id}"), r.leaks().get(0));
+        assertTrue(r.leaks().get(0).contains("/api/sweep-leaky/classes/{id}"), r.leaks().get(0));
         assertTrue(r.leaks().get(0).contains(FIXTURES.classB.toString()), r.leaks().get(0));
     }
 }

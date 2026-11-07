@@ -2,6 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { ToastProvider } from '../design';
 import { ApiProblemError } from '../api/problem';
+import { AuthBootstrap } from '../features/auth/AuthBootstrap';
+import { clearCacheOnUserChange } from '../features/auth/session';
 import { guardContextWrites } from './stores/context';
 
 export function makeQueryClient() {
@@ -16,6 +18,7 @@ export function makeQueryClient() {
     },
   });
   guardContextWrites(client);
+  clearCacheOnUserChange(client); // a different person (or nobody) must never see the previous person's cached data
   return client;
 }
 
@@ -26,7 +29,10 @@ export function AppProviders({ children, client }: { children: ReactNode; client
   const [qc] = useState(() => client ?? appQueryClient);
   return (
     <QueryClientProvider client={qc}>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        <AuthBootstrap />
+        {children}
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

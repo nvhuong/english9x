@@ -14,7 +14,8 @@
 #   --no-build   reuse the already built app image    --rmi   also remove the images this project built at the end
 #   --down       only tear the project down (after a --keep run)
 # Environment: E2E_WORKERS (default 2; the stack uses ~2-3 GB of RAM), E2E_VIDEO (on|off|retain-on-failure, default on),
-#   E9X_MAILPIT_PORT / E9X_FAKE_TELEGRAM_PORT / E9X_FAKE_GEMINI_PORT (default: first free port from 8025 / 8081 / 8082).
+#   E9X_MAILPIT_PORT / E9X_FAKE_TELEGRAM_PORT / E9X_FAKE_GEMINI_PORT / E9X_FAKE_OIDC_PORT (default: first free port from
+#   8025 / 8081 / 8082 / 8083). E9X_JWT_SECRET and E9X_E2E_SEED_SECRET are generated per run unless you set them.
 # Needs host ports 80 and 443 free (Caddy). Touches only the Compose project "e9x-e2e"; never prunes anything.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -22,7 +23,7 @@ cd "$ROOT"
 
 PROJECT="e9x-e2e"
 COMPOSE=(docker compose -p "$PROJECT" -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml)
-SERVICES=(app caddy mailpit fake-telegram fake-gemini)
+SERVICES=(app caddy mailpit fake-telegram fake-gemini fake-oidc)
 
 KEEP=0; BUILD=1; RMI=0; DOWN_ONLY=0
 while [ $# -gt 0 ]; do
@@ -43,6 +44,7 @@ command -v docker >/dev/null || die "docker not found"
 docker info >/dev/null 2>&1 || die "Docker is not running"
 command -v pnpm >/dev/null || die "pnpm not found (Node 22 + pnpm 10: source ~/.nvm/nvm.sh && nvm use 22)"
 command -v node >/dev/null || die "node not found"
+command -v openssl >/dev/null || die "openssl not found"
 
 teardown() {
   say "tearing down project $PROJECT (down -v)"
@@ -80,7 +82,16 @@ export E9X_MAILPIT_PORT="${E9X_MAILPIT_PORT:-$(free_port 8025)}"
 export E9X_FAKE_TELEGRAM_PORT="${E9X_FAKE_TELEGRAM_PORT:-$(free_port 8081)}"
 export E9X_FAKE_GEMINI_PORT="${E9X_FAKE_GEMINI_PORT:-$(free_port 8082)}"
 if [ "$E9X_FAKE_TELEGRAM_PORT" = "$E9X_FAKE_GEMINI_PORT" ]; then export E9X_FAKE_GEMINI_PORT="$(free_port $((E9X_FAKE_TELEGRAM_PORT + 1)))"; fi
-echo "ports: https 443, mailpit $E9X_MAILPIT_PORT, fake-telegram $E9X_FAKE_TELEGRAM_PORT, fake-gemini $E9X_FAKE_GEMINI_PORT"
+export E9X_FAKE_OIDC_PORT="${E9X_FAKE_OIDC_PORT:-$(free_port 8083)}"
+while [ "$E9X_FAKE_OIDC_PORT" = "$E9X_FAKE_TELEGRAM_PORT" ] || [ "$E9X_FAKE_OIDC_PORT" = "$E9X_FAKE_GEMINI_PORT" ] || [ "$E9X_FAKE_OIDC_PORT" = "$E9X_MAILPIT_PORT" ]; do
+  export E9X_FAKE_OIDC_PORT="$(free_port $((E9X_FAKE_OIDC_PORT + 1)))"
+done
+echo "ports: https 443, mailpit $E9X_MAILPIT_PORT, fake-telegram $E9X_FAKE_TELEGRAM_PORT, fake-gemini $E9X_FAKE_GEMINI_PORT, fake-oidc $E9X_FAKE_OIDC_PORT"
+
+# Secrets of this run only (never reused, never printed): the JWT signing key, and the secret the seed API demands.
+# The Playwright process below inherits E9X_E2E_SEED_SECRET.
+export E9X_JWT_SECRET="${E9X_JWT_SECRET:-$(openssl rand -hex 32)}"
+export E9X_E2E_SEED_SECRET="${E9X_E2E_SEED_SECRET:-$(openssl rand -hex 24)}"
 
 say "installing e2e dependencies"
 pnpm -C e2e install --frozen-lockfile >/dev/null || die "pnpm install failed in e2e/"

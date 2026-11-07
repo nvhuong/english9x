@@ -100,5 +100,6 @@ public final class TestPostgres {
         registry.add("e9x.jobs.worker-datasource.url", () -> jdbcUrl(database));
         registry.add("e9x.jobs.worker-datasource.username", () -> WORKER_LOGIN);
         registry.add("e9x.jobs.worker-datasource.password", () -> WORKER_PASSWORD);
+        TestAuth.configure(registry);
     }
 }

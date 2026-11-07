@@ -1,0 +1,120 @@
+{
+  "nav": {
+    "login": "Sign in",
+    "register": "Sign up",
+    "logout": "Sign out",
+    "account": "Account",
+    "signedInAs": "Signed in: {{name}}"
+  },
+  "common": {
+    "or": "or",
+    "backToLogin": "Back to sign in",
+    "loading": "Working…",
+    "tryAgain": "Try again"
+  },
+  "fields": {
+    "email": "Email",
+    "password": "Password",
+    "newPassword": "New password",
+    "confirmPassword": "Repeat the new password",
+    "displayName": "Display name"
+  },
+  "hints": {
+    "passwordPolicy": "At least 8 characters, at most 72 bytes."
+  },
+  "validation": {
+    "required": "Please fill in this field.",
+    "email": "This email address is not valid.",
+    "passwordShort": "The password needs at least 8 characters.",
+    "passwordLong": "The password is too long (72 bytes at most; accented characters take more than one byte).",
+    "passwordMismatch": "The two passwords do not match.",
+    "consent": "You need to agree to create an account.",
+    "consentGoogle": "You need to agree to continue.",
+    "nameLong": "The name is too long (100 characters at most)."
+  },
+  "problem": {
+    "invalidCredentials": "The email or password is incorrect.",
+    "tooManyAttempts": "Too many attempts. Please wait a while and try again.",
+    "invalidToken": "This link is invalid, already used, or has expired.",
+    "generic": "Something went wrong. Please try again.",
+    "network": "Could not reach the server. Check your connection and try again.",
+    "consentRequired": "This account has not agreed to the processing of personal data yet. Sign in with Google once to give your agreement.",
+    "NotBlank": "Please fill in this field.",
+    "Email": "This email address is not valid.",
+    "Size": "The value is not within the allowed length.",
+    "AssertTrue": "You need to agree to create an account.",
+    "NotNull": "Please fill in this field.",
+    "PasswordMinLength": "The password is too short.",
+    "Utf8MaxBytes": "The password is too long (72 bytes at most)."
+  },
+  "login": {
+    "title": "Sign in",
+    "description": "Continue learning and practising with your English9x account.",
+    "submit": "Sign in",
+    "forgot": "Forgot your password?",
+    "noAccount": "No account yet?",
+    "registerLink": "Sign up",
+    "google": "Sign in with Google",
+    "errorGoogle": "Google sign-in did not work. Please try again.",
+    "errorGoogleUnverified": "Google has not confirmed this email address, so we cannot link or create an account. Verify the address with Google, or sign in with email and password.",
+    "alreadySignedIn": "You are signed in."
+  },
+  "register": {
+    "title": "Create an account",
+    "description": "Sign up to study IELTS and TOEIC courses on English9x.",
+    "submit": "Sign up",
+    "consent": "I agree that English9x collects and processes my personal data (name, email, study results) to provide the service, as set out in Decree 13/2023/ND-CP.",
+    "haveAccount": "Already have an account?",
+    "loginLink": "Sign in",
+    "sentTitle": "Check your email",
+    "sentBody": "If this address can be used to sign up, an email with a verification link has been sent to {{email}}. Open the link in the email to finish. It is valid for 24 hours.",
+    "resend": "Resend the verification email",
+    "resent": "If this account is still waiting for verification, a new email has been sent."
+  },
+  "verify": {
+    "title": "Verify your email",
+    "working": "Verifying your email…",
+    "successTitle": "Email verified",
+    "successBody": "Thank you. Your account is ready.",
+    "failTitle": "Could not verify",
+    "failBody": "The link is invalid, already used, or has expired. Enter your email to get a new one.",
+    "missingToken": "The verification link is incomplete. Enter your email to get a new one.",
+    "login": "Sign in",
+    "continue": "Continue",
+    "resend": "Send a new link"
+  },
+  "forgot": {
+    "title": "Forgot your password",
+    "description": "Enter the email of your account. We will send a link to choose a new password.",
+    "submit": "Send the link",
+    "sentTitle": "Check your email",
+    "sentBody": "If an account uses this email, a password reset link has been sent. It is valid for 1 hour and works once."
+  },
+  "reset": {
+    "title": "Choose a new password",
+    "description": "Choose a new password for your account. Every older session will be signed out.",
+    "submit": "Set the password",
+    "missingToken": "The reset link is incomplete. Please request a new one.",
+    "requestNew": "Request a new link",
+    "doneTitle": "Password changed",
+    "doneBody": "You can now sign in with the new password.",
+    "failTitle": "Could not reset the password"
+  },
+  "google": {
+    "consentTitle": "One more step",
+    "consentBody": "Before your account can be used, English9x needs your agreement to process your personal data.",
+    "consentSubmit": "Agree and continue",
+    "replaceTitle": "You are already signed in",
+    "replaceBody": "This browser is signed in as {{name}}. Did you just sign in with Google yourself? If you followed a link from someone else, keep your current session.",
+    "replaceBodyNoName": "This browser already has a signed-in session. Did you just sign in with Google yourself? If you followed a link from someone else, keep your current session.",
+    "replaceContinue": "Continue with the Google account",
+    "replaceStay": "Keep my current session",
+    "working": "Finishing your Google sign-in…",
+    "failTitle": "Google sign-in did not work"
+  },
+  "banner": {
+    "unverified": "Your email is not verified yet. You can study, but you need to verify it before buying a plan.",
+    "resend": "Resend the verification email",
+    "resent": "Verification email sent. Please check your inbox."
+  }
+}

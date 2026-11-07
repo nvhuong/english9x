@@ -342,6 +342,7 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.auth.access-token-ttl` | `15m` | Hạn access token | Cấu hình |
 | `e9x.auth.refresh-token-ttl` | `30d` | Hạn refresh token | Cấu hình |
 | `e9x.auth.login-rate-limit` | `10/15m` | Giới hạn đăng nhập sai theo IP + email | Cấu hình |
+| `e9x.auth.no-consent-retention` | `7d` | Tài khoản Google bỏ dở ở bước đồng ý (chưa có đồng ý, không có hoạt động) bị xoá sau thời gian này; tối thiểu 1 ngày | Cấu hình |
 | `e9x.learning.streak.min-minutes` | `10` | Số phút học để tính một ngày trong chuỗi | Quản trị |
 | `e9x.learning.heartbeat-interval` | `30s` | Chu kỳ gửi tín hiệu đang học | Cấu hình |
 | `e9x.learning.idle-timeout` | `2m` | Không tương tác quá thời gian này thì ngừng tính giờ | Cấu hình |

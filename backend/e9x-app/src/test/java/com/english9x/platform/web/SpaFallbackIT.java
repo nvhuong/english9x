@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.english9x.support.TestAuth;
 import com.english9x.support.TestPostgres;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +39,16 @@ class SpaFallbackIT {
     TestRestTemplate http;
 
     private ResponseEntity<String> get(String path, String accept) {
+        return get(path, accept, null);
+    }
+
+    private ResponseEntity<String> get(String path, String accept, String bearer) {
         HttpHeaders h = new HttpHeaders();
         if (accept != null) {
             h.set(HttpHeaders.ACCEPT, accept);
+        }
+        if (bearer != null) {
+            h.setBearerAuth(bearer);
         }
         ResponseEntity<String> r = http.exchange(path, HttpMethod.GET, new HttpEntity<>(h), String.class);
         return ResponseEntity.status(r.getStatusCode()).headers(r.getHeaders()).body(r.getBody() == null ? "" : r.getBody());
@@ -69,14 +77,19 @@ class SpaFallbackIT {
 
     @Test
     void apiPathsKeepTheirRealProblem404() {
+        String token = TestAuth.accessToken(java.util.UUID.randomUUID());
         for (String path : new String[] {"/api/nope", "/api/platform/nope", "/api"}) {
             for (String accept : new String[] {BROWSER_ACCEPT, "application/json"}) {
-                ResponseEntity<String> r = get(path, accept);
+                // anonymous callers are refused before routing (401); an authenticated one gets the real 404 problem
+                ResponseEntity<String> anonymous = get(path, accept);
+                assertEquals(401, anonymous.getStatusCode().value(), path + " / " + accept + ": " + anonymous.getBody());
+                assertFalse(anonymous.getBody().contains("spa-test-index"), path + " must not be the SPA");
+                ResponseEntity<String> r = get(path, accept, token);
                 assertEquals(404, r.getStatusCode().value(), path + " / " + accept + ": " + r.getBody());
                 assertFalse(r.getBody().contains("spa-test-index"), path + " must not be the SPA");
             }
         }
-        ResponseEntity<String> r = get("/api/nope", "application/json");
+        ResponseEntity<String> r = get("/api/nope", "application/json", token);
         MediaType ct = r.getHeaders().getContentType();
         assertNotNull(ct);
         assertTrue(MediaType.APPLICATION_PROBLEM_JSON.isCompatibleWith(ct), "content type was " + ct);
@@ -84,11 +97,13 @@ class SpaFallbackIT {
 
     @Test
     void actuatorPathsKeepTheirReal404() {
-        for (String path : new String[] {"/actuator/nope", "/actuator/health/nope"}) {
-            ResponseEntity<String> r = get(path, BROWSER_ACCEPT);
-            assertEquals(404, r.getStatusCode().value(), path + ": " + r.getBody());
-            assertFalse(r.getBody().contains("spa-test-index"), path + " must not be the SPA");
-        }
+        // only health is exposed; everything else under /actuator is denied (401 anonymous), never the SPA
+        ResponseEntity<String> nope = get("/actuator/nope", BROWSER_ACCEPT);
+        assertEquals(401, nope.getStatusCode().value(), nope.getBody());
+        assertFalse(nope.getBody().contains("spa-test-index"));
+        ResponseEntity<String> r = get("/actuator/health/nope", BROWSER_ACCEPT);
+        assertEquals(404, r.getStatusCode().value(), "/actuator/health/nope: " + r.getBody());
+        assertFalse(r.getBody().contains("spa-test-index"), "must not be the SPA");
         assertEquals(200, get("/actuator/health", BROWSER_ACCEPT).getStatusCode().value(), "real endpoints still work");
     }
 

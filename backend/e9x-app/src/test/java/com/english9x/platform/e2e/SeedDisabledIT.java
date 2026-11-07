@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.english9x.support.TestAuth;
 import com.english9x.support.TestPostgres;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -45,10 +49,16 @@ class SeedDisabledIT {
 
     @Test
     void seedRoutesAreNotFound() {
-        for (String path : new String[] {"/api/test/seed/ping", "/api/test/seed/anything", "/api/test/seed"}) {
-            ResponseEntity<String> post = http.postForEntity(path, null, String.class);
+        // Anonymous callers get 401 (everything under /api needs a token, so the route's absence is not even revealed);
+        // an authenticated caller gets the real answer: no such route.
+        HttpHeaders auth = new HttpHeaders();
+        auth.setBearerAuth(TestAuth.accessToken(java.util.UUID.randomUUID()));
+        for (String path : new String[] {"/api/test/seed/ping", "/api/test/seed/anything", "/api/test/seed", "/api/test/seed/learner"}) {
+            assertEquals(401, http.postForEntity(path, null, String.class).getStatusCode().value(), path);
+            assertEquals(401, http.getForEntity(path, String.class).getStatusCode().value(), path);
+            ResponseEntity<String> post = http.exchange(path, HttpMethod.POST, new HttpEntity<>(auth), String.class);
             assertEquals(404, post.getStatusCode().value(), path + ": " + post.getBody());
-            ResponseEntity<String> get = http.getForEntity(path, String.class);
+            ResponseEntity<String> get = http.exchange(path, HttpMethod.GET, new HttpEntity<>(auth), String.class);
             assertEquals(404, get.getStatusCode().value(), path + ": " + get.getBody());
         }
     }
