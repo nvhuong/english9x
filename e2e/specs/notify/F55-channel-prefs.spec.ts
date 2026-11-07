@@ -25,7 +25,7 @@ test.describe('F55 channel preferences', () => {
     await expect(page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ })).toBeChecked();
 
     // Telegram off, email on, for REVIEW_REQUESTED only
-    await page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ }).uncheck();
+    await page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ }).click();
     await expect(page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ })).not.toBeChecked();
     await page.reload();
     await expect(page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ })).not.toBeChecked();
@@ -42,7 +42,7 @@ test.describe('F55 channel preferences', () => {
     expect(messages.some((m) => m.text.includes('Có nội dung chờ duyệt'))).toBe(false);
 
     // switch it back on: the next REVIEW_REQUESTED reaches Telegram too
-    await page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ }).check();
+    await page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ }).click();
     await expect(page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ })).toBeChecked();
     await page.reload();
     await expect(page.getByRole('checkbox', { name: /^Telegram: Có nội dung chờ duyệt/ })).toBeChecked();
@@ -51,7 +51,7 @@ test.describe('F55 channel preferences', () => {
     expect(after[2]!.text).toContain('Có nội dung chờ duyệt');
 
     // email off for the other event: the in-app notification still arrives, the mail does not
-    await page.getByRole('checkbox', { name: /^Email: Nội dung đã được xuất bản/ }).uncheck();
+    await page.getByRole('checkbox', { name: /^Email: Nội dung đã được xuất bản/ }).click();
     await expect(page.getByRole('checkbox', { name: /^Email: Nội dung đã được xuất bản/ })).not.toBeChecked();
     await seed.reviewEvent({ kind: 'approved', authorId: w.reviewer.userId, orgId: w.org.orgId });
     await telegram.waitForMessages(chat, { count: 4, timeoutMs: 40_000 });

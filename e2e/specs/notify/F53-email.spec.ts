@@ -22,7 +22,7 @@ test.describe('F53 email notifications', () => {
     await page.goto('/notifications/preferences');
     const email = page.getByRole('checkbox', { name: /^Email: Có nội dung chờ duyệt/ });
     await expect(email).toBeChecked();
-    await email.uncheck();
+    await email.click();
     await expect(email).not.toBeChecked();
     await page.reload();
     await expect(page.getByRole('checkbox', { name: /^Email: Có nội dung chờ duyệt/ })).not.toBeChecked();
