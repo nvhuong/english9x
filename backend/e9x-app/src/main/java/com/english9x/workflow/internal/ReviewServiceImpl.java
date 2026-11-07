@@ -1,5 +1,6 @@
 package com.english9x.workflow.internal;
 
+import com.english9x.audit.api.AuditLog;
 import com.english9x.org.api.Authz;
 import com.english9x.org.api.CurrentContextHolder;
 import com.english9x.org.api.Role;
@@ -65,14 +66,16 @@ class ReviewServiceImpl implements ReviewService {
     private final Authz authz;
     private final ApplicationEventPublisher events;
     private final WorkflowProperties props;
+    private final AuditLog audit;
     private final Map<String, ReviewableType> types = new HashMap<>();
 
     ReviewServiceImpl(ReviewRepository repo, Authz authz, ApplicationEventPublisher events, WorkflowProperties props,
-                      List<ReviewableType> registered) {
+                      AuditLog audit, List<ReviewableType> registered) {
         this.repo = repo;
         this.authz = authz;
         this.events = events;
         this.props = props;
+        this.audit = audit;
         for (ReviewableType t : registered) {
             if (types.put(t.type(), t) != null) {
                 throw new IllegalStateException("two ReviewableType beans for content type '" + t.type() + "'");
@@ -95,6 +98,18 @@ class ReviewServiceImpl implements ReviewService {
         return t;
     }
 
+    /** What the audit record of a review action says about the version: its kind, id and exam, and for a send-back the length (never the text) of the comment. */
+    private static Map<String, Object> versionFacts(String type, UUID versionId, String examCode, Integer commentLength) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("type", type);
+        m.put("versionId", versionId.toString());
+        m.put("examCode", examCode);
+        if (commentLength != null) {
+            m.put("commentLength", commentLength);
+        }
+        return m;
+    }
+
     // ---- submit ---------------------------------------------------------------------------------------------------------
 
     private record Submitted(UUID reviewId, VersionRef ref, String examCode, UUID ownerOrgId) {}
@@ -103,7 +118,7 @@ class ReviewServiceImpl implements ReviewService {
     public UUID submit(VersionRef version) {
         Actor me = actor();
         Submitted s = submitOne(me, version, null);
-        // Audit (P1.9): action review.submit, target = review id, detail = type, versionId, examCode
+        audit.record("review.submit", "review", s.reviewId(), versionFacts(s.ref().type(), s.ref().versionId(), s.examCode(), null));
         events.publishEvent(new ReviewRequested(s.ref().type(), s.ref().versionId(), Optional.ofNullable(s.ownerOrgId()), s.examCode(),
                 s.reviewId(), Optional.empty()));
         return s.reviewId();
@@ -127,7 +142,7 @@ class ReviewServiceImpl implements ReviewService {
             Submitted s = submitOne(me, m, bundleId);
             firstPerExam.putIfAbsent(s.examCode(), s);
         }
-        // Audit (P1.9): action review.submit-bundle, target = bundle id, detail = member count
+        audit.record("review.submit-bundle", "review-bundle", bundleId, Map.of("members", members.size()));
         for (Submitted s : firstPerExam.values()) {
             events.publishEvent(new ReviewRequested(s.ref().type(), s.ref().versionId(), Optional.ofNullable(s.ownerOrgId()), s.examCode(),
                     s.reviewId(), Optional.of(bundleId)));
@@ -163,7 +178,7 @@ class ReviewServiceImpl implements ReviewService {
         List<Object> queued = new ArrayList<>();
         Reviewable v = loadForDecision(me, row);
         publish(me, row, v, queued);
-        // Audit (P1.9): action review.approve, target = review id, detail = type, versionId, examCode
+        audit.record("review.approve", "review", row.id(), versionFacts(row.type(), row.versionId(), row.examCode(), null));
         queued.forEach(events::publishEvent);
     }
 
@@ -174,7 +189,7 @@ class ReviewServiceImpl implements ReviewService {
         ReviewRepository.Row row = lockForDecision(me, reviewId);
         List<Object> queued = new ArrayList<>();
         sendBack(me, row, loadForDecision(me, row), text, queued);
-        // Audit (P1.9): action review.request-changes, target = review id, detail = comment length (not the text)
+        audit.record("review.request-changes", "review", row.id(), versionFacts(row.type(), row.versionId(), row.examCode(), text.length()));
         queued.forEach(events::publishEvent);
     }
 
@@ -288,7 +303,7 @@ class ReviewServiceImpl implements ReviewService {
         for (Map.Entry<VersionRef, ReviewRepository.Row> e : rows.entrySet()) {
             sendBack(me, e.getValue(), loaded.get(e.getKey()), text, queued);
         }
-        // Audit (P1.9): action review.request-bundle-changes, target = bundle id, detail = member count
+        audit.record("review.request-bundle-changes", "review-bundle", bundleId, Map.of("members", rows.size(), "commentLength", text.length()));
         onePerAuthor(queued).forEach(events::publishEvent);
     }
 
@@ -310,7 +325,7 @@ class ReviewServiceImpl implements ReviewService {
         if (!missing.isEmpty()) {
             throw new UnpublishedDependencyException(missing); // rolls everything back
         }
-        // Audit (P1.9): action review.approve-bundle, target = bundle id, detail = member count
+        audit.record("review.approve-bundle", "review-bundle", bundleId, Map.of("members", rows.size()));
         onePerAuthor(queued).forEach(events::publishEvent);
     }
 

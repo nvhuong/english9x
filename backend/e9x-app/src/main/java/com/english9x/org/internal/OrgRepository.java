@@ -174,8 +174,8 @@ class OrgRepository {
     }
 
     /** Ends what could still be accepted. An expired row stays EXPIRED. One voided by its inviter's lost authority is retired too: that authority can come back. */
-    void retirePending(UUID orgId, String email, Instant now) {
-        jdbc.update("update invitations set revoked_at = ? where org_id is not distinct from ? and email = lower(?) and accepted_at is null and revoked_at is null and expires_at > ?",
+    int retirePending(UUID orgId, String email, Instant now) {
+        return jdbc.update("update invitations set revoked_at = ? where org_id is not distinct from ? and email = lower(?) and accepted_at is null and revoked_at is null and expires_at > ?",
                 ts(now), orgId, email, ts(now));
     }
 
@@ -226,16 +226,23 @@ class OrgRepository {
         }
     }
 
-    /** Revokes a pending invitation of that scope; false when there is none (or it is not the caller's to see). */
-    boolean revoke(UUID invitationId, UUID orgId, Instant now) {
-        return jdbc.update("update invitations set revoked_at = ? where id = ? and org_id is not distinct from ? and accepted_at is null and revoked_at is null and expires_at > ?",
-                ts(now), invitationId, orgId, ts(now)) == 1;
+    record Revoked(String email, List<RoleSpec> roles) {}
+
+    /** Revokes a pending invitation of that scope and says what it was; empty when there is none (or it is not the caller's to see). */
+    Optional<Revoked> revoke(UUID invitationId, UUID orgId, Instant now) {
+        return jdbc.query("update invitations set revoked_at = ? where id = ? and org_id is not distinct from ? and accepted_at is null and revoked_at is null and expires_at > ? returning email, grants::text as grants",
+                (rs, n) -> new Revoked(rs.getString("email"), parseGrants(rs.getString("grants"))),
+                ts(now), invitationId, orgId, ts(now)).stream().findFirst();
     }
 
-    record Accepted(String outcome, UUID orgId) {}
+    record Accepted(String outcome, UUID orgId, UUID invitationId, List<RoleSpec> roles) {}
 
     Accepted accept(byte[] tokenHash, Instant now) {
         return jdbc.queryForObject("select * from org_invitation_accept(?, ?)",
-                (rs, n) -> new Accepted(rs.getString("r_outcome"), rs.getObject("r_org_id", UUID.class)), tokenHash, ts(now));
+                (rs, n) -> {
+                    String grants = rs.getString("r_grants");
+                    return new Accepted(rs.getString("r_outcome"), rs.getObject("r_org_id", UUID.class), rs.getObject("r_invitation_id", UUID.class),
+                            grants == null ? List.of() : parseGrants(grants));
+                }, tokenHash, ts(now));
     }
 }

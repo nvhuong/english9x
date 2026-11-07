@@ -72,6 +72,9 @@ class ReviewServiceIT {
     static final UUID ORG_C = UUID.randomUUID();           // its own organisation: a queue nobody else filled
     static final UUID AUTHOR_C = UUID.randomUUID();
     static final UUID REVIEWER_C = UUID.randomUUID();
+    static final UUID ORG_D = UUID.randomUUID();           // the audit-log tests' own organisation, so they leave ORG_C's queue as it was
+    static final UUID AUTHOR_D = UUID.randomUUID();
+    static final UUID REVIEWER_D = UUID.randomUUID();
     static final UUID ORG_A = UUID.randomUUID();
     static final UUID ORG_B = UUID.randomUUID();
     static final UUID AUTHOR_A = UUID.randomUUID();       // AUTHOR IELTS in A
@@ -166,9 +169,9 @@ class ReviewServiceIT {
     static void fixtures(@Autowired JdbcTemplate migrated) {
         su = new JdbcTemplate(TestPostgres.superuser(DB));
         su.update("insert into exams(code,name) values ('IELTS','IELTS'),('TOEIC','TOEIC') on conflict do nothing");
-        su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER'),(?,'C','CENTER')", ORG_A, ORG_B, ORG_C);
+        su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER'),(?,'C','CENTER'),(?,'D','CENTER')", ORG_A, ORG_B, ORG_C, ORG_D);
         for (UUID u : new UUID[] {AUTHOR_A, AUTHOR_A_BOTH, REVIEWER_A, REVIEWER_A2, REVIEWER_A_TOEIC, DUAL_A, LEARNER_A, AUTHOR_B,
-                REVIEWER_B, E9_AUTHOR, E9_REVIEWER, SYS_DUAL, AUTHOR_C, REVIEWER_C}) {
+                REVIEWER_B, E9_AUTHOR, E9_REVIEWER, SYS_DUAL, AUTHOR_C, REVIEWER_C, AUTHOR_D, REVIEWER_D}) {
             su.update("insert into users(id,email) values (?,?)", u, u + "@x.test");
         }
         for (UUID u : new UUID[] {AUTHOR_A, AUTHOR_A_BOTH, REVIEWER_A, REVIEWER_A2, REVIEWER_A_TOEIC, DUAL_A, LEARNER_A, E9_REVIEWER}) {
@@ -180,6 +183,11 @@ class ReviewServiceIT {
         for (UUID u : new UUID[] {AUTHOR_C, REVIEWER_C}) {
             su.update("insert into org_memberships(org_id,user_id) values (?,?)", ORG_C, u);
         }
+        for (UUID u : new UUID[] {AUTHOR_D, REVIEWER_D}) {
+            su.update("insert into org_memberships(org_id,user_id) values (?,?)", ORG_D, u);
+        }
+        grant(AUTHOR_D, ORG_D, "IELTS", "AUTHOR");
+        grant(REVIEWER_D, ORG_D, "IELTS", "REVIEWER");
         grant(AUTHOR_C, ORG_C, "IELTS", "AUTHOR");
         grant(REVIEWER_C, ORG_C, "IELTS", "REVIEWER");
         grant(AUTHOR_A, ORG_A, "IELTS", "AUTHOR");
@@ -896,5 +904,84 @@ class ReviewServiceIT {
         assertEquals(List.of(), recorder.workflowEvents());
         assertEquals("IN_REVIEW", status(it));
         assertEquals("IN_REVIEW", reviewStatus(review));
+    }
+
+    // ---- the audit log (P1.9, F57): every submit and decision is recorded in the same transaction, by the person who did it --------
+
+    private static List<java.util.Map<String, Object>> audit(String action, Object target) {
+        return su.queryForList("select actor_id, org_id, target_type, target_id, detail::text as detail from audit_log where action = ? and target_id = ? order by seq",
+                action, target.toString());
+    }
+
+    @Test
+    void everySubmitAndDecisionIsRecordedByItsActorWithoutTheCommentText() {
+        UUID it = item(ORG_D, "IELTS", AUTHOR_D, "DRAFT");
+        UUID review = submitted(AUTHOR_D, ORG_D, it);
+        var submit = audit("review.submit", review);
+        assertEquals(1, submit.size());
+        assertEquals(AUTHOR_D, submit.get(0).get("actor_id"));
+        assertEquals(ORG_D, submit.get(0).get("org_id"));
+        assertEquals("review", submit.get(0).get("target_type"));
+        assertTrue(((String) submit.get(0).get("detail")).contains(it.toString()) && ((String) submit.get(0).get("detail")).contains("IELTS"), submit.get(0).toString());
+
+        String comment = "PRIVATE-FEEDBACK-" + UUID.randomUUID();
+        asDo(REVIEWER_D, ORG_D, () -> reviews.requestChanges(review, comment));
+        var changes = audit("review.request-changes", review);
+        assertEquals(1, changes.size());
+        assertEquals(REVIEWER_D, changes.get(0).get("actor_id"));
+        assertTrue(((String) changes.get(0).get("detail")).contains("\"commentLength\": " + comment.length()), changes.get(0).toString());
+        assertEquals(0, su.queryForObject("select count(*) from audit_log where row_to_json(audit_log)::text like ?", Integer.class, "%PRIVATE-FEEDBACK%"),
+                "the comment text never reaches the log, only its length");
+
+        UUID review2 = submitted(AUTHOR_D, ORG_D, it);
+        asDo(REVIEWER_D, ORG_D, () -> reviews.approve(review2));
+        var approved = audit("review.approve", review2);
+        assertEquals(1, approved.size());
+        assertEquals(REVIEWER_D, approved.get(0).get("actor_id"));
+        assertEquals(ORG_D, approved.get(0).get("org_id"));
+        assertTrue(((String) approved.get(0).get("detail")).contains(it.toString()), approved.get(0).toString());
+    }
+
+    @Test
+    void bundlesAreRecordedWithTheirMemberCount() {
+        UUID m1 = item(ORG_D, "IELTS", AUTHOR_D, "DRAFT");
+        UUID m2 = item(ORG_D, "IELTS", AUTHOR_D, "DRAFT");
+        UUID bundle = as(AUTHOR_D, ORG_D, () -> reviews.submit(new BundleRef(List.of(ref(m1), ref(m2)))));
+        var submit = audit("review.submit-bundle", bundle);
+        assertEquals(1, submit.size());
+        assertEquals(AUTHOR_D, submit.get(0).get("actor_id"));
+        assertTrue(((String) submit.get(0).get("detail")).contains("\"members\": 2"), submit.get(0).toString());
+        asDo(REVIEWER_D, ORG_D, () -> reviews.requestBundleChanges(bundle, "BUNDLE-PRIVATE-NOTE"));
+        assertEquals(1, audit("review.request-bundle-changes", bundle).size());
+        assertEquals(REVIEWER_D, audit("review.request-bundle-changes", bundle).get(0).get("actor_id"));
+        UUID bundle2 = as(AUTHOR_D, ORG_D, () -> reviews.submit(new BundleRef(List.of(ref(m1), ref(m2)))));
+        asDo(REVIEWER_D, ORG_D, () -> reviews.approveBundle(bundle2));
+        var approved = audit("review.approve-bundle", bundle2);
+        assertEquals(1, approved.size());
+        assertTrue(((String) approved.get(0).get("detail")).contains("\"members\": 2"), approved.get(0).toString());
+        assertEquals(0, su.queryForObject("select count(*) from audit_log where row_to_json(audit_log)::text like ?", Integer.class, "%BUNDLE-PRIVATE-NOTE%"));
+    }
+
+    @Test
+    void refusedAndRolledBackDecisionsLeaveNoRecord() {
+        long before = su.queryForObject("select count(*) from audit_log where action like 'review.%' and actor_id in (?, ?, ?)", Long.class, DUAL_A, REVIEWER_A, AUTHOR_A);
+        UUID mine = item(ORG_A, "IELTS", DUAL_A, "DRAFT");
+        UUID review = submitted(DUAL_A, ORG_A, mine);           // the submit itself is recorded
+        assertThrows(SelfReviewException.class, () -> asDo(DUAL_A, ORG_A, () -> reviews.approve(review)));
+        assertThrows(SelfReviewException.class, () -> asDo(DUAL_A, ORG_A, () -> reviews.requestChanges(review, "x")));
+        assertEquals(List.of(), audit("review.approve", review));
+        assertEquals(List.of(), audit("review.request-changes", review));
+        // rolled back by an outer transaction: the decision and its record go together
+        UUID other = item(ORG_A, "IELTS", AUTHOR_A, "DRAFT");
+        UUID review2 = submitted(AUTHOR_A, ORG_A, other);
+        as(REVIEWER_A, ORG_A, () -> new TransactionTemplate(tm).execute(st -> {
+            reviews.approve(review2);
+            assertEquals(1, appJdbc.queryForObject("select count(*) from review_requests where id = ? and status = 'PUBLISHED'", Integer.class, review2));
+            st.setRollbackOnly();
+            return null;
+        }));
+        assertEquals(List.of(), audit("review.approve", review2));
+        assertEquals(before + 2, su.queryForObject("select count(*) from audit_log where action like 'review.%' and actor_id in (?, ?, ?)", Long.class, DUAL_A, REVIEWER_A, AUTHOR_A),
+                "only the two submits are on record");
     }
 }

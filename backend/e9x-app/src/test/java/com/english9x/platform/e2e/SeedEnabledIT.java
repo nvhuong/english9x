@@ -77,6 +77,24 @@ class SeedEnabledIT {
     }
 
     @Test
+    void reviewFlowRunsTheRealServiceAndLeavesAuditRecords() {
+        String author = post("/api/test/seed/learner", "{\"email\":\"flow-author@e2e.test\"}", SECRET).getBody().replaceAll(".*\"userId\":\"([^\"]+)\".*", "$1");
+        String reviewer = post("/api/test/seed/learner", "{\"email\":\"flow-reviewer@e2e.test\"}", SECRET).getBody().replaceAll(".*\"userId\":\"([^\"]+)\".*", "$1");
+        // nobody holds a role yet: the real Authz refuses, so the seed cannot be used to bypass the rules
+        ResponseEntity<String> refused = post("/api/test/seed/review-flow", "{\"authorId\":\"" + author + "\",\"reviewerId\":\"" + reviewer + "\"}", SECRET);
+        assertTrue(refused.getStatusCode().value() >= 400, refused.getBody());
+        assertEquals(201, post("/api/test/seed/staff-grant", "{\"userId\":\"" + author + "\",\"role\":\"AUTHOR\",\"examCode\":\"IELTS\"}", SECRET).getStatusCode().value());
+        assertEquals(201, post("/api/test/seed/staff-grant", "{\"userId\":\"" + reviewer + "\",\"role\":\"REVIEWER\",\"examCode\":\"IELTS\"}", SECRET).getStatusCode().value());
+        ResponseEntity<String> ok = post("/api/test/seed/review-flow", "{\"authorId\":\"" + author + "\",\"reviewerId\":\"" + reviewer + "\",\"outcome\":\"approved\"}", SECRET);
+        assertEquals(201, ok.getStatusCode().value(), ok.getBody());
+        String reviewId = ok.getBody().replaceAll(".*\"reviewId\":\"([^\"]+)\".*", "$1");
+        JdbcTemplate su = new JdbcTemplate(TestPostgres.superuser(DB));
+        assertEquals(author, su.queryForObject("select actor_id::text from audit_log where action = 'review.submit' and target_id = ?", String.class, reviewId));
+        assertEquals(reviewer, su.queryForObject("select actor_id::text from audit_log where action = 'review.approve' and target_id = ?", String.class, reviewId));
+        assertEquals("PUBLISHED", su.queryForObject("select d.status from e2e_docs d join review_requests r on r.version_id = d.id where r.id = ?::uuid", String.class, reviewId));
+    }
+
+    @Test
     void organisationFixturesFollowTheRealRules() {
         ResponseEntity<String> org = post("/api/test/seed/organization", "{\"name\":\"Seed Centre\",\"type\":\"ENTERPRISE\"}", SECRET);
         assertEquals(201, org.getStatusCode().value(), org.getBody());
