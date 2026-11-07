@@ -1,6 +1,6 @@
 // F03 — Quên mật khẩu (spec §16.2): "Yêu cầu → link → đặt mật khẩu mới → mật khẩu cũ bị từ chối; refresh token cũ bị thu hồi".
-// Through the real screens and the real mail (Mailpit). Access tokens already issued are stateless and keep working until
-// their 15 minutes are up; the refresh tokens are what the reset revokes.
+// Through the real screens and the real mail (Mailpit). The reset revokes the refresh tokens and moves the credentials version, which
+// ends every access token issued before it (checked per request).
 import { test, expect } from '../../fixtures';
 import { env, request } from '../../helpers/env';
 
@@ -104,5 +104,37 @@ test.describe('F03 password reset', () => {
     await mailpit.lastEmailTo(known.email, { subjectIncludes: 'Đặt lại mật khẩu' });
     await page.waitForTimeout(1500); // the app has had its chance to (not) send
     expect(await mailpit.hasNoEmailTo(unknown)).toBe(true);
+  });
+
+  // Final review I1 and M11: a reset ends the old access token at once and takes the Telegram destination with it; preferences stay.
+  test('F03 a reset kills the old access token, the linked chat and an unused link token', async ({ org, seed, mailpit, telegram, uniqueEmail, page }) => {
+    const learner = await seed.verifiedLearner({ email: uniqueEmail('f03-reset-tg'), displayName: 'Trần Thu Trang' });
+    const { token } = await org.apiLogin(learner);
+    const tokenFrom = (deepLink: string) => deepLink.split('start=')[1]!;
+    const chat = telegram.uniqueChatId();
+    expect(await telegram.deliverUpdate(telegram.startUpdate(chat, tokenFrom((await org.api(token, 'POST', '/api/me/telegram/link')).body.deepLink)))).toBe(200);
+    expect((await org.api(token, 'GET', '/api/me/telegram')).body.linked).toBe(true);
+    const unused = tokenFrom((await org.api(token, 'POST', '/api/me/telegram/link')).body.deepLink);
+    expect((await org.api(token, 'PUT', '/api/me/notification-prefs', { body: { eventType: 'REVIEW_REQUESTED', channel: 'EMAIL', enabled: false } })).status).toBe(204);
+
+    await page.goto('/forgot-password');
+    await page.getByLabel(/^Email/).fill(learner.email);
+    await page.getByRole('button', { name: 'Gửi liên kết' }).click();
+    const mail = await mailpit.lastEmailTo(learner.email, { subjectIncludes: 'Đặt lại mật khẩu' });
+    await page.goto(mailpit.linksIn(mail).find((l) => l.includes('/reset-password?token='))!);
+    await page.getByLabel(/^Mật khẩu mới/).fill('New-password-for-reset-2');
+    await page.getByLabel(/^Nhập lại mật khẩu mới/).fill('New-password-for-reset-2');
+    await page.getByRole('button', { name: 'Đặt mật khẩu' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Đã đổi mật khẩu' })).toBeVisible();
+
+    expect((await org.api(token, 'GET', '/api/auth/me')).status, 'the old access token').toBe(401);
+    const fresh = await org.apiLogin({ email: learner.email, password: 'New-password-for-reset-2' });
+    expect((await org.api(fresh.token, 'GET', '/api/me/telegram')).body.linked, 'the chat is gone').toBe(false);
+    const other = telegram.uniqueChatId();
+    expect(await telegram.deliverUpdate(telegram.startUpdate(other, unused))).toBe(200);
+    await telegram.waitForMessages(other);
+    expect((await telegram.messagesFor(other))[0]!.text).toContain('không hợp lệ hoặc đã hết hạn');
+    const prefs = (await org.api(fresh.token, 'GET', '/api/me/notification-prefs')).body.events as { type: string; email: boolean }[];
+    expect(prefs.find((e) => e.type === 'REVIEW_REQUESTED')!.email, 'preferences stay').toBe(false);
   });
 });

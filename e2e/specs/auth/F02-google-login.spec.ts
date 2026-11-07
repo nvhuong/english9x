@@ -100,6 +100,71 @@ test.describe('F02 Google sign-in', () => {
     await expect(page.getByRole('alert')).toContainText('Email hoặc mật khẩu chưa đúng.');
   });
 
+  // Final review I1 and M11: nothing the first holder of an address chose outlives the mailbox owner's arrival.
+  test('F02 an unverified account can choose nothing, is told why, and its access token dies when the real owner signs in', async ({ page, auth, org, seed, uniqueEmail }) => {
+    const attacker = await seed.verifiedLearner({ email: uniqueEmail('f02-takeover'), password: 'Attacker-pass-9', verified: false, displayName: 'Kẻ tấn công' });
+    const { token } = await org.apiLogin(attacker);
+
+    // the screen says why, and the API refuses all the same
+    await auth.loginAs(page, attacker);
+    await page.goto('/notifications/preferences');
+    await expect(page.getByText('Hãy xác thực email để đổi tuỳ chọn thông báo và kết nối Telegram.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tạo liên kết kết nối' })).toHaveCount(0);
+    const link = await org.api(token, 'POST', '/api/me/telegram/link');
+    expect(link.status).toBe(403);
+    expect(link.body.type).toBe('urn:e9x:problem:email-not-verified');
+    const pref = await org.api(token, 'PUT', '/api/me/notification-prefs', { body: { eventType: 'SCORE_OFFICIAL', channel: 'EMAIL', enabled: false } });
+    expect(pref.status).toBe(403);
+    expect((await org.api(token, 'GET', '/api/auth/me')).status).toBe(200);
+    await page.getByRole('button', { name: 'Đăng xuất' }).click();
+
+    // the owner arrives: the 15-minute token stops working on the spot, also for the link endpoint
+    await signInWithGoogle(page, { email: attacker.email, name: 'Chủ thật' });
+    await agreeToGoogleConsent(page);
+    await expect(page.getByText('Đã đăng nhập: Chủ thật')).toBeVisible();
+    expect((await org.api(token, 'GET', '/api/auth/me')).status).toBe(401);
+    expect((await org.api(token, 'POST', '/api/me/telegram/link')).status).toBe(401);
+
+    // email is on, and the owner may change things
+    await page.goto('/notifications/preferences');
+    await expect(page.getByText('Hãy xác thực email để đổi tuỳ chọn thông báo và kết nối Telegram.')).toHaveCount(0);
+    for (const box of await page.getByRole('checkbox', { name: /^Email:/ }).all()) await expect(box).toBeChecked();
+    await expect(page.getByRole('button', { name: 'Tạo liên kết kết nối' })).toBeVisible();
+  });
+
+  test('F02 a victim who clicked the mail: the attacker keeps no chat, no unused token and no live access token once Google is linked', async ({ page, org, telegram, mailpit, uniqueEmail, auth }) => {
+    // the attacker registers the victim's address; the victim clicks the mail they never asked for: verified, and the attacker is signed in
+    const attacker = { email: uniqueEmail('f02-linked'), password: 'Attacker-pass-9', displayName: 'Kẻ tấn công' };
+    const { verifyLink } = await auth.registerLearner(page, attacker);
+    const { token } = await org.apiLogin(attacker);
+    await page.goto(verifyLink);
+    await expect(page.getByRole('heading', { level: 1, name: /xác thực/i })).toBeVisible();
+
+    const tokenFrom = (deepLink: string) => deepLink.split('start=')[1]!;
+    const first = await org.api(token, 'POST', '/api/me/telegram/link');
+    expect(first.status).toBe(200);
+    const chat = telegram.uniqueChatId();
+    expect(await telegram.deliverUpdate(telegram.startUpdate(chat, tokenFrom(first.body.deepLink)))).toBe(200);
+    expect((await org.api(token, 'GET', '/api/me/telegram')).body.linked, 'a positive control: the chat did link').toBe(true);
+    const unused = tokenFrom((await org.api(token, 'POST', '/api/me/telegram/link')).body.deepLink);
+    expect((await org.api(token, 'PUT', '/api/me/notification-prefs', { body: { eventType: 'REVIEW_REQUESTED', channel: 'EMAIL', enabled: false } })).status).toBe(204);
+
+    await page.getByRole('button', { name: 'Đăng xuất' }).click().catch(() => {});
+    await signInWithGoogle(page, { email: attacker.email, name: 'Chủ thật' });
+    await expect(page.getByText(/Đã đăng nhập/)).toBeVisible();
+    await mailpit.lastEmailTo(attacker.email, { subjectIncludes: 'liên kết' });
+
+    expect((await org.api(token, 'POST', '/api/me/telegram/link')).status, 'the old access token').toBe(401);
+    const other = telegram.uniqueChatId();
+    expect(await telegram.deliverUpdate(telegram.startUpdate(other, unused))).toBe(200);
+    await telegram.waitForMessages(other); // the bot answers, and what it says is the refusal
+    expect((await telegram.messagesFor(other))[0]!.text).toContain('không hợp lệ hoặc đã hết hạn');
+    await page.goto('/notifications/preferences');
+    await expect(page.getByText('Chưa kết nối Telegram')).toBeVisible();
+    // a verified account's preferences were chosen by someone who proved the mailbox: LINKED keeps them
+    await expect(page.locator('[data-event="REVIEW_REQUESTED"]').getByRole('checkbox', { name: /^Email:/ })).not.toBeChecked();
+  });
+
   test('F02 a sign-in code in the address bar cannot be replayed and a tampered callback is refused', async ({ page, request }) => {
     // a made-up code: the page says so and offers the way back
     await page.goto('/login/google?code=' + 'A'.repeat(43));
