@@ -77,7 +77,10 @@ public final class SweepFixtures {
         // P2.1: org B's catalog rows (a score table with a published version, a grading skill with a published version, a grading policy);
         // no catalog endpoint takes an id yet, P2.5 adds them and the sweep then covers them
         UUID scoreTableB = UUID.randomUUID();
-        su.update("insert into score_tables(id,owner_org_id,exam_code,skill,scope,test_version_id) values (?,?,'IELTS','LISTENING','TEST',gen_random_uuid())", scoreTableB, orgB);
+        // an organisation's score table can only be TEST scope, which is refused until P2.6: lift the refusal for this insert, then put it back
+        su.execute("alter table score_tables drop constraint score_tables_test_scope_refused_ck");
+        su.update("insert into score_tables(id,owner_org_id,exam_code,skill,scope,test_id) values (?,?,'IELTS','LISTENING','TEST',gen_random_uuid())", scoreTableB, orgB);
+        su.execute("alter table score_tables add constraint score_tables_test_scope_refused_ck check (scope <> 'TEST') not valid");
         su.update("insert into score_table_versions(score_table_id,owner_org_id,exam_code,version_no,status) values (?,?,'IELTS',1,'PUBLISHED')", scoreTableB, orgB);
         UUID skillB = UUID.randomUUID();
         su.update("insert into grading_skills(id,owner_org_id,exam_code,question_type_code) values (?,?,'IELTS','IELTS_W_TASK2')", skillB, orgB);

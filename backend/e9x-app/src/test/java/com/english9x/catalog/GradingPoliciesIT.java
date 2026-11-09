@@ -13,11 +13,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 /** GradingPolicies#resolve: test beats organisation beats exam beats the configured default, and an organisation's policy never reaches another. */
+@Import(com.english9x.catalog.internal.TestLookupStubConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class GradingPoliciesIT {
 
@@ -29,9 +31,13 @@ class GradingPoliciesIT {
     static final UUID USER_B = UUID.randomUUID();
     static final UUID USER_C = UUID.randomUUID();
     static final UUID USER_P = UUID.randomUUID();
-    static final UUID TEST_A = UUID.randomUUID();     // a test version of org A with its own mode
-    static final UUID TEST_E9 = UUID.randomUUID();    // a test version of English9x with its own mode
-    static final UUID TEST_PLAIN = UUID.randomUUID();
+    // the override belongs to a TEST; a test has several versions (spec 10.3 "theo đề")
+    static final UUID T_A = UUID.randomUUID();        // a test of org A with its own mode
+    static final UUID T_E9 = UUID.randomUUID();       // a test of English9x with its own mode
+    static final UUID TEST_A = UUID.randomUUID();     // version 1 of T_A
+    static final UUID TEST_A_V2 = UUID.randomUUID();  // version 2 of T_A, published later
+    static final UUID TEST_E9 = UUID.randomUUID();    // a version of T_E9
+    static final UUID TEST_PLAIN = UUID.randomUUID(); // a version of a test with no policy
     static JdbcTemplate su;
 
     @DynamicPropertySource
@@ -43,7 +49,7 @@ class GradingPoliciesIT {
     @Autowired GradingPolicies policies;
 
     static void policy(UUID owner, String exam, String scope, UUID test, String mode) {
-        su.update("insert into grading_policies(owner_org_id,exam_code,scope,test_version_id,mode) values (?,?,?,?,?)", owner, exam, scope, test, mode);
+        su.update("insert into grading_policies(owner_org_id,exam_code,scope,test_id,mode) values (?,?,?,?,?)", owner, exam, scope, test, mode);
     }
 
     @BeforeAll
@@ -57,8 +63,14 @@ class GradingPoliciesIT {
         policy(null, "IELTS", "EXAM", null, "AI");
         policy(ORG_A, "IELTS", "ORG", null, "TEACHER");
         policy(ORG_B, "IELTS", "ORG", null, "BOTH");
-        policy(ORG_A, "IELTS", "TEST", TEST_A, "BOTH");
-        policy(null, "IELTS", "TEST", TEST_E9, "BOTH");
+        // P2.6 lifts the refusal of TEST scope; this throwaway database does it now so that the keys and the lookup can be exercised
+        su.execute("alter table grading_policies drop constraint grading_policies_test_scope_refused_ck");
+        policy(ORG_A, "IELTS", "TEST", T_A, "BOTH");
+        policy(null, "IELTS", "TEST", T_E9, "BOTH");
+        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_A, T_A);
+        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_A_V2, T_A);
+        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_E9, T_E9);
+        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_PLAIN, UUID.randomUUID());
     }
 
     private GradingMode resolve(UUID user, UUID boundOrg, String exam, UUID orgParam, UUID test) {
@@ -76,6 +88,12 @@ class GradingPoliciesIT {
         assertEquals(GradingMode.AI, resolve(USER_C, ORG_C, "IELTS", ORG_C, null), "an organisation without a policy gets the exam's");
         assertEquals(GradingMode.BOTH, resolve(USER_P, null, "IELTS", null, TEST_E9), "a test of English9x, for anybody");
         assertEquals(GradingMode.BOTH, resolve(USER_C, ORG_C, "IELTS", ORG_C, TEST_E9), "also for an organisation's learner, which has no policy of its own");
+    }
+
+    @Test
+    void aNewVersionOfTheSameTestKeepsItsPolicy() {
+        assertEquals(GradingMode.BOTH, resolve(USER_A, ORG_A, "IELTS", ORG_A, TEST_A));
+        assertEquals(GradingMode.BOTH, resolve(USER_A, ORG_A, "IELTS", ORG_A, TEST_A_V2), "version 2 of the test is the same test: same policy");
     }
 
     @Test

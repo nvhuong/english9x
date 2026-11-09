@@ -61,6 +61,15 @@ class SeedEnabledIT {
     }
 
     @Test
+    void theSeedsAcceptCatalogExamCodesOnlyAndNeverAddAnExam() {
+        String author = post("/api/test/seed/learner", "{\"email\":\"seed-exam-author@e2e.test\"}", SECRET).getBody().replaceAll(".*\"userId\":\"([^\"]+)\".*", "$1");
+        assertEquals(400, post("/api/test/seed/review-event", "{\"kind\":\"requested\",\"examCode\":\"GMAT\",\"authorId\":\"" + author + "\"}", SECRET).getStatusCode().value());
+        assertEquals(400, post("/api/test/seed/review-flow", "{\"examCode\":\"GMAT\",\"outcome\":\"submitted\",\"authorId\":\"" + author + "\"}", SECRET).getStatusCode().value());
+        assertEquals(0, jdbc.queryForObject("select count(*) from exams where code = 'GMAT'", Integer.class), "no stray exam in the catalog or the role pickers");
+        assertEquals(201, post("/api/test/seed/review-event", "{\"kind\":\"requested\",\"examCode\":\"TOEIC\",\"authorId\":\"" + author + "\"}", SECRET).getStatusCode().value());
+    }
+
+    @Test
     void reviewEventsGoThroughTheRealRegistryAndListenersToTheRecipients() throws Exception {
         String reviewer = post("/api/test/seed/learner", "{\"email\":\"seed-reviewer@e2e.test\"}", SECRET).getBody().replaceAll(".*\"userId\":\"([^\"]+)\".*", "$1");
         String author = post("/api/test/seed/learner", "{\"email\":\"seed-author@e2e.test\"}", SECRET).getBody().replaceAll(".*\"userId\":\"([^\"]+)\".*", "$1");

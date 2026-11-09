@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -27,6 +28,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * Reading AC and GT are two tables, only PUBLISHED versions count (the highest), the version used is returned, and a table of
  * another organisation is never found. Nobody is a mock: a user "is" whoever {@link CurrentContextHolder} is bound to.
  */
+@Import(com.english9x.catalog.internal.TestLookupStubConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class ScoreTablesIT {
 
@@ -36,9 +38,13 @@ class ScoreTablesIT {
     static final UUID LEARNER_A = UUID.randomUUID();
     static final UUID LEARNER_B = UUID.randomUUID();
     static final UUID LEARNER_P = UUID.randomUUID();      // member of nothing: the personal context
-    static final UUID TEST_E9 = UUID.randomUUID();        // a test version of English9x with an override
-    static final UUID TEST_A = UUID.randomUUID();         // a test version of org A with an override
-    static final UUID TEST_OTHER = UUID.randomUUID();     // a test version nobody set a table for
+    // overrides belong to a TEST; a test has versions (the lookup of P2.6 is stubbed, see TestLookupStubConfig)
+    static final UUID T_E9 = UUID.randomUUID();           // a test of English9x with an override
+    static final UUID T_A = UUID.randomUUID();            // a test of org A with an override
+    static final UUID TEST_E9 = UUID.randomUUID();        // a version of T_E9
+    static final UUID TEST_E9_V2 = UUID.randomUUID();     // a later version of T_E9
+    static final UUID TEST_A = UUID.randomUUID();         // a version of T_A
+    static final UUID TEST_OTHER = UUID.randomUUID();     // a version of a test nobody set a table for
     static JdbcTemplate su;
 
     @DynamicPropertySource
@@ -56,9 +62,9 @@ class ScoreTablesIT {
         return sb.append(']').toString();
     }
 
-    static UUID table(UUID owner, String exam, String skill, String scope, UUID testVersion) {
+    static UUID table(UUID owner, String exam, String skill, String scope, UUID testId) {
         UUID id = UUID.randomUUID();
-        su.update("insert into score_tables(id,owner_org_id,exam_code,skill,scope,test_version_id) values (?,?,?,?,?,?)", id, owner, exam, skill, scope, testVersion);
+        su.update("insert into score_tables(id,owner_org_id,exam_code,skill,scope,test_id) values (?,?,?,?,?,?)", id, owner, exam, skill, scope, testId);
         return id;
     }
 
@@ -76,6 +82,12 @@ class ScoreTablesIT {
     @BeforeAll
     static void fixtures(@Autowired JdbcTemplate migrated) {   // the parameter makes Spring boot (and Flyway migrate) first
         su = new JdbcTemplate(TestPostgres.superuser(DB));
+        // P2.6 lifts the refusal of TEST scope (CatalogTestScopeRefusedIT measures it); this throwaway database does it now
+        su.execute("alter table score_tables drop constraint score_tables_test_scope_refused_ck");
+        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_E9, T_E9);
+        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_E9_V2, T_E9);
+        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_A, T_A);
+        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_OTHER, UUID.randomUUID());
         su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER')", ORG_A, ORG_B);
         for (UUID u : new UUID[] {LEARNER_A, LEARNER_B, LEARNER_P}) {
             su.update("insert into users(id,email) values (?,?)", u, u + "@x.test");
@@ -87,9 +99,9 @@ class ScoreTablesIT {
         defaultVersion = version(def, null, "IELTS", 2, "PUBLISHED", entries(0, 3, 5, 9));
         version(def, null, "IELTS", 3, "DRAFT", entries(9, 9, 9, 9));
         version(def, null, "IELTS", 4, "IN_REVIEW", entries(8, 8, 8, 8));
-        UUID ov = table(null, "IELTS", "LISTENING", "TEST", TEST_E9);
+        UUID ov = table(null, "IELTS", "LISTENING", "TEST", T_E9);
         overrideE9 = version(ov, null, "IELTS", 1, "PUBLISHED", entries(2, 4, 6, 8));
-        UUID ovA = table(ORG_A, "IELTS", "LISTENING", "TEST", TEST_A);
+        UUID ovA = table(ORG_A, "IELTS", "LISTENING", "TEST", T_A);
         overrideA = version(ovA, ORG_A, "IELTS", 1, "PUBLISHED", entries(1, 2, 3, 4));
         // Reading Academic and General Training: two tables (spec 3.3)
         UUID ac = table(null, "IELTS", "READING_AC", "EXAM", null);
@@ -126,6 +138,14 @@ class ScoreTablesIT {
         ResolvedScoreTable otherTest = resolve(LEARNER_P, null, "IELTS", "LISTENING", TEST_OTHER);
         assertEquals(defaultVersion, otherTest.scoreTableVersionId(), "a test with no table of its own falls back to the exam default");
         assertFalse(otherTest.testOverride());
+    }
+
+    @Test
+    void aNewVersionOfTheSameTestKeepsItsOverride() {
+        ResolvedScoreTable v1 = resolve(LEARNER_P, null, "IELTS", "LISTENING", TEST_E9);
+        ResolvedScoreTable v2 = resolve(LEARNER_P, null, "IELTS", "LISTENING", TEST_E9_V2);
+        assertTrue(v2.testOverride(), "the override is the test's, not the version's: republishing the test does not drop it");
+        assertEquals(v1.scoreTableVersionId(), v2.scoreTableVersionId());
     }
 
     @Test
@@ -193,9 +213,10 @@ class ScoreTablesIT {
 
     @Test
     void aPublishedTableThatTableConverterRefusesStopsTheScoringLoudly() {
-        UUID broken = table(null, "TOEIC", "LISTENING", "EXAM", null);
-        UUID bad = version(broken, null, "TOEIC", 1, "PUBLISHED", "[{\"raw\":0,\"scaled\":5},{\"raw\":2,\"scaled\":10}]");   // raw 1 is missing
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> resolve(LEARNER_P, null, "TOEIC", "LISTENING", null));
+        // IELTS SPEAKING: no other test reads it, so the result does not depend on the order the tests run in (review M1)
+        UUID broken = table(null, "IELTS", "SPEAKING", "EXAM", null);
+        UUID bad = version(broken, null, "IELTS", 1, "PUBLISHED", "[{\"raw\":0,\"scaled\":5},{\"raw\":2,\"scaled\":10}]");   // raw 1 is missing
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> resolve(LEARNER_P, null, "IELTS", "SPEAKING", null));
         assertTrue(e.getMessage().contains(bad.toString()), e.getMessage());
     }
 }

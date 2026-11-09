@@ -19,10 +19,12 @@ class GradingPoliciesImpl implements GradingPolicies {
 
     private final JdbcTemplate jdbc;
     private final CatalogProperties props;
+    private final TestLookup tests;
 
-    GradingPoliciesImpl(JdbcTemplate jdbc, CatalogProperties props) {
+    GradingPoliciesImpl(JdbcTemplate jdbc, CatalogProperties props, TestLookup tests) {
         this.jdbc = jdbc;
         this.props = props;
+        this.tests = tests;
     }
 
     @Override
@@ -30,8 +32,8 @@ class GradingPoliciesImpl implements GradingPolicies {
         if (!Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from exams where code = ?)", Boolean.class, examCode))) {
             throw new IllegalArgumentException("unknown exam: " + examCode);
         }
-        Optional<GradingMode> test = testVersionId.flatMap(id ->
-                mode("scope = 'TEST' and test_version_id = ? and exam_code = ?", id, examCode));
+        Optional<GradingMode> test = testVersionId.flatMap(tests::testOf).flatMap(id ->
+                mode("scope = 'TEST' and test_id = ? and exam_code = ?", id, examCode));
         Optional<GradingMode> org = orgId.flatMap(id ->
                 mode("scope = 'ORG' and owner_org_id = ? and exam_code = ?", id, examCode));
         GradingMode exam = mode("scope = 'EXAM' and exam_code = ?", examCode).orElse(props.defaultMode());

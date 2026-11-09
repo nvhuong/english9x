@@ -30,9 +30,11 @@ class ScoreTablesImpl implements ScoreTables {
     private record Found(UUID versionId, ScoreFunction function, String entries) {}
 
     private final JdbcTemplate jdbc;
+    private final TestLookup tests;
 
-    ScoreTablesImpl(JdbcTemplate jdbc) {
+    ScoreTablesImpl(JdbcTemplate jdbc, TestLookup tests) {
         this.jdbc = jdbc;
+        this.tests = tests;
     }
 
     @Override
@@ -43,8 +45,10 @@ class ScoreTablesImpl implements ScoreTables {
         if (!skills.contains(skill)) {
             throw new IllegalArgumentException("exam " + examCode + " keeps no score under " + skill + " (it keeps " + skills + ")");
         }
-        if (testVersionId.isPresent()) {
-            Optional<Found> override = latestPublished("t.scope = 'TEST' and t.test_version_id = ?", examCode, skill, testVersionId.get());
+        // the override belongs to the TEST of the version (TestLookup; none exists before P2.6, and no TEST row can either)
+        Optional<UUID> testId = testVersionId.flatMap(tests::testOf);
+        if (testId.isPresent()) {
+            Optional<Found> override = latestPublished("t.scope = 'TEST' and t.test_id = ?", examCode, skill, testId.get());
             if (override.isPresent()) {
                 return result(examCode, skill, override.get(), true);
             }

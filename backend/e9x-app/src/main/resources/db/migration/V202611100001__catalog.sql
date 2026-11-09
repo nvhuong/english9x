@@ -81,26 +81,38 @@ BEGIN
 END $$;
 
 -- ---- score tables --------------------------------------------------------------------------------------------------------------
--- A score table is identified by (exam, skill, scope). EXAM scope is the default of English9x; TEST scope is the override of one
--- test version (the table lives in the test's own context: English9x or the centre that wrote the test). test_version_id has no
--- foreign key yet: test_versions arrives with P2.6, which adds it.
+-- A score table is identified by (exam, skill, scope). EXAM scope is the default of English9x; TEST scope is the override of one TEST
+-- (spec 10.2 "bảng ghi đè theo đề"), keyed by test_id and NOT by test version: a new published version of the same test keeps its
+-- override. ScoreTables#resolve takes the test version and looks up its test.
+--
+-- TEST-SCOPE ROWS ARE REFUSED UNTIL P2.6 (the CHECK score_tables_test_scope_refused_ck, 2026-11-10). `tests` does not exist yet, so
+-- nothing can say whose test an id is: any author could otherwise squat any id (measured in the P2.1 review: a 23505 on a row the victim
+-- cannot see, and a foreign TEST row winning in resolve). P2.6 lifts the CHECK together with:
+--   * the foreign key test_id -> tests(id);
+--   * an owner-match rule: the row's owner_org_id equals the test's owner (trigger or policy);
+--   * writers restricted to the administrator of the test's owner (spec section 2, row 6, "Quản trị đặt": SYS_ADMIN for English9x
+--     tests, ORG_ADMIN for an organisation's tests) instead of the exam's AUTHOR;
+--   * the guard after publish where the spec requires it.
 CREATE TABLE score_tables (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_org_id uuid REFERENCES organizations(id),
   exam_code text NOT NULL REFERENCES exams(code),
   skill text NOT NULL CHECK (skill ~ '^[A-Z][A-Z0-9_]*$'),
   scope text NOT NULL CHECK (scope IN ('EXAM', 'TEST')),
-  test_version_id uuid,
+  test_id uuid,
   -- spec 10.2: TABLE (raw to scaled) or a function of the domain: IELTS_OVERALL, IELTS_WRITING_WEIGHTED, SUM
   function text NOT NULL DEFAULT 'TABLE' CHECK (function IN ('TABLE', 'IELTS_OVERALL', 'IELTS_WRITING_WEIGHTED', 'SUM')),
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT score_tables_scope_ck CHECK (
-    (scope = 'EXAM' AND test_version_id IS NULL AND owner_org_id IS NULL)
-    OR (scope = 'TEST' AND test_version_id IS NOT NULL)),
+    (scope = 'EXAM' AND test_id IS NULL AND owner_org_id IS NULL)
+    OR (scope = 'TEST' AND test_id IS NOT NULL)),
+  -- P2.6 drops this constraint (see the note above): until then no TEST-scope row can be inserted by anyone, the owner included
+  CONSTRAINT score_tables_test_scope_refused_ck CHECK (scope <> 'TEST'),
   UNIQUE (id, exam_code)
 );
-CREATE UNIQUE INDEX score_tables_exam_default_uq ON score_tables (exam_code, skill) WHERE scope = 'EXAM';
-CREATE UNIQUE INDEX score_tables_test_override_uq ON score_tables (test_version_id, skill) WHERE scope = 'TEST';
+-- The owner is part of every key, so one owner's row never blocks another's (a 23505 on a row the caller cannot see).
+CREATE UNIQUE INDEX score_tables_exam_default_uq ON score_tables (exam_code, skill, owner_org_id) NULLS NOT DISTINCT WHERE scope = 'EXAM';
+CREATE UNIQUE INDEX score_tables_test_override_uq ON score_tables (owner_org_id, test_id, skill) NULLS NOT DISTINCT WHERE scope = 'TEST';
 CREATE TRIGGER score_tables_skill_trg BEFORE INSERT ON score_tables
   FOR EACH ROW EXECUTE FUNCTION catalog_check_score_skill();
 ALTER TABLE score_tables ENABLE ROW LEVEL SECURITY;
@@ -164,24 +176,32 @@ ALTER TABLE grading_skill_versions ENABLE ROW LEVEL SECURITY;
 
 -- ---- grading policies --------------------------------------------------------------------------------------------------------
 -- Spec 10.3: test > organisation > exam. Not versioned (a setting, not content); the mode is AI, TEACHER or BOTH (GradingMode).
+-- TEST scope is keyed by test_id (not by version) and is REFUSED UNTIL P2.6 for the same reasons and with the same lift list as
+-- score_tables (grading_policies_test_scope_refused_ck): foreign key to tests, owner match, SYS_ADMIN / ORG_ADMIN of the test's owner
+-- as the only writers (spec section 2 row 6; the policies below name AUTHOR for TEST scope only as a placeholder nobody can reach), and
+-- no change after publish.
+-- An ENTERPRISE organisation has no teachers (spec section 4): its ORG policy can only be AI (policy below; P6.5 relies on it).
 CREATE TABLE grading_policies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_org_id uuid REFERENCES organizations(id),
   exam_code text NOT NULL REFERENCES exams(code),
   scope text NOT NULL CHECK (scope IN ('EXAM', 'ORG', 'TEST')),
-  -- the test version the policy is for; no foreign key until P2.6 creates test_versions
-  test_version_id uuid,
+  -- the TEST the policy is for (not a test version); no foreign key until P2.6 creates tests
+  test_id uuid,
   mode text NOT NULL CHECK (mode IN ('AI', 'TEACHER', 'BOTH')),
   updated_by uuid REFERENCES users(id),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT grading_policies_scope_ck CHECK (
-    (scope = 'EXAM' AND owner_org_id IS NULL AND test_version_id IS NULL)
-    OR (scope = 'ORG' AND owner_org_id IS NOT NULL AND test_version_id IS NULL)
-    OR (scope = 'TEST' AND test_version_id IS NOT NULL))
+    (scope = 'EXAM' AND owner_org_id IS NULL AND test_id IS NULL)
+    OR (scope = 'ORG' AND owner_org_id IS NOT NULL AND test_id IS NULL)
+    OR (scope = 'TEST' AND test_id IS NOT NULL)),
+  -- P2.6 drops this constraint (see the note above)
+  CONSTRAINT grading_policies_test_scope_refused_ck CHECK (scope <> 'TEST')
 );
-CREATE UNIQUE INDEX grading_policies_exam_uq ON grading_policies (exam_code) WHERE scope = 'EXAM';
+-- The owner is part of every key, so one owner's row never blocks another's.
+CREATE UNIQUE INDEX grading_policies_exam_uq ON grading_policies (exam_code, owner_org_id) NULLS NOT DISTINCT WHERE scope = 'EXAM';
 CREATE UNIQUE INDEX grading_policies_org_uq ON grading_policies (owner_org_id, exam_code) WHERE scope = 'ORG';
-CREATE UNIQUE INDEX grading_policies_test_uq ON grading_policies (test_version_id) WHERE scope = 'TEST';
+CREATE UNIQUE INDEX grading_policies_test_uq ON grading_policies (owner_org_id, test_id) NULLS NOT DISTINCT WHERE scope = 'TEST';
 ALTER TABLE grading_policies ENABLE ROW LEVEL SECURITY;
 
 -- ==== policies ==================================================================================================================
@@ -260,11 +280,12 @@ CREATE POLICY grading_skill_versions_delete ON grading_skill_versions FOR DELETE
 
 -- ---- grading_policies
 -- Readable like a score table. Written by: SYS_ADMIN for the exam default (English9x context); the ORG_ADMIN of the organisation
--- for its own policy; an AUTHOR of the exam, in the test's context, for a test's policy.
+-- for its own policy; an AUTHOR of the exam for a test's policy (TEST scope is refused until P2.6, which makes it the administrator of the test's owner).
 CREATE POLICY grading_policies_select ON grading_policies FOR SELECT TO e9x_app, e9x_grader
   USING (owner_org_id IS NULL OR owner_org_id = e9x_current_org());
 CREATE POLICY grading_policies_insert ON grading_policies FOR INSERT TO e9x_app WITH CHECK (
   e9x_workflow_in_context(owner_org_id) AND updated_by = e9x_current_user()
+  AND (scope <> 'ORG' OR mode = 'AI' OR EXISTS (SELECT 1 FROM organizations o WHERE o.id = owner_org_id AND o.type = 'CENTER'))
   AND CASE scope
         WHEN 'EXAM' THEN e9x_workflow_has_role(owner_org_id, exam_code, ARRAY['SYS_ADMIN'])
         WHEN 'ORG'  THEN e9x_workflow_has_role(owner_org_id, exam_code, ARRAY['ORG_ADMIN'])
@@ -277,7 +298,8 @@ CREATE POLICY grading_policies_update ON grading_policies FOR UPDATE TO e9x_app
                WHEN 'ORG'  THEN e9x_workflow_has_role(owner_org_id, exam_code, ARRAY['ORG_ADMIN'])
                ELSE e9x_workflow_has_role(owner_org_id, exam_code, ARRAY['AUTHOR'])
              END)
-  WITH CHECK (updated_by = e9x_current_user());
+  WITH CHECK (updated_by = e9x_current_user()
+              AND (scope <> 'ORG' OR mode = 'AI' OR EXISTS (SELECT 1 FROM organizations o WHERE o.id = owner_org_id AND o.type = 'CENTER')));
 CREATE POLICY grading_policies_delete ON grading_policies FOR DELETE TO e9x_app
   USING (e9x_workflow_in_context(owner_org_id)
          AND CASE scope
@@ -290,7 +312,7 @@ CREATE POLICY grading_policies_delete ON grading_policies FOR DELETE TO e9x_app
 -- Headers are insert-only. A version's identity (parent, owner, exam, number, author) never changes; only its content and status do.
 GRANT SELECT ON score_tables, score_table_versions, grading_policies TO e9x_app, e9x_grader;
 GRANT SELECT ON grading_skills, grading_skill_versions TO e9x_app, e9x_grader;
-GRANT INSERT (id, owner_org_id, exam_code, skill, scope, test_version_id, function) ON score_tables TO e9x_app;
+GRANT INSERT (id, owner_org_id, exam_code, skill, scope, test_id, function) ON score_tables TO e9x_app;
 GRANT INSERT (id, score_table_id, owner_org_id, exam_code, version_no, entries, created_by) ON score_table_versions TO e9x_app;
 GRANT UPDATE (status, entries, updated_at) ON score_table_versions TO e9x_app;
 GRANT DELETE ON score_table_versions TO e9x_app;
@@ -299,6 +321,6 @@ GRANT INSERT (id, grading_skill_id, owner_org_id, exam_code, version_no, rubric,
   ON grading_skill_versions TO e9x_app;
 GRANT UPDATE (status, rubric, criteria, prompt_template, samples, result_schema, updated_at) ON grading_skill_versions TO e9x_app;
 GRANT DELETE ON grading_skill_versions TO e9x_app;
-GRANT INSERT (id, owner_org_id, exam_code, scope, test_version_id, mode, updated_by) ON grading_policies TO e9x_app;
+GRANT INSERT (id, owner_org_id, exam_code, scope, test_id, mode, updated_by) ON grading_policies TO e9x_app;
 GRANT UPDATE (mode, updated_by, updated_at) ON grading_policies TO e9x_app;
 GRANT DELETE ON grading_policies TO e9x_app;
