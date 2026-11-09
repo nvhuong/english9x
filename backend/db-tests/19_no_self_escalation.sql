@@ -11,7 +11,7 @@ INSERT INTO org_memberships(org_id,user_id) VALUES
 INSERT INTO role_grants(user_id,org_id,exam_code,role) VALUES
  ('a0000000-0000-0000-0000-000000000001',NULL,NULL,'SYS_ADMIN'),
  ('a0000000-0000-0000-0000-000000000002',NULL,'IELTS','AUTHOR');
-INSERT INTO exams(code,name) VALUES ('IELTS','IELTS');
+INSERT INTO exams(code,name) VALUES ('IELTS','IELTS') ON CONFLICT DO NOTHING;
 INSERT INTO courses(id,owner_org_id,exam_code,code,title,status)
  VALUES ('dddddddd-0000-0000-0000-00000000000d',NULL,'IELTS','E9PUB1','c','PUBLISHED');
 

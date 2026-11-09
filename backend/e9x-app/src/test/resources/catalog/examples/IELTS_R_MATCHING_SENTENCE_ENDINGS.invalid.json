@@ -1,0 +1,27 @@
+{
+  "expectedErrorPath": "content.items",
+  "content": {
+    "items": [],
+    "choices": [
+      {
+        "key": "i",
+        "text": "heading one"
+      },
+      {
+        "key": "ii",
+        "text": "heading two"
+      },
+      {
+        "key": "iii",
+        "text": "heading three"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "ii"
+      ]
+    ]
+  }
+}

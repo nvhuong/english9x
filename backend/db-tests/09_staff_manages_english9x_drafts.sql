@@ -1,5 +1,5 @@
 INSERT INTO organizations(id,name,type) VALUES ('aaaaaaaa-0000-0000-0000-000000000001','Center A','CENTER');
-INSERT INTO exams(code,name) VALUES ('IELTS','IELTS');
+INSERT INTO exams(code,name) VALUES ('IELTS','IELTS') ON CONFLICT DO NOTHING;
 
 SET ROLE e9x_app;
 SELECT set_config('app.org_id','',false);

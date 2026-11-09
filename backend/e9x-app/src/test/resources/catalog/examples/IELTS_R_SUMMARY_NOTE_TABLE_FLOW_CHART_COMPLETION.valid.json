@@ -1,0 +1,17 @@
+{
+  "content": {
+    "text": "Name: [[1]]  Phone: [[2]]"
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "Smith"
+      ],
+      [
+        "0123 456",
+        "0123456"
+      ]
+    ],
+    "maxWords": 2
+  }
+}

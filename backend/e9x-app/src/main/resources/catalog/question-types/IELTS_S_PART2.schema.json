@@ -1,0 +1,70 @@
+{
+  "code": "IELTS_S_PART2",
+  "content": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "IELTS Speaking Part 2",
+    "type": "object",
+    "properties": {
+      "topic": {
+        "title": "Cue card topic",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500,
+        "pattern": "\\S"
+      },
+      "bulletPoints": {
+        "title": "You should say",
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 6,
+        "items": {
+          "title": "Question",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "pattern": "\\S"
+        }
+      },
+      "prepareSeconds": {
+        "title": "Preparation time (s)",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 300
+      },
+      "speakSeconds": {
+        "title": "Speaking time (s)",
+        "type": "integer",
+        "minimum": 30,
+        "maximum": 180
+      }
+    },
+    "required": [
+      "topic",
+      "bulletPoints"
+    ],
+    "additionalProperties": false
+  },
+  "answerKey": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Speaking: no answer key",
+    "type": "object",
+    "properties": {
+      "sampleAnswer": {
+        "title": "Model answer",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 10000,
+        "pattern": "\\S"
+      },
+      "notes": {
+        "title": "Notes for graders",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4000,
+        "pattern": "\\S"
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  }
+}

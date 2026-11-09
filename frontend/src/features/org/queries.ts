@@ -9,10 +9,24 @@ import { choicesToRoles } from './roles';
 export type MemberView = components['schemas']['MemberView'];
 export type InvitationView = components['schemas']['InvitationView'];
 export type AdminOrgView = components['schemas']['AdminOrgView'];
+export type ExamInfo = components['schemas']['ExamInfo'];
 
 /** The wire shape of a role: `examCode` is omitted, never null, for roles that apply to every exam. */
 export const toWire = (keys: readonly string[]) =>
   choicesToRoles(keys).map((r) => (r.examCode ? { role: r.role, examCode: r.examCode } : { role: r.role }));
+
+/**
+ * The exams of the catalogue (GET /api/catalog/exams): the same in every context, so a public key. Where a screen lets somebody choose
+ * an exam it asks here; there is no list of exams in the SPA.
+ */
+export function useExamCodes() {
+  const api = useApi();
+  return useQuery({
+    queryKey: publicKey('catalog', 'exams'),
+    staleTime: 5 * 60_000,
+    queryFn: async () => ((await api.GET('/api/catalog/exams')).data as ExamInfo[]).flatMap((e) => (e.code ? [e.code] : [])),
+  });
+}
 
 /** Every organisation (SYS_ADMIN). Context-keyed like everything the server answers per context. */
 export function useAllOrganizations() {

@@ -25,6 +25,7 @@ class ConfigurationKeysTest {
             {"e9x.grading.ai.retry-delays", "30s,2m,10m"},
             {"e9x.grading.ai.schema-retry", "1"},
             {"e9x.grading.claim-timeout", "24h"},
+            {"e9x.grading.default-mode", "AI"},
             {"e9x.exam.default-max-resumes", "2"},
             {"e9x.exam.autosave-interval", "5s"},
             {"e9x.exam.late-sync-grace", "2m"},

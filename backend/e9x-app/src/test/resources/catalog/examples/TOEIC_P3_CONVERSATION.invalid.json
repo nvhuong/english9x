@@ -1,0 +1,27 @@
+{
+  "expectedErrorPath": "content.options",
+  "content": {
+    "stem": "What are the speakers discussing?",
+    "options": [
+      {
+        "key": "A",
+        "text": "one"
+      },
+      {
+        "key": "B",
+        "text": "two"
+      },
+      {
+        "key": "C",
+        "text": "three"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "B"
+      ]
+    ]
+  }
+}

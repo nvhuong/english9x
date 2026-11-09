@@ -1,0 +1,11 @@
+{
+  "expectedErrorPath": "answerKey.slots[0]",
+  "content": {
+    "text": "Name: [[1]]"
+  },
+  "answerKey": {
+    "slots": [
+      []
+    ]
+  }
+}

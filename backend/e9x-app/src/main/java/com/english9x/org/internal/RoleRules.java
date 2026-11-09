@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * What a list of roles may contain. The database enforces the same rules (CHECKs and triggers on role_grants and
@@ -18,13 +19,11 @@ import java.util.Set;
  *   <li>An organisation: LEARNER, ORG_ADMIN and, for a CENTER only, AUTHOR, REVIEWER, TEACHER (each for an exam).
  *       ENTERPRISE with AUTHOR / REVIEWER / TEACHER is a 409 (spec §4), not a 400: the request is well formed, the
  *       organisation's type is what forbids it.
- *   <li>Exam codes: v1 offers IELTS and TOEIC. Assumption: P2.1 (catalogue) replaces this constant with the {@code exams} table.
+ *   <li>Exam codes: the exams of the catalogue ({@code catalog.api.Exams}, the {@code exams} table), which the caller passes as a
+ *       predicate; the database also enforces it with a foreign key from {@code role_grants.exam_code} to {@code exams}.
  * </ul>
  */
 final class RoleRules {
-
-    /** v1 exams; replaced by the catalogue's exams in P2.1. */
-    static final Set<String> KNOWN_EXAMS = Set.of("IELTS", "TOEIC");
 
     private RoleRules() {}
 
@@ -34,7 +33,7 @@ final class RoleRules {
     }
 
     /** The roles without duplicates, in order. Throws 400 (shape) or 409 (ENTERPRISE) problems. */
-    static List<RoleSpec> check(Optional<OrgType> orgType, List<RoleSpec> roles) {
+    static List<RoleSpec> check(Optional<OrgType> orgType, List<RoleSpec> roles, Predicate<String> examExists) {
         List<OrgProblems.FieldProblem> shape = new ArrayList<>();
         List<OrgProblems.FieldProblem> forbidden = new ArrayList<>();
         Set<RoleSpec> unique = new LinkedHashSet<>();
@@ -46,7 +45,7 @@ final class RoleRules {
             boolean perExam = role == Role.AUTHOR || role == Role.REVIEWER || role == Role.TEACHER;
             if (perExam && exam == null) {
                 shape.add(new OrgProblems.FieldProblem(at + ".examCode", i, "ExamRequired", "This role is for one exam: choose it."));
-            } else if (perExam && !KNOWN_EXAMS.contains(exam)) {
+            } else if (perExam && !examExists.test(exam)) {
                 shape.add(new OrgProblems.FieldProblem(at + ".examCode", i, "UnknownExam", "Unknown exam."));
             } else if (!perExam && exam != null) {
                 shape.add(new OrgProblems.FieldProblem(at + ".examCode", i, "ExamNotAllowed", "This role applies to every exam."));

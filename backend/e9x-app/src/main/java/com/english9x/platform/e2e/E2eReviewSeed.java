@@ -46,7 +46,7 @@ class E2eReviewSeed {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "authorId; reviewerId unless outcome=submitted; outcome: submitted | approved | changes");
         }
         String exam = req.examCode() != null ? req.examCode() : "IELTS";
-        db.jdbc().update("insert into exams(code, name) values (?, ?) on conflict do nothing", exam, exam);
+        db.requireCatalogExam(exam);
         db.jdbc().execute("create table if not exists e2e_docs (id uuid primary key, owner_org_id uuid, exam_code text not null,"
                 + " author_id uuid not null, status text not null default 'DRAFT')");
         db.jdbc().execute("create or replace trigger e2e_docs_lifecycle before update or delete on e2e_docs for each row execute function e9x_guard_version_lifecycle()");

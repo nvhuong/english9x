@@ -197,7 +197,7 @@ class SeedController {
     @ResponseStatus(HttpStatus.CREATED)
     Map<String, Object> reviewEvent(@RequestBody ReviewEventRequest req) {
         String exam = req.examCode() != null ? req.examCode() : "IELTS";
-        db.jdbc().update("insert into exams(code, name) values (?, ?) on conflict do nothing", exam, exam);
+        db.requireCatalogExam(exam);
         UUID reviewId = UUID.randomUUID();
         UUID versionId = UUID.randomUUID();
         Optional<UUID> org = Optional.ofNullable(req.orgId());

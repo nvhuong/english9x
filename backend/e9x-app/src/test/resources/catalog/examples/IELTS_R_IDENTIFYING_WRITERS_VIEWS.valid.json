@@ -1,0 +1,12 @@
+{
+  "content": {
+    "statement": "The writer believes the policy will succeed."
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "NO"
+      ]
+    ]
+  }
+}

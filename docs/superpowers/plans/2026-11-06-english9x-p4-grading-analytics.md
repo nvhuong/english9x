@@ -26,6 +26,8 @@
 
 **Tests:** `AutoGradingIT.toeicScoresWithTestOverrideTable`, `.ieltsListeningReadingBands`, `.interruptedAttemptScoredAndFlagged`, `.scoreTableVersionRecorded`, `.idempotentOnDuplicateEvent`.
 
+> **Ghi chú 2026-11-10 (từ P2.1 fix1, M4):** P2.1 KHÔNG seed bảng quy đổi TABLE nào (spec §10.2 không cho giá trị). `ScoreTables#resolve` ném `ScoreTableNotFoundException` cho tới khi có bảng PUBLISHED; listener chấm điểm phải bắt ngoại lệ đó (để bài thi chưa có điểm quy đổi, không đoán). Seed E2E của F33/F15 phải xuất bản một bảng trước khi chấm. `toeicScoresWithTestOverrideTable` chỉ chạy được sau P2.6 (phạm vi TEST bị từ chối tới lúc đó): trước P2.6 hãy kiểm tra bằng bảng mặc định của kỳ thi.
+
 > **Ghi chú 2026-11-08 (review cuối P1, sửa plan 10):** `e9x_caller_is_sys_admin` và các helper của workflow chỉ cấp `EXECUTE` cho `e9x_app`, nên grader đọc các bảng đó sẽ bị từ chối: cấp thêm trong migration của P4, kèm db-test. Login của grader phải được thêm vào `infra/postgres/init/01-roles.sh`, và volume đang có phải chạy lại script đó bằng tay (README, Database roles).
 
 ### Task P4.2: chấm AI bằng Gemini (W7) — F34, F37
@@ -42,6 +44,8 @@
 - Công tắc khẩn cấp `e9x.grading.ai.per-user-daily-limit` (mặc định 0 = tắt): khi > 0 và vượt, bài chuyển hàng chờ giáo viên thay vì chấm AI — không từ chối học viên.
 - Lưu `ai_evaluations` (skill version, model, input/output tokens, chi phí ước tính theo bảng giá cấu hình `e9x.gemini.price-per-1k-*`).
 - Dry-run cho P2.5: `AiGrader` dùng chung, không lưu.
+
+> **Ghi chú 2026-11-10 (từ P2.1 fix1, M3):** job `ai_grade` đọc skill chấm đã xuất bản từ `grading_skills`/`grading_skill_versions`. Nếu handler chạy trên `e9x_app` với ngữ cảnh học viên thì đọc 0 hàng (học viên không đọc được skill) và mọi bài Writing/Speaking kết thúc `AI_FAILED`. Phải chọn rõ một trong hai: (1) handler dùng login `e9x_grader` (đã có SELECT và policy PUBLISHED của English9x + tổ chức đang gắn, V202611100001) với `app.org_id` của lượt thi; hoặc (2) một hàm SECURITY DEFINER hẹp chỉ trả skill PUBLISHED theo `question_type_code`. Ghi quyết định vào task này, kèm db-test chứng minh đường đọc.
 
 **Tests:** `GeminiAiGraderTest` (fake HTTP server) `.validJsonParsed`, `.schemaViolationRetriedOnceWithErrors`, `.serverErrorRetriedWithConfiguredDelays`, `AiGradeJobIT.exhaustedRetriesMarksAiFailedAndNotifiesAdmin`, `.dailyLimitZeroMeansUnlimited`, `.dailyLimitPositiveRoutesToTeacherQueue`.
 

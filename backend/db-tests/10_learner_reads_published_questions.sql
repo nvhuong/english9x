@@ -1,5 +1,5 @@
 INSERT INTO users(id,email) VALUES ('11111111-0000-0000-0000-000000000001','u1@x.test');
-INSERT INTO exams(code,name) VALUES ('IELTS','IELTS');
+INSERT INTO exams(code,name) VALUES ('IELTS','IELTS') ON CONFLICT DO NOTHING;
 INSERT INTO questions(owner_org_id,exam_code,content,answer_key,status) VALUES
  (NULL,'IELTS','{"q":"e9-pub"}','{"a":1}','PUBLISHED'),
  (NULL,'IELTS','{"q":"e9-draft"}','{"a":2}','DRAFT');

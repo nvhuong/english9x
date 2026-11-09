@@ -1,0 +1,111 @@
+{
+  "code": "IELTS_R_DIAGRAM_LABEL_COMPLETION",
+  "content": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "IELTS Reading diagram label completion",
+    "type": "object",
+    "properties": {
+      "imageMediaId": {
+        "title": "Image media id",
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "labelNumber": {
+        "title": "Label number",
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      },
+      "marker": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Position of the label on the image (0 to 1)",
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "y": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "additionalProperties": false
+      },
+      "choices": {
+        "title": "Choices (when the answer is picked from a list)",
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 15,
+        "items": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "title": "Option key",
+              "type": "string",
+              "pattern": "^[A-Za-z0-9]{1,4}$"
+            },
+            "text": {
+              "title": "Option text",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "key",
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "imageMediaId",
+      "labelNumber"
+    ],
+    "additionalProperties": false
+  },
+  "answerKey": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Accepted answers",
+    "type": "object",
+    "properties": {
+      "slots": {
+        "title": "Accepted answers",
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 1,
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "pattern": "\\S"
+          }
+        }
+      },
+      "maxWords": {
+        "title": "Word limit per answer (0 = none)",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 10
+      }
+    },
+    "required": [
+      "slots"
+    ],
+    "additionalProperties": false
+  }
+}

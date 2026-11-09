@@ -1,0 +1,15 @@
+{
+  "content": {
+    "stem": "What is the main cause of the problem?"
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "pollution",
+        "air pollution"
+      ]
+    ],
+    "maxWords": 2,
+    "transcript": "Script of the recording, for the review page."
+  }
+}

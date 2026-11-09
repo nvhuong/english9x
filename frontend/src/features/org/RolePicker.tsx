@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CheckboxField } from '../auth/components';
+import { useExamCodes } from './queries';
 import { roleChoices, roleLabel, type Scope } from './roles';
 
 export interface RolePickerProps {
@@ -13,11 +14,12 @@ export interface RolePickerProps {
 /** The roles of a scope as labelled checkboxes in one fieldset. */
 export function RolePicker({ scope, value, onChange, error }: RolePickerProps) {
   const { t } = useTranslation('org');
+  const exams = useExamCodes().data ?? [];
   return (
     <fieldset className="flex flex-col gap-2 rounded-md border border-line p-3">
       <legend className="px-1 text-sm font-semibold text-ink">{t('invite.legend')}</legend>
       <div className="grid gap-2 sm:grid-cols-2">
-        {roleChoices(scope).map((c) => (
+        {roleChoices(scope, exams).map((c) => (
           <CheckboxField
             key={c.key}
             label={roleLabel(t, c.role, c.examCode)}

@@ -157,6 +157,54 @@
         "required" : [ "email" ],
         "type" : "object"
       },
+      "ExamInfo" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "scoreSkills" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "sections" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ExamSection"
+            },
+            "type" : "array"
+          },
+          "variants" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ExamSection" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "itemCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "skill" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "GrantView" : {
         "properties" : {
           "examCode" : {
@@ -1379,6 +1427,37 @@
           }
         },
         "tags" : [ "auth-controller" ]
+      }
+    },
+    "/api/catalog/exams" : {
+      "get" : {
+        "operationId" : "exams",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ExamInfo"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "catalog-controller" ]
       }
     },
     "/api/invitations/{token}/accept" : {

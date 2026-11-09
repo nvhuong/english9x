@@ -1,12 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { Role } from '../../app/stores/roles';
 
-/**
- * The exams a role can be given for in v1. Assumption: P2.1 (catalogue) replaces this with the exams table; the server
- * knows the same list (RoleRules.KNOWN_EXAMS) and refuses any other code.
- */
-export const EXAMS = ['IELTS', 'TOEIC'] as const;
-
 /** Who is being given roles: English9x staff, or the members of a center / an enterprise. */
 export type Scope = 'staff' | 'CENTER' | 'ENTERPRISE';
 
@@ -22,21 +16,22 @@ export interface RoleSpec {
   examCode?: string | null;
 }
 
-const perExam = (role: Role): RoleChoice[] => EXAMS.map((exam) => ({ key: `${role}:${exam}`, role, examCode: exam }));
+const perExam = (role: Role, exams: readonly string[]): RoleChoice[] => exams.map((exam) => ({ key: `${role}:${exam}`, role, examCode: exam }));
 const plain = (role: Role): RoleChoice => ({ key: role, role, examCode: null });
 
 /**
  * The roles that make sense in a scope (spec §4): an ENTERPRISE has no AUTHOR / REVIEWER / TEACHER; English9x staff have no
- * organisation roles. UI convenience: the server refuses the same combinations.
+ * organisation roles. UI convenience: the server refuses the same combinations. `exams` are the codes of the catalogue
+ * (GET /api/catalog/exams, see useExamCodes), never a list of the screen's own.
  */
-export function roleChoices(scope: Scope): RoleChoice[] {
+export function roleChoices(scope: Scope, exams: readonly string[]): RoleChoice[] {
   switch (scope) {
     case 'ENTERPRISE':
       return [plain('LEARNER'), plain('ORG_ADMIN')];
     case 'CENTER':
-      return [plain('LEARNER'), plain('ORG_ADMIN'), ...perExam('AUTHOR'), ...perExam('REVIEWER'), ...perExam('TEACHER')];
+      return [plain('LEARNER'), plain('ORG_ADMIN'), ...perExam('AUTHOR', exams), ...perExam('REVIEWER', exams), ...perExam('TEACHER', exams)];
     case 'staff':
-      return [...perExam('AUTHOR'), ...perExam('REVIEWER'), ...perExam('TEACHER'), plain('SYS_ADMIN')];
+      return [...perExam('AUTHOR', exams), ...perExam('REVIEWER', exams), ...perExam('TEACHER', exams), plain('SYS_ADMIN')];
   }
 }
 

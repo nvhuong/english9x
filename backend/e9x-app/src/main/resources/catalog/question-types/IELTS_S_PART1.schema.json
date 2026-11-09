@@ -1,0 +1,57 @@
+{
+  "code": "IELTS_S_PART1",
+  "content": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "IELTS Speaking Part 1",
+    "type": "object",
+    "properties": {
+      "topic": {
+        "title": "Topic",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200,
+        "pattern": "\\S"
+      },
+      "questions": {
+        "title": "Questions",
+        "type": "array",
+        "minItems": 3,
+        "maxItems": 12,
+        "items": {
+          "title": "Question",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "required": [
+      "questions"
+    ],
+    "additionalProperties": false
+  },
+  "answerKey": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Speaking: no answer key",
+    "type": "object",
+    "properties": {
+      "sampleAnswer": {
+        "title": "Model answer",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 10000,
+        "pattern": "\\S"
+      },
+      "notes": {
+        "title": "Notes for graders",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4000,
+        "pattern": "\\S"
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  }
+}

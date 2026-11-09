@@ -1,0 +1,24 @@
+{
+  "content": {
+    "audioMediaId": "11111111-1111-4111-8111-111111111111",
+    "options": [
+      {
+        "key": "A"
+      },
+      {
+        "key": "B"
+      },
+      {
+        "key": "C"
+      }
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "C"
+      ]
+    ],
+    "transcript": "Script of the recording, for the review page."
+  }
+}

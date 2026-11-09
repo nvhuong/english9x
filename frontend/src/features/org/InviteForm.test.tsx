@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../app/stores/auth';
-import { json, me, problem, renderAt, resetAuth, stubApi } from '../auth/testUtils';
+import { catalogExams, json, me, problem, renderAt, resetAuth, stubApi } from '../auth/testUtils';
 import { InviteForm } from './InviteForm';
 
 vi.mock('../../api/useApi', async (orig) => {
@@ -30,60 +30,62 @@ describe('InviteForm', () => {
     expect(screen.queryByRole('checkbox', { name: /Biên soạn/ })).not.toBeInTheDocument();
   });
 
-  it('a center offers teachers per exam', () => {
+  it('a center offers teachers per exam, the exams being the catalogue\'s', async () => {
+    stubApi({ ...catalogExams });
     show('CENTER', ORG);
-    expect(screen.getByRole('checkbox', { name: 'Giáo viên · IELTS' })).toBeInTheDocument();
+    expect(await screen.findByRole('checkbox', { name: 'Giáo viên · IELTS' })).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Giáo viên · TOEIC' })).toBeInTheDocument();
   });
 
   it('refuses an invalid address and an empty choice in the browser, next to the fields', async () => {
-    const calls = stubApi({});
+    const calls = stubApi({ ...catalogExams });
     show('staff', null);
     await userEvent.type(screen.getByLabelText(/^Email/), 'not-an-email');
     await userEvent.click(screen.getByRole('button', { name: 'Gửi lời mời' }));
     expect(await screen.findByText('Địa chỉ email chưa hợp lệ.')).toBeInTheDocument();
     expect(screen.getByText('Hãy chọn ít nhất một vai trò.')).toBeInTheDocument();
-    expect(calls).toHaveLength(0);
+    expect(calls.filter((c) => c.path !== '/api/catalog/exams')).toHaveLength(0);
   });
 
   it('invites English9x staff through /api/admin/invitations with the chosen roles', async () => {
-    const calls = stubApi({ 'POST /api/admin/invitations': () => json(201, created) });
+    const calls = stubApi({ ...catalogExams, 'POST /api/admin/invitations': () => json(201, created) });
     show('staff', null);
     await userEvent.type(screen.getByLabelText(/^Email/), 'new.author@example.test');
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Biên soạn · IELTS' }));
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Biên soạn · IELTS' }));
     await userEvent.click(screen.getByRole('button', { name: 'Gửi lời mời' }));
     expect(await screen.findByText('Đã gửi lời mời tới new.author@example.test.')).toBeInTheDocument();
-    expect(calls[0]!.body).toEqual({ email: 'new.author@example.test', roles: [{ role: 'AUTHOR', examCode: 'IELTS' }] });
+    expect(calls.find((c) => c.method === 'POST')!.body).toEqual({ email: 'new.author@example.test', roles: [{ role: 'AUTHOR', examCode: 'IELTS' }] });
   });
 
   it('invites into an organisation through /api/orgs/{id}/invitations', async () => {
-    const calls = stubApi({ [`POST /api/orgs/${ORG}/invitations`]: () => json(201, created) });
+    const calls = stubApi({ ...catalogExams, [`POST /api/orgs/${ORG}/invitations`]: () => json(201, created) });
     show('CENTER', ORG);
     await userEvent.type(screen.getByLabelText(/^Email/), 'teacher@example.test');
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Giáo viên · TOEIC' }));
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Giáo viên · TOEIC' }));
     await userEvent.click(screen.getByRole('button', { name: 'Gửi lời mời' }));
-    await waitFor(() => expect(calls).toHaveLength(1));
-    expect(calls[0]!.body).toEqual({ email: 'teacher@example.test', roles: [{ role: 'TEACHER', examCode: 'TOEIC' }] });
+    const posts = () => calls.filter((c) => c.method === 'POST');
+    await waitFor(() => expect(posts()).toHaveLength(1));
+    expect(posts()[0]!.body).toEqual({ email: 'teacher@example.test', roles: [{ role: 'TEACHER', examCode: 'TOEIC' }] });
   });
 
   it('shows a rule the server enforces as a message, and a rate limit as its own message', async () => {
-    stubApi({ [`POST /api/orgs/${ORG}/invitations`]: () => problem(409, 'role-not-allowed') });
+    stubApi({ ...catalogExams, [`POST /api/orgs/${ORG}/invitations`]: () => problem(409, 'role-not-allowed') });
     show('CENTER', ORG);
     await userEvent.type(screen.getByLabelText(/^Email/), 'a@example.test');
     await userEvent.click(screen.getByRole('checkbox', { name: 'Học viên' }));
     await userEvent.click(screen.getByRole('button', { name: 'Gửi lời mời' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Tổ chức doanh nghiệp không có biên soạn, người duyệt hoặc giáo viên.');
     vi.unstubAllGlobals();
-    stubApi({ [`POST /api/orgs/${ORG}/invitations`]: () => problem(429, 'too-many-invitations') });
+    stubApi({ ...catalogExams, [`POST /api/orgs/${ORG}/invitations`]: () => problem(429, 'too-many-invitations') });
     await userEvent.click(screen.getByRole('button', { name: 'Gửi lời mời' }));
     expect(await screen.findByText('Bạn đã gửi quá nhiều lời mời. Hãy thử lại sau.')).toBeInTheDocument();
   });
 
   it('places server field errors next to the email field', async () => {
-    stubApi({ 'POST /api/admin/invitations': () => problem(400, 'validation-failed', { errors: [{ field: 'email', code: 'Email', message: 'must be a well-formed email address' }] }) });
+    stubApi({ ...catalogExams, 'POST /api/admin/invitations': () => problem(400, 'validation-failed', { errors: [{ field: 'email', code: 'Email', message: 'must be a well-formed email address' }] }) });
     show('staff', null);
     await userEvent.type(screen.getByLabelText(/^Email/), 'a@b.c');
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Biên soạn · IELTS' }));
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Biên soạn · IELTS' }));
     await userEvent.click(screen.getByRole('button', { name: 'Gửi lời mời' }));
     expect(await screen.findByText('Địa chỉ email chưa hợp lệ.')).toBeInTheDocument();
   });

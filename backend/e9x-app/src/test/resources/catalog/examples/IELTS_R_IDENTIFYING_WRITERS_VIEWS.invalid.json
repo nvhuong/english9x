@@ -1,0 +1,13 @@
+{
+  "expectedErrorPath": "answerKey.slots[0][0]",
+  "content": {
+    "statement": "The writer believes the policy will succeed."
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "TRUE"
+      ]
+    ]
+  }
+}

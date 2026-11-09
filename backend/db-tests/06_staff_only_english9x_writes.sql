@@ -1,7 +1,7 @@
 INSERT INTO organizations(id,name,type) VALUES
  ('aaaaaaaa-0000-0000-0000-000000000001','Center A','CENTER'),
  ('bbbbbbbb-0000-0000-0000-000000000002','Center B','CENTER');
-INSERT INTO exams(code,name) VALUES ('IELTS','IELTS');
+INSERT INTO exams(code,name) VALUES ('IELTS','IELTS') ON CONFLICT DO NOTHING;
 INSERT INTO courses(owner_org_id,exam_code,code,title,status) VALUES
  (NULL,'IELTS','E9PUB1','e9 published','PUBLISHED'),
  ('bbbbbbbb-0000-0000-0000-000000000002','IELTS','BPUB01','b published','PUBLISHED');

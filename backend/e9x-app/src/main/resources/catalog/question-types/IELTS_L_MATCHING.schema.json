@@ -1,0 +1,122 @@
+{
+  "code": "IELTS_L_MATCHING",
+  "content": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "IELTS Listening matching",
+    "type": "object",
+    "properties": {
+      "instruction": {
+        "title": "Instruction",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000,
+        "pattern": "\\S"
+      },
+      "items": {
+        "title": "Things to match",
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 10,
+        "items": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Item",
+          "type": "object",
+          "properties": {
+            "text": {
+              "title": "Text",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "choices": {
+        "title": "Choices to match from",
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 15,
+        "items": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "title": "Option key",
+              "type": "string",
+              "pattern": "^[A-Za-z0-9]{1,4}$"
+            },
+            "text": {
+              "title": "Option text",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "key",
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "allowReuse": {
+        "title": "A choice may be used more than once",
+        "type": "boolean"
+      },
+      "audioMediaId": {
+        "title": "Audio media id",
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      },
+      "imageMediaId": {
+        "title": "Image media id",
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+      }
+    },
+    "required": [
+      "items",
+      "choices"
+    ],
+    "additionalProperties": false
+  },
+  "answerKey": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Correct choice per item",
+    "type": "object",
+    "properties": {
+      "slots": {
+        "title": "Accepted choices per item",
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 10,
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9]{1,4}$"
+          }
+        }
+      },
+      "transcript": {
+        "title": "Transcript (review material, shown after submitting)",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20000,
+        "pattern": "\\S"
+      }
+    },
+    "required": [
+      "slots"
+    ],
+    "additionalProperties": false
+  }
+}

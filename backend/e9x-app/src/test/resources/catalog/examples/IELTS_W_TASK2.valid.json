@@ -1,0 +1,7 @@
+{
+  "content": {
+    "prompt": "Write about the topic.",
+    "minWords": 250
+  },
+  "answerKey": {}
+}

@@ -1,0 +1,8 @@
+{
+  "expectedErrorPath": "content.minWords",
+  "content": {
+    "prompt": "Write about the topic.",
+    "minWords": 240
+  },
+  "answerKey": {}
+}

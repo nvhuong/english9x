@@ -1,0 +1,13 @@
+{
+  "expectedErrorPath": "answerKey.slots[0][0]",
+  "content": {
+    "statement": "The bridge was finished in 1932."
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "YES"
+      ]
+    ]
+  }
+}

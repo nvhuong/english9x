@@ -1,0 +1,34 @@
+{
+  "content": {
+    "stem": "What can be inferred from both documents?",
+    "options": [
+      {
+        "key": "A",
+        "text": "one"
+      },
+      {
+        "key": "B",
+        "text": "two"
+      },
+      {
+        "key": "C",
+        "text": "three"
+      },
+      {
+        "key": "D",
+        "text": "four"
+      }
+    ],
+    "passageNumbers": [
+      1,
+      2
+    ]
+  },
+  "answerKey": {
+    "slots": [
+      [
+        "B"
+      ]
+    ]
+  }
+}

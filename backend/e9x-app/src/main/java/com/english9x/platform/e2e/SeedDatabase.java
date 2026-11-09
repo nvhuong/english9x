@@ -24,6 +24,13 @@ final class SeedDatabase implements DisposableBean {
     private final HikariDataSource dataSource;
     private final JdbcTemplate jdbc;
 
+    /** A seed uses the exams of the catalog (V202611100002) and never adds one: a stray exam would show in /api/catalog/exams and in the role pickers. */
+    void requireCatalogExam(String exam) {
+        if (!Boolean.TRUE.equals(jdbc.queryForObject("select exists (select 1 from exams where code = ?)", Boolean.class, exam))) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "examCode must be an exam of the catalog");
+        }
+    }
+
     SeedDatabase(
             @Value("${spring.datasource.url}") String url,
             @Value("${spring.flyway.user}") String user,
