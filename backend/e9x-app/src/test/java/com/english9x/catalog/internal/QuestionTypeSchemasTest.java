@@ -210,6 +210,98 @@ class QuestionTypeSchemasTest {
         assertEquals(List.of("answerKey.slots[0][0]"), paths(check("IELTS_L_PLAN_MAP_DIAGRAM_LABELLING", content, "{\"slots\":[[\"F\"]]}")));
     }
 
+    // ---- the exam room never receives the solution side (I4) -------------------------------------------------------------------------
+
+    /** Names a learner must not see before submitting. Lower-cased, compared exactly and as a prefix ("correctOption", "answerText"). */
+    static final List<String> SOLUTION_FIELD_PREFIXES = List.of("transcript", "explanation", "rationale", "solution", "sampleanswer",
+            "modelanswer", "sampleresponse", "correct", "iscorrect", "answer", "hint", "script");
+
+    private static void propertyNames(JsonNode schema, String path, List<String> out) {
+        if (schema == null || !schema.isObject()) {
+            return;
+        }
+        for (Iterator<Map.Entry<String, JsonNode>> it = schema.path("properties").fields(); it.hasNext();) {
+            Map.Entry<String, JsonNode> f = it.next();
+            out.add(path + f.getKey());
+            propertyNames(f.getValue(), path + f.getKey() + ".", out);
+        }
+        propertyNames(schema.path("items"), path + "[].", out);
+        for (String combinator : List.of("allOf", "anyOf", "oneOf")) {
+            schema.path(combinator).forEach(c -> propertyNames(c, path, out));
+        }
+        for (Iterator<Map.Entry<String, JsonNode>> it = schema.path("$defs").fields(); it.hasNext();) {
+            propertyNames(it.next().getValue(), path, out);
+        }
+    }
+
+    @Test
+    void noContentSchemaDeclaresASolutionField() throws IOException {
+        Map<String, SchemaFiles.SchemaFile> files = new SchemaFiles("classpath*:catalog/question-types/*.schema.json").load();
+        assertEquals(31, files.size());
+        List<String> offenders = new ArrayList<>();
+        for (SchemaFiles.SchemaFile f : files.values()) {
+            List<String> names = new ArrayList<>();
+            propertyNames(f.content(), "", names);
+            for (String n : names) {
+                String leaf = n.substring(n.lastIndexOf('.') + 1).toLowerCase(java.util.Locale.ROOT);
+                if (SOLUTION_FIELD_PREFIXES.stream().anyMatch(leaf::startsWith)) {
+                    offenders.add(f.code() + " content." + n);
+                }
+            }
+        }
+        assertEquals(List.of(), offenders, "these fields would reach the exam room: put them in the answer key (the solution side)");
+    }
+
+    @Test
+    void theGuardCatchesASolutionFieldWhereverItHides() throws IOException {
+        List<String> names = new ArrayList<>();
+        propertyNames(JSON.readTree("{\"properties\":{\"a\":{\"type\":\"array\",\"items\":{\"properties\":{\"explanation\":{}}}}}}"), "", names);
+        assertEquals(List.of("a", "a.[].explanation"), names);
+    }
+
+    @Test
+    void everyListeningTypeKeepsItsTranscriptOnTheSolutionSide() throws IOException {
+        Map<String, SchemaFiles.SchemaFile> files = new SchemaFiles("classpath*:catalog/question-types/*.schema.json").load();
+        int listening = 0;
+        for (SchemaFiles.SchemaFile f : files.values()) {
+            if (f.content().path("properties").has("audioMediaId")) {
+                listening++;
+                assertTrue(f.answerKey().path("properties").has("transcript"), f.code() + " has audio but no transcript in its solution side");
+            }
+        }
+        assertEquals(10, listening, "6 IELTS Listening + TOEIC Parts 1-4");
+    }
+
+    @Test
+    void aTranscriptInContentIsRefusedAndOneInTheAnswerKeyIsAccepted() throws IOException {
+        String audio = "11111111-1111-4111-8111-111111111111";
+        String content = "{\"audioMediaId\":\"" + audio + "\",\"options\":[{\"key\":\"A\"},{\"key\":\"B\"},{\"key\":\"C\"}]}";
+        assertEquals(List.of(), check("TOEIC_P2_QUESTION_RESPONSE", content, "{\"slots\":[[\"C\"]],\"transcript\":\"Where is the exit?\"}"));
+        List<FieldError> leaked = check("TOEIC_P2_QUESTION_RESPONSE", content.replace("\"options\"", "\"transcript\":\"x\",\"options\""), "{\"slots\":[[\"C\"]]}");
+        assertEquals(List.of("content.transcript"), paths(leaked));
+    }
+
+    // ---- M5: blanks are exactly 1..N and map to slots by number; M6: a word limit for typed diagram labels --------------------------
+
+    @Test
+    void blanksAreNumberedExactlyOneToN() throws IOException {
+        String type = "IELTS_L_SENTENCE_COMPLETION";
+        assertEquals(List.of(), check(type, "{\"text\":\"a [[1]] b [[2]]\"}", "{\"slots\":[[\"x\"],[\"y\"]]}"));
+        assertEquals(List.of(), check(type, "{\"text\":\"a [[2]] b [[1]]\"}", "{\"slots\":[[\"x\"],[\"y\"]]}"), "order in the text does not matter, numbers do");
+        assertEquals(List.of("content.text"), paths(check(type, "{\"text\":\"a [[1]] b [[3]]\"}", "{\"slots\":[[\"x\"],[\"y\"]]}")), "[[1]] and [[3]] leave a hole");
+        assertEquals(List.of("content.text"), paths(check(type, "{\"text\":\"a [[2]] b [[3]]\"}", "{\"slots\":[[\"x\"],[\"y\"]]}")), "numbering starts at 1");
+        assertEquals(List.of("content.text"), paths(check(type, "{\"text\":\"a [[0]] b [[1]]\"}", "{\"slots\":[[\"x\"],[\"y\"]]}")), "0 is not a blank number");
+        assertEquals(List.of("answerKey.slots"), paths(check(type, "{\"text\":\"a [[1]] b [[2]] c [[3]]\"}", "{\"slots\":[[\"x\"],[\"y\"]]}")), "slot n answers blank n: three blanks need three slots");
+    }
+
+    @Test
+    void aTypedDiagramLabelCanCarryAWordLimit() throws IOException {
+        String content = "{\"imageMediaId\":\"11111111-1111-4111-8111-111111111111\",\"labelNumber\":3,\"marker\":{\"x\":0.25,\"y\":0.5}}";
+        assertEquals(List.of(), check("IELTS_R_DIAGRAM_LABEL_COMPLETION", content, "{\"slots\":[[\"library\"]],\"maxWords\":2}"));
+        assertEquals(List.of("answerKey.maxWords"), paths(check("IELTS_R_DIAGRAM_LABEL_COMPLETION", content, "{\"slots\":[[\"library\"]],\"maxWords\":99}")));
+        assertEquals(List.of("answerKey.maxWords"), paths(check("IELTS_R_DIAGRAM_LABEL_COMPLETION", content, "{\"slots\":[[\"library\"]],\"maxWords\":-1}")));
+    }
+
     @Test
     void brokenSchemasAreRefusedWhenTheCatalogIsBuilt() throws IOException {
         List<QuestionTypeCatalog.TypeRow> rows = seededRows();

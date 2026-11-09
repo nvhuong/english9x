@@ -12,6 +12,7 @@
         "0123456"
       ]
     ],
-    "maxWords": 2
+    "maxWords": 2,
+    "transcript": "Script of the recording, for the review page."
   }
 }

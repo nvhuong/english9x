@@ -17,13 +17,6 @@
         "type": "string",
         "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
       },
-      "transcript": {
-        "title": "Transcript",
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 20000,
-        "pattern": "\\S"
-      },
       "imageMediaId": {
         "title": "Image media id",
         "type": "string",
@@ -63,6 +56,13 @@
         "type": "integer",
         "minimum": 0,
         "maximum": 10
+      },
+      "transcript": {
+        "title": "Transcript (review material, shown after submitting)",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20000,
+        "pattern": "\\S"
       }
     },
     "required": [

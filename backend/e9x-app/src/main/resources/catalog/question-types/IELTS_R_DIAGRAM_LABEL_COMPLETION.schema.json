@@ -95,6 +95,12 @@
             "pattern": "\\S"
           }
         }
+      },
+      "maxWords": {
+        "title": "Word limit per answer (0 = none)",
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 10
       }
     },
     "required": [

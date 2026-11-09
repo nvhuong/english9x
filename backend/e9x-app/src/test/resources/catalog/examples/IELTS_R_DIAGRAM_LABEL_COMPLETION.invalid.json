@@ -13,6 +13,7 @@
       [
         "library"
       ]
-    ]
+    ],
+    "maxWords": 2
   }
 }

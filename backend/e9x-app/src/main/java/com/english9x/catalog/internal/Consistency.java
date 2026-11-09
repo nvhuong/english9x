@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * What a JSON Schema cannot say and a scorer needs: the correct option is one of the options, option keys are unique, a matching has
@@ -41,13 +43,16 @@ final class Consistency {
                 variantsAmong(slots, keys, out);
             }
             case GAP_TYPED -> {
-                Set<String> blanks = new HashSet<>();
+                Set<Integer> blanks = new HashSet<>();
                 Matcher m = BLANK.matcher(content.path("text").asText(""));
                 while (m.find()) {
-                    blanks.add(m.group(1));
+                    blanks.add(Integer.parseInt(m.group(1)));
                 }
                 if (blanks.isEmpty()) {
                     out.add(new FieldError("content.text", "has no blank: write each blank as [[1]], [[2]], ..."));
+                } else if (!blanks.equals(IntStream.rangeClosed(1, blanks.size()).boxed().collect(Collectors.toSet()))) {
+                    // slot n answers blank [[n]]: the numbers must be exactly 1..N or the mapping is ambiguous
+                    out.add(new FieldError("content.text", "blanks must be numbered exactly 1, 2, 3, ... with no gap and no 0"));
                 } else if (slots.size() != blanks.size()) {
                     out.add(new FieldError("answerKey.slots", "needs one answer per blank"));
                 }

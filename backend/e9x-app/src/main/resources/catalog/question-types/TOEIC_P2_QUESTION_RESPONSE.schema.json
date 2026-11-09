@@ -36,13 +36,6 @@
           ],
           "additionalProperties": false
         }
-      },
-      "transcript": {
-        "title": "Transcript",
-        "type": "string",
-        "minLength": 1,
-        "maxLength": 20000,
-        "pattern": "\\S"
       }
     },
     "required": [
@@ -71,6 +64,13 @@
             "pattern": "^[A-Za-z0-9]{1,4}$"
           }
         }
+      },
+      "transcript": {
+        "title": "Transcript (review material, shown after submitting)",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20000,
+        "pattern": "\\S"
       }
     },
     "required": [

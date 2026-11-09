@@ -13,6 +13,7 @@
         "library",
         "the library"
       ]
-    ]
+    ],
+    "maxWords": 2
   }
 }
