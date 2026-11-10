@@ -138,7 +138,8 @@ public final class SweepFixtures {
             Map.entry("POST /api/me/notifications/read-all", OWN),
             Map.entry("PUT /api/me/notification-prefs", OWN),
             Map.entry("POST /api/me/telegram/link", OWN),
-            Map.entry("DELETE /api/me/telegram", OWN));
+            Map.entry("DELETE /api/me/telegram", OWN),
+            Map.entry("POST /api/orders", OWN + " (the plan and the courses are shared catalogue rows, not a tenant's; OrderServiceIT covers who may order what)"));
     // (POST /api/cms/media is not exempt: it has a typed fixture below, with a multipart body)
 
     /** A minimal valid invitation: what makes the answer depend on who asks, not on the body. */
@@ -189,8 +190,6 @@ public final class SweepFixtures {
         // P5.1: an order is the caller's own (user_id = the person), never an organisation's. A's member really orders; the plan routes are the English9x SYS_ADMIN's
         // (A's ORG_ADMIN is refused with 403 whatever the id); an order code of B's member is a 404 as much as a code nobody has.
         String plan = "{\"name\":\"Sweep\",\"priceVnd\":1000,\"months\":1,\"maxCourses\":1,\"active\":true}";
-        all.put("POST /api/orders", ForeignIdSweep.Fixture.write("{\"planId\":\"" + planId + "\",\"courseIds\":[\"" + publishedCourse + "\"]}", List.of(),
-                ForeignIdSweep.Control.of(Map.of(), null)));
         all.put("POST /api/admin/plans", ForeignIdSweep.Fixture.write(plan, List.of(), new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.ADMIN)));
         all.put("PUT /api/admin/plans/{id}", ForeignIdSweep.Fixture.write(plan, List.of(), new ForeignIdSweep.Control(slot("id", planId), null, ForeignIdSweep.ADMIN)));
         all.put("GET /api/orders/{code}", ForeignIdSweep.Fixture.read(List.of(

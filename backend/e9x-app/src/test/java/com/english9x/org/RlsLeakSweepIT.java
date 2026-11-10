@@ -119,7 +119,7 @@ class RlsLeakSweepIT {
                 "DELETE /api/orgs/{id}/invitations/{invitationId}", "DELETE /api/admin/invitations/{invitationId}",
                 "POST /api/invitations/{token}/accept", "POST /api/admin/invitations", "POST /api/admin/organizations",
                 "GET /api/media/{id}/url", "POST /api/cms/media",
-                "POST /api/orders", "POST /api/admin/plans", "PUT /api/admin/plans/{id}", "GET /api/orders/{code}")),
+                "POST /api/admin/plans", "PUT /api/admin/plans/{id}", "GET /api/orders/{code}")),
                 "visited " + r.visited());
     }
 
