@@ -124,11 +124,11 @@ export const seed = {
     post<{ reviewId: string; versionId: string; outcome: string }>('review-flow', { examCode: 'IELTS', orgId: null, outcome: 'approved', ...opts }),
 
   /**
-   * The same REAL review (Authz, RLS, lifecycle trigger, events, audit) for a version the CMS made: `type` 'question' or 'question_group', the id of
+   * The same REAL review (Authz, RLS, lifecycle trigger, events, audit) for a version the CMS made: `type` 'question', 'question_group' or 'strategy_lesson', the id of
    * the version. The author submits it (and must be its creator), the reviewer approves it (outcome 'approved'), sends it back ('changes'), or it is
    * left in review ('submitted'). A stand-in for the CMS review screens (P2.9).
    */
-  reviewVersion: (opts: { type: 'question' | 'question_group'; versionId: string; authorId: string; reviewerId?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
+  reviewVersion: (opts: { type: 'question' | 'question_group' | 'strategy_lesson'; versionId: string; authorId: string; reviewerId?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
     post<{ reviewId: string; versionId: string; outcome: string }>('review-version', { orgId: null, outcome: 'approved', ...opts }),
 
   /** A centre with teachers and learners (classes, members). Needs the classroom module. */

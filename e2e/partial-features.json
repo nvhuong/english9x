@@ -23,6 +23,11 @@
       "owner": "P3.1 (courses), P6.1 (classes)"
     },
     {
+      "id": "F14",
+      "pending": "Done through the real stack (P2.4): the author writes a lesson with all ten block types on the editor screen, the server keeps them in order, refuses a video host outside the allowlist and a lesson without a question type, and publishes the lesson only through a review that waits for the embedded question (the review is run by seed.reviewVersion, the real ReviewService, until the review screens exist). The learner side is covered by Vitest (StrategyLessonView: every block, the embedded question hides its answer until the learner has answered) and by StrategyLessonIT. Pending: 'học viên thấy đúng' in the browser: there is no learner lesson route until P3.2, which must render StrategyLessonView from QuestionVersions#examView, a signed link per file and an answer checker, and extend this spec with the learner reading a published lesson (frames from YouTube/Vimeo allowed by the CSP, the embedded question answered).",
+      "owner": "P3.2 (lesson page), P2.9 (review queue replaces seed.reviewVersion)"
+    },
+    {
       "id": "F18",
       "pending": "Done through the real stack (P2.3): editing a published question makes a new draft version and never touches the published one, one open version per question, a colleague cannot take a draft over, the new version is published only by a review (run by seed.reviewVersion, the real ReviewService, until the review screens exist). Pending: 'học viên đang thi vẫn thấy bản cũ' (a learner IN an exam keeps reading the version the attempt began on: no exam room exists yet) and the side-by-side comparison of two versions (diff screen) and the approval by a person in the review queue.",
       "owner": "P3.4 (exam room: the attempt keeps its version), P2.9 (review queue and version comparison)"

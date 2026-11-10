@@ -7,7 +7,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -71,9 +71,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -89,7 +89,7 @@ export interface paths {
         };
         get: operations["all"];
         put?: never;
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -104,7 +104,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_2"];
+        put: operations["update_3"];
         post?: never;
         delete?: never;
         options?: never;
@@ -361,13 +361,13 @@ export interface paths {
             cookie?: never;
         };
         /** List groups (the latest version of each) the caller may read */
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         /**
          * Create a question group (version 1, a draft) with its members
          * @description 422 with errors[] by JSON path, as for a question.
          */
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -382,9 +382,9 @@ export interface paths {
             cookie?: never;
         };
         /** One group: its latest version, or the numbered one, with the solution side */
-        get: operations["get_1"];
+        get: operations["get_2"];
         /** Edit a group: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
-        put: operations["update_1"];
+        put: operations["update_2"];
         post?: never;
         delete?: never;
         options?: never;
@@ -402,7 +402,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review; it is approved only when every member question is PUBLISHED */
-        post: operations["submit_1"];
+        post: operations["submit_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -417,7 +417,7 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a group, oldest first */
-        get: operations["versions_1"];
+        get: operations["versions_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -450,13 +450,13 @@ export interface paths {
             cookie?: never;
         };
         /** List questions (the latest version of each) the caller may read, newest change first */
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         /**
          * Create a question (version 1, a draft) of a question type
          * @description 422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.
          */
-        post: operations["create_1"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -471,9 +471,9 @@ export interface paths {
             cookie?: never;
         };
         /** One question: its latest version, or the numbered one, with the answer key */
-        get: operations["get"];
+        get: operations["get_1"];
         /** Edit a question: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
-        put: operations["update"];
+        put: operations["update_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -491,7 +491,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review (the workflow records the author, audits and notifies the reviewers) */
-        post: operations["submit"];
+        post: operations["submit_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -506,6 +506,79 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a question, oldest first, with the answer key (for comparing versions) */
+        get: operations["versions_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/strategy-lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List lessons (the latest version of each) the caller may read, newest change first */
+        get: operations["list_2"];
+        put?: never;
+        /**
+         * Create a strategy lesson (version 1, a draft)
+         * @description 422 with errors[] (JSON paths such as blocks[2].url) when a block does not match its type, a video address is not YouTube/Vimeo, a file or embedded question is not usable, or no question type is given.
+         */
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/strategy-lessons/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One lesson: its latest version, or the numbered one */
+        get: operations["get"];
+        /** Edit a lesson: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/strategy-lessons/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit the open draft for review (refused at approval while an embedded question is not published) */
+        post: operations["submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/strategy-lessons/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every version of a lesson, oldest first */
         get: operations["versions"];
         put?: never;
         post?: never;
@@ -586,7 +659,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1340,6 +1413,69 @@ export interface components {
             /** Format: uuid */
             userId: string;
         };
+        StrategyLessonPage: {
+            items?: components["schemas"]["StrategyLessonSummary"][];
+            /** Format: int32 */
+            limit?: number;
+            /** Format: int32 */
+            offset?: number;
+            /** Format: int64 */
+            total?: number;
+        };
+        StrategyLessonRequest: {
+            /** @description the ordered blocks: heading, paragraph, table, image, audio, video-upload, video-embed, callout, embedded-question, worked-example */
+            blocks?: unknown;
+            /**
+             * @description the exam of the lesson (needed to make a lesson; fixed afterwards)
+             * @example IELTS
+             */
+            examCode?: string;
+            /** @description the question types the lesson teaches (at least one, of the exam) */
+            questionTypeCodes?: string[];
+            title?: string;
+        };
+        StrategyLessonSubmitted: {
+            /** Format: uuid */
+            reviewId?: string;
+        };
+        StrategyLessonSummary: {
+            /** Format: uuid */
+            createdBy?: string;
+            examCode?: string;
+            /** Format: uuid */
+            lessonId?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            title?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
+        StrategyLessonVersion: {
+            blocks?: unknown;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            examCode?: string;
+            /** Format: uuid */
+            lessonId?: string;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            questionTypeCodes?: string[];
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            title?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
         SubmittedForReview: {
             /** Format: uuid */
             reviewId?: string;
@@ -1377,7 +1513,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 action?: string;
@@ -1535,7 +1671,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -1564,7 +1700,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -1626,7 +1762,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -1659,7 +1795,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2166,7 +2302,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 exam?: string;
@@ -2200,7 +2336,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2233,7 +2369,7 @@ export interface operations {
             };
         };
     };
-    get_1: {
+    get_2: {
         parameters: {
             query?: {
                 version?: number;
@@ -2266,7 +2402,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2301,7 +2437,7 @@ export interface operations {
             };
         };
     };
-    submit_1: {
+    submit_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2332,7 +2468,7 @@ export interface operations {
             };
         };
     };
-    versions_1: {
+    versions_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2394,7 +2530,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: {
                 exam?: string;
@@ -2430,7 +2566,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2463,7 +2599,7 @@ export interface operations {
             };
         };
     };
-    get: {
+    get_1: {
         parameters: {
             query?: {
                 version?: number;
@@ -2496,7 +2632,7 @@ export interface operations {
             };
         };
     };
-    update: {
+    update_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2531,7 +2667,7 @@ export interface operations {
             };
         };
     };
-    submit: {
+    submit_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2562,7 +2698,7 @@ export interface operations {
             };
         };
     };
-    versions: {
+    versions_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2580,6 +2716,202 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["QuestionVersion"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_2: {
+        parameters: {
+            query?: {
+                exam?: string;
+                status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StrategyLessonPage"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StrategyLessonRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StrategyLessonVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: {
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StrategyLessonVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StrategyLessonRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StrategyLessonVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StrategyLessonSubmitted"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StrategyLessonVersion"][];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -2742,7 +3074,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 limit?: number;

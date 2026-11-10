@@ -75,7 +75,7 @@ e9x:
   public-base-url: ${E9X_PUBLIC_BASE_URL:}
   security:
     # Content-Security-Policy of the SPA and API (same origin only). Tasks that load media from elsewhere extend it here.
-    csp: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+    csp: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob:; connect-src 'self'; frame-src https://www.youtube.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
   events:
     redelivery-after: 2m             # a module event whose listener has not completed is resubmitted once it is this old (first cycle one period after start-up)
     publication-max-age: 30d         # a publication still incomplete after this is logged as an error and deleted, so a failing row cannot keep personal data for ever
@@ -128,6 +128,10 @@ e9x:
       default-page-size: 50
       max-page-size: 100
       max-group-members: 100
+    strategy:
+      max-json-size: 512KB
+      max-blocks: 200
+      video-hosts: youtube.com,www.youtube.com,m.youtube.com,youtu.be,vimeo.com,www.vimeo.com,player.vimeo.com
   media:
     url-ttl: 10m
     # The private bucket (MinIO). Links are signed for public-url and fetched through the site's own origin (infra/Caddyfile: /<bucket>/*, which keeps the

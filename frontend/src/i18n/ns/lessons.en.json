@@ -1,0 +1,162 @@
+{
+  "nav": {
+    "lessons": "Strategy lessons"
+  },
+  "loading": "Loading…",
+  "status": {
+    "DRAFT": "Draft",
+    "IN_REVIEW": "In review",
+    "CHANGES_REQUESTED": "Changes requested",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "blockType": {
+    "heading": "Heading",
+    "paragraph": "Paragraph",
+    "table": "Table",
+    "image": "Image",
+    "audio": "Audio",
+    "video-upload": "Uploaded video",
+    "video-embed": "YouTube/Vimeo video",
+    "callout": "Tip / trap box",
+    "embedded-question": "Embedded question",
+    "worked-example": "Worked example"
+  },
+  "callout": {
+    "tip": "Tip",
+    "trap": "Trap"
+  },
+  "field": {
+    "lessonTitle": "Lesson title",
+    "level": "Heading level",
+    "text": "Text",
+    "caption": "Caption (optional)",
+    "alt": "Description of the image for screen reader users",
+    "altHint": "Required: say what the image shows.",
+    "imageMediaId": "Image file id",
+    "audioMediaId": "Audio file id",
+    "videoMediaId": "Video file id",
+    "provider": "Provider",
+    "url": "Video address",
+    "urlHint": "Paste the https address of a YouTube or Vimeo video. Addresses of other sites are refused.",
+    "kind": "Kind of box",
+    "questionVersionId": "Question version id",
+    "title": "Example title",
+    "problem": "Problem",
+    "steps": "Solution steps",
+    "stepsHint": "One step per line.",
+    "answer": "Result (optional)",
+    "tableHeader": "Header row of the table",
+    "tableHint": "Separate the cells with a | sign.",
+    "tableRows": "Rows of the table (one row per line, cells separated by |)"
+  },
+  "media": {
+    "help": {
+      "AUDIO": "Paste the id of an audio file uploaded for this exam, or upload a new one below.",
+      "IMAGE": "Paste the id of an image file uploaded for this exam, or upload a new one below.",
+      "VIDEO": "Paste the id of a video file uploaded for this exam, or upload a new one below."
+    },
+    "uploadNew": "Upload a new file",
+    "showPreview": "Preview the file",
+    "hidePreview": "Hide the preview"
+  },
+  "embedded": {
+    "pick": "Pick a question of the exam",
+    "pickPlaceholder": "Choose a question",
+    "hint": "The question must be published before this lesson can be.",
+    "untitled": "(untitled)"
+  },
+  "types": {
+    "legend": "Question types this lesson teaches",
+    "hint": "Choose at least one question type of the exam."
+  },
+  "blocks": {
+    "title": "Content blocks",
+    "empty": "No blocks yet. Add the first one below.",
+    "label": "Block {{n}}: {{type}}",
+    "up": "Move up",
+    "down": "Move down",
+    "remove": "Remove block",
+    "addLabel": "Add a block",
+    "addPlaceholder": "Choose a block type"
+  },
+  "actions": {
+    "createDraft": "Save draft",
+    "save": "Save draft",
+    "saveNewVersion": "Save as a new version",
+    "submit": "Submit for review"
+  },
+  "new": {
+    "title": "New strategy lesson",
+    "description": "Write the lesson from blocks: headings, paragraphs, tables, images, audio, video, tip/trap boxes, embedded questions and worked examples.",
+    "exam": "Exam",
+    "examPlaceholder": "Choose an exam",
+    "noneTitle": "No exam to write for",
+    "none": "You may not write lessons for any exam in this context."
+  },
+  "edit": {
+    "title": "Strategy lesson",
+    "back": "Back to the lessons",
+    "version": "Version {{n}}",
+    "saved": "Draft saved.",
+    "savedNewVersion": "A new draft was made, version {{n}}. The published version is unchanged.",
+    "submitted": "Submitted for review. This version is locked until the reviewer decides.",
+    "publishedNote": "This version is published and cannot be changed. Saving makes a new draft (version {{next}}).",
+    "inReviewNote": "This version is waiting for review and is locked.",
+    "archivedNote": "This version is archived and cannot be changed.",
+    "notFoundTitle": "Lesson not found",
+    "notFound": "The lesson does not exist, or you may not open it in this context."
+  },
+  "list": {
+    "title": "Strategy lessons",
+    "description": "The strategy lessons of the exams you write or review in this context, the latest version of each.",
+    "new": "New lesson",
+    "exam": "Exam",
+    "status": "Status",
+    "all": "All",
+    "caption": "Strategy lessons",
+    "colTitle": "Title",
+    "colExam": "Exam",
+    "colStatus": "Status",
+    "colVersion": "Version",
+    "emptyTitle": "No lessons yet",
+    "empty": "No lesson matches the filter.",
+    "pagination": "Pagination",
+    "previous": "Previous page",
+    "next": "Next page",
+    "range": "{{from}}–{{to}} of {{total}}"
+  },
+  "errors": {
+    "invalid": "The lesson is not valid. Fix the items below and save again.",
+    "underReview": "The latest version is waiting for review and cannot be edited.",
+    "anotherAuthor": "This draft belongs to another author; only they can edit and submit it.",
+    "archived": "This lesson is archived.",
+    "notEditable": "There is no draft to submit.",
+    "conflict": "Somebody just changed this lesson. Reload and try again.",
+    "forbidden": "You may not do this with this lesson.",
+    "notFound": "Lesson not found.",
+    "generic": "Something went wrong. Try again in a few minutes."
+  },
+  "view": {
+    "tip": "Tip",
+    "trap": "Trap",
+    "workedExample": "Worked example",
+    "problem": "Problem",
+    "step": "Step {{n}}",
+    "answer": "Result",
+    "showAnswer": "Show the result",
+    "video": "Video: {{caption}}",
+    "videoBlocked": "This video cannot be played here.",
+    "mediaMissing": "This file cannot be opened yet.",
+    "questionMissing": "This question cannot be opened yet.",
+    "question": "Try a question",
+    "yourAnswer": "Your answer",
+    "check": "Check",
+    "checking": "Checking…",
+    "correct": "Correct",
+    "wrong": "Not correct",
+    "correctAnswer": "Answer: {{answer}}",
+    "explanation": "Explanation",
+    "types": "Question types this lesson teaches"
+  }
+}

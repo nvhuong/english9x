@@ -1236,6 +1236,146 @@
         "required" : [ "roles", "userId" ],
         "type" : "object"
       },
+      "StrategyLessonPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/StrategyLessonSummary"
+            },
+            "type" : "array"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "offset" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "StrategyLessonRequest" : {
+        "properties" : {
+          "blocks" : {
+            "description" : "the ordered blocks: heading, paragraph, table, image, audio, video-upload, video-embed, callout, embedded-question, worked-example"
+          },
+          "examCode" : {
+            "description" : "the exam of the lesson (needed to make a lesson; fixed afterwards)",
+            "example" : "IELTS",
+            "type" : "string"
+          },
+          "questionTypeCodes" : {
+            "description" : "the question types the lesson teaches (at least one, of the exam)",
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "StrategyLessonSubmitted" : {
+        "properties" : {
+          "reviewId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "StrategyLessonSummary" : {
+        "properties" : {
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "StrategyLessonVersion" : {
+        "properties" : {
+          "blocks" : { },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "questionTypeCodes" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "SubmittedForReview" : {
         "properties" : {
           "reviewId" : {
@@ -1313,7 +1453,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_6",
+        "operationId" : "list_7",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -1530,7 +1670,7 @@
     },
     "/api/admin/organizations" : {
       "get" : {
-        "operationId" : "list_4",
+        "operationId" : "list_5",
         "responses" : {
           "200" : {
             "content" : {
@@ -1559,7 +1699,7 @@
         "tags" : [ "org-controller" ]
       },
       "post" : {
-        "operationId" : "create_4",
+        "operationId" : "create_5",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1626,7 +1766,7 @@
         "tags" : [ "plan-controller" ]
       },
       "post" : {
-        "operationId" : "create_3",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1664,7 +1804,7 @@
     },
     "/api/admin/plans/{id}" : {
       "put" : {
-        "operationId" : "update_2",
+        "operationId" : "update_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2218,7 +2358,7 @@
     },
     "/api/cms/question-groups" : {
       "get" : {
-        "operationId" : "list_3",
+        "operationId" : "list_4",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -2278,7 +2418,7 @@
       },
       "post" : {
         "description" : "422 with errors[] by JSON path, as for a question.",
-        "operationId" : "create_2",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2317,7 +2457,7 @@
     },
     "/api/cms/question-groups/{id}" : {
       "get" : {
-        "operationId" : "get_1",
+        "operationId" : "get_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2361,7 +2501,7 @@
         "tags" : [ "group-controller" ]
       },
       "put" : {
-        "operationId" : "update_1",
+        "operationId" : "update_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2409,7 +2549,7 @@
     },
     "/api/cms/question-groups/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_1",
+        "operationId" : "submit_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2447,7 +2587,7 @@
     },
     "/api/cms/question-groups/{id}/versions" : {
       "get" : {
-        "operationId" : "versions_1",
+        "operationId" : "versions_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2527,7 +2667,7 @@
     },
     "/api/cms/questions" : {
       "get" : {
-        "operationId" : "list_2",
+        "operationId" : "list_3",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -2602,7 +2742,7 @@
       },
       "post" : {
         "description" : "422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.",
-        "operationId" : "create_1",
+        "operationId" : "create_2",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2641,7 +2781,7 @@
     },
     "/api/cms/questions/{id}" : {
       "get" : {
-        "operationId" : "get",
+        "operationId" : "get_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2685,7 +2825,7 @@
         "tags" : [ "question-controller" ]
       },
       "put" : {
-        "operationId" : "update",
+        "operationId" : "update_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2733,7 +2873,7 @@
     },
     "/api/cms/questions/{id}/submit" : {
       "post" : {
-        "operationId" : "submit",
+        "operationId" : "submit_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2771,7 +2911,7 @@
     },
     "/api/cms/questions/{id}/versions" : {
       "get" : {
-        "operationId" : "versions",
+        "operationId" : "versions_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2808,6 +2948,268 @@
         },
         "summary" : "Every version of a question, oldest first, with the answer key (for comparing versions)",
         "tags" : [ "question-controller" ]
+      }
+    },
+    "/api/cms/strategy-lessons" : {
+      "get" : {
+        "operationId" : "list_2",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StrategyLessonPage"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "List lessons (the latest version of each) the caller may read, newest change first",
+        "tags" : [ "strategy-controller" ]
+      },
+      "post" : {
+        "description" : "422 with errors[] (JSON paths such as blocks[2].url) when a block does not match its type, a video address is not YouTube/Vimeo, a file or embedded question is not usable, or no question type is given.",
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StrategyLessonRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StrategyLessonVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create a strategy lesson (version 1, a draft)",
+        "tags" : [ "strategy-controller" ]
+      }
+    },
+    "/api/cms/strategy-lessons/{id}" : {
+      "get" : {
+        "operationId" : "get",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "version",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StrategyLessonVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One lesson: its latest version, or the numbered one",
+        "tags" : [ "strategy-controller" ]
+      },
+      "put" : {
+        "operationId" : "update",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StrategyLessonRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StrategyLessonVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Edit a lesson: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)",
+        "tags" : [ "strategy-controller" ]
+      }
+    },
+    "/api/cms/strategy-lessons/{id}/submit" : {
+      "post" : {
+        "operationId" : "submit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StrategyLessonSubmitted"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit the open draft for review (refused at approval while an embedded question is not published)",
+        "tags" : [ "strategy-controller" ]
+      }
+    },
+    "/api/cms/strategy-lessons/{id}/versions" : {
+      "get" : {
+        "operationId" : "versions",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/StrategyLessonVersion"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Every version of a lesson, oldest first",
+        "tags" : [ "strategy-controller" ]
       }
     },
     "/api/invitations/{token}/accept" : {
@@ -2964,7 +3366,7 @@
     },
     "/api/me/notifications" : {
       "get" : {
-        "operationId" : "list_5",
+        "operationId" : "list_6",
         "parameters" : [ {
           "in" : "query",
           "name" : "limit",

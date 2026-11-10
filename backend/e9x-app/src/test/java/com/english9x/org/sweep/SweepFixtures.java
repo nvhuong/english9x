@@ -34,6 +34,11 @@ public final class SweepFixtures {
     public final UUID questionAForSubmit = UUID.randomUUID();
     public final UUID groupAForPut = UUID.randomUUID();
     public final UUID groupAForSubmit = UUID.randomUUID();
+    /** P2.4: org B's strategy lesson (PUBLISHED, with a question type), and A's author's own drafts: the positive controls of PUT and submit. */
+    public final UUID lessonB = UUID.randomUUID();
+    public final UUID lessonVersionB = UUID.randomUUID();
+    public final UUID lessonAForPut = UUID.randomUUID();
+    public final UUID lessonAForSubmit = UUID.randomUUID();
     public final UUID mediaB = UUID.randomUUID();
     public final UUID invitationA = UUID.randomUUID();
     public final UUID invitationB = UUID.randomUUID();
@@ -136,6 +141,22 @@ public final class SweepFixtures {
             su.update("insert into question_group_versions(id,group_id,owner_org_id,exam_code,version_no,status,content,created_by) values (?,?,?,'IELTS',1,'DRAFT','{\"title\":\"a\"}',?)",
                     UUID.randomUUID(), own, orgA, authorA);
         }
+        // P2.4: strategy lessons, same shape: B's published lesson (with its type), and two draft lessons of A's author
+        String lesson = "insert into strategy_lessons(id,owner_org_id,exam_code,created_by) values (?,?,'IELTS',?)";
+        String lessonVersion = "insert into strategy_lesson_versions(id,lesson_id,owner_org_id,exam_code,version_no,title,blocks,created_by) "
+                + "values (?,?,?,'IELTS',1,'Sweep lesson','[{\"type\":\"paragraph\",\"text\":\"x\"}]',?)";
+        String lessonType = "insert into strategy_lesson_types(version_id,type_code,owner_org_id,exam_code) values (?,'IELTS_R_SHORT_ANSWER',?,'IELTS')";
+        su.update(lesson, lessonB, orgB, userB);
+        su.update(lessonVersion, lessonVersionB, lessonB, orgB, userB);
+        su.update(lessonType, lessonVersionB, orgB);
+        su.update("update strategy_lesson_versions set status = 'IN_REVIEW' where id = ?", lessonVersionB);
+        su.update("update strategy_lesson_versions set status = 'PUBLISHED' where id = ?", lessonVersionB);
+        for (UUID own : List.of(lessonAForPut, lessonAForSubmit)) {
+            UUID version = UUID.randomUUID();
+            su.update(lesson, own, orgA, authorA);
+            su.update(lessonVersion, version, own, orgA, authorA);
+            su.update(lessonType, version, orgA);
+        }
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
@@ -237,6 +258,11 @@ public final class SweepFixtures {
         all.put("POST /api/cms/question-groups", ForeignIdSweep.Fixture.write(group, List.of(), none));
         all.put("PUT /api/cms/question-groups/{id}", ForeignIdSweep.Fixture.write(group, List.of(), new ForeignIdSweep.Control(slot("id", groupAForPut), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/question-groups/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", groupAForSubmit), null, ForeignIdSweep.AUTHOR)));
+        // P2.4: strategy lessons, like questions: A's ORG_ADMIN (no AUTHOR grant) is refused on every route and every foreign id; A's author really writes A's drafts
+        String lessonBody = "{\"examCode\":\"IELTS\",\"title\":\"Sweep\",\"blocks\":[{\"type\":\"paragraph\",\"text\":\"x\"}],\"questionTypeCodes\":[\"IELTS_R_SHORT_ANSWER\"]}";
+        all.put("POST /api/cms/strategy-lessons", ForeignIdSweep.Fixture.write(lessonBody, List.of(), none));
+        all.put("PUT /api/cms/strategy-lessons/{id}", ForeignIdSweep.Fixture.write(lessonBody, List.of(), new ForeignIdSweep.Control(slot("id", lessonAForPut), null, ForeignIdSweep.AUTHOR)));
+        all.put("POST /api/cms/strategy-lessons/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", lessonAForSubmit), null, ForeignIdSweep.AUTHOR)));
         return all;
     }
 

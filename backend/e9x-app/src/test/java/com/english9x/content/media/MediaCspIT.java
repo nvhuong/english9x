@@ -43,4 +43,14 @@ class MediaCspIT extends OrgIT {
         assertFalse(csp.get("script-src").contains("'unsafe-inline'") || csp.get("script-src").contains("'unsafe-eval'"));
         assertTrue(csp.containsKey("frame-ancestors") && csp.containsKey("object-src"));
     }
+
+    /** P2.4: the video-embed block shows YouTube or Vimeo in a frame, and only those two origins may be framed (everything else keeps default-src 'self'). */
+    @Test
+    void frameSrcIsExactlyYouTubeAndVimeo() {
+        Map<String, List<String>> csp = directives();
+        assertEquals(List.of("https://www.youtube.com", "https://player.vimeo.com"), csp.get("frame-src"));
+        assertFalse(csp.get("frame-src").contains("*") || csp.get("frame-src").contains("https:") || csp.get("frame-src").contains("'self'"));
+        assertEquals(List.of("'none'"), csp.get("frame-ancestors"), "the site itself is still not frameable");
+        assertEquals(List.of("'none'"), csp.get("object-src"));
+    }
 }
