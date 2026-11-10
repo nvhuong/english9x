@@ -122,7 +122,9 @@
     "pagination": "Phân trang",
     "previous": "Trang trước",
     "next": "Trang sau",
-    "range": "{{from}}–{{to}} trên {{total}}"
+    "range": "{{from}}–{{to}} trên {{total}}",
+    "colActions": "Thao tác",
+    "preview": "Xem trước"
   },
   "errors": {
     "invalid": "Câu hỏi chưa đúng với dạng câu này. Sửa các mục dưới đây rồi lưu lại.",
@@ -143,5 +145,21 @@
     "moveDown": "Chuyển xuống",
     "copy": "Nhân đôi",
     "emptyList": "Chưa có mục nào. Dùng nút bên dưới để thêm."
+  },
+  "variants": {
+    "label": "Cách viết chấp nhận, chỗ trống {{n}}",
+    "help": "Mỗi dòng một cách viết được tính là đúng."
+  },
+  "rows": {
+    "add": "Thêm dòng",
+    "remove": "Xoá",
+    "removeRow": "Xoá dòng {{n}}",
+    "cell": "{{column}}, dòng {{n}}",
+    "actions": "Thao tác",
+    "count_one": "{{count}} dòng",
+    "count_other": "{{count}} dòng"
+  },
+  "preview": {
+    "link": "Xem trước như học viên"
   }
 }

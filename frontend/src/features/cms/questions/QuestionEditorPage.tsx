@@ -142,6 +142,9 @@ function EditBody({ q, type, notice, setNotice }: { q: QuestionVersion; type: Qu
           {t('edit.back')}
         </Link>
         <Heading>{t('edit.title')}</Heading>
+        <Link to={`/cms/questions/${questionId}/preview`} className="self-start text-sm text-primary underline">
+          {t('preview.link')}
+        </Link>
         <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
           <Badge tone={TONE[q.status]}>{t(`status.${q.status}`)}</Badge>
           <span>{t('edit.version', { n: q.versionNo })}</span>

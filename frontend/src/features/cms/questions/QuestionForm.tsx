@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../../../i18n';
 import { Button } from '../../../design';
 import { FormAlert } from '../../auth/components';
+import { RowsTableField } from '../question-form/RowsTableField';
+import { VariantsWidget } from '../question-form/VariantsWidget';
 import { MediaIdWidget } from './MediaIdWidget';
 import { errorSchemaOf, formSchema, formUiSchema, type FormModel } from './schema';
 import type { FieldIssue } from './problems';
@@ -27,7 +29,8 @@ export interface QuestionFormProps {
   actions?: ReactNode;
 }
 
-const widgets = { mediaId: MediaIdWidget };
+const widgets = { mediaId: MediaIdWidget, variants: VariantsWidget };
+const fields = { rowsTable: RowsTableField };
 
 /**
  * The question editor's form, built from the schemas of the type (react-jsonschema-form), plus the same two documents as JSON text for the author who
@@ -131,6 +134,7 @@ export function QuestionForm({ type, model, onChange, onSave, issues, locked = f
             formData={model}
             validator={validator}
             widgets={widgets}
+            fields={fields}
             formContext={{ examCode: type.examCode }}
             extraErrors={extraErrors}
             noValidate

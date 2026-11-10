@@ -22,4 +22,10 @@ export default tseslint.config(
     plugins: { e9x },
     rules: { 'e9x/query-key-helper': 'error' },
   },
+  {
+    // Tests of the context machinery itself seed the cache with literal keys and string organisations on purpose.
+    files: ['src/**/*.test.{ts,tsx}'],
+    plugins: { e9x },
+    rules: { 'e9x/query-key-helper': 'off' },
+  },
 );

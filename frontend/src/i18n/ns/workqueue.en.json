@@ -1,0 +1,27 @@
+{
+  "nav": "My work queue",
+  "title": "My work queue",
+  "description": "What waits for you in the exams you are assigned in this context: your drafts, questions sent back for changes, and questions waiting for your review.",
+  "loading": "Loading…",
+  "noRoleTitle": "No work assigned",
+  "noRole": "You are not an author or a reviewer of any exam in this context.",
+  "emptyTitle": "The queue is empty",
+  "empty": "No drafts, change requests or questions waiting for review are yours.",
+  "errorTitle": "The queue could not be loaded",
+  "error": "Something went wrong. Try again in a few minutes.",
+  "retry": "Reload",
+  "sections": {
+    "drafts": "My drafts",
+    "changes": "Changes requested",
+    "review": "Waiting for my review"
+  },
+  "hints": {
+    "drafts": "Questions you are writing, not yet sent for review.",
+    "changes": "A reviewer sent these back; change them and submit again.",
+    "review": "Other people's questions submitted in the exams you review. You cannot review your own version."
+  },
+  "none": "Nothing here.",
+  "untitled": "(untitled)",
+  "version": "version {{n}}",
+  "preview": "Preview"
+}

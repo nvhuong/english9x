@@ -81,7 +81,7 @@ test.describe('F09 question forms', () => {
       await page.locator(`#root_content_options_${i}_key`).fill(key);
       await page.locator(`#root_content_options_${i}_text`).fill(`choice ${i + 1}`);
     }
-    await page.locator('#root_answerKey_slots_0_0').fill('C');
+    await page.locator('#root_answerKey_slots_0').fill('C');
     await page.getByRole('button', { name: 'Lưu bản nháp' }).click();
     const again = page.getByRole('alert').filter({ hasText: 'chưa đúng với dạng câu' });
     await expect(again.getByText('content.options[3].key')).toBeVisible();
@@ -96,7 +96,7 @@ test.describe('F09 question forms', () => {
     await page.reload();
     await expect(page.locator('#root_content_stem')).toHaveValue(stem);
     await expect(page.locator('#root_content_options_3_key')).toHaveValue('D');
-    await expect(page.locator('#root_answerKey_slots_0_0')).toHaveValue('C');
+    await expect(page.locator('#root_answerKey_slots_0')).toHaveValue('C');
     await expect(page.locator('#root_explanation')).toHaveValue('Cần một động từ ở quá khứ.');
     // the list shows it, with its status
     await page.goto('/cms/questions');
@@ -118,7 +118,7 @@ test.describe('F09 question forms', () => {
     await expect(page.getByLabel('Âm thanh (mã tệp)')).toHaveValue(/^[0-9a-f-]{36}$/);
     await page.getByLabel('Hình ảnh (mã tệp)').fill(s.imageId);
     for (const [i, key] of ['A', 'B', 'C', 'D'].entries()) await page.locator(`#root_content_options_${i}_key`).fill(key);
-    await page.locator('#root_answerKey_slots_0_0').fill('A');
+    await page.locator('#root_answerKey_slots_0').fill('A');
     await page.getByRole('button', { name: 'Lưu bản nháp' }).click();
     await expect(page).toHaveURL(/\/cms\/questions\/[0-9a-f-]{36}$/);
 

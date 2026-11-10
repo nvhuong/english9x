@@ -9,8 +9,8 @@
     },
     {
       "id": "F06",
-      "pending": "'AUTHOR IELTS không thấy/không sửa được câu TOEIC' and 'REVIEWER không duyệt được bản mình soạn' through the CMS screens: needs the question editor and the review workflow. Today: the exam a role is granted for travels from invitation to grants, the server's Authz answers per exam (canReviewOwnVersion is false), and the screens an AUTHOR/REVIEWER can open.",
-      "owner": "P2.8 (question editor), P2.9 (review queue)"
+      "pending": "Done through the real stack (P2.8): the work queue and the question editor are scoped to the exams of the person's grants ('AUTHOR IELTS không thấy/không sửa được câu TOEIC': the queue has nothing of TOEIC and the question cannot be opened or previewed), and a person who is both author and reviewer is not offered their own version to review in the queue. Pending: 'REVIEWER không duyệt được bản mình soạn' on the review SCREEN itself (the server refuses it, canReviewOwnVersion is false; the review screen that would show the refusal is P2.9's).",
+      "owner": "P2.9 (review queue and decision screens)"
     },
     {
       "id": "F07",
@@ -91,6 +91,11 @@
       "id": "F40",
       "pending": "Done through the real stack (P5.2): the SYS_ADMIN sets the receiving account on the screen, the order page shows the QR (a 512 px PNG), the account, the exact amount and note, the SYS_ADMIN confirms one order and rejects another on the queue screen, access opens from the confirmation, the learner is told in the app and by mail, the audit log holds the decisions without an account number or the reason's text, a second decision is 409. Pending: the browser steps that PLACE the order (plan/course pickers, checkout page) and decoding the QR on the page with jsQR. The scan with three real bank apps is a manual pre-release step of the owner.",
       "owner": "P5.4 (checkout screens, jsQR decode)"
+    },
+    {
+      "id": "F10",
+      "pending": "Done through the real stack (P2.8): the preview of every question type of the catalog is opened from the editor, shows the learner's side (stem, options, gaps, media) and never a word of the solution side (answer key, explanation, transcript, model answer). Pending: 'giống phòng thi': until the exam room of P3.4 exists the preview is the CMS's minimal renderer keyed by InteractionKind; P3.4 replaces it with the room's own question component and this spec must then also compare the preview with the room's rendering of the same question.",
+      "owner": "P3.4 (exam room component replaces the minimal renderer)"
     }
   ]
 }
