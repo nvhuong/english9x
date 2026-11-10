@@ -1,0 +1,47 @@
+{
+  "nav": { "import": "Import Excel" },
+  "title": "Import câu hỏi từ Excel",
+  "description": "Tải mẫu Excel của một dạng câu, điền mỗi dòng một câu hỏi, rồi tải lên cùng file zip media (nếu có). Chỉ cần một dòng sai là cả lô bị từ chối và không câu nào được tạo; khi mọi dòng đúng, tất cả thành bản nháp.",
+  "none": { "title": "Chưa thể import", "description": "Bạn chưa là tác giả của đề thi nào trong ngữ cảnh này nên chưa thể import câu hỏi." },
+  "type": { "label": "Dạng câu hỏi" },
+  "step1": { "title": "1. Tải mẫu", "download": "Tải mẫu Excel" },
+  "step2": {
+    "title": "2. Tải lên",
+    "fileLabel": "File Excel đã điền (.xlsx)",
+    "zipLabel": "File zip media (tuỳ chọn)",
+    "zipHint": "Tên tệp trong các cột *_media_file phải có trong file zip.",
+    "start": "Bắt đầu import"
+  },
+  "progress": { "label": "Tiến độ tải lên" },
+  "result": {
+    "title": "Kết quả",
+    "running": "Máy chủ đang kiểm tra file: {{done}}/{{total}} dòng…",
+    "SUCCEEDED": "Đã tạo {{count}} bản nháp.",
+    "REJECTED": "File bị từ chối: {{errors}} lỗi.",
+    "FAILED": "Import không chạy được.",
+    "submit": "Gửi duyệt cả lô",
+    "submitted": "Đã gửi duyệt cả lô.",
+    "nothingCreated": "Không có câu hỏi nào được tạo. Sửa các dòng lỗi rồi tải lại.",
+    "downloadReport": "Tải file Excel tô đỏ ô lỗi",
+    "failedHint": "Import không chạy được và đã dừng. Hãy thử tải lên lại; nếu vẫn lỗi, báo quản trị viên."
+  },
+  "status": { "QUEUED": "Đang chờ", "RUNNING": "Đang chạy", "SUCCEEDED": "Thành công", "REJECTED": "Bị từ chối", "FAILED": "Thất bại" },
+  "errors": {
+    "table": "Lỗi theo dòng",
+    "row": "Dòng",
+    "column": "Cột",
+    "message": "Lỗi",
+    "wholeFile": "Cả file",
+    "truncated": "Hiển thị {{shown}} trên {{total}} lỗi; tải file Excel tô đỏ để xem tất cả.",
+    "network": "Mất kết nối khi tải lên. Hãy thử lại.",
+    "notXlsx": "File phải là Excel (.xlsx) làm từ mẫu.",
+    "notZip": "File media phải là .zip.",
+    "tooLarge": "File lớn hơn giới hạn của mỗi lô.",
+    "type": "Dạng câu hỏi này không import được.",
+    "notSubmittable": "Chỉ lô đã import thành công mới gửi duyệt được.",
+    "unavailable": "Kho lưu trữ tệp chưa sẵn sàng. Hãy thử lại sau.",
+    "forbidden": "Bạn không có quyền import dạng câu hỏi này.",
+    "notFound": "Không tìm thấy lần import này.",
+    "generic": "Có lỗi xảy ra. Hãy thử lại."
+  }
+}

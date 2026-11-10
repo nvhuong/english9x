@@ -32,6 +32,8 @@ public final class SweepFixtures {
     /** The version of {@link #questionAForPut}: a member A's groups may list. */
     public final UUID questionVersionA = UUID.randomUUID();
     public final UUID questionAForSubmit = UUID.randomUUID();
+    public final UUID importA = UUID.randomUUID();
+    public final UUID importB = UUID.randomUUID();
     public final UUID groupAForPut = UUID.randomUUID();
     /** The version of {@link #groupAForPut}: a group version A's tests may list. */
     public final UUID groupVersionA = UUID.randomUUID();
@@ -156,6 +158,16 @@ public final class SweepFixtures {
             su.update("insert into question_group_versions(id,group_id,owner_org_id,exam_code,version_no,status,content,created_by) values (?,?,?,'IELTS',1,'DRAFT','{\"title\":\"a\"}',?)",
                     own.equals(groupAForPut) ? groupVersionA : UUID.randomUUID(), own, orgA, authorA);
         }
+        // P2.7: org B's import (a finished one), and A's author's finished import with one draft (the positive control of the submit route)
+        su.update("insert into import_jobs(id,owner_org_id,user_id,exam_code,type_code,status,source_name,created_count,total_rows,finished_at) values (?,?,?,'IELTS','IELTS_R_SHORT_ANSWER','SUCCEEDED','b.xlsx',0,0,now())",
+                importB, orgB, userB);
+        UUID importedQuestion = UUID.randomUUID();
+        UUID importedVersion = UUID.randomUUID();
+        su.update(q, importedQuestion, orgA, authorA);
+        su.update(qv, importedVersion, importedQuestion, orgA, "DRAFT", authorA);
+        su.update("insert into import_jobs(id,owner_org_id,user_id,exam_code,type_code,status,source_name,created_count,total_rows,finished_at) values (?,?,?,'IELTS','IELTS_R_SHORT_ANSWER','SUCCEEDED','a.xlsx',1,1,now())",
+                importA, orgA, authorA);
+        su.update("insert into import_job_versions(import_job_id,position,row_no,question_version_id) values (?,1,2,?)", importA, importedVersion);
         // P2.6: org B's test (a DRAFT version with a Listening part holding B's group), and two draft tests of A's author (no parts yet)
         UUID testVersionB = UUID.randomUUID();
         su.update("insert into test_versions(id,test_id,owner_org_id,exam_code,variant,version_no,status,title,created_by) values (?,?,?,'IELTS','AC',1,'DRAFT','B test',?)", testVersionB, testB, orgB, userB);
@@ -234,6 +246,7 @@ public final class SweepFixtures {
             Map.entry("PUT /api/me/notification-prefs", OWN),
             Map.entry("POST /api/me/telegram/link", OWN),
             Map.entry("DELETE /api/me/telegram", OWN),
+            Map.entry("POST /api/cms/import", "P2.7: takes no id of a tenant: the owner is the bound context, the type a query parameter, the files the body; refused 403 for anybody who is no AUTHOR of the exam in that context (ImportJobIT.onlyAnAuthorOfTheExamImportsAndOnlyItsTypes). The job it queues acts as the uploader under the same policies"),
             Map.entry("POST /api/orders", OWN + " (the plan and the courses are shared catalogue rows, not a tenant's; OrderServiceIT covers who may order what)"));
     // (POST /api/cms/media is not exempt: it has a typed fixture below, with a multipart body)
 
@@ -332,6 +345,10 @@ public final class SweepFixtures {
         all.put("PUT /api/cms/tests/{id}/structure", ForeignIdSweep.Fixture.write(structureBody, List.of(), new ForeignIdSweep.Control(slot("id", testAForPut), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/tests/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null,
                 "a test goes to review only when every skill of its exam has questions (IELTS: four, each with a published group); TestServiceIT.aTestWithoutASkillIsNotSentForReview... measures the 202 and the refusals, the foreign ids are walked here"));
+        // P2.7: the upload takes no id of a tenant (the owner is the bound context, the type a query parameter); the submit takes the import's id: B's import is a 404
+        // for A's people, A's author really submits A's own. The template is a catalogue item, the same for every tenant: the ORG_ADMIN without AUTHOR is refused.
+        all.put("POST /api/cms/import/{jobId}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("jobId", importA), null, ForeignIdSweep.AUTHOR)));
+        all.put("GET /api/cms/import/templates/{typeCode}.xlsx", ForeignIdSweep.Fixture.read(List.of(new ForeignIdSweep.Attempt(slot("typeCode", "IELTS_R_SHORT_ANSWER")))));
         all.put("POST /api/cms/question-groups", ForeignIdSweep.Fixture.write(group, List.of(), none));
         all.put("PUT /api/cms/question-groups/{id}", ForeignIdSweep.Fixture.write(group, List.of(), new ForeignIdSweep.Control(slot("id", groupAForPut), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/question-groups/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", groupAForSubmit), null, ForeignIdSweep.AUTHOR)));
@@ -400,6 +417,8 @@ public final class SweepFixtures {
             Map.entry("exams", "reference data every tenant shares (IELTS, TOEIC), the same for everybody; read-only for the application (P2.1)"),
             Map.entry("exam_sections", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"),
             Map.entry("interaction_kinds", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"),
+            Map.entry("import_errors", "P2.7: no tenant column of its own; the request role reads and writes a row only while its import (import_jobs, swept) is visible to it, and no endpoint takes the id of an error"),
+            Map.entry("import_job_versions", "P2.7: as import_errors: the drafts of a lot, visible only with their import; no endpoint takes their ids"),
             Map.entry("question_types", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"));
 
     /**

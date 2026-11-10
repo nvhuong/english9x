@@ -1,6 +1,7 @@
 package com.english9x.content.media.internal;
 
 import io.minio.BucketExistsArgs;
+import io.minio.DownloadObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -71,6 +72,16 @@ final class MinioObjectStore implements ObjectStore {
             internal.uploadObject(UploadObjectArgs.builder().bucket(bucket).object(key).filename(file.toString()).contentType(contentType).build());
         } catch (Exception e) {
             throw new MediaStorageException("cannot store the media object", e);
+        }
+    }
+
+    @Override
+    public void get(String key, Path target) {
+        try {
+            java.nio.file.Files.deleteIfExists(target);
+            internal.downloadObject(DownloadObjectArgs.builder().bucket(bucket).object(key).filename(target.toString()).build());
+        } catch (Exception e) {
+            throw new MediaStorageException("cannot read the stored object", e);
         }
     }
 
