@@ -18,7 +18,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -28,7 +27,6 @@ import org.springframework.test.context.DynamicPropertySource;
  * Reading AC and GT are two tables, only PUBLISHED versions count (the highest), the version used is returned, and a table of
  * another organisation is never found. Nobody is a mock: a user "is" whoever {@link CurrentContextHolder} is bound to.
  */
-@Import(com.english9x.catalog.internal.TestLookupStubConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class ScoreTablesIT {
 
@@ -38,7 +36,7 @@ class ScoreTablesIT {
     static final UUID LEARNER_A = UUID.randomUUID();
     static final UUID LEARNER_B = UUID.randomUUID();
     static final UUID LEARNER_P = UUID.randomUUID();      // member of nothing: the personal context
-    // overrides belong to a TEST; a test has versions (the lookup of P2.6 is stubbed, see TestLookupStubConfig)
+    // overrides belong to a TEST; a test has versions (TestLookup reads test_versions)
     static final UUID T_E9 = UUID.randomUUID();           // a test of English9x with an override
     static final UUID T_A = UUID.randomUUID();            // a test of org A with an override
     static final UUID TEST_E9 = UUID.randomUUID();        // a version of T_E9
@@ -82,15 +80,20 @@ class ScoreTablesIT {
     @BeforeAll
     static void fixtures(@Autowired JdbcTemplate migrated) {   // the parameter makes Spring boot (and Flyway migrate) first
         su = new JdbcTemplate(TestPostgres.superuser(DB));
-        // P2.6 lifts the refusal of TEST scope (CatalogTestScopeRefusedIT measures it); this throwaway database does it now
-        su.execute("alter table score_tables drop constraint score_tables_test_scope_refused_ck");
         // this fixture keeps a draft and a version under review beside the published one; P2.5 allows one open version per table (the CMS path), not the fixtures of a resolver test
         su.execute("drop index score_table_versions_one_open_uq");
-        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_E9, T_E9);
-        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_E9_V2, T_E9);
-        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_A, T_A);
-        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_OTHER, UUID.randomUUID());
         su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER')", ORG_A, ORG_B);
+        // real tests (P2.6): an override belongs to a test that exists, of the same owner; TestLookup reads test_versions
+        UUID by = com.english9x.content.test.TestRows.author(su);
+        for (Object[] t : new Object[][] {{T_E9, null}, {T_A, ORG_A}}) {
+            su.update("insert into tests(id,owner_org_id,exam_code,created_by) values (?,?,'IELTS',?)", t[0], t[1], by);
+        }
+        UUID other = UUID.randomUUID();
+        su.update("insert into tests(id,owner_org_id,exam_code,created_by) values (?,NULL,'IELTS',?)", other, by);
+        for (Object[] v : new Object[][] {{TEST_E9, T_E9, null, 1}, {TEST_E9_V2, T_E9, null, 2}, {TEST_A, T_A, ORG_A, 1}, {TEST_OTHER, other, null, 1}}) {
+            su.update("insert into test_versions(id,test_id,owner_org_id,exam_code,version_no,status,title,created_by) values (?,?,?,'IELTS',?,'PUBLISHED','t',?)",
+                    v[0], v[1], v[2], v[3], by);
+        }
         for (UUID u : new UUID[] {LEARNER_A, LEARNER_B, LEARNER_P}) {
             su.update("insert into users(id,email) values (?,?)", u, u + "@x.test");
         }

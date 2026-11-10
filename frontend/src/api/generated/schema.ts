@@ -7,7 +7,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -71,7 +71,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -119,9 +119,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
-        post: operations["create_7"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -153,7 +153,7 @@ export interface paths {
         };
         get: operations["all"];
         put?: never;
-        post: operations["create_6"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -392,13 +392,13 @@ export interface paths {
             cookie?: never;
         };
         /** List grading skills (the latest version of each) the caller may read, newest change first */
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         /**
          * Create the grading skill of a question type (version 1, a draft)
          * @description 422 with errors[] (JSON paths such as resultSchema.properties.task_response, criteria[1].step) when the content does not match its form; 409 grading-skill-exists (with skillId) when the owner has a skill for the type.
          */
-        post: operations["create_5"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -453,7 +453,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review */
-        post: operations["submit_4"];
+        post: operations["submit_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -468,7 +468,7 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a skill, oldest first */
-        get: operations["versions_4"];
+        get: operations["versions_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -518,13 +518,13 @@ export interface paths {
             cookie?: never;
         };
         /** List groups (the latest version of each) the caller may read */
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         /**
          * Create a question group (version 1, a draft) with its members
          * @description 422 with errors[] by JSON path, as for a question.
          */
-        post: operations["create_4"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -559,7 +559,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review; it is approved only when every member question is PUBLISHED */
-        post: operations["submit_3"];
+        post: operations["submit_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -574,7 +574,7 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a group, oldest first */
-        get: operations["versions_3"];
+        get: operations["versions_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -607,13 +607,13 @@ export interface paths {
             cookie?: never;
         };
         /** List questions (the latest version of each) the caller may read, newest change first */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         /**
          * Create a question (version 1, a draft) of a question type
          * @description 422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.
          */
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -648,7 +648,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review (the workflow records the author, audits and notifies the reviewers) */
-        post: operations["submit_2"];
+        post: operations["submit_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -663,7 +663,7 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a question, oldest first, with the answer key (for comparing versions) */
-        get: operations["versions_2"];
+        get: operations["versions_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -680,13 +680,13 @@ export interface paths {
             cookie?: never;
         };
         /** List score tables (the latest version of each) the caller may read, newest change first */
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         /**
          * Create the conversion table of an exam skill (version 1, a draft)
          * @description 422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). 409 test-scope-unavailable for scope TEST; 409 score-table-exists (with tableId) when the exam skill already has a table.
          */
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -721,7 +721,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review */
-        post: operations["submit_1"];
+        post: operations["submit_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -736,7 +736,7 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a table, oldest first */
-        get: operations["versions_1"];
+        get: operations["versions_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -753,13 +753,13 @@ export interface paths {
             cookie?: never;
         };
         /** List lessons (the latest version of each) the caller may read, newest change first */
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         /**
          * Create a strategy lesson (version 1, a draft)
          * @description 422 with errors[] (JSON paths such as blocks[2].url) when a block does not match its type, a video address is not YouTube/Vimeo, a file or embedded question is not usable, or no question type is given.
          */
-        post: operations["create_1"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -794,7 +794,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review (refused at approval while an embedded question is not published) */
-        post: operations["submit"];
+        post: operations["submit_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -809,6 +809,101 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a lesson, oldest first */
+        get: operations["versions_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List tests (the latest version of each) the caller may read */
+        get: operations["list_2"];
+        put?: never;
+        /**
+         * Create a test (version 1, an empty draft)
+         * @description 422 with errors[] by JSON path (examCode, variant, title).
+         */
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/tests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One test: its latest version, or the numbered one, with the check against the exam */
+        get: operations["get_5"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/tests/{id}/structure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the structure: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)
+         * @description 422 with errors[] by JSON path. A count that differs from the exam's sections is not an error: it comes back as warnings.
+         */
+        put: operations["structure"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/tests/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit the open draft for review
+         * @description 422 test-skill-missing while a skill of the exam has no question. The review approves it only when every group is PUBLISHED.
+         */
+        post: operations["submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/tests/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every version of a test, oldest first */
         get: operations["versions"];
         put?: never;
         post?: never;
@@ -889,7 +984,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1229,6 +1324,150 @@ export interface components {
         AuthConfig: {
             /** @description false when Google sign-in is not configured: hide the button */
             googleEnabled: boolean;
+        };
+        CmsTestCreateRequest: {
+            /**
+             * @description the exam; fixed for the life of the test
+             * @example IELTS
+             */
+            examCode?: string;
+            /** @description the name the learner sees */
+            title?: string;
+            /**
+             * @description IELTS: AC or GT; an exam with no variants: null
+             * @example AC
+             */
+            variant?: string;
+        };
+        CmsTestGroup: {
+            /** Format: uuid */
+            groupId?: string;
+            /** Format: uuid */
+            groupVersionId?: string;
+            /** Format: int32 */
+            questions?: number;
+            title?: string;
+        };
+        CmsTestIssue: {
+            code?: string;
+            message?: string;
+            sectionCode?: string;
+            skill?: string;
+        };
+        CmsTestOverride: {
+            /** Format: uuid */
+            scoreTableId?: string;
+            skill?: string;
+        };
+        CmsTestPage: {
+            items?: components["schemas"]["CmsTestSummary"][];
+            /** Format: int32 */
+            limit?: number;
+            /** Format: int32 */
+            offset?: number;
+        };
+        CmsTestPart: {
+            /** Format: int32 */
+            durationSec?: number;
+            groups?: components["schemas"]["CmsTestGroup"][];
+            /** Format: int32 */
+            position?: number;
+            /** Format: int32 */
+            questions?: number;
+            sectionCode?: string;
+            skill?: string;
+        };
+        CmsTestPartRequest: {
+            /**
+             * Format: int32
+             * @description the time limit of the section, in seconds
+             */
+            durationSec?: number;
+            /** @description the group versions asked in this part, in order; each one a question group of this exam that the author can read */
+            groups?: string[];
+            /** @description a section of the exam: a TOEIC part (P1..P7) or an IELTS skill (LISTENING, READING, WRITING, SPEAKING) */
+            sectionCode?: string;
+        };
+        CmsTestScoreOverrideRequest: {
+            /** Format: uuid */
+            scoreTableId?: string;
+            skill?: string;
+        };
+        CmsTestSectionCheck: {
+            /** Format: int32 */
+            actual?: number;
+            /** Format: int32 */
+            expected?: number;
+            sectionCode?: string;
+            skill?: string;
+            /** @description OK, MISSING, SHORT or OVER */
+            state?: string;
+        };
+        CmsTestStructureRequest: {
+            /**
+             * Format: int32
+             * @description how many times an attempt may be reopened; null = the default of the exam
+             */
+            maxResumes?: number;
+            parts?: components["schemas"]["CmsTestPartRequest"][];
+            /** @description conversion tables of TEST scope of this test that the structure declares; each must exist for this test and skill */
+            scoreTableOverrides?: components["schemas"]["CmsTestScoreOverrideRequest"][];
+            /** @description null keeps the title */
+            title?: string;
+        };
+        CmsTestSubmitted: {
+            /** Format: uuid */
+            reviewId?: string;
+        };
+        CmsTestSummary: {
+            /** Format: uuid */
+            createdBy?: string;
+            examCode?: string;
+            /** Format: int32 */
+            parts?: number;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            /** Format: uuid */
+            testId?: string;
+            title?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            variant?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
+        CmsTestVersion: {
+            /** @description a skill with no question: the test cannot be sent for review */
+            blockers?: components["schemas"]["CmsTestIssue"][];
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            examCode?: string;
+            /** Format: int32 */
+            maxResumes?: number;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            parts?: components["schemas"]["CmsTestPart"][];
+            scoreTableOverrides?: components["schemas"]["CmsTestOverride"][];
+            /** @description one line per section of the exam: what it needs and what the test has */
+            sections?: components["schemas"]["CmsTestSectionCheck"][];
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            /** Format: uuid */
+            testId?: string;
+            title?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            variant?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+            /** @description count mismatches: they warn, they do not stop a review */
+            warnings?: components["schemas"]["CmsTestIssue"][];
         };
         ConfirmOrderRequest: {
             /** @description The bank's transaction reference, if the administrator has it (at most 100 characters) */
@@ -2005,7 +2244,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 action?: string;
@@ -2163,7 +2402,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 status?: string;
@@ -2265,7 +2504,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -2294,7 +2533,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -2418,7 +2657,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -2893,7 +3132,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 exam?: string;
@@ -2926,7 +3165,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -3060,7 +3299,7 @@ export interface operations {
             };
         };
     };
-    submit_4: {
+    submit_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -3091,7 +3330,7 @@ export interface operations {
             };
         };
     };
-    versions_4: {
+    versions_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -3187,7 +3426,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 exam?: string;
@@ -3221,7 +3460,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -3322,7 +3561,7 @@ export interface operations {
             };
         };
     };
-    submit_3: {
+    submit_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3353,7 +3592,7 @@ export interface operations {
             };
         };
     };
-    versions_3: {
+    versions_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3415,7 +3654,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 exam?: string;
@@ -3451,7 +3690,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -3552,7 +3791,7 @@ export interface operations {
             };
         };
     };
-    submit_2: {
+    submit_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -3583,7 +3822,7 @@ export interface operations {
             };
         };
     };
-    versions_2: {
+    versions_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -3614,7 +3853,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 exam?: string;
@@ -3647,7 +3886,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -3748,7 +3987,7 @@ export interface operations {
             };
         };
     };
-    submit_1: {
+    submit_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3779,7 +4018,7 @@ export interface operations {
             };
         };
     };
-    versions_1: {
+    versions_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3810,7 +4049,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: {
                 exam?: string;
@@ -3843,7 +4082,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3944,7 +4183,7 @@ export interface operations {
             };
         };
     };
-    submit: {
+    submit_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3975,7 +4214,7 @@ export interface operations {
             };
         };
     };
-    versions: {
+    versions_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3993,6 +4232,203 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["StrategyLessonVersion"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_2: {
+        parameters: {
+            query?: {
+                exam?: string;
+                status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsTestPage"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CmsTestCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsTestVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_5: {
+        parameters: {
+            query?: {
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsTestVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    structure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CmsTestStructureRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsTestVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsTestSubmitted"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    versions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsTestVersion"][];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -4155,7 +4591,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 limit?: number;

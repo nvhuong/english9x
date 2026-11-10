@@ -128,7 +128,7 @@ export const seed = {
    * the version. The author submits it (and must be its creator), the reviewer approves it (outcome 'approved'), sends it back ('changes'), or it is
    * left in review ('submitted'). A stand-in for the CMS review screens (P2.9).
    */
-  reviewVersion: (opts: { type: 'question' | 'question_group' | 'strategy_lesson' | 'score_table' | 'grading_skill'; versionId: string; authorId: string; reviewerId?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
+  reviewVersion: (opts: { type: 'question' | 'question_group' | 'strategy_lesson' | 'score_table' | 'grading_skill' | 'test'; versionId: string; authorId: string; reviewerId?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
     post<{ reviewId: string; versionId: string; outcome: string }>('review-version', { orgId: null, outcome: 'approved', ...opts }),
 
   /** A centre with teachers and learners (classes, members). Needs the classroom module. */

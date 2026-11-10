@@ -186,6 +186,340 @@
         "required" : [ "googleEnabled" ],
         "type" : "object"
       },
+      "CmsTestCreateRequest" : {
+        "properties" : {
+          "examCode" : {
+            "description" : "the exam; fixed for the life of the test",
+            "example" : "IELTS",
+            "type" : "string"
+          },
+          "title" : {
+            "description" : "the name the learner sees",
+            "type" : "string"
+          },
+          "variant" : {
+            "description" : "IELTS: AC or GT; an exam with no variants: null",
+            "example" : "AC",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestGroup" : {
+        "properties" : {
+          "groupId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "groupVersionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "questions" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestIssue" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "sectionCode" : {
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestOverride" : {
+        "properties" : {
+          "scoreTableId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestSummary"
+            },
+            "type" : "array"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "offset" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestPart" : {
+        "properties" : {
+          "durationSec" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "groups" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestGroup"
+            },
+            "type" : "array"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "questions" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sectionCode" : {
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestPartRequest" : {
+        "properties" : {
+          "durationSec" : {
+            "description" : "the time limit of the section, in seconds",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "groups" : {
+            "description" : "the group versions asked in this part, in order; each one a question group of this exam that the author can read",
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "sectionCode" : {
+            "description" : "a section of the exam: a TOEIC part (P1..P7) or an IELTS skill (LISTENING, READING, WRITING, SPEAKING)",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestScoreOverrideRequest" : {
+        "properties" : {
+          "scoreTableId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestSectionCheck" : {
+        "properties" : {
+          "actual" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "expected" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sectionCode" : {
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "state" : {
+            "description" : "OK, MISSING, SHORT or OVER",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestStructureRequest" : {
+        "properties" : {
+          "maxResumes" : {
+            "description" : "how many times an attempt may be reopened; null = the default of the exam",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "parts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestPartRequest"
+            },
+            "type" : "array"
+          },
+          "scoreTableOverrides" : {
+            "description" : "conversion tables of TEST scope of this test that the structure declares; each must exist for this test and skill",
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestScoreOverrideRequest"
+            },
+            "type" : "array"
+          },
+          "title" : {
+            "description" : "null keeps the title",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestSubmitted" : {
+        "properties" : {
+          "reviewId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestSummary" : {
+        "properties" : {
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "parts" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "testId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "variant" : {
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsTestVersion" : {
+        "properties" : {
+          "blockers" : {
+            "description" : "a skill with no question: the test cannot be sent for review",
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestIssue"
+            },
+            "type" : "array"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "maxResumes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "parts" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestPart"
+            },
+            "type" : "array"
+          },
+          "scoreTableOverrides" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestOverride"
+            },
+            "type" : "array"
+          },
+          "sections" : {
+            "description" : "one line per section of the exam: what it needs and what the test has",
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestSectionCheck"
+            },
+            "type" : "array"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "testId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "variant" : {
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "warnings" : {
+            "description" : "count mismatches: they warn, they do not stop a review",
+            "items" : {
+              "$ref" : "#/components/schemas/CmsTestIssue"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "ConfirmOrderRequest" : {
         "properties" : {
           "bankRef" : {
@@ -2006,7 +2340,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_10",
+        "operationId" : "list_11",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -2223,7 +2557,7 @@
     },
     "/api/admin/orders" : {
       "get" : {
-        "operationId" : "list_9",
+        "operationId" : "list_10",
         "parameters" : [ {
           "in" : "query",
           "name" : "status",
@@ -2359,7 +2693,7 @@
     },
     "/api/admin/organizations" : {
       "get" : {
-        "operationId" : "list_7",
+        "operationId" : "list_8",
         "responses" : {
           "200" : {
             "content" : {
@@ -2388,7 +2722,7 @@
         "tags" : [ "org-controller" ]
       },
       "post" : {
-        "operationId" : "create_7",
+        "operationId" : "create_8",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2519,7 +2853,7 @@
         "tags" : [ "plan-controller" ]
       },
       "post" : {
-        "operationId" : "create_6",
+        "operationId" : "create_7",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3036,7 +3370,7 @@
     },
     "/api/cms/grading-skills" : {
       "get" : {
-        "operationId" : "list_6",
+        "operationId" : "list_7",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -3088,7 +3422,7 @@
       },
       "post" : {
         "description" : "422 with errors[] (JSON paths such as resultSchema.properties.task_response, criteria[1].step) when the content does not match its form; 409 grading-skill-exists (with skillId) when the owner has a skill for the type.",
-        "operationId" : "create_5",
+        "operationId" : "create_6",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3261,7 +3595,7 @@
     },
     "/api/cms/grading-skills/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_4",
+        "operationId" : "submit_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3299,7 +3633,7 @@
     },
     "/api/cms/grading-skills/{id}/versions" : {
       "get" : {
-        "operationId" : "versions_4",
+        "operationId" : "versions_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3415,7 +3749,7 @@
     },
     "/api/cms/question-groups" : {
       "get" : {
-        "operationId" : "list_5",
+        "operationId" : "list_6",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -3475,7 +3809,7 @@
       },
       "post" : {
         "description" : "422 with errors[] by JSON path, as for a question.",
-        "operationId" : "create_4",
+        "operationId" : "create_5",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3606,7 +3940,7 @@
     },
     "/api/cms/question-groups/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_3",
+        "operationId" : "submit_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3644,7 +3978,7 @@
     },
     "/api/cms/question-groups/{id}/versions" : {
       "get" : {
-        "operationId" : "versions_3",
+        "operationId" : "versions_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3724,7 +4058,7 @@
     },
     "/api/cms/questions" : {
       "get" : {
-        "operationId" : "list_4",
+        "operationId" : "list_5",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -3799,7 +4133,7 @@
       },
       "post" : {
         "description" : "422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.",
-        "operationId" : "create_3",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3930,7 +4264,7 @@
     },
     "/api/cms/questions/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_2",
+        "operationId" : "submit_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3968,7 +4302,7 @@
     },
     "/api/cms/questions/{id}/versions" : {
       "get" : {
-        "operationId" : "versions_2",
+        "operationId" : "versions_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4009,7 +4343,7 @@
     },
     "/api/cms/score-tables" : {
       "get" : {
-        "operationId" : "list_3",
+        "operationId" : "list_4",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -4061,7 +4395,7 @@
       },
       "post" : {
         "description" : "422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). 409 test-scope-unavailable for scope TEST; 409 score-table-exists (with tableId) when the exam skill already has a table.",
-        "operationId" : "create_2",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4192,7 +4526,7 @@
     },
     "/api/cms/score-tables/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_1",
+        "operationId" : "submit_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4230,7 +4564,7 @@
     },
     "/api/cms/score-tables/{id}/versions" : {
       "get" : {
-        "operationId" : "versions_1",
+        "operationId" : "versions_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4271,7 +4605,7 @@
     },
     "/api/cms/strategy-lessons" : {
       "get" : {
-        "operationId" : "list_2",
+        "operationId" : "list_3",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -4323,7 +4657,7 @@
       },
       "post" : {
         "description" : "422 with errors[] (JSON paths such as blocks[2].url) when a block does not match its type, a video address is not YouTube/Vimeo, a file or embedded question is not usable, or no question type is given.",
-        "operationId" : "create_1",
+        "operationId" : "create_2",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4454,7 +4788,7 @@
     },
     "/api/cms/strategy-lessons/{id}/submit" : {
       "post" : {
-        "operationId" : "submit",
+        "operationId" : "submit_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4492,7 +4826,7 @@
     },
     "/api/cms/strategy-lessons/{id}/versions" : {
       "get" : {
-        "operationId" : "versions",
+        "operationId" : "versions_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4529,6 +4863,280 @@
         },
         "summary" : "Every version of a lesson, oldest first",
         "tags" : [ "strategy-controller" ]
+      }
+    },
+    "/api/cms/tests" : {
+      "get" : {
+        "operationId" : "list_2",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsTestPage"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "List tests (the latest version of each) the caller may read",
+        "tags" : [ "test-controller" ]
+      },
+      "post" : {
+        "description" : "422 with errors[] by JSON path (examCode, variant, title).",
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CmsTestCreateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsTestVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create a test (version 1, an empty draft)",
+        "tags" : [ "test-controller" ]
+      }
+    },
+    "/api/cms/tests/{id}" : {
+      "get" : {
+        "operationId" : "get_5",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "version",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsTestVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One test: its latest version, or the numbered one, with the check against the exam",
+        "tags" : [ "test-controller" ]
+      }
+    },
+    "/api/cms/tests/{id}/structure" : {
+      "put" : {
+        "description" : "422 with errors[] by JSON path. A count that differs from the exam's sections is not an error: it comes back as warnings.",
+        "operationId" : "structure",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CmsTestStructureRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsTestVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Set the structure: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)",
+        "tags" : [ "test-controller" ]
+      }
+    },
+    "/api/cms/tests/{id}/submit" : {
+      "post" : {
+        "description" : "422 test-skill-missing while a skill of the exam has no question. The review approves it only when every group is PUBLISHED.",
+        "operationId" : "submit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsTestSubmitted"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit the open draft for review",
+        "tags" : [ "test-controller" ]
+      }
+    },
+    "/api/cms/tests/{id}/versions" : {
+      "get" : {
+        "operationId" : "versions",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/CmsTestVersion"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Every version of a test, oldest first",
+        "tags" : [ "test-controller" ]
       }
     },
     "/api/invitations/{token}/accept" : {
@@ -4685,7 +5293,7 @@
     },
     "/api/me/notifications" : {
       "get" : {
-        "operationId" : "list_8",
+        "operationId" : "list_9",
         "parameters" : [ {
           "in" : "query",
           "name" : "limit",

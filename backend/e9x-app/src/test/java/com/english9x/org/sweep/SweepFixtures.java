@@ -33,6 +33,12 @@ public final class SweepFixtures {
     public final UUID questionVersionA = UUID.randomUUID();
     public final UUID questionAForSubmit = UUID.randomUUID();
     public final UUID groupAForPut = UUID.randomUUID();
+    /** The version of {@link #groupAForPut}: a group version A's tests may list. */
+    public final UUID groupVersionA = UUID.randomUUID();
+    /** P2.6: org B's test (with a version, a part and a group), and A's author's own draft tests: the positive controls of PUT structure. */
+    public final UUID testB = UUID.randomUUID();
+    public final UUID testAForPut = UUID.randomUUID();
+    public final UUID testAForSubmit = UUID.randomUUID();
     public final UUID groupAForSubmit = UUID.randomUUID();
     /** P2.4: org B's strategy lesson (PUBLISHED, with a question type), and A's author's own drafts: the positive controls of PUT and submit. */
     public final UUID lessonB = UUID.randomUUID();
@@ -107,10 +113,9 @@ public final class SweepFixtures {
         // P2.1: org B's catalog rows (a score table with a published version, a grading skill with a published version, a grading policy);
         // no catalog endpoint takes an id yet, P2.5 adds them and the sweep then covers them
         UUID scoreTableB = UUID.randomUUID();
-        // an organisation's score table can only be TEST scope, which is refused until P2.6: lift the refusal for this insert, then put it back
-        su.execute("alter table score_tables drop constraint score_tables_test_scope_refused_ck");
-        su.update("insert into score_tables(id,owner_org_id,exam_code,skill,scope,test_id) values (?,?,'IELTS','LISTENING','TEST',gen_random_uuid())", scoreTableB, orgB);
-        su.execute("alter table score_tables add constraint score_tables_test_scope_refused_ck check (scope <> 'TEST') not valid");
+        // an organisation's score table can only be TEST scope (P2.6): a real test of org B to hang it on
+        su.update("insert into tests(id,owner_org_id,exam_code,created_by) values (?,?,'IELTS',?)", testB, orgB, userB);
+        su.update("insert into score_tables(id,owner_org_id,exam_code,skill,scope,test_id) values (?,?,'IELTS','LISTENING','TEST',?)", scoreTableB, orgB, testB);
         su.update("insert into score_table_versions(score_table_id,owner_org_id,exam_code,version_no,status) values (?,?,'IELTS',1,'PUBLISHED')", scoreTableB, orgB);
         UUID skillB = UUID.randomUUID();
         su.update("insert into grading_skills(id,owner_org_id,exam_code,question_type_code) values (?,?,'IELTS','IELTS_W_TASK2')", skillB, orgB);
@@ -145,7 +150,16 @@ public final class SweepFixtures {
         for (UUID own : List.of(groupAForPut, groupAForSubmit)) {
             su.update("insert into question_groups(id,owner_org_id,exam_code,created_by) values (?,?,'IELTS',?)", own, orgA, authorA);
             su.update("insert into question_group_versions(id,group_id,owner_org_id,exam_code,version_no,status,content,created_by) values (?,?,?,'IELTS',1,'DRAFT','{\"title\":\"a\"}',?)",
-                    UUID.randomUUID(), own, orgA, authorA);
+                    own.equals(groupAForPut) ? groupVersionA : UUID.randomUUID(), own, orgA, authorA);
+        }
+        // P2.6: org B's test (a DRAFT version with a Listening part holding B's group), and two draft tests of A's author (no parts yet)
+        UUID testVersionB = UUID.randomUUID();
+        su.update("insert into test_versions(id,test_id,owner_org_id,exam_code,variant,version_no,status,title,created_by) values (?,?,?,'IELTS','AC',1,'DRAFT','B test',?)", testVersionB, testB, orgB, userB);
+        su.update("insert into test_parts(test_version_id,position,section_code,duration_sec,owner_org_id,exam_code) values (?,1,'LISTENING',1800,?,'IELTS')", testVersionB, orgB);
+        su.update("insert into test_part_groups(test_version_id,part_position,position,group_version_id,owner_org_id,exam_code) values (?,1,1,?,?,'IELTS')", testVersionB, groupVersionB, orgB);
+        for (UUID own : List.of(testAForPut, testAForSubmit)) {
+            su.update("insert into tests(id,owner_org_id,exam_code,variant,created_by) values (?,?,'IELTS','AC',?)", own, orgA, authorA);
+            su.update("insert into test_versions(id,test_id,owner_org_id,exam_code,variant,version_no,title,created_by) values (?,?,?,'IELTS','AC',1,'A test',?)", UUID.randomUUID(), own, orgA, authorA);
         }
         // P2.4: strategy lessons, same shape: B's published lesson (with its type), and two draft lessons of A's author
         String lesson = "insert into strategy_lessons(id,owner_org_id,exam_code,created_by) values (?,?,'IELTS',?)";
@@ -282,6 +296,13 @@ public final class SweepFixtures {
         all.put("POST /api/cms/questions", ForeignIdSweep.Fixture.write(question, List.of(), none));
         all.put("PUT /api/cms/questions/{id}", ForeignIdSweep.Fixture.write(question, List.of(), new ForeignIdSweep.Control(slot("id", questionAForPut), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/questions/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", questionAForSubmit), null, ForeignIdSweep.AUTHOR)));
+        // P2.6: tests, like groups: A's ORG_ADMIN (no AUTHOR grant) is refused on every route and every foreign id; A's author really builds A's draft tests
+        String testBody = "{\"examCode\":\"IELTS\",\"variant\":\"AC\",\"title\":\"Sweep test\"}";
+        String structureBody = "{\"parts\":[{\"sectionCode\":\"READING\",\"durationSec\":600,\"groups\":[\"" + groupVersionA + "\"]}]}";
+        all.put("POST /api/cms/tests", ForeignIdSweep.Fixture.write(testBody, List.of(), none));
+        all.put("PUT /api/cms/tests/{id}/structure", ForeignIdSweep.Fixture.write(structureBody, List.of(), new ForeignIdSweep.Control(slot("id", testAForPut), null, ForeignIdSweep.AUTHOR)));
+        all.put("POST /api/cms/tests/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null,
+                "a test goes to review only when every skill of its exam has questions (IELTS: four, each with a published group); TestServiceIT.aTestWithoutASkillIsNotSentForReview... measures the 202 and the refusals, the foreign ids are walked here"));
         all.put("POST /api/cms/question-groups", ForeignIdSweep.Fixture.write(group, List.of(), none));
         all.put("PUT /api/cms/question-groups/{id}", ForeignIdSweep.Fixture.write(group, List.of(), new ForeignIdSweep.Control(slot("id", groupAForPut), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/question-groups/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", groupAForSubmit), null, ForeignIdSweep.AUTHOR)));

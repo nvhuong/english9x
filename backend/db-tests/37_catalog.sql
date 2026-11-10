@@ -62,24 +62,35 @@ BEGIN
   ASSERT (SELECT count(*) FROM grading_policies) = 0 AND (SELECT count(*) FROM grading_skills) = 0, 'no policy or skill is seeded';
 END $$;
 
--- ---- TEST scope is refused until P2.6 (I1/I2 of the P2.1 review) ---------------------------------------------------------------------
--- No TEST-scope row can be inserted by anyone, the owner of the tables included: `tests` does not exist yet, so nothing says whose test
--- an id is. P2.6 lifts both constraints together with the foreign key, the owner match and the administrator-only writers.
+-- ---- TEST scope (enabled by P2.6, V202611120002; the detailed tests of who writes it are 44_tests.sql) ------------------------------------
+-- fixtures: the tests the TEST rows hang on (a TEST row needs a real test, of the same owner and exam)
+INSERT INTO tests(id,owner_org_id,exam_code,created_by) VALUES
+ ('71000000-0000-0000-0000-00000000000a','aaaaaaaa-0000-0000-0000-00000000000a','IELTS','c1000000-0000-0000-0000-000000000001'),
+ ('71000000-0000-0000-0000-00000000000b','bbbbbbbb-0000-0000-0000-00000000000b','IELTS','c1000000-0000-0000-0000-000000000004'),
+ ('71000000-0000-0000-0000-0000000000a2','aaaaaaaa-0000-0000-0000-00000000000a','IELTS','c1000000-0000-0000-0000-000000000001'),
+ ('71000000-0000-0000-0000-0000000000e9',NULL,'IELTS','c1000000-0000-0000-0000-000000000005');
 DO $$
 BEGIN
+  -- the owner of the tables is not exempt from the rule: a TEST row of a test that does not exist, or of another owner's, is refused
   BEGIN
     INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (NULL,'IELTS','LISTENING','TEST',gen_random_uuid());
-    ASSERT false, 'the owner of the table inserted a TEST score table';
-  EXCEPTION WHEN check_violation THEN ASSERT SQLERRM LIKE '%score_tables_test_scope_refused_ck%', SQLERRM; END;
+    ASSERT false, 'a TEST score table of a test nobody made';
+  EXCEPTION WHEN check_violation THEN ASSERT SQLERRM LIKE '%carries the owner and the exam of its test%', SQLERRM; END;
   BEGIN
     INSERT INTO grading_policies(owner_org_id,exam_code,scope,test_id,mode) VALUES (NULL,'IELTS','TEST',gen_random_uuid(),'AI');
-    ASSERT false, 'the owner of the table inserted a TEST grading policy';
-  EXCEPTION WHEN check_violation THEN ASSERT SQLERRM LIKE '%grading_policies_test_scope_refused_ck%', SQLERRM; END;
+    ASSERT false, 'a TEST grading policy of a test nobody made';
+  EXCEPTION WHEN check_violation THEN ASSERT SQLERRM LIKE '%carries the owner and the exam of its test%', SQLERRM; END;
+  BEGIN
+    INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES ('bbbbbbbb-0000-0000-0000-00000000000b','IELTS','LISTENING','TEST','71000000-0000-0000-0000-00000000000a');
+    ASSERT false, 'org B squatted the test of org A';
+  EXCEPTION WHEN check_violation THEN ASSERT SQLERRM LIKE '%carries the owner and the exam of its test%', SQLERRM; END;
+  BEGIN
+    INSERT INTO grading_policies(owner_org_id,exam_code,scope,test_id,mode) VALUES (NULL,'IELTS','TEST','71000000-0000-0000-0000-00000000000a','AI');
+    ASSERT false, 'English9x squatted the test of org A';
+  EXCEPTION WHEN check_violation THEN ASSERT SQLERRM LIKE '%carries the owner and the exam of its test%', SQLERRM; END;
+  ASSERT (SELECT count(*) FROM pg_constraint WHERE conname IN ('score_tables_test_scope_refused_ck','grading_policies_test_scope_refused_ck')) = 0, 'the refusal CHECKs are gone for real';
+  ASSERT (SELECT count(*) FROM pg_constraint WHERE conname IN ('score_tables_test_fk','grading_policies_test_fk') AND contype = 'f') = 2, 'and the foreign keys to tests are there';
 END $$;
--- The fixtures below need TEST rows to exercise the policies and keys the way P2.6 will: drop the two constraints, insert, and put them
--- back NOT VALID (the fixtures predate them; every later insert is checked).
-ALTER TABLE score_tables DROP CONSTRAINT score_tables_test_scope_refused_ck;
-ALTER TABLE grading_policies DROP CONSTRAINT grading_policies_test_scope_refused_ck;
 
 -- P2.5 (V202611110005) allows one open version per table and per skill. These fixtures hold several open versions of one table on purpose
 -- (a draft, one under review, the author's submission), so the two indexes are dropped here; 42_scoring_guards.sql tests them. The decision
@@ -145,28 +156,19 @@ GRANT EXECUTE ON FUNCTION public.t_attempt(text) TO e9x_app, e9x_grader;
 INSERT INTO score_tables(id,owner_org_id,exam_code,skill,scope,test_id) VALUES
  ('51000000-0000-0000-0000-0000000000a2','aaaaaaaa-0000-0000-0000-00000000000a','IELTS','READING_AC','TEST','71000000-0000-0000-0000-0000000000a2');
 
--- keys carry the owner: one owner's row never blocks another's (no 23505 on a row the caller cannot see), the same owner's still does
+-- keys carry the owner and the owner is the test's: the same owner, test and skill twice is refused (23505), another owner's row for the same test is refused
+-- before it can collide (the owner match), so no 23505 on a row the caller cannot see
 DO $$
 BEGIN
-  -- the very test id of org A's override, used by org B and by English9x for the same exam and skill
-  INSERT INTO score_tables(id,owner_org_id,exam_code,skill,scope,test_id) VALUES
-   ('51000000-0000-0000-0000-0000000000b1','bbbbbbbb-0000-0000-0000-00000000000b','IELTS','LISTENING','TEST','71000000-0000-0000-0000-00000000000a'),
-   ('51000000-0000-0000-0000-0000000000e1',NULL,'IELTS','LISTENING','TEST','71000000-0000-0000-0000-00000000000a');
   ASSERT public.t_msg('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''LISTENING'',''TEST'',''71000000-0000-0000-0000-00000000000a'')') LIKE '23505%',
          'the same owner, test and skill twice is refused';
-  ASSERT public.t_msg('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (NULL,''IELTS'',''LISTENING'',''TEST'',''71000000-0000-0000-0000-00000000000a'')') LIKE '23505%',
+  INSERT INTO score_tables(id,owner_org_id,exam_code,skill,scope,test_id) VALUES ('51000000-0000-0000-0000-0000000000e1',NULL,'IELTS','LISTENING','TEST','71000000-0000-0000-0000-0000000000e9');
+  ASSERT public.t_msg('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (NULL,''IELTS'',''LISTENING'',''TEST'',''71000000-0000-0000-0000-0000000000e9'')') LIKE '23505%',
          'also for English9x (NULL owner counts as a value)';
-  DELETE FROM score_tables WHERE id IN ('51000000-0000-0000-0000-0000000000b1','51000000-0000-0000-0000-0000000000e1');
-  INSERT INTO grading_policies(id,owner_org_id,exam_code,scope,test_id,mode) VALUES
-   ('63000000-0000-0000-0000-0000000000b1','bbbbbbbb-0000-0000-0000-00000000000b','IELTS','TEST','71000000-0000-0000-0000-00000000000a','AI'),
-   ('63000000-0000-0000-0000-0000000000e1',NULL,'IELTS','TEST','71000000-0000-0000-0000-00000000000a','AI');
-  ASSERT public.t_msg('INSERT INTO grading_policies(owner_org_id,exam_code,scope,test_id,mode) VALUES (''bbbbbbbb-0000-0000-0000-00000000000b'',''IELTS'',''TEST'',''71000000-0000-0000-0000-00000000000a'',''BOTH'')') LIKE '23505%',
+  DELETE FROM score_tables WHERE id = '51000000-0000-0000-0000-0000000000e1';
+  ASSERT public.t_msg('INSERT INTO grading_policies(owner_org_id,exam_code,scope,test_id,mode) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''TEST'',''71000000-0000-0000-0000-00000000000a'',''AI'')') LIKE '23505%',
          'the same owner and test twice is refused for a policy';
-  DELETE FROM grading_policies WHERE id IN ('63000000-0000-0000-0000-0000000000b1','63000000-0000-0000-0000-0000000000e1');
 END $$;
--- the refusal is back for everything inserted from here on
-ALTER TABLE score_tables ADD CONSTRAINT score_tables_test_scope_refused_ck CHECK (scope <> 'TEST') NOT VALID;
-ALTER TABLE grading_policies ADD CONSTRAINT grading_policies_test_scope_refused_ck CHECK (scope <> 'TEST') NOT VALID;
 
 -- ---- reference data is read-only for the application and the grader ---------------------------------------------------------------
 SET ROLE e9x_app;
@@ -207,7 +209,7 @@ BEGIN
   ASSERT (SELECT count(*) FROM grading_skills) = 0 AND (SELECT count(*) FROM grading_skill_versions) = 0, 'a learner reads no grading skill';
   ASSERT (SELECT count(*) FROM grading_policies) = 3, 'learner A reads the exam default, org A''s policy and org A''s test policy';
   ASSERT (SELECT count(*) FROM grading_policies WHERE id = '63000000-0000-0000-0000-00000000000b') = 0, 'not org B''s policy';
-  ASSERT public.t_attempt('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''READING_AC'',''TEST'',gen_random_uuid())') = 'err:42501', 'a learner writes no score table';
+  ASSERT public.t_attempt('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''READING_AC'',''TEST'',''71000000-0000-0000-0000-00000000000a'')') = 'err:42501', 'a learner writes no score table';
   ASSERT public.t_attempt('INSERT INTO grading_policies(owner_org_id,exam_code,scope,mode,updated_by) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''TOEIC'',''ORG'',''AI'',''c1000000-0000-0000-0000-000000000003'')') = 'err:42501', 'nor a policy';
   ASSERT public.t_attempt('UPDATE grading_policies SET mode = ''AI''') = 'rows:0', 'nor change one (no policy lets a learner see a row to update)';
 END $$;
@@ -243,12 +245,12 @@ BEGIN
   ASSERT (SELECT count(*) FROM score_table_versions WHERE owner_org_id = 'aaaaaaaa-0000-0000-0000-00000000000a') = 3, 'the author reads all three versions of org A (published, draft, in review)';
   ASSERT (SELECT count(*) FROM grading_skill_versions WHERE owner_org_id = 'aaaaaaaa-0000-0000-0000-00000000000a') = 2, 'and both skill versions';
   ASSERT (SELECT count(*) FROM grading_skill_versions WHERE owner_org_id IS NULL) = 0, 'not English9x''s skill from inside the organisation';
-  -- a new TEST table is refused whoever asks (after the role check: a 23514 here means RLS let the author through)
-  ASSERT public.t_msg('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''READING_GT'',''TEST'',gen_random_uuid())') LIKE '23514%score_tables_test_scope_refused_ck%',
-         'the author of org A cannot create a TEST table until P2.6';
-  ASSERT public.t_msg('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''NO_SUCH_SKILL'',''TEST'',gen_random_uuid())') LIKE '23514%keeps no score%', 'a skill the exam keeps no score for is refused (the skill trigger, not the scope CHECK)';
-  ASSERT public.t_attempt('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''TOEIC'',''READING'',''TEST'',gen_random_uuid())') = 'err:42501', 'not for TOEIC: the grant is for IELTS';
-  ASSERT public.t_attempt('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (NULL,''IELTS'',''READING_AC'',''TEST'',gen_random_uuid())') = 'err:42501', 'not for English9x: this author is a member of org A';
+  -- a new TEST table is the administrator's (spec 2 row 6), not the exam's author's: the author passes the owner match (a real test of org A) and RLS refuses
+  ASSERT public.t_attempt('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''READING_GT'',''TEST'',''71000000-0000-0000-0000-00000000000a'')') = 'err:42501',
+         'the author of org A cannot create a TEST table: the writer is the administrator of the test''s owner';
+  ASSERT public.t_msg('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''NO_SUCH_SKILL'',''TEST'',''71000000-0000-0000-0000-00000000000a'')') LIKE '23514%keeps no score%', 'a skill the exam keeps no score for is refused (the skill trigger, not the scope CHECK)';
+  ASSERT public.t_attempt('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''TOEIC'',''READING'',''TEST'',''71000000-0000-0000-0000-00000000000a'')') IN ('err:42501', 'err:23514'), 'not for TOEIC: the grant is for IELTS (and the test is an IELTS test)';
+  ASSERT public.t_attempt('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (NULL,''IELTS'',''READING_AC'',''TEST'',''71000000-0000-0000-0000-0000000000e9'')') = 'err:42501', 'not for English9x: this author is a member of org A';
   ASSERT public.t_attempt('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''READING_GT'',''EXAM'')') = 'err:23514', 'an exam default is English9x''s: an organisation''s EXAM-scope table is refused by the constraint';
   ASSERT public.t_attempt('INSERT INTO score_table_versions(score_table_id,owner_org_id,exam_code,version_no,entries,created_by) VALUES (''51000000-0000-0000-0000-0000000000a2'',''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',1,''[{"raw":0,"scaled":0}]'',''c1000000-0000-0000-0000-000000000001'')') = 'rows:1', 'a DRAFT version';
   ASSERT public.t_attempt('INSERT INTO score_table_versions(score_table_id,owner_org_id,exam_code,version_no,created_by) VALUES (''51000000-0000-0000-0000-0000000000a2'',''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',2,''c1000000-0000-0000-0000-000000000003'')') = 'err:42501', 'created_by is the caller, nobody else';
@@ -270,8 +272,8 @@ BEGIN
   ASSERT public.t_attempt('UPDATE grading_skill_versions SET rubric = ''new'' WHERE id = ''62000000-0000-0000-0000-0000000a0002''') = 'rows:1', 'draft skill edited';
   ASSERT public.t_attempt('UPDATE grading_skill_versions SET rubric = ''new'' WHERE id = ''62000000-0000-0000-0000-0000000a0001''') = 'rows:0', 'published skill is frozen for the author';
   -- policies: a test policy for a test of org A, but not the organisation's own, nor the exam default
-  ASSERT public.t_msg('INSERT INTO grading_policies(owner_org_id,exam_code,scope,test_id,mode,updated_by) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''TEST'',gen_random_uuid(),''AI'',''c1000000-0000-0000-0000-000000000001'')') LIKE '23514%grading_policies_test_scope_refused_ck%',
-         'the mode of a test cannot be set until P2.6 (the author passed RLS; the CHECK refused)';
+  ASSERT public.t_attempt('INSERT INTO grading_policies(owner_org_id,exam_code,scope,test_id,mode,updated_by) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''IELTS'',''TEST'',''71000000-0000-0000-0000-0000000000a2'',''AI'',''c1000000-0000-0000-0000-000000000001'')') = 'err:42501',
+         'the mode of a test is the administrator''s: the author of the exam is refused';
   ASSERT public.t_attempt('INSERT INTO grading_policies(owner_org_id,exam_code,scope,mode,updated_by) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''TOEIC'',''ORG'',''AI'',''c1000000-0000-0000-0000-000000000001'')') = 'err:42501', 'but not the organisation''s mode';
   ASSERT public.t_attempt('INSERT INTO grading_policies(owner_org_id,exam_code,scope,mode,updated_by) VALUES (NULL,''TOEIC'',''EXAM'',''AI'',''c1000000-0000-0000-0000-000000000001'')') = 'err:42501', 'nor the exam''s';
   ASSERT public.t_attempt('UPDATE grading_policies SET mode = ''AI'' WHERE id = ''63000000-0000-0000-0000-00000000000a''') = 'rows:0', 'nor change the organisation''s mode';
@@ -284,8 +286,6 @@ BEGIN
   ASSERT (SELECT count(*) FROM score_table_versions WHERE status NOT IN ('PUBLISHED','ARCHIVED')) = 0, 'a TOEIC author reads no IELTS draft';
   ASSERT (SELECT count(*) FROM grading_skill_versions) = 0, 'nor an IELTS skill';
   ASSERT public.t_attempt('UPDATE score_table_versions SET entries = ''[]'' WHERE id = ''52000000-0000-0000-0000-0000000a0002''') = 'rows:0', 'nor edit an IELTS draft';
-  ASSERT public.t_msg('INSERT INTO score_tables(owner_org_id,exam_code,skill,scope,test_id) VALUES (''aaaaaaaa-0000-0000-0000-00000000000a'',''TOEIC'',''READING'',''TEST'',gen_random_uuid())') LIKE '23514%score_tables_test_scope_refused_ck%',
-         'but passes RLS for TOEIC tables (only the P2.6 refusal stops it)';
 END $$;
 
 -- ---- reviewer of IELTS in org A -------------------------------------------------------------------------------------------------
