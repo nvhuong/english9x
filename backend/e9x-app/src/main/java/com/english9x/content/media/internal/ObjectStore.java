@@ -11,6 +11,9 @@ interface ObjectStore {
 
     void put(String key, Path file, String contentType);
 
+    /** Downloads the object into {@code target} (an existing file is replaced). @throws MediaStorageException when it is not there or cannot be read */
+    void get(String key, Path target);
+
     /** Deleting what is not there is not an error. */
     void delete(String key);
 

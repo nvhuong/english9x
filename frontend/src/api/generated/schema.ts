@@ -7,7 +7,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -71,7 +71,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -151,7 +151,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post: operations["create_8"];
         delete?: never;
@@ -424,7 +424,7 @@ export interface paths {
             cookie?: never;
         };
         /** List grading skills (the latest version of each) the caller may read, newest change first */
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         /**
          * Create the grading skill of a question type (version 1, a draft)
@@ -485,7 +485,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review */
-        post: operations["submit_5"];
+        post: operations["submit_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -503,6 +503,92 @@ export interface paths {
         get: operations["versions_5"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My recent imports, newest first */
+        get: operations["list_7"];
+        put?: never;
+        /** Start importing a filled-in template (all rows or none) */
+        post: operations["start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/import/templates/{typeCode}.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The Excel template of a question type, made from its JSON Schema */
+        get: operations["template"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/import/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** State of an import, its errors by row and column, and the drafts it made */
+        get: operations["get_6"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/import/{jobId}/report.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The workbook with the failed cells marked red */
+        get: operations["report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/import/{jobId}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit every draft of a successful import for review, as one bundle */
+        post: operations["submit_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1016,7 +1102,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1620,6 +1706,12 @@ export interface components {
             /** Format: date-time */
             validUntil: string;
         };
+        ErrorView: {
+            column?: string;
+            message?: string;
+            /** Format: int32 */
+            row?: number;
+        };
         ExamInfo: {
             code?: string;
             name?: string;
@@ -1743,6 +1835,46 @@ export interface components {
             orgId?: string;
             /** @enum {string} */
             role: "LEARNER" | "AUTHOR" | "REVIEWER" | "TEACHER" | "ORG_ADMIN" | "SYS_ADMIN";
+        };
+        ImportDetail: {
+            errors?: components["schemas"]["ErrorView"][];
+            job?: components["schemas"]["ImportView"];
+            versionIds?: string[];
+        };
+        ImportUploadForm: {
+            /**
+             * Format: binary
+             * @description the filled-in .xlsx made from the template
+             */
+            file?: string;
+            /**
+             * Format: binary
+             * @description optional .zip of the media files the rows name
+             */
+            mediaZip?: string;
+        };
+        ImportView: {
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: int32 */
+            createdCount?: number;
+            /** Format: int32 */
+            errorCount?: number;
+            examCode?: string;
+            failureReason?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+            hasMedia?: boolean;
+            hasReport?: boolean;
+            /** Format: uuid */
+            id?: string;
+            /** Format: int32 */
+            processedRows?: number;
+            sourceName?: string;
+            status?: string;
+            /** Format: int32 */
+            totalRows?: number;
+            typeCode?: string;
         };
         /** @enum {string} */
         InvitationStatus: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED" | "VOIDED";
@@ -2324,6 +2456,11 @@ export interface components {
             /** Format: uuid */
             userId: string;
         };
+        Started: {
+            /** Format: uuid */
+            jobId?: string;
+            status?: string;
+        };
         StrategyLessonPage: {
             items?: components["schemas"]["StrategyLessonSummary"][];
             /** Format: int32 */
@@ -2387,6 +2524,10 @@ export interface components {
             /** Format: int32 */
             versionNo?: number;
         };
+        Submitted: {
+            /** Format: uuid */
+            bundleId?: string;
+        };
         SubmittedForReview: {
             /** Format: uuid */
             reviewId?: string;
@@ -2424,7 +2565,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 action?: string;
@@ -2582,7 +2723,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 status?: string;
@@ -2775,7 +2916,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3403,7 +3544,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: {
                 exam?: string;
@@ -3570,7 +3711,7 @@ export interface operations {
             };
         };
     };
-    submit_5: {
+    submit_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -3619,6 +3760,195 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["GradingSkillVersion"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImportView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    start: {
+        parameters: {
+            query: {
+                /** @description the question type of every row; the caller must be an AUTHOR of its exam in the current context */
+                typeCode: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["ImportUploadForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Started"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    template: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                typeCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImportDetail"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submit_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Submitted"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -4862,7 +5192,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 limit?: number;

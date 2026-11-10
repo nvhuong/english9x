@@ -71,17 +71,43 @@ class MediaService {
         }
         String filename = cleanName(upload.getOriginalFilename());
         Path temp = null;
+        try {
+            temp = Files.createTempFile("e9x-media-", ".upload");
+            upload.transferTo(temp.toFile());
+            return storeFile(examCode, who, temp, filename);
+        } catch (IOException e) {
+            LOG.error("media upload could not be handled", e);
+            throw MediaProblems.storageUnavailable();
+        } finally {
+            if (temp != null) {
+                try {
+                    Files.deleteIfExists(temp);
+                } catch (IOException e) {
+                    LOG.warn("temp file {} could not be removed", temp.getFileName());
+                }
+            }
+        }
+    }
+
+    /** What {@link #storeFile} would make of a file, without storing anything: container from the magic number, the name must agree, then the probe. */
+    Found inspect(Path file, String filename) throws IOException {
+        MediaSniffer.Container container = MediaSniffer.sniff(file).orElseThrow(MediaProblems::notAllowed);
+        if (!container.accepts(filename)) {
+            throw MediaProblems.extensionMismatch();
+        }
+        return classify(container, file);
+    }
+
+    /**
+     * Steps 3 to 5 of the order above for a file that is already on disk and whose caller has been authorised and size-checked: sniff, probe, the
+     * object, the row. Used by the upload and by the Excel import (P2.7); the temp file stays the caller's.
+     */
+    Uploaded storeFile(String examCode, CurrentContextHolder.Binding who, Path temp, String filename) {
         UUID id = UUID.randomUUID();
         boolean stored = false;
         boolean done = false;
         try {
-            temp = Files.createTempFile("e9x-media-", ".upload");
-            upload.transferTo(temp.toFile());
-            MediaSniffer.Container container = MediaSniffer.sniff(temp).orElseThrow(MediaProblems::notAllowed);
-            if (!container.accepts(filename)) {
-                throw MediaProblems.extensionMismatch();
-            }
-            Found found = classify(container, temp);
+            Found found = inspect(temp, filename);
             try {
                 store.put(id.toString(), temp, found.mime());
                 stored = true;
@@ -104,17 +130,15 @@ class MediaService {
             if (stored && !done) {
                 removeQuietly(id); // the object must not outlive a failed upload
             }
-            if (temp != null) {
-                try {
-                    Files.deleteIfExists(temp);
-                } catch (IOException e) {
-                    LOG.warn("temp file {} could not be removed", temp.getFileName());
-                }
-            }
         }
     }
 
-    private record Found(MediaKind kind, String mime, Long durationMs) {}
+    /** Removes the stored object of a file whose row was rolled back (an import that failed after it stored its media). */
+    void discardObject(UUID id) {
+        removeQuietly(id);
+    }
+
+    record Found(MediaKind kind, String mime, Long durationMs) {}
 
     private Found classify(MediaSniffer.Container c, Path file) {
         switch (c) {

@@ -1,0 +1,47 @@
+{
+  "nav": { "import": "Excel import" },
+  "title": "Import questions from Excel",
+  "description": "Download the Excel template of a question type, fill one question per row, then upload it with a zip of media files (if any). One wrong row rejects the whole file and nothing is created; when every row is right, all of them become drafts.",
+  "none": { "title": "You cannot import yet", "description": "You are not an author of any exam in this context, so you cannot import questions yet." },
+  "type": { "label": "Question type" },
+  "step1": { "title": "1. Get the template", "download": "Download the Excel template" },
+  "step2": {
+    "title": "2. Upload",
+    "fileLabel": "Filled-in Excel file (.xlsx)",
+    "zipLabel": "Media zip file (optional)",
+    "zipHint": "The file names in the *_media_file columns must be in the zip.",
+    "start": "Start import"
+  },
+  "progress": { "label": "Upload progress" },
+  "result": {
+    "title": "Result",
+    "running": "The server is checking the file: {{done}}/{{total}} rows…",
+    "SUCCEEDED": "{{count}} drafts created.",
+    "REJECTED": "The file was rejected: {{errors}} errors.",
+    "FAILED": "The import could not be run.",
+    "submit": "Submit the whole lot for review",
+    "submitted": "The whole lot was submitted for review.",
+    "nothingCreated": "No question was created. Fix the rows with errors and upload again.",
+    "downloadReport": "Download the Excel with the failed cells in red",
+    "failedHint": "The import could not be run and has stopped. Try uploading again; if it keeps failing, tell an administrator."
+  },
+  "status": { "QUEUED": "Waiting", "RUNNING": "Running", "SUCCEEDED": "Succeeded", "REJECTED": "Rejected", "FAILED": "Failed" },
+  "errors": {
+    "table": "Errors by row",
+    "row": "Row",
+    "column": "Column",
+    "message": "Error",
+    "wholeFile": "Whole file",
+    "truncated": "Showing {{shown}} of {{total}} errors; download the red Excel to see them all.",
+    "network": "The connection was lost while uploading. Try again.",
+    "notXlsx": "The file must be an Excel (.xlsx) made from the template.",
+    "notZip": "The media file must be a .zip.",
+    "tooLarge": "The file is larger than the limit of one lot.",
+    "type": "This question type cannot be imported.",
+    "notSubmittable": "Only an import that succeeded can be submitted.",
+    "unavailable": "File storage is not ready. Try again later.",
+    "forbidden": "You may not import this question type.",
+    "notFound": "That import was not found.",
+    "generic": "Something went wrong. Try again."
+  }
+}

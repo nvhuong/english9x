@@ -94,6 +94,7 @@ class ReviewServiceIT {
     static void database(DynamicPropertyRegistry registry) {
         TestPostgres.connect(registry, DB);
         registry.add("e9x.workflow.max-bundle-size", () -> String.valueOf(MAX_BUNDLE));
+        registry.add("e9x.content.import.max-rows", () -> String.valueOf(MAX_BUNDLE)); // P2.7: an import lot must fit one bundle, and the application refuses to start when it cannot
     }
 
     @TestConfiguration

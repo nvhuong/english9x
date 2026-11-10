@@ -682,6 +682,21 @@
         "required" : [ "active", "courseId", "id", "source", "validFrom", "validUntil" ],
         "type" : "object"
       },
+      "ErrorView" : {
+        "properties" : {
+          "column" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "row" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "ExamInfo" : {
         "properties" : {
           "code" : {
@@ -967,6 +982,96 @@
           }
         },
         "required" : [ "role" ],
+        "type" : "object"
+      },
+      "ImportDetail" : {
+        "properties" : {
+          "errors" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ErrorView"
+            },
+            "type" : "array"
+          },
+          "job" : {
+            "$ref" : "#/components/schemas/ImportView"
+          },
+          "versionIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ImportUploadForm" : {
+        "properties" : {
+          "file" : {
+            "description" : "the filled-in .xlsx made from the template",
+            "format" : "binary",
+            "type" : "string"
+          },
+          "mediaZip" : {
+            "description" : "optional .zip of the media files the rows name",
+            "format" : "binary",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ImportView" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "errorCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "failureReason" : {
+            "type" : "string"
+          },
+          "finishedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "hasMedia" : {
+            "type" : "boolean"
+          },
+          "hasReport" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "processedRows" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sourceName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "totalRows" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "typeCode" : {
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "InvitationStatus" : {
@@ -2333,6 +2438,18 @@
         "required" : [ "roles", "userId" ],
         "type" : "object"
       },
+      "Started" : {
+        "properties" : {
+          "jobId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "StrategyLessonPage" : {
         "properties" : {
           "items" : {
@@ -2473,6 +2590,15 @@
         },
         "type" : "object"
       },
+      "Submitted" : {
+        "properties" : {
+          "bundleId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "SubmittedForReview" : {
         "properties" : {
           "reviewId" : {
@@ -2550,7 +2676,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_11",
+        "operationId" : "list_12",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -2767,7 +2893,7 @@
     },
     "/api/admin/orders" : {
       "get" : {
-        "operationId" : "list_10",
+        "operationId" : "list_11",
         "parameters" : [ {
           "in" : "query",
           "name" : "status",
@@ -3001,7 +3127,7 @@
     },
     "/api/admin/organizations" : {
       "get" : {
-        "operationId" : "list_8",
+        "operationId" : "list_9",
         "responses" : {
           "200" : {
             "content" : {
@@ -3678,7 +3804,7 @@
     },
     "/api/cms/grading-skills" : {
       "get" : {
-        "operationId" : "list_7",
+        "operationId" : "list_8",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -3903,7 +4029,7 @@
     },
     "/api/cms/grading-skills/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_5",
+        "operationId" : "submit_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3978,6 +4104,236 @@
         },
         "summary" : "Every version of a skill, oldest first",
         "tags" : [ "skill-controller" ]
+      }
+    },
+    "/api/cms/import" : {
+      "get" : {
+        "operationId" : "list_7",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ImportView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "My recent imports, newest first",
+        "tags" : [ "import-controller" ]
+      },
+      "post" : {
+        "operationId" : "start",
+        "parameters" : [ {
+          "description" : "the question type of every row; the caller must be an AUTHOR of its exam in the current context",
+          "in" : "query",
+          "name" : "typeCode",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ImportUploadForm"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Started"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Start importing a filled-in template (all rows or none)",
+        "tags" : [ "import-controller" ]
+      }
+    },
+    "/api/cms/import/templates/{typeCode}.xlsx" : {
+      "get" : {
+        "operationId" : "template",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "typeCode",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The Excel template of a question type, made from its JSON Schema",
+        "tags" : [ "import-controller" ]
+      }
+    },
+    "/api/cms/import/{jobId}" : {
+      "get" : {
+        "operationId" : "get_6",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "jobId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImportDetail"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "State of an import, its errors by row and column, and the drafts it made",
+        "tags" : [ "import-controller" ]
+      }
+    },
+    "/api/cms/import/{jobId}/report.xlsx" : {
+      "get" : {
+        "operationId" : "report",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "jobId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The workbook with the failed cells marked red",
+        "tags" : [ "import-controller" ]
+      }
+    },
+    "/api/cms/import/{jobId}/submit" : {
+      "post" : {
+        "operationId" : "submit_5",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "jobId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Submitted"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit every draft of a successful import for review, as one bundle",
+        "tags" : [ "import-controller" ]
       }
     },
     "/api/cms/media" : {
@@ -5601,7 +5957,7 @@
     },
     "/api/me/notifications" : {
       "get" : {
-        "operationId" : "list_9",
+        "operationId" : "list_10",
         "parameters" : [ {
           "in" : "query",
           "name" : "limit",

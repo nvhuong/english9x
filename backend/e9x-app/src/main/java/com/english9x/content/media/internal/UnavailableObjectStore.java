@@ -20,6 +20,11 @@ final class UnavailableObjectStore implements ObjectStore {
     }
 
     @Override
+    public void get(String key, Path target) {
+        throw off();
+    }
+
+    @Override
     public void delete(String key) {}
 
     @Override
