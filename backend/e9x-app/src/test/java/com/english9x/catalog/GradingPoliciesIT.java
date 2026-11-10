@@ -13,13 +13,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 /** GradingPolicies#resolve: test beats organisation beats exam beats the configured default, and an organisation's policy never reaches another. */
-@Import(com.english9x.catalog.internal.TestLookupStubConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class GradingPoliciesIT {
 
@@ -63,14 +61,18 @@ class GradingPoliciesIT {
         policy(null, "IELTS", "EXAM", null, "AI");
         policy(ORG_A, "IELTS", "ORG", null, "TEACHER");
         policy(ORG_B, "IELTS", "ORG", null, "BOTH");
-        // P2.6 lifts the refusal of TEST scope; this throwaway database does it now so that the keys and the lookup can be exercised
-        su.execute("alter table grading_policies drop constraint grading_policies_test_scope_refused_ck");
+        // real tests (P2.6): a TEST policy belongs to a test that exists, of the same owner; TestLookup reads test_versions
+        UUID by = com.english9x.content.test.TestRows.author(su);
+        UUID plain = UUID.randomUUID();
+        for (Object[] t : new Object[][] {{T_A, ORG_A}, {T_E9, null}, {plain, null}}) {
+            su.update("insert into tests(id,owner_org_id,exam_code,created_by) values (?,?,'IELTS',?)", t[0], t[1], by);
+        }
+        for (Object[] v : new Object[][] {{TEST_A, T_A, ORG_A, 1}, {TEST_A_V2, T_A, ORG_A, 2}, {TEST_E9, T_E9, null, 1}, {TEST_PLAIN, plain, null, 1}}) {
+            su.update("insert into test_versions(id,test_id,owner_org_id,exam_code,version_no,status,title,created_by) values (?,?,?,'IELTS',?,'PUBLISHED','t',?)",
+                    v[0], v[1], v[2], v[3], by);
+        }
         policy(ORG_A, "IELTS", "TEST", T_A, "BOTH");
         policy(null, "IELTS", "TEST", T_E9, "BOTH");
-        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_A, T_A);
-        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_A_V2, T_A);
-        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_E9, T_E9);
-        com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_PLAIN, UUID.randomUUID());
     }
 
     private GradingMode resolve(UUID user, UUID boundOrg, String exam, UUID orgParam, UUID test) {

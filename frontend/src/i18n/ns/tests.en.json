@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "tests": "Tests"
+  },
+  "loading": "Loading…",
+  "status": {
+    "DRAFT": "Draft",
+    "IN_REVIEW": "In review",
+    "CHANGES_REQUESTED": "Changes requested",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "variant": {
+    "AC": "Academic",
+    "GT": "General Training"
+  },
+  "actions": {
+    "create": "Create test",
+    "save": "Save draft",
+    "saveNewVersion": "Save as a new version",
+    "submit": "Submit for review"
+  },
+  "new": {
+    "title": "New test",
+    "description": "Build a test from the question groups already written: choose the exam, name it, then add the parts in the next step.",
+    "exam": "Exam",
+    "examPlaceholder": "Choose an exam",
+    "variant": "Variant",
+    "variantPlaceholder": "Choose a variant",
+    "name": "Test name"
+  },
+  "edit": {
+    "back": "Back to the tests",
+    "version": "Version {{n}}",
+    "name": "Test name",
+    "maxResumes": "Resumes allowed",
+    "maxResumesHint": "Leave empty for the default of the exam.",
+    "saved": "Draft saved.",
+    "savedNewVersion": "A new draft, version {{n}}, was made. The published version is untouched.",
+    "submitted": "Submitted for review. This version is locked until the reviewer decides.",
+    "publishedNote": "This version is published and cannot be changed. Saving makes a new draft (version {{next}}).",
+    "inReviewNote": "This version is waiting for review and is locked.",
+    "archivedNote": "This version is archived and cannot be changed.",
+    "notFoundTitle": "Test not found",
+    "notFound": "The test does not exist, or you may not open it in this context."
+  },
+  "parts": {
+    "heading": "Parts of the test",
+    "empty": "The test has no parts yet.",
+    "partN": "Part {{n}}",
+    "section": "Section of the exam",
+    "minutes": "Time (minutes)",
+    "remove": "Remove part",
+    "groupsOf": "Question groups of part {{n}}",
+    "up": "Move {{title}} up",
+    "down": "Move {{title}} down",
+    "removeGroup": "Remove group {{title}}",
+    "removeGroupShort": "Remove",
+    "addGroup": "Add a question group",
+    "addGroupPlaceholder": "Choose a group",
+    "groupOption": "{{title}} ({{members}} questions, {{status}})",
+    "add": "Add a part"
+  },
+  "check": {
+    "heading": "Check against the exam",
+    "note": "A different number of questions is only a warning. A test with a whole skill missing cannot be submitted, and it is published only when every question group in it is published.",
+    "blockers": "Cannot be submitted yet, missing skill:",
+    "caption": "Questions in the test against the exam",
+    "colSection": "Section",
+    "colSkill": "Skill",
+    "colExpected": "Needed",
+    "colActual": "Has",
+    "colState": "State",
+    "state": {
+      "OK": "Complete",
+      "MISSING": "Missing",
+      "SHORT": "Short",
+      "OVER": "Over"
+    },
+    "overrides": "Conversion tables for this test: {{skills}}."
+  },
+  "list": {
+    "title": "Tests",
+    "description": "The tests of the exams you write or review, each showing its latest version.",
+    "new": "New test",
+    "exam": "Exam",
+    "status": "Status",
+    "all": "All",
+    "caption": "List of tests",
+    "colTitle": "Test",
+    "colExam": "Exam",
+    "colStatus": "Status",
+    "colVersion": "Version",
+    "colParts": "Parts",
+    "emptyTitle": "No tests yet",
+    "empty": "No test matches the filter.",
+    "pagination": "Pagination",
+    "previous": "Previous page",
+    "next": "Next page"
+  },
+  "errors": {
+    "invalid": "The test is not right yet. Fix the marked fields and save again.",
+    "skillMissing": "Cannot be submitted: the test needs questions in every skill of its exam.",
+    "underReview": "The latest version is being reviewed and cannot be edited.",
+    "anotherAuthor": "This draft belongs to another author; only they can edit and submit it.",
+    "archived": "This test has been archived.",
+    "notEditable": "There is no draft to submit.",
+    "conflict": "Somebody just changed this test. Reload and try again.",
+    "forbidden": "You may not do this with the test.",
+    "notFound": "Test not found.",
+    "generic": "Something went wrong. Try again."
+  }
+}

@@ -23,14 +23,19 @@
       "owner": "P3.1 (courses), P6.1 (classes)"
     },
     {
+      "id": "F13",
+      "pending": "Done through the real stack (P2.6): the author builds a TOEIC test on the screen part by part from published question groups, the screen checks it against the exam (a count that differs warns, a missing skill blocks the review), the number of resumes is set per test, the test is published only by a review that waits for its groups (a draft group refuses the approval), and an edit makes version 2 while version 1 stays PUBLISHED (the review is run by seed.reviewVersion, the real ReviewService, until the review screens exist). Pending: 'gắn bảng quy đổi ghi đè' on a screen (the TEST scope is enabled in the database since V202611120002 and resolve uses it, covered by TestVersionViewIT.publishingVersion2OfATestKeepsTheOverride and db-test 44; no CMS screen or endpoint writes the override yet: its header is the administrator's, its rows are versioned content), and the full-size tests 'TOEIC 200 câu' / 'IELTS 4 kỹ năng' with every count right (they need ~100 published questions: the Excel import of P2.7 makes them).",
+      "owner": "P2.7 (import: full-size tests), the override screen (an administrator's)"
+    },
+    {
       "id": "F14",
       "pending": "Done through the real stack (P2.4): the author writes a lesson with all ten block types on the editor screen, the server keeps them in order, refuses a video host outside the allowlist and a lesson without a question type, and publishes the lesson only through a review that waits for the embedded question (the review is run by seed.reviewVersion, the real ReviewService, until the review screens exist). The learner side is covered by Vitest (StrategyLessonView: every block, the embedded question hides its answer until the learner has answered) and by StrategyLessonIT. Pending: 'học viên thấy đúng' in the browser: there is no learner lesson route until P3.2, which must render StrategyLessonView from QuestionVersions#examView, a signed link per file and an answer checker, and extend this spec with the learner reading a published lesson (frames from YouTube/Vimeo allowed by the CSP, the embedded question answered).",
       "owner": "P3.2 (lesson page), P2.9 (review queue replaces seed.reviewVersion)"
     },
     {
       "id": "F15",
-      "pending": "Done through the real stack (P2.5): the author makes the DEFAULT table of an exam skill on the screen, the server refuses a gap in the raw values and a score that falls (TableConverter), the table is published only by a review (seed.reviewVersion, the real ReviewService, until the review screens exist), an edit makes version 2 and the published version is untouched, version 1 is archived when 2 is published. Pending: 'ghi đè' (the per-TEST override: scope TEST answers 409 and the database refuses the row until tests exist), and 'kết quả thi dùng đúng bảng; sửa bảng không đổi kết quả cũ' (an exam result records the score table version it used: no results exist yet).",
-      "owner": "P2.6 (the override, with tests), P4.1 (results use and record the table version)"
+      "pending": "Done through the real stack (P2.5): the author makes the DEFAULT table of an exam skill on the screen, the server refuses a gap in the raw values and a score that falls (TableConverter), the table is published only by a review (seed.reviewVersion, the real ReviewService, until the review screens exist), an edit makes version 2 and the published version is untouched, version 1 is archived when 2 is published. Pending: 'ghi đè' on the screen (since P2.6 the database accepts a TEST-scope table for a real test, written by the administrator of the test's owner only, and ScoreTables#resolve uses it for every version of the test; the score-table CMS still answers 409 for scope TEST and no screen sets an override: see the F13 entry), and 'kết quả thi dùng đúng bảng; sửa bảng không đổi kết quả cũ' (an exam result records the score table version it used: no results exist yet).",
+      "owner": "the override screen (an administrator's, with the F13 entry), P4.1 (results use and record the table version)"
     },
     {
       "id": "F16",
