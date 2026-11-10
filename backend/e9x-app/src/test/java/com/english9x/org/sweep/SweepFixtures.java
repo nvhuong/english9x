@@ -53,6 +53,9 @@ public final class SweepFixtures {
     public final UUID publishedCourse = UUID.randomUUID();
     public final String orderCodeA = "SWA001";
     public final String orderCodeB = "SWB001";
+    /** P5.2: two more pending orders of A's member, one for the confirm route's positive control and one for the reject route's (each decision changes its order). */
+    public final String orderCodeConfirmA = "SWA002";
+    public final String orderCodeRejectA = "SWA003";
     /** Raw tokens of an invitation of org B, and of one org A's member may really accept (plausible: 40-64 URL-safe characters). */
     public final String tokenB = "sweep-foreign-invitation-token-of-org-b-0001";
     public final String tokenForA = "sweep-own-invitation-token-for-the-a-member1";
@@ -173,11 +176,13 @@ public final class SweepFixtures {
         // P5.1: plans are a price list shared by everybody; orders belong to a person (B's member has one, with an item; A's member has one too, the positive control)
         su.update("insert into plans(id,name,price_vnd,months,max_courses) values (?,'Sweep plan',100000,1,2)", planId);
         su.update("insert into courses(id,owner_org_id,exam_code,code,title,status) values (?,null,'IELTS','SWPUB1','Published','PUBLISHED')", publishedCourse);
-        for (Object[] o : new Object[][] {{orderCodeA, userA}, {orderCodeB, userB}}) {
+        for (Object[] o : new Object[][] {{orderCodeA, userA}, {orderCodeB, userB}, {orderCodeConfirmA, userA}, {orderCodeRejectA, userA}}) {
             UUID order = UUID.randomUUID();
             su.update("insert into orders(id,code,user_id,plan_id,plan_months,amount_vnd) values (?,?,?,?,1,100000)", order, o[0], o[1], planId);
             su.update("insert into order_items(order_id,user_id,course_id,course_code) values (?,?,?,'SWPUB1')", order, o[1], publishedCourse);
         }
+        // P5.2: the receiving account (one active row, shared by everybody who pays)
+        su.update("insert into payment_accounts(bank_bin,account_no,account_name) values ('970436','SWEEP123456','Sweep account')");
     }
 
     // ---- the operations of the API that are not simply read with an id: the one list of exemptions, and the fixtures ------------------------------
@@ -257,6 +262,18 @@ public final class SweepFixtures {
         all.put("PUT /api/admin/plans/{id}", ForeignIdSweep.Fixture.write(plan, List.of(), new ForeignIdSweep.Control(slot("id", planId), null, ForeignIdSweep.ADMIN)));
         all.put("GET /api/orders/{code}", ForeignIdSweep.Fixture.read(List.of(
                 new ForeignIdSweep.Attempt(slot("code", orderCodeB)), new ForeignIdSweep.Attempt(slot("code", "NOSUCH")))));
+        // P5.2: the administrators' routes. A's ORG_ADMIN is refused with 403 whatever the code; the SYS_ADMIN control really decides A's member's own pending order.
+        // The QR image is the owner's: B's member's code and a code nobody has are 404 (the positive control, A's member's own pending order, is asserted in RlsLeakSweepIT).
+        all.put("PUT /api/admin/payment-account", ForeignIdSweep.Fixture.write("{\"bankBin\":\"970436\",\"accountNo\":\"SWEEP123456\",\"accountName\":\"Sweep account\"}", List.of(),
+                new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.ADMIN)));
+        all.put("POST /api/admin/orders/{code}/confirm", ForeignIdSweep.Fixture.write("{\"bankRef\":\"SWEEP\"}", List.of(
+                new ForeignIdSweep.Attempt(slot("code", orderCodeB)), new ForeignIdSweep.Attempt(slot("code", "NOSUCH"))),
+                new ForeignIdSweep.Control(slot("code", orderCodeConfirmA), null, ForeignIdSweep.ADMIN)));
+        all.put("POST /api/admin/orders/{code}/reject", ForeignIdSweep.Fixture.write("{\"reason\":\"sweep\"}", List.of(
+                new ForeignIdSweep.Attempt(slot("code", orderCodeB)), new ForeignIdSweep.Attempt(slot("code", "NOSUCH"))),
+                new ForeignIdSweep.Control(slot("code", orderCodeRejectA), null, ForeignIdSweep.ADMIN)));
+        all.put("GET /api/orders/{code}/qr.png", ForeignIdSweep.Fixture.read(List.of(
+                new ForeignIdSweep.Attempt(slot("code", orderCodeB)), new ForeignIdSweep.Attempt(slot("code", "NOSUCH")))));
         // P2.3: questions and groups. The caller (A's ORG_ADMIN, no AUTHOR grant) is refused on every route and every foreign id; A's author really writes
         // A's own drafts (one per route, because each write changes the draft it is aimed at). The foreign ids are walked on the routes with one uuid.
         String question = questionBody();
@@ -329,6 +346,7 @@ public final class SweepFixtures {
             Map.entry("notification_deliveries", "P1.8: RLS on with no policy, no privilege for the request role, only the delivery functions touch it"),
             Map.entry("event_publication", "P1.8: Spring Modulith's registry of module events: ids, no tenant column, no endpoint reads it"),
             Map.entry("plans", "P5.1: the price list, the same for every tenant; the request role reads active plans and only a real SYS_ADMIN writes (OrderServiceIT.planAdminIsSysAdminOnly...)"),
+            Map.entry("payment_accounts", "P5.2: the one bank account every payer pays into, the same for every tenant; the request role reads the active row and only a real SYS_ADMIN writes it (OrderAdminIT.paymentAccountAdmin..., 43_payment_accounts.sql)"),
             Map.entry("exams", "reference data every tenant shares (IELTS, TOEIC), the same for everybody; read-only for the application (P2.1)"),
             Map.entry("exam_sections", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"),
             Map.entry("interaction_kinds", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"),

@@ -5,7 +5,7 @@
     {
       "id": "F01",
       "pending": "'chưa xác thực thì không mua được gói' through the checkout SCREEN: POST /api/orders already refuses an unverified learner (F39 asserts urn:e9x:problem:email-not-verified at the real endpoint, OrderServiceIT.unverifiedEmailCannotOrder), but there is no plan/checkout page yet, so the browser scenario (open a plan, try to pay, get refused, verify, the same order goes through) is pending.",
-      "owner": "P5.4 (checkout screens), P5.2 (payment)"
+      "owner": "P5.4 (checkout screens)"
     },
     {
       "id": "F06",
@@ -44,8 +44,8 @@
     },
     {
       "id": "F39",
-      "pending": "Driven through the real API of the running stack (plans, order within the course limit, locked price, verified-email rule, order code and transfer note, expiry job with a SYSTEM audit record). Pending: the browser steps (choose a plan and courses on the checkout page) and the QR/transfer step with the administrator's confirmation.",
-      "owner": "P5.4 (plan and checkout screens), P5.2 (QR, payment account, confirmation)"
+      "pending": "Driven through the real API of the running stack (plans, order within the course limit, locked price, verified-email rule, order code and transfer note, expiry job with a SYSTEM audit record); the QR, the payment account and the administrator's confirmation are covered by F40 (P5.2). Pending: the browser steps that choose a plan and courses on the checkout page.",
+      "owner": "P5.4 (plan and checkout screens)"
     },
     {
       "id": "F41",
@@ -54,33 +54,38 @@
     },
     {
       "id": "F52",
-      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the same scenario started by a real submit/approve/request-changes in the CMS, and the other spec §13 events (new/confirmed/rejected orders (P5.2), scores, grading queue, assignments, session reminders), whose source modules do not exist yet.",
-      "owner": "P2.9 (CMS review queue); sources: P5.2 (orders; the plan-expiry notices are real since P5.1 and asserted in F41), P4.2/P4.3 (scores, grading), P6.2/P6.3 (assignments, sessions)"
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the same scenario started by a real submit/approve/request-changes in the CMS, and the other spec §13 events (scores, grading queue, assignments, session reminders), whose source modules do not exist yet.",
+      "owner": "P2.9 (CMS review queue); sources: the order notices are real since P5.2 (asserted in F40: ORDER_PENDING, ORDER_CONFIRMED by app and mail, ORDER_REJECTED) and the plan-expiry notices since P5.1 (F41); P4.2/P4.3 (scores, grading), P6.2/P6.3 (assignments, sessions)"
     },
     {
       "id": "F53",
-      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the mail for a real CMS review action and for the other §13 events.",
-      "owner": "P2.9; P5.2, P4.2/P4.3, P6.2/P6.3 for the other sources"
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the mail for a real CMS review action and for the other §13 events (the order notices are real since P5.2, asserted in F40).",
+      "owner": "P2.9; P4.2/P4.3, P6.2/P6.3 for the other sources"
     },
     {
       "id": "F54",
-      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: Telegram messages for a real CMS review action and the other §13 events. Telegram's own delivery of /start to the webhook is played by the spec (the real bot cannot be reached from CI).",
-      "owner": "P2.9; P5.2, P4.2/P4.3, P6.2/P6.3 for the other sources"
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: Telegram messages for a real CMS review action and the other §13 events (the order notices are real since P5.2, asserted in F40). Telegram's own delivery of /start to the webhook is played by the spec (the real bot cannot be reached from CI).",
+      "owner": "P2.9; P4.2/P4.3, P6.2/P6.3 for the other sources"
     },
     {
       "id": "F55",
-      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the effect of preferences on a real CMS review action and on the other §13 events (the preference screen already lists all of them).",
-      "owner": "P2.9; P5.2, P4.2/P4.3, P6.2/P6.3 for the other sources"
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the effect of preferences on a real CMS review action and on the other §13 events (the order notices are real since P5.2, asserted in F40) (the preference screen already lists all of them).",
+      "owner": "P2.9; P4.2/P4.3, P6.2/P6.3 for the other sources"
     },
     {
       "id": "F57",
-      "pending": "The acceptance line names three kinds of record: order confirmation, seat revocation and content approval. The spec covers what exists, through the real screens and the real services: organisation creation, role changes, invitation send/revoke/accept and content approval (a real ReviewService run over a stand-in e2e_doc version through seed.reviewFlow, since the CMS review screens do not exist yet), read on the real audit-log screen by the SYS_ADMIN and refused to everybody else. Pending: the order-confirmation record (billing module, no module yet) and the seat-revocation record (billing seats, P5.3, no module yet); those modules must call AuditLog#record and extend this spec with the two rows. Content approval through the real CMS review screen instead of the seed arrives with P2.9.",
-      "owner": "P5.2 (order confirm/reject), P5.3 (seat assign/revoke), P2.9 (review screen replaces seed.reviewFlow)"
+      "pending": "The acceptance line names three kinds of record: order confirmation, seat revocation and content approval. The spec covers what exists, through the real screens and the real services: organisation creation, role changes, invitation send/revoke/accept, order confirmation (P5.2: a real order placed and confirmed through the billing endpoints, one transaction with the audit record) and content approval (a real ReviewService run over a stand-in e2e_doc version through seed.reviewFlow, since the CMS review screens do not exist yet), read on the real audit-log screen by the SYS_ADMIN and refused to everybody else. Pending: the seat-revocation record (billing seats, P5.3, no module yet); that module must call AuditLog#record and extend this spec with its row. Content approval through the real CMS review screen instead of the seed arrives with P2.9.",
+      "owner": "P5.3 (seat assign/revoke), P2.9 (review screen replaces seed.reviewFlow)"
     },
     {
       "id": "F58",
       "pending": "The 8 main screens of the design mockups are not built yet: 01 course catalogue, 02 chapter map, 03 lesson, 04 exam room Reading, 05 exam room Speaking, 06 result, 07 CMS review queue, 08 admin QR orders. They move from PENDING_MAIN_SCREENS to SCREENS in the spec as they appear (see its header and the P1.12 note in the foundation plan).",
       "owner": "P3.1 (01, 02), P3.2 (03), P3.4 (04, 05), P4.4 (06), P2.9 (07), P5.4 (08)"
+    },
+    {
+      "id": "F40",
+      "pending": "Done through the real stack (P5.2): the SYS_ADMIN sets the receiving account on the screen, the order page shows the QR (a 512 px PNG), the account, the exact amount and note, the SYS_ADMIN confirms one order and rejects another on the queue screen, access opens from the confirmation, the learner is told in the app and by mail, the audit log holds the decisions without an account number or the reason's text, a second decision is 409. Pending: the browser steps that PLACE the order (plan/course pickers, checkout page) and decoding the QR on the page with jsQR. The scan with three real bank apps is a manual pre-release step of the owner.",
+      "owner": "P5.4 (checkout screens, jsQR decode)"
     }
   ]
 }

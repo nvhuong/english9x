@@ -1,6 +1,7 @@
 package com.english9x.billing.order;
 
 import com.english9x.audit.api.AuditLog;
+import com.english9x.billing.api.events.OrderPlaced;
 import com.english9x.billing.internal.BillingProblems;
 import com.english9x.billing.internal.BillingProperties;
 import com.english9x.billing.order.OrderDtos.CreateOrderRequest;
@@ -9,6 +10,9 @@ import com.english9x.billing.order.OrderDtos.OrderCreated;
 import com.english9x.billing.order.OrderDtos.OrderView;
 import com.english9x.billing.order.OrderRepository.OrderRow;
 import com.english9x.billing.order.OrderRepository.PlanRow;
+import com.english9x.billing.payment.PaymentInstructions;
+import com.english9x.billing.payment.QrImages;
+import com.english9x.billing.payment.PaymentInstructions.PayTo;
 import com.english9x.domain.billing.Codes;
 import com.english9x.domain.billing.Plan;
 import com.english9x.domain.billing.PlanSelection;
@@ -19,7 +23,9 @@ import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,14 +46,19 @@ class OrderService {
     private final OrderCodes codes;
     private final BillingProperties props;
     private final Clock clock;
+    private final PaymentInstructions payment;
+    private final ApplicationEventPublisher events;
 
-    OrderService(OrderRepository repo, UserDirectory users, AuditLog audit, OrderCodes codes, BillingProperties props, Clock clock) {
+    OrderService(OrderRepository repo, UserDirectory users, AuditLog audit, OrderCodes codes, BillingProperties props, Clock clock,
+            PaymentInstructions payment, ApplicationEventPublisher events) {
         this.repo = repo;
         this.users = users;
         this.audit = audit;
         this.codes = codes;
         this.props = props;
         this.clock = clock;
+        this.payment = payment;
+        this.events = events;
     }
 
     private static UUID actingUser() {
@@ -95,7 +106,12 @@ class OrderService {
         detail.put("amountVnd", plan.priceVnd());
         detail.put("courses", courses.size());
         audit.record("order.create", "order", orderId, detail);
-        return new OrderCreated(code, plan.priceVnd(), transferNote(code, courses), null, null);
+        final String orderCode = code;
+        events.publishEvent(new OrderPlaced(orderId, orderCode, user, plan.priceVnd()));
+        String note = transferNote(orderCode, courses);
+        Optional<PayTo> to = payment.payTo();
+        return new OrderCreated(orderCode, plan.priceVnd(), note, to.map(t -> payment.qrPayload(t, plan.priceVnd(), note)).orElse(null),
+                to.map(t -> qrUrl(orderCode)).orElse(null), to.orElse(null));
     }
 
     @Transactional(readOnly = true)
@@ -114,11 +130,28 @@ class OrderService {
         return view(o, repo.itemsOf(o.id(), user));
     }
 
+    /** The QR image of one of the caller's orders that still waits for payment: PNG bytes, 512 px. Anything else is a 404. */
+    @Transactional(readOnly = true)
+    byte[] qrPng(String code) {
+        OrderView o = mine(code);
+        if (!"PENDING_PAYMENT".equals(o.status()) || o.qrPayload() == null) {
+            throw BillingProblems.notFound();
+        }
+        return QrImages.png(o.qrPayload());
+    }
+
+    private static String qrUrl(String code) {
+        return "/api/orders/" + code + "/qr.png";
+    }
+
     private OrderView view(OrderRow o, List<OrderCourse> courses) {
-        return new OrderView(o.code(), o.status(), o.amountVnd(), o.planId(), o.planMonths(), o.createdAt(), transferNote(o.code(), courses), courses, o.rejectReason());
+        String note = transferNote(o.code(), courses);
+        Optional<PayTo> to = "PENDING_PAYMENT".equals(o.status()) ? payment.payTo() : Optional.empty();
+        return new OrderView(o.code(), o.status(), o.amountVnd(), o.planId(), o.planMonths(), o.createdAt(), note, courses, o.rejectReason(),
+                to.map(t -> payment.qrPayload(t, o.amountVnd(), note)).orElse(null), to.map(t -> qrUrl(o.code())).orElse(null), to.orElse(null));
     }
 
     private String transferNote(String code, List<OrderCourse> courses) {
-        return TransferNote.build(code, courses.stream().map(OrderCourse::code).toList(), props.transferNoteMaxLength());
+        return TransferNote.build(code, courses.stream().map(OrderCourse::code).sorted().toList(), props.transferNoteMaxLength());
     }
 }

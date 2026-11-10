@@ -16,6 +16,61 @@
         "required" : [ "status" ],
         "type" : "object"
       },
+      "AdminOrderView" : {
+        "properties" : {
+          "amountVnd" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bankRef" : {
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "confirmedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "courseCodes" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "planMonths" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rejectReason" : {
+            "type" : "string"
+          },
+          "status" : {
+            "description" : "PENDING_PAYMENT, CONFIRMED, REJECTED or EXPIRED",
+            "type" : "string"
+          },
+          "transferNote" : {
+            "description" : "What the payer should have put in the transfer, to match it against the bank statement",
+            "type" : "string"
+          },
+          "userEmail" : {
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "userName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "amountVnd", "code", "courseCodes", "createdAt", "planMonths", "status", "transferNote", "userId" ],
+        "type" : "object"
+      },
       "AdminOrgView" : {
         "properties" : {
           "createdAt" : {
@@ -129,6 +184,17 @@
           }
         },
         "required" : [ "googleEnabled" ],
+        "type" : "object"
+      },
+      "ConfirmOrderRequest" : {
+        "properties" : {
+          "bankRef" : {
+            "description" : "The bank's transaction reference, if the administrator has it (at most 100 characters)",
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "CreateOrderRequest" : {
@@ -861,12 +927,16 @@
             "description" : "6 characters, A-Z and 0-9",
             "type" : "string"
           },
+          "payTo" : {
+            "$ref" : "#/components/schemas/PayTo",
+            "description" : "The bank account to pay into. Null while no payment account is configured"
+          },
           "qrPayload" : {
-            "description" : "The VietQR text for the QR code. Null until the payment account and the QR are built (P5.2)",
+            "description" : "The VietQR text for the QR code. Null while no payment account is configured",
             "type" : "string"
           },
           "qrPngUrl" : {
-            "description" : "URL of the QR image. Null until P5.2",
+            "description" : "URL of the QR image (PNG, 512 px). Null while no payment account is configured",
             "type" : "string"
           },
           "transferNote" : {
@@ -896,6 +966,10 @@
             "format" : "date-time",
             "type" : "string"
           },
+          "payTo" : {
+            "$ref" : "#/components/schemas/PayTo",
+            "description" : "The bank account to pay into; same rule as qrPayload"
+          },
           "planId" : {
             "format" : "uuid",
             "type" : "string"
@@ -903,6 +977,14 @@
           "planMonths" : {
             "format" : "int32",
             "type" : "integer"
+          },
+          "qrPayload" : {
+            "description" : "The VietQR text; only while the order is PENDING_PAYMENT and an account is configured",
+            "type" : "string"
+          },
+          "qrPngUrl" : {
+            "description" : "URL of the QR image; same rule as qrPayload",
+            "type" : "string"
           },
           "rejectReason" : {
             "description" : "Why the order was not confirmed (REJECTED)",
@@ -937,6 +1019,64 @@
           }
         },
         "required" : [ "id", "name", "type" ],
+        "type" : "object"
+      },
+      "PayTo" : {
+        "properties" : {
+          "accountName" : {
+            "type" : "string"
+          },
+          "accountNo" : {
+            "type" : "string"
+          },
+          "bankBin" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "accountName", "accountNo", "bankBin" ],
+        "type" : "object"
+      },
+      "PaymentAccountRequest" : {
+        "properties" : {
+          "accountName" : {
+            "description" : "Name of the account holder, shown to the payer",
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "accountNo" : {
+            "description" : "1 to 19 letters or digits",
+            "minLength" : 1,
+            "pattern" : "[A-Za-z0-9]{1,19}",
+            "type" : "string"
+          },
+          "bankBin" : {
+            "description" : "The bank's 6-digit NAPAS BIN",
+            "minLength" : 1,
+            "pattern" : "[0-9]{6}",
+            "type" : "string"
+          }
+        },
+        "required" : [ "accountName", "accountNo", "bankBin" ],
+        "type" : "object"
+      },
+      "PaymentAccountView" : {
+        "properties" : {
+          "accountName" : {
+            "type" : "string"
+          },
+          "accountNo" : {
+            "type" : "string"
+          },
+          "bankBin" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "accountName", "accountNo", "bankBin", "updatedAt" ],
         "type" : "object"
       },
       "PlanRequest" : {
@@ -1407,6 +1547,16 @@
         "required" : [ "status" ],
         "type" : "object"
       },
+      "RejectOrderRequest" : {
+        "properties" : {
+          "reason" : {
+            "description" : "Why the payment was not accepted: 1 to 500 characters, shown to the learner",
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason" ],
+        "type" : "object"
+      },
       "ResetConfirmRequest" : {
         "properties" : {
           "newPassword" : {
@@ -1856,7 +2006,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_9",
+        "operationId" : "list_10",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -2071,6 +2221,142 @@
         "tags" : [ "invitation-controller" ]
       }
     },
+    "/api/admin/orders" : {
+      "get" : {
+        "operationId" : "list_9",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminOrderView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "order-admin-controller" ]
+      }
+    },
+    "/api/admin/orders/{code}/confirm" : {
+      "post" : {
+        "operationId" : "confirm",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "code",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConfirmOrderRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminOrderView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "order-admin-controller" ]
+      }
+    },
+    "/api/admin/orders/{code}/reject" : {
+      "post" : {
+        "operationId" : "reject",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "code",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RejectOrderRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminOrderView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "order-admin-controller" ]
+      }
+    },
     "/api/admin/organizations" : {
       "get" : {
         "operationId" : "list_7",
@@ -2136,6 +2422,70 @@
           }
         },
         "tags" : [ "org-controller" ]
+      }
+    },
+    "/api/admin/payment-account" : {
+      "get" : {
+        "operationId" : "current",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaymentAccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "payment-account-controller" ]
+      },
+      "put" : {
+        "operationId" : "replace",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PaymentAccountRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaymentAccountView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "payment-account-controller" ]
       }
     },
     "/api/admin/plans" : {
@@ -4672,6 +5022,43 @@
           }
         },
         "tags" : [ "order-controller" ]
+      }
+    },
+    "/api/orders/{code}/qr.png" : {
+      "get" : {
+        "operationId" : "qr",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "code",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "qr-image-controller" ]
       }
     },
     "/api/orgs/{id}/invitations" : {

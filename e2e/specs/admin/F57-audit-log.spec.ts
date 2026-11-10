@@ -3,8 +3,9 @@
 // inviting and revoking, accepting an invitation (all through the admin screens and the invitation page), and approving content
 // (a real ReviewService run on a stand-in version, seed.reviewFlow, until the CMS review screens of P2.9 exist). The SYS_ADMIN then
 // reads all of it on the audit-log screen, filters it, and nobody else can open it.
-// PENDING (see e2e/partial-features.json): order confirmation (billing, P5.2) and seat revocation (billing, P5.3) have no module
-// yet, so their records cannot be produced; those modules call AuditLog#record and extend this spec with the two rows.
+// Order confirmation (billing, P5.2) is covered: a real order is placed and confirmed by the SYS_ADMIN, and the record is read on the screen.
+// PENDING (see e2e/partial-features.json): seat revocation (billing seats, P5.3) has no module yet; it calls AuditLog#record and extends this
+// spec with its row.
 import { test, expect } from '../../fixtures';
 import type { Page } from '@playwright/test';
 
@@ -83,6 +84,17 @@ test.describe('F57 audit log', () => {
     // 6) approving content: the real review workflow, author and reviewer being two people
     const flow = await seed.reviewFlow({ authorId: author.userId, reviewerId: reviewer.userId, outcome: 'approved' });
 
+    // 7) confirming an order: a learner orders over the real API, the SYS_ADMIN confirms it (one transaction: order, entitlements, audit record)
+    const buyer = await seed.verifiedLearner({ email: uniqueEmail('f57-buyer'), displayName: 'Người Mua Gói F57' });
+    const adminApi = await org.apiLogin(admin);
+    const buyerApi = await org.apiLogin(buyer);
+    const course = await seed.billing.course();
+    const plan = await org.api(adminApi.token, 'POST', '/api/admin/plans', { body: { name: `Gói F57 ${suffix}`, priceVnd: 250000, months: 2, maxCourses: 1, active: true } });
+    const placed = await org.api(buyerApi.token, 'POST', '/api/orders', { body: { planId: plan.body.id, courseIds: [course.courseId] } });
+    expect(placed.status).toBe(201);
+    const orderCode: string = placed.body.orderCode;
+    expect((await org.api(adminApi.token, 'POST', `/api/admin/orders/${orderCode}/confirm`, { body: { bankRef: 'FT57' } })).status).toBe(200);
+
     // the SYS_ADMIN reads it all on the screen
     await openAuditLog(page);
     await filterBy(page, { actor: admin.email });
@@ -121,6 +133,18 @@ test.describe('F57 audit log', () => {
     const submit = rowsOf(page).filter({ hasText: 'review.submit' });
     await expect(submit).toContainText('Gửi duyệt');
     await expect(submit).toContainText('Người Soạn Nội Dung');
+
+    // order confirmation: the record names the order, the amount and the bank reference, never an account number
+    const orderId = ((await org.api(adminApi.token, 'GET', `/api/admin/audit-log?action=order.confirm&targetType=order&size=100`)).body.items as Array<{ targetId: string; detail: Record<string, unknown> }>)
+      .find((r) => r.detail.orderCode === orderCode)!.targetId;
+    await filterBy(page, { targetId: orderId });
+    const confirmRow = rowsOf(page).filter({ hasText: 'order.confirm' });
+    await expect(confirmRow).toHaveCount(1);
+    await expect(confirmRow).toContainText('Xác nhận đơn');
+    await expect(confirmRow).toContainText('Quản Trị Nhật Ký');
+    await expect(confirmRow).toContainText(orderCode);
+    await expect(confirmRow).toContainText('250000');
+    await expect(confirmRow).toContainText('FT57');
 
     // a filter that matches nothing says so and offers the way back
     await filterBy(page, { actor: `nobody-${suffix}@example.test` });
