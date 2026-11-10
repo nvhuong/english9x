@@ -27,4 +27,17 @@ public interface JobQueue {
      * @return the job id
      */
     UUID enqueue(String type, JsonNode payload, Instant runAt);
+
+    /**
+     * Like {@link #enqueue}, but queues the job only if no job of this {@code type} with the same {@code dedupeKey} exists yet, in any
+     * state (a finished one counts until it is purged after {@code e9x.jobs.retention}). For work that several application instances, or
+     * one instance twice, may all try to queue: a periodic tick, whose key is its time bucket, is queued once however many try.
+     *
+     * <p>Same transaction rules as {@link #enqueue}. A concurrent insert of the same key waits for the other transaction and then
+     * does nothing once it commits.
+     *
+     * @param dedupeKey 1 to 200 characters
+     * @return {@code true} if this call queued the job, {@code false} if the key was already taken
+     */
+    boolean enqueueOnce(String type, JsonNode payload, Instant runAt, String dedupeKey);
 }

@@ -16,8 +16,8 @@ import java.util.UUID;
  * the session and refuses a statement that tries to name others. Consequences, by design:
  * <ul>
  *   <li>With no person bound (a job or a listener that runs without one) {@code record} throws {@link IllegalStateException}.
- *       The system itself has no actor in v1. Code that records what a PERSON did from a background step binds that person first,
- *       as a notification listener already must.
+ *       What the SYSTEM itself changes (a job that expires orders) is recorded through {@link SystemAuditLog} instead, with the actor kind SYSTEM.
+ *       Code that records what a PERSON did from a background step binds that person first, as a notification listener already must.
  *   <li>Outside a transaction it throws {@code IllegalTransactionStateException}: a record that is not atomic with its action is a bug.
  * </ul>
  *
