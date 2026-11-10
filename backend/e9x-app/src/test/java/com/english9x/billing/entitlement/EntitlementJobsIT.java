@@ -21,9 +21,13 @@ class EntitlementJobsIT extends BillingIT {
     private UUID entitle(UUID u, Instant until, boolean order) {
         UUID id = UUID.randomUUID();
         UUID c = course("PUBLISHED");
-        su.update("insert into entitlements(id,user_id,course_id,valid_from,valid_until,source_order_id,source_seat_id,source_org_id) values (?,?,?,?,?,?,?,?)",
-                id, u, c, Timestamp.from(until.minus(Duration.ofDays(60))), Timestamp.from(until), order ? UUID.randomUUID() : null,
-                order ? null : UUID.randomUUID(), order ? null : org("CENTER"));
+        if (order) {
+            su.update("insert into entitlements(id,user_id,course_id,valid_from,valid_until,source_order_id) values (?,?,?,?,?,?)",
+                    id, u, c, Timestamp.from(until.minus(Duration.ofDays(60))), Timestamp.from(until), UUID.randomUUID());
+        } else {
+            com.english9x.support.SeatFixtures.seatEntitlement(su, org("CENTER"), u, c, until.minus(Duration.ofDays(60)), until);
+            id = su.queryForObject("select id from entitlements where user_id = ? and course_id = ?", UUID.class, u, c);
+        }
         return id;
     }
 

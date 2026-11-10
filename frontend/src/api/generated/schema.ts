@@ -112,6 +112,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/org-licenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAll"];
+        put?: never;
+        post: operations["create_8"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/org-licenses/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["licensableCourses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/organizations": {
         parameters: {
             query?: never;
@@ -1068,7 +1100,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["revoke"];
+        delete: operations["revoke_1"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1085,6 +1117,54 @@ export interface paths {
         put: operations["set"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/licenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ofOrg"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/licenses/{id}/seats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/licenses/{id}/seats/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revoke"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1181,6 +1261,15 @@ export interface components {
             name: string;
             type: components["schemas"]["OrgType"];
         };
+        AssignSeatRequest: {
+            /** @description A subset of the licence's courses */
+            courseIds: string[];
+            /**
+             * Format: uuid
+             * @description A member of the organisation
+             */
+            userId: string;
+        };
         AuditEntry: {
             action: string;
             /** @description Looked up now; null when the account no longer exists */
@@ -1239,6 +1328,34 @@ export interface components {
             courseIds: string[];
             /** Format: uuid */
             planId: string;
+        };
+        CreateOrgLicenseRequest: {
+            /**
+             * @description QR: an order the organisation's administrator pays by bank transfer; CONTRACT: active at once, paid under a contract
+             * @enum {string}
+             */
+            activation: "QR" | "CONTRACT";
+            /** @description Required for CONTRACT, 1 to 100 characters; not allowed for QR */
+            contractNo?: string;
+            /** @description Published English9x courses the seats may cover */
+            courseIds: string[];
+            /**
+             * Format: int32
+             * @description Length in months, 1 to 60
+             */
+            months: number;
+            /** Format: uuid */
+            orgId: string;
+            /**
+             * Format: int64
+             * @description The agreed price; locked at creation
+             */
+            priceVnd: number;
+            /**
+             * Format: int32
+             * @description People who can hold a seat at once, 1 to 100000
+             */
+            seats: number;
         };
         CreateOrganizationRequest: {
             name: string;
@@ -1407,6 +1524,12 @@ export interface components {
             roles: components["schemas"]["RoleSpec"][];
         };
         JsonNode: unknown;
+        LicenseCourse: {
+            code: string;
+            /** Format: uuid */
+            id: string;
+            title?: string;
+        };
         LoginRequest: {
             /** Format: email */
             email: string;
@@ -1538,10 +1661,18 @@ export interface components {
             courses: components["schemas"]["OrderCourse"][];
             /** Format: date-time */
             createdAt: string;
+            /**
+             * Format: uuid
+             * @description The organisation licence this order pays for; null for a plan order
+             */
+            licenseId?: string;
             /** @description The bank account to pay into; same rule as qrPayload */
             payTo?: components["schemas"]["PayTo"];
-            /** Format: uuid */
-            planId: string;
+            /**
+             * Format: uuid
+             * @description The plan of a personal order; null for the order of an organisation licence
+             */
+            planId?: string;
             /** Format: int32 */
             planMonths: number;
             /** @description The VietQR text; only while the order is PENDING_PAYMENT and an account is configured */
@@ -1553,6 +1684,46 @@ export interface components {
             /** @description PENDING_PAYMENT, CONFIRMED, REJECTED or EXPIRED */
             status: string;
             transferNote: string;
+        };
+        OrgLicenseCreated: {
+            license: components["schemas"]["OrgLicenseView"];
+            payTo?: components["schemas"]["PayTo"];
+            qrPayload?: string;
+            /** @description QR: the transfer note the payer puts in the bank transfer */
+            transferNote?: string;
+        };
+        OrgLicenseView: {
+            /**
+             * @description QR: an order the organisation's administrator pays by bank transfer; CONTRACT: active at once, paid under a contract
+             * @enum {string}
+             */
+            activation: "QR" | "CONTRACT";
+            contractNo?: string;
+            courses: components["schemas"]["LicenseCourse"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** @description Who holds a seat now; filled for the organisation's own reading, empty in the administrators' list */
+            holders: components["schemas"]["SeatHolder"][];
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            months: number;
+            /** @description The order of a QR licence */
+            orderCode?: string;
+            /** Format: uuid */
+            orgId: string;
+            /** Format: int64 */
+            priceVnd: number;
+            /** Format: int32 */
+            seats: number;
+            /** Format: int32 */
+            seatsUsed: number;
+            /** @description PENDING_PAYMENT, ACTIVE or CANCELLED */
+            status: string;
+            /** Format: date-time */
+            validFrom?: string;
+            /** Format: date-time */
+            validUntil?: string;
         };
         /** @enum {string} */
         OrgType: "CENTER" | "ENTERPRISE";
@@ -1899,6 +2070,15 @@ export interface components {
             versionId?: string;
             /** Format: int32 */
             versionNo?: number;
+        };
+        SeatHolder: {
+            /** Format: date-time */
+            assignedAt: string;
+            courseIds: string[];
+            displayName?: string;
+            email?: string;
+            /** Format: uuid */
+            userId: string;
         };
         SetRolesRequest: {
             roles: components["schemas"]["RoleSpec"][];
@@ -2252,6 +2432,97 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AdminOrderView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrgLicenseView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_8: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrgLicenseRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrgLicenseCreated"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    licensableCourses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LicenseCourse"][];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -4578,7 +4849,7 @@ export interface operations {
             };
         };
     };
-    revoke: {
+    revoke_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4662,6 +4933,104 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["MemberView"];
                 };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    ofOrg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrgLicenseView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignSeatRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SeatHolder"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                id: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Error (RFC 7807 problem details) */
             default: {

@@ -64,6 +64,10 @@
     "order_create": "Đặt đơn",
     "order_expire": "Đơn hết hạn chờ thanh toán",
     "plan_create": "Tạo gói",
-    "plan_update": "Sửa gói"
+    "plan_update": "Sửa gói",
+    "seat_assign": "Gán suất",
+    "seat_revoke": "Thu hồi suất",
+    "license_create": "Tạo giấy phép suất",
+    "license_change": "Đổi giấy phép suất"
   }
 }

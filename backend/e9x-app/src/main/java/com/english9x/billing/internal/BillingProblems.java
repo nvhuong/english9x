@@ -46,6 +46,16 @@ public final class BillingProblems {
         return of(HttpStatus.UNPROCESSABLE_ENTITY, "reason-required", "Reason required", message, List.of(new FieldProblem("reason", null, "ReasonRequired", message)));
     }
 
+    /** 409 for a licence or seat that is not in a state to take the action (no free seat, already assigned, licence not active). */
+    public static ErrorResponseException conflict(String slug, String title, String detail) {
+        return of(HttpStatus.CONFLICT, slug, title, detail, List.of());
+    }
+
+    /** 422: the request is well-formed but names something the licence or the organisation does not allow (a course outside the licence, a non-member). */
+    public static ErrorResponseException unprocessable(String slug, String title, String field, String code, String detail) {
+        return of(HttpStatus.UNPROCESSABLE_ENTITY, slug, title, detail, List.of(new FieldProblem(field, null, code, detail)));
+    }
+
     private static ErrorResponseException of(HttpStatus status, String slug, String title, String detail, List<FieldProblem> errors) {
         ProblemDetail p = ProblemDetail.forStatusAndDetail(status, detail);
         p.setType(URI.create("urn:e9x:problem:" + slug));

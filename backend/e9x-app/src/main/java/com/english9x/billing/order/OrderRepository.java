@@ -16,7 +16,7 @@ class OrderRepository {
 
     record PlanRow(UUID id, long priceVnd, int months, int maxCourses, boolean active) {}
 
-    record OrderRow(UUID id, String code, String status, long amountVnd, UUID planId, int planMonths, Instant createdAt, String rejectReason) {}
+    record OrderRow(UUID id, String code, String status, long amountVnd, UUID planId, UUID licenseId, int planMonths, Instant createdAt, String rejectReason) {}
 
     private final JdbcTemplate jdbc;
 
@@ -48,17 +48,23 @@ class OrderRepository {
                 id, code, userId, planId, planMonths, amountVnd, Timestamp.from(createdAt)) == 1;
     }
 
+    /** Like {@link #insertOrder} for the order of an organisation licence (no plan): the payer is an ORG_ADMIN, the SYS_ADMIN files it. False = code taken. */
+    boolean insertLicenseOrder(UUID id, String code, UUID payerId, UUID licenseId, int months, long amountVnd, Instant createdAt) {
+        return jdbc.update("insert into orders(id, code, user_id, license_id, plan_months, amount_vnd, created_at) values (?, ?, ?, ?, ?, ?, ?) on conflict (code) do nothing",
+                id, code, payerId, licenseId, months, amountVnd, Timestamp.from(createdAt)) == 1;
+    }
+
     void insertItem(UUID orderId, UUID userId, OrderCourse course) {
         jdbc.update("insert into order_items(order_id, user_id, course_id, course_code) values (?, ?, ?, ?)", orderId, userId, course.id(), course.code());
     }
 
     List<OrderRow> mine(UUID userId) {
-        return jdbc.query("select id, code, status, amount_vnd, plan_id, plan_months, created_at, reject_reason from orders where user_id = ? order by created_at desc, id",
+        return jdbc.query("select id, code, status, amount_vnd, plan_id, license_id, plan_months, created_at, reject_reason from orders where user_id = ? order by created_at desc, id",
                 (rs, i) -> row(rs), userId);
     }
 
     Optional<OrderRow> mine(UUID userId, String code) {
-        return jdbc.query("select id, code, status, amount_vnd, plan_id, plan_months, created_at, reject_reason from orders where user_id = ? and code = ?",
+        return jdbc.query("select id, code, status, amount_vnd, plan_id, license_id, plan_months, created_at, reject_reason from orders where user_id = ? and code = ?",
                 (rs, i) -> row(rs), userId, code).stream().findFirst();
     }
 
@@ -69,6 +75,6 @@ class OrderRepository {
 
     private static OrderRow row(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new OrderRow(rs.getObject("id", UUID.class), rs.getString("code").strip(), rs.getString("status"), rs.getLong("amount_vnd"),
-                rs.getObject("plan_id", UUID.class), rs.getInt("plan_months"), rs.getTimestamp("created_at").toInstant(), rs.getString("reject_reason"));
+                rs.getObject("plan_id", UUID.class), rs.getObject("license_id", UUID.class), rs.getInt("plan_months"), rs.getTimestamp("created_at").toInstant(), rs.getString("reject_reason"));
     }
 }
