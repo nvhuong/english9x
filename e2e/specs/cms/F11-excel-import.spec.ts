@@ -69,7 +69,8 @@ test.describe('F11 excel import', () => {
     expect(rejected.body.errors).toEqual(expect.arrayContaining([{ row: 3, column: 'answer.slots.1', message: 'thiếu đáp án' }]));
     expect(rejected.body.versionIds).toEqual([]);
     const none = await org.api(s.author.token, 'GET', '/api/cms/questions?examCode=TOEIC&size=100', { org: s.orgId });
-    expect(none.body.total, 'a rejected import creates no question').toBe(0);
+    // scope to this test's own author: English9x TOEIC content is shared across staff, so other specs running in parallel also appear in the list
+    expect((none.body.items as Array<{ createdBy: string }>).filter((q) => q.createdBy === s.author.userId), 'a rejected import creates no question').toHaveLength(0);
 
     // 3. the fixed file: every row becomes a draft, as one lot
     await page.reload();
@@ -80,14 +81,15 @@ test.describe('F11 excel import', () => {
     expect(made.body.job).toMatchObject({ status: 'SUCCEEDED', createdCount: 3 });
     expect(made.body.versionIds).toHaveLength(3);
     const drafts = await org.api(s.author.token, 'GET', '/api/cms/questions?examCode=TOEIC&size=100', { org: s.orgId });
-    expect(drafts.body.total).toBe(3);
-    expect((drafts.body.items as Array<{ status: string; createdBy: string }>).every((q) => q.status === 'DRAFT' && q.createdBy === s.author.userId)).toBe(true);
+    const mine = (drafts.body.items as Array<{ status: string; createdBy: string }>).filter((q) => q.createdBy === s.author.userId);
+    expect(mine).toHaveLength(3);
+    expect(mine.every((q) => q.status === 'DRAFT')).toBe(true);
 
     // 4. only now does the lot go to review, together
     await page.getByRole('button', { name: 'Gửi duyệt cả lô' }).click();
     await expect(page.getByText('Đã gửi duyệt cả lô.')).toBeVisible();
     const submitted = await org.api(s.author.token, 'GET', '/api/cms/questions?examCode=TOEIC&size=100', { org: s.orgId });
-    expect((submitted.body.items as Array<{ status: string }>).map((q) => q.status)).toEqual(['IN_REVIEW', 'IN_REVIEW', 'IN_REVIEW']);
+    expect((submitted.body.items as Array<{ status: string; createdBy: string }>).filter((q) => q.createdBy === s.author.userId).map((q) => q.status)).toEqual(['IN_REVIEW', 'IN_REVIEW', 'IN_REVIEW']);
   });
 
   test('F11 the media zip: the files a row names become media of the exam and the drafts point at them; a file missing from the zip is named', async ({ page, request, auth, org, uniqueEmail }) => {
@@ -109,9 +111,10 @@ test.describe('F11 excel import', () => {
     const id = await upload(page, file('ielts_r_headings_ok.xlsx'), file('media.zip'));
     await expect(page.getByText('Đã tạo 2 bản nháp.')).toBeVisible({ timeout: 60_000 });
     const list = await org.api(s.author.token, 'GET', '/api/cms/questions?examCode=IELTS&size=100', { org: s.orgId });
-    expect(list.body.total).toBe(2);
+    const mine = (list.body.items as Array<{ questionId: string; createdBy: string }>).filter((q) => q.createdBy === s.author.userId);
+    expect(mine).toHaveLength(2);
     const detail = await org.api(s.author.token, 'GET', `/api/cms/import/${id}`, { org: s.orgId });
-    const first = await org.api(s.author.token, 'GET', `/api/cms/questions/${list.body.items[0].questionId}`, { org: s.orgId });
+    const first = await org.api(s.author.token, 'GET', `/api/cms/questions/${mine[0].questionId}`, { org: s.orgId });
     const mediaId = first.body.content.imageMediaId as string;
     expect(mediaId).toMatch(/^[0-9a-f-]{36}$/);
     const link = await org.api(s.author.token, 'GET', `/api/media/${mediaId}/url`, { org: s.orgId });
