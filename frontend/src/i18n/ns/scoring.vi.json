@@ -1,0 +1,86 @@
+{
+  "nav": {
+    "scoreTables": "Bảng quy đổi"
+  },
+  "loading": "Đang tải…",
+  "status": {
+    "DRAFT": "Bản nháp",
+    "IN_REVIEW": "Đang chờ duyệt",
+    "CHANGES_REQUESTED": "Cần sửa",
+    "PUBLISHED": "Đã xuất bản",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "rows": {
+    "label": "Các dòng của bảng",
+    "hint": "Mỗi dòng: số câu đúng rồi điểm quy đổi, ví dụ \"12 5.5\" (dán từ bảng tính cũng được). Số câu đúng phải liên tục từ 0 và điểm quy đổi không được giảm. Dòng chỉ có một số là điểm của số câu đúng kế tiếp.",
+    "preview": "Bảng sẽ lưu ({{count}} dòng)",
+    "empty": "Chưa có dòng nào.",
+    "caption": "Bảng quy đổi sẽ lưu",
+    "colRaw": "Số câu đúng",
+    "colScaled": "Điểm quy đổi"
+  },
+  "actions": {
+    "createDraft": "Lưu bản nháp",
+    "save": "Lưu bản nháp",
+    "saveNewVersion": "Lưu thành phiên bản mới",
+    "submit": "Gửi duyệt"
+  },
+  "new": {
+    "title": "Bảng quy đổi mới",
+    "description": "Bảng đổi số câu đúng thành điểm của một kỹ năng trong một kỳ thi. Bảng mặc định của kỳ thi thuộc về English9x; bảng riêng cho từng đề sẽ có khi dựng đề được.",
+    "exam": "Kỳ thi",
+    "examPlaceholder": "Chọn kỳ thi",
+    "skill": "Điểm cần quy đổi",
+    "skillPlaceholder": "Chọn kỹ năng",
+    "scope": "Phạm vi: mặc định của kỳ thi."
+  },
+  "edit": {
+    "title": "Bảng quy đổi {{skill}}",
+    "back": "Về danh sách bảng quy đổi",
+    "version": "Phiên bản {{n}}",
+    "scopeExam": "Mặc định của kỳ thi",
+    "saved": "Đã lưu bản nháp.",
+    "savedNewVersion": "Đã tạo bản nháp mới, phiên bản {{n}}. Bản đã xuất bản vẫn giữ nguyên.",
+    "submitted": "Đã gửi duyệt. Bản này được khoá cho tới khi người duyệt quyết định.",
+    "publishedNote": "Bản này đã xuất bản và không sửa được. Lưu thay đổi sẽ tạo bản nháp mới (phiên bản {{next}}).",
+    "inReviewNote": "Bản này đang chờ duyệt nên bị khoá.",
+    "archivedNote": "Bản này đã được lưu trữ và không sửa được.",
+    "functionNote": "Điểm này được tính bằng hàm {{function}}, không có bảng để sửa.",
+    "notFoundTitle": "Không tìm thấy bảng",
+    "notFound": "Bảng không tồn tại, hoặc bạn không có quyền mở nó trong ngữ cảnh này."
+  },
+  "list": {
+    "title": "Bảng quy đổi",
+    "description": "Các bảng đổi số câu đúng thành điểm của những kỳ thi bạn soạn hoặc duyệt, mỗi bảng hiện phiên bản mới nhất.",
+    "new": "Bảng mới",
+    "exam": "Kỳ thi",
+    "status": "Trạng thái",
+    "all": "Tất cả",
+    "caption": "Danh sách bảng quy đổi",
+    "colSkill": "Điểm",
+    "colExam": "Kỳ thi",
+    "colStatus": "Trạng thái",
+    "colVersion": "Phiên bản",
+    "colRows": "Số dòng",
+    "computed": "tính bằng {{function}}",
+    "emptyTitle": "Chưa có bảng",
+    "empty": "Không có bảng nào khớp bộ lọc.",
+    "pagination": "Phân trang",
+    "previous": "Trang trước",
+    "next": "Trang sau",
+    "range": "{{from}}–{{to}} trên {{total}}"
+  },
+  "errors": {
+    "invalid": "Bảng chưa đúng. Sửa các mục dưới đây rồi lưu lại.",
+    "testScope": "Bảng riêng cho từng đề chưa dùng được; hãy làm bảng mặc định của kỳ thi.",
+    "exists": "Kỳ thi này đã có bảng cho điểm đó. Mở bảng trong danh sách để sửa.",
+    "underReview": "Phiên bản mới nhất đang chờ duyệt nên không sửa được.",
+    "anotherAuthor": "Bản nháp này là của người soạn khác; chỉ họ sửa và gửi duyệt được.",
+    "archived": "Bảng này đã được lưu trữ.",
+    "notEditable": "Không có bản nháp nào để gửi duyệt.",
+    "conflict": "Có người vừa thay đổi bảng này. Tải lại rồi thử lại.",
+    "forbidden": "Bạn không có quyền với bảng này.",
+    "notFound": "Không tìm thấy bảng.",
+    "generic": "Có lỗi xảy ra. Thử lại sau ít phút."
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "nav": {
+    "scoreTables": "Score tables"
+  },
+  "loading": "Loading…",
+  "status": {
+    "DRAFT": "Draft",
+    "IN_REVIEW": "In review",
+    "CHANGES_REQUESTED": "Changes requested",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "rows": {
+    "label": "Rows of the table",
+    "hint": "One row per line: the number of correct answers, then the scaled score, for example \"12 5.5\" (pasting from a spreadsheet works). The raw numbers must run from 0 without a gap and the scaled score must never fall. A line with one number is the score of the next raw value.",
+    "preview": "The table that will be saved ({{count}} rows)",
+    "empty": "No rows yet.",
+    "caption": "The score table that will be saved",
+    "colRaw": "Correct answers",
+    "colScaled": "Scaled score"
+  },
+  "actions": {
+    "createDraft": "Save draft",
+    "save": "Save draft",
+    "saveNewVersion": "Save as a new version",
+    "submit": "Submit for review"
+  },
+  "new": {
+    "title": "New score table",
+    "description": "A table that turns correct answers into the score of one skill of an exam. The default table of an exam belongs to English9x; a table for a single test comes with the test builder.",
+    "exam": "Exam",
+    "examPlaceholder": "Choose an exam",
+    "skill": "Score to convert",
+    "skillPlaceholder": "Choose a skill",
+    "scope": "Scope: the default of the exam."
+  },
+  "edit": {
+    "title": "Score table {{skill}}",
+    "back": "Back to the score tables",
+    "version": "Version {{n}}",
+    "scopeExam": "Default of the exam",
+    "saved": "Draft saved.",
+    "savedNewVersion": "A new draft was made, version {{n}}. The published version is unchanged.",
+    "submitted": "Submitted for review. This version is locked until the reviewer decides.",
+    "publishedNote": "This version is published and cannot be edited. Saving makes a new draft (version {{next}}).",
+    "inReviewNote": "This version is waiting for review and is locked.",
+    "archivedNote": "This version is archived and cannot be edited.",
+    "functionNote": "This score is computed by the function {{function}}; there is no table to edit.",
+    "notFoundTitle": "Table not found",
+    "notFound": "The table does not exist, or you may not open it in this context."
+  },
+  "list": {
+    "title": "Score tables",
+    "description": "The tables that turn correct answers into scores for the exams you write or review, each showing its latest version.",
+    "new": "New table",
+    "exam": "Exam",
+    "status": "Status",
+    "all": "All",
+    "caption": "Score tables",
+    "colSkill": "Score",
+    "colExam": "Exam",
+    "colStatus": "Status",
+    "colVersion": "Version",
+    "colRows": "Rows",
+    "computed": "computed by {{function}}",
+    "emptyTitle": "No tables yet",
+    "empty": "No table matches the filter.",
+    "pagination": "Pagination",
+    "previous": "Previous page",
+    "next": "Next page",
+    "range": "{{from}}–{{to}} of {{total}}"
+  },
+  "errors": {
+    "invalid": "The table is not valid. Fix the items below and save again.",
+    "testScope": "A table for a single test cannot be used yet; make the default table of the exam.",
+    "exists": "This exam already has a table for that score. Open it in the list to edit it.",
+    "underReview": "The latest version is being reviewed and cannot be edited.",
+    "anotherAuthor": "This draft belongs to another author; only they can edit or submit it.",
+    "archived": "This table has been archived.",
+    "notEditable": "There is no draft to submit.",
+    "conflict": "Somebody just changed this table. Reload and try again.",
+    "forbidden": "You may not do this with this table.",
+    "notFound": "Table not found.",
+    "generic": "Something went wrong. Try again in a few minutes."
+  }
+}

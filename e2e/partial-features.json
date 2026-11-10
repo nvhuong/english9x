@@ -28,6 +28,16 @@
       "owner": "P3.2 (lesson page), P2.9 (review queue replaces seed.reviewVersion)"
     },
     {
+      "id": "F15",
+      "pending": "Done through the real stack (P2.5): the author makes the DEFAULT table of an exam skill on the screen, the server refuses a gap in the raw values and a score that falls (TableConverter), the table is published only by a review (seed.reviewVersion, the real ReviewService, until the review screens exist), an edit makes version 2 and the published version is untouched, version 1 is archived when 2 is published. Pending: 'ghi đè' (the per-TEST override: scope TEST answers 409 and the database refuses the row until tests exist), and 'kết quả thi dùng đúng bảng; sửa bảng không đổi kết quả cũ' (an exam result records the score table version it used: no results exist yet).",
+      "owner": "P2.6 (the override, with tests), P4.1 (results use and record the table version)"
+    },
+    {
+      "id": "F16",
+      "pending": "Done through the real stack (P2.5): the author writes the IELTS Writing Task 2 skill on the screen (rubric, criteria, prompt template with the four variables, scored samples, result schema that must declare every criterion), a review publishes it, a teacher of the exam reads the published one and a learner never does, an edit makes version 2. Pending: 'chạy thử với bài mẫu' (the dry run calls the AI grader of P4.2 and validates the answer against the result schema: the server answers 501 dry-run-unavailable and sends nothing until then) and 'dùng khi chấm' (the AI grading job takes the published skill of the question type).",
+      "owner": "P4.2 (AiGrader: the dry run), P4.3 (the grading job uses the skill)"
+    },
+    {
       "id": "F18",
       "pending": "Done through the real stack (P2.3): editing a published question makes a new draft version and never touches the published one, one open version per question, a colleague cannot take a draft over, the new version is published only by a review (run by seed.reviewVersion, the real ReviewService, until the review screens exist). Pending: 'học viên đang thi vẫn thấy bản cũ' (a learner IN an exam keeps reading the version the attempt began on: no exam room exists yet) and the side-by-side comparison of two versions (diff screen) and the approval by a person in the review queue.",
       "owner": "P3.4 (exam room: the attempt keeps its version), P2.9 (review queue and version comparison)"

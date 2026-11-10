@@ -7,7 +7,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -71,9 +71,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_7"];
         put?: never;
-        post: operations["create_5"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -89,7 +89,7 @@ export interface paths {
         };
         get: operations["all"];
         put?: never;
-        post: operations["create_4"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -104,7 +104,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_3"];
+        put: operations["update_5"];
         post?: never;
         delete?: never;
         options?: never;
@@ -320,6 +320,99 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cms/grading-skills": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List grading skills (the latest version of each) the caller may read, newest change first */
+        get: operations["list_6"];
+        put?: never;
+        /**
+         * Create the grading skill of a question type (version 1, a draft)
+         * @description 422 with errors[] (JSON paths such as resultSchema.properties.task_response, criteria[1].step) when the content does not match its form; 409 grading-skill-exists (with skillId) when the owner has a skill for the type.
+         */
+        post: operations["create_5"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/grading-skills/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One skill: its latest version, or the numbered one */
+        get: operations["get_4"];
+        /** Edit a skill: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
+        put: operations["update_4"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/grading-skills/{id}/dry-run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run the skill on a sample answer, saving no score (needs the AI grader: 501 until it exists)
+         * @description 501 dry-run-unavailable until the AI grader (P4.2) is built; nothing is sent to any service meanwhile.
+         */
+        post: operations["dryRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/grading-skills/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit the open draft for review */
+        post: operations["submit_4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/grading-skills/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every version of a skill, oldest first */
+        get: operations["versions_4"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cms/media": {
         parameters: {
             query?: never;
@@ -361,13 +454,13 @@ export interface paths {
             cookie?: never;
         };
         /** List groups (the latest version of each) the caller may read */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         /**
          * Create a question group (version 1, a draft) with its members
          * @description 422 with errors[] by JSON path, as for a question.
          */
-        post: operations["create_3"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -382,9 +475,9 @@ export interface paths {
             cookie?: never;
         };
         /** One group: its latest version, or the numbered one, with the solution side */
-        get: operations["get_2"];
+        get: operations["get_3"];
         /** Edit a group: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
-        put: operations["update_2"];
+        put: operations["update_3"];
         post?: never;
         delete?: never;
         options?: never;
@@ -402,7 +495,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review; it is approved only when every member question is PUBLISHED */
-        post: operations["submit_2"];
+        post: operations["submit_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -417,7 +510,7 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a group, oldest first */
-        get: operations["versions_2"];
+        get: operations["versions_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -450,13 +543,13 @@ export interface paths {
             cookie?: never;
         };
         /** List questions (the latest version of each) the caller may read, newest change first */
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         /**
          * Create a question (version 1, a draft) of a question type
          * @description 422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.
          */
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -471,9 +564,9 @@ export interface paths {
             cookie?: never;
         };
         /** One question: its latest version, or the numbered one, with the answer key */
-        get: operations["get_1"];
+        get: operations["get_2"];
         /** Edit a question: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
-        put: operations["update_1"];
+        put: operations["update_2"];
         post?: never;
         delete?: never;
         options?: never;
@@ -491,7 +584,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review (the workflow records the author, audits and notifies the reviewers) */
-        post: operations["submit_1"];
+        post: operations["submit_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -506,6 +599,79 @@ export interface paths {
             cookie?: never;
         };
         /** Every version of a question, oldest first, with the answer key (for comparing versions) */
+        get: operations["versions_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/score-tables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List score tables (the latest version of each) the caller may read, newest change first */
+        get: operations["list_3"];
+        put?: never;
+        /**
+         * Create the conversion table of an exam skill (version 1, a draft)
+         * @description 422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). 409 test-scope-unavailable for scope TEST; 409 score-table-exists (with tableId) when the exam skill already has a table.
+         */
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/score-tables/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One table: its latest version, or the numbered one */
+        get: operations["get_1"];
+        /** Edit a table: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
+        put: operations["update_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/score-tables/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit the open draft for review */
+        post: operations["submit_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/score-tables/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every version of a table, oldest first */
         get: operations["versions_1"];
         put?: never;
         post?: never;
@@ -659,7 +825,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1006,6 +1172,104 @@ export interface components {
             /** Format: int32 */
             position?: number;
             skill?: string;
+        };
+        GradingCriterion: {
+            code?: string;
+            /** Format: double */
+            max?: number;
+            /** Format: double */
+            min?: number;
+            name?: string;
+            /** Format: double */
+            step?: number;
+        };
+        GradingSample: {
+            /** Format: double */
+            band?: number;
+            commentary?: string;
+            /** Format: uuid */
+            mediaId?: string;
+            text?: string;
+        };
+        GradingSkillDryRunRequest: {
+            /**
+             * Format: uuid
+             * @description or as a recording (Speaking): a file of the exam
+             */
+            mediaId?: string;
+            /** @description the answer as text (Writing) */
+            response?: string;
+        };
+        GradingSkillPage: {
+            items?: components["schemas"]["GradingSkillSummary"][];
+            /** Format: int32 */
+            limit?: number;
+            /** Format: int32 */
+            offset?: number;
+            /** Format: int64 */
+            total?: number;
+        };
+        GradingSkillRequest: {
+            /** @description the scale of each criterion: code, name, min, max, step (step divides min..max) */
+            criteria?: components["schemas"]["GradingCriterion"][];
+            /** @description Mustache variables {{rubric}} {{samples}} {{task}} {{response}}, all four used; nothing else */
+            promptTemplate?: string;
+            /**
+             * @description the Writing or Speaking question type the skill grades (needed to make a skill; fixed afterwards)
+             * @example IELTS_W_TASK2
+             */
+            questionTypeCode?: string;
+            /** @description JSON Schema (2020-12) of the AI's answer; declares a property for every criterion code; refers only to itself */
+            resultSchema?: unknown;
+            /** @description markdown */
+            rubric?: string;
+            /** @description scored examples: band, exactly one of text and mediaId, commentary */
+            samples?: components["schemas"]["GradingSample"][];
+        };
+        GradingSkillSubmitted: {
+            /** Format: uuid */
+            reviewId?: string;
+        };
+        GradingSkillSummary: {
+            /** Format: uuid */
+            createdBy?: string;
+            examCode?: string;
+            questionTypeCode?: string;
+            /** Format: uuid */
+            skillId?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
+        GradingSkillVersion: {
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            criteria?: components["schemas"]["GradingCriterion"][];
+            examCode?: string;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            promptTemplate?: string;
+            questionTypeCode?: string;
+            resultSchema?: unknown;
+            rubric?: string;
+            samples?: components["schemas"]["GradingSample"][];
+            /** Format: uuid */
+            skillId?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
         };
         GrantView: {
             /** @description null = every exam */
@@ -1408,6 +1672,96 @@ export interface components {
             /** @enum {string} */
             role: "LEARNER" | "AUTHOR" | "REVIEWER" | "TEACHER" | "ORG_ADMIN" | "SYS_ADMIN";
         };
+        ScoreRow: {
+            /** Format: int32 */
+            raw?: number;
+            /** Format: double */
+            scaled?: number;
+        };
+        ScoreTablePage: {
+            items?: components["schemas"]["ScoreTableSummary"][];
+            /** Format: int32 */
+            limit?: number;
+            /** Format: int32 */
+            offset?: number;
+            /** Format: int64 */
+            total?: number;
+        };
+        ScoreTableRequest: {
+            /**
+             * @description the exam (needed to make a table; fixed afterwards)
+             * @example IELTS
+             */
+            examCode?: string;
+            /** @description raw correct answers to scaled score; raw contiguous from 0, scaled never decreasing */
+            rows?: components["schemas"]["ScoreRow"][];
+            /**
+             * @description EXAM, the default of the exam. TEST (the override of one test) answers 409 until tests can be built (P2.6)
+             * @example EXAM
+             */
+            scope?: string;
+            /**
+             * @description one of the exam's score skills: IELTS LISTENING, READING_AC, READING_GT, WRITING, SPEAKING, OVERALL; TOEIC LISTENING, READING, TOTAL
+             * @example LISTENING
+             */
+            skill?: string;
+            /**
+             * Format: uuid
+             * @description the TEST (not a test version) of an override; only with scope TEST
+             */
+            testId?: string;
+        };
+        ScoreTableSubmitted: {
+            /** Format: uuid */
+            reviewId?: string;
+        };
+        ScoreTableSummary: {
+            /** Format: uuid */
+            createdBy?: string;
+            examCode?: string;
+            function?: string;
+            /** Format: int32 */
+            rowCount?: number;
+            /** @enum {string} */
+            scope?: "EXAM" | "TEST";
+            skill?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            /** Format: uuid */
+            tableId?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
+        ScoreTableVersion: {
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            examCode?: string;
+            function?: string;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            rows?: components["schemas"]["ScoreRow"][];
+            /** @enum {string} */
+            scope?: "EXAM" | "TEST";
+            skill?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            /** Format: uuid */
+            tableId?: string;
+            /** Format: uuid */
+            testId?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
         SetRolesRequest: {
             roles: components["schemas"]["RoleSpec"][];
             /** Format: uuid */
@@ -1513,7 +1867,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_7: {
+    list_9: {
         parameters: {
             query?: {
                 action?: string;
@@ -1671,7 +2025,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -1700,7 +2054,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -1762,7 +2116,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -1795,7 +2149,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -2237,6 +2591,235 @@ export interface operations {
             };
         };
     };
+    list_6: {
+        parameters: {
+            query?: {
+                exam?: string;
+                status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradingSkillPage"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradingSkillRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradingSkillVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_4: {
+        parameters: {
+            query?: {
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradingSkillVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradingSkillRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradingSkillVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    dryRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradingSkillDryRunRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submit_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradingSkillSubmitted"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    versions_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradingSkillVersion"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     upload: {
         parameters: {
             query: {
@@ -2302,7 +2885,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 exam?: string;
@@ -2336,7 +2919,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -2369,7 +2952,7 @@ export interface operations {
             };
         };
     };
-    get_2: {
+    get_3: {
         parameters: {
             query?: {
                 version?: number;
@@ -2402,7 +2985,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2437,7 +3020,7 @@ export interface operations {
             };
         };
     };
-    submit_2: {
+    submit_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2468,7 +3051,7 @@ export interface operations {
             };
         };
     };
-    versions_2: {
+    versions_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2530,7 +3113,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 exam?: string;
@@ -2566,7 +3149,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -2599,7 +3182,7 @@ export interface operations {
             };
         };
     };
-    get_1: {
+    get_2: {
         parameters: {
             query?: {
                 version?: number;
@@ -2632,7 +3215,7 @@ export interface operations {
             };
         };
     };
-    update_1: {
+    update_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2667,7 +3250,7 @@ export interface operations {
             };
         };
     };
-    submit_1: {
+    submit_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2698,7 +3281,7 @@ export interface operations {
             };
         };
     };
-    versions_1: {
+    versions_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2716,6 +3299,202 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["QuestionVersion"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_3: {
+        parameters: {
+            query?: {
+                exam?: string;
+                status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScoreTablePage"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScoreTableRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScoreTableVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_1: {
+        parameters: {
+            query?: {
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScoreTableVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScoreTableRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScoreTableVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submit_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScoreTableSubmitted"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    versions_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScoreTableVersion"][];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -3074,7 +3853,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_8: {
         parameters: {
             query?: {
                 limit?: number;

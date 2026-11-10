@@ -259,6 +259,226 @@
         },
         "type" : "object"
       },
+      "GradingCriterion" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "max" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "min" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "step" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "GradingSample" : {
+        "properties" : {
+          "band" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "commentary" : {
+            "type" : "string"
+          },
+          "mediaId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GradingSkillDryRunRequest" : {
+        "properties" : {
+          "mediaId" : {
+            "description" : "or as a recording (Speaking): a file of the exam",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "response" : {
+            "description" : "the answer as text (Writing)",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GradingSkillPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GradingSkillSummary"
+            },
+            "type" : "array"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "offset" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "GradingSkillRequest" : {
+        "properties" : {
+          "criteria" : {
+            "description" : "the scale of each criterion: code, name, min, max, step (step divides min..max)",
+            "items" : {
+              "$ref" : "#/components/schemas/GradingCriterion"
+            },
+            "type" : "array"
+          },
+          "promptTemplate" : {
+            "description" : "Mustache variables {{rubric}} {{samples}} {{task}} {{response}}, all four used; nothing else",
+            "type" : "string"
+          },
+          "questionTypeCode" : {
+            "description" : "the Writing or Speaking question type the skill grades (needed to make a skill; fixed afterwards)",
+            "example" : "IELTS_W_TASK2",
+            "type" : "string"
+          },
+          "resultSchema" : {
+            "description" : "JSON Schema (2020-12) of the AI's answer; declares a property for every criterion code; refers only to itself"
+          },
+          "rubric" : {
+            "description" : "markdown",
+            "type" : "string"
+          },
+          "samples" : {
+            "description" : "scored examples: band, exactly one of text and mediaId, commentary",
+            "items" : {
+              "$ref" : "#/components/schemas/GradingSample"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "GradingSkillSubmitted" : {
+        "properties" : {
+          "reviewId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GradingSkillSummary" : {
+        "properties" : {
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "questionTypeCode" : {
+            "type" : "string"
+          },
+          "skillId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "GradingSkillVersion" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "criteria" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GradingCriterion"
+            },
+            "type" : "array"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "promptTemplate" : {
+            "type" : "string"
+          },
+          "questionTypeCode" : {
+            "type" : "string"
+          },
+          "resultSchema" : { },
+          "rubric" : {
+            "type" : "string"
+          },
+          "samples" : {
+            "items" : {
+              "$ref" : "#/components/schemas/GradingSample"
+            },
+            "type" : "array"
+          },
+          "skillId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "GrantView" : {
         "properties" : {
           "examCode" : {
@@ -1218,6 +1438,189 @@
         "required" : [ "role" ],
         "type" : "object"
       },
+      "ScoreRow" : {
+        "properties" : {
+          "raw" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "scaled" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "ScoreTablePage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ScoreTableSummary"
+            },
+            "type" : "array"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "offset" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ScoreTableRequest" : {
+        "properties" : {
+          "examCode" : {
+            "description" : "the exam (needed to make a table; fixed afterwards)",
+            "example" : "IELTS",
+            "type" : "string"
+          },
+          "rows" : {
+            "description" : "raw correct answers to scaled score; raw contiguous from 0, scaled never decreasing",
+            "items" : {
+              "$ref" : "#/components/schemas/ScoreRow"
+            },
+            "type" : "array"
+          },
+          "scope" : {
+            "description" : "EXAM, the default of the exam. TEST (the override of one test) answers 409 until tests can be built (P2.6)",
+            "example" : "EXAM",
+            "type" : "string"
+          },
+          "skill" : {
+            "description" : "one of the exam's score skills: IELTS LISTENING, READING_AC, READING_GT, WRITING, SPEAKING, OVERALL; TOEIC LISTENING, READING, TOTAL",
+            "example" : "LISTENING",
+            "type" : "string"
+          },
+          "testId" : {
+            "description" : "the TEST (not a test version) of an override; only with scope TEST",
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ScoreTableSubmitted" : {
+        "properties" : {
+          "reviewId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ScoreTableSummary" : {
+        "properties" : {
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "function" : {
+            "type" : "string"
+          },
+          "rowCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "scope" : {
+            "enum" : [ "EXAM", "TEST" ],
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "tableId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ScoreTableVersion" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "function" : {
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "rows" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ScoreRow"
+            },
+            "type" : "array"
+          },
+          "scope" : {
+            "enum" : [ "EXAM", "TEST" ],
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "tableId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "testId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "SetRolesRequest" : {
         "properties" : {
           "roles" : {
@@ -1453,7 +1856,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_7",
+        "operationId" : "list_9",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -1670,7 +2073,7 @@
     },
     "/api/admin/organizations" : {
       "get" : {
-        "operationId" : "list_5",
+        "operationId" : "list_7",
         "responses" : {
           "200" : {
             "content" : {
@@ -1699,7 +2102,7 @@
         "tags" : [ "org-controller" ]
       },
       "post" : {
-        "operationId" : "create_5",
+        "operationId" : "create_7",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1766,7 +2169,7 @@
         "tags" : [ "plan-controller" ]
       },
       "post" : {
-        "operationId" : "create_4",
+        "operationId" : "create_6",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1804,7 +2207,7 @@
     },
     "/api/admin/plans/{id}" : {
       "put" : {
-        "operationId" : "update_3",
+        "operationId" : "update_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2281,6 +2684,310 @@
         "tags" : [ "catalog-controller" ]
       }
     },
+    "/api/cms/grading-skills" : {
+      "get" : {
+        "operationId" : "list_6",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingSkillPage"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "List grading skills (the latest version of each) the caller may read, newest change first",
+        "tags" : [ "skill-controller" ]
+      },
+      "post" : {
+        "description" : "422 with errors[] (JSON paths such as resultSchema.properties.task_response, criteria[1].step) when the content does not match its form; 409 grading-skill-exists (with skillId) when the owner has a skill for the type.",
+        "operationId" : "create_5",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GradingSkillRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingSkillVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create the grading skill of a question type (version 1, a draft)",
+        "tags" : [ "skill-controller" ]
+      }
+    },
+    "/api/cms/grading-skills/{id}" : {
+      "get" : {
+        "operationId" : "get_4",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "version",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingSkillVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One skill: its latest version, or the numbered one",
+        "tags" : [ "skill-controller" ]
+      },
+      "put" : {
+        "operationId" : "update_4",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GradingSkillRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingSkillVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Edit a skill: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)",
+        "tags" : [ "skill-controller" ]
+      }
+    },
+    "/api/cms/grading-skills/{id}/dry-run" : {
+      "post" : {
+        "description" : "501 dry-run-unavailable until the AI grader (P4.2) is built; nothing is sent to any service meanwhile.",
+        "operationId" : "dryRun",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GradingSkillDryRunRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Run the skill on a sample answer, saving no score (needs the AI grader: 501 until it exists)",
+        "tags" : [ "skill-controller" ]
+      }
+    },
+    "/api/cms/grading-skills/{id}/submit" : {
+      "post" : {
+        "operationId" : "submit_4",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingSkillSubmitted"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit the open draft for review",
+        "tags" : [ "skill-controller" ]
+      }
+    },
+    "/api/cms/grading-skills/{id}/versions" : {
+      "get" : {
+        "operationId" : "versions_4",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/GradingSkillVersion"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Every version of a skill, oldest first",
+        "tags" : [ "skill-controller" ]
+      }
+    },
     "/api/cms/media" : {
       "post" : {
         "operationId" : "upload",
@@ -2358,7 +3065,7 @@
     },
     "/api/cms/question-groups" : {
       "get" : {
-        "operationId" : "list_4",
+        "operationId" : "list_5",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -2418,7 +3125,7 @@
       },
       "post" : {
         "description" : "422 with errors[] by JSON path, as for a question.",
-        "operationId" : "create_3",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2457,7 +3164,7 @@
     },
     "/api/cms/question-groups/{id}" : {
       "get" : {
-        "operationId" : "get_2",
+        "operationId" : "get_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2501,7 +3208,7 @@
         "tags" : [ "group-controller" ]
       },
       "put" : {
-        "operationId" : "update_2",
+        "operationId" : "update_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2549,7 +3256,7 @@
     },
     "/api/cms/question-groups/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_2",
+        "operationId" : "submit_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2587,7 +3294,7 @@
     },
     "/api/cms/question-groups/{id}/versions" : {
       "get" : {
-        "operationId" : "versions_2",
+        "operationId" : "versions_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2667,7 +3374,7 @@
     },
     "/api/cms/questions" : {
       "get" : {
-        "operationId" : "list_3",
+        "operationId" : "list_4",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -2742,7 +3449,7 @@
       },
       "post" : {
         "description" : "422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.",
-        "operationId" : "create_2",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2781,7 +3488,7 @@
     },
     "/api/cms/questions/{id}" : {
       "get" : {
-        "operationId" : "get_1",
+        "operationId" : "get_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2825,7 +3532,7 @@
         "tags" : [ "question-controller" ]
       },
       "put" : {
-        "operationId" : "update_1",
+        "operationId" : "update_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2873,7 +3580,7 @@
     },
     "/api/cms/questions/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_1",
+        "operationId" : "submit_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2911,7 +3618,7 @@
     },
     "/api/cms/questions/{id}/versions" : {
       "get" : {
-        "operationId" : "versions_1",
+        "operationId" : "versions_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2948,6 +3655,268 @@
         },
         "summary" : "Every version of a question, oldest first, with the answer key (for comparing versions)",
         "tags" : [ "question-controller" ]
+      }
+    },
+    "/api/cms/score-tables" : {
+      "get" : {
+        "operationId" : "list_3",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScoreTablePage"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "List score tables (the latest version of each) the caller may read, newest change first",
+        "tags" : [ "score-table-controller" ]
+      },
+      "post" : {
+        "description" : "422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). 409 test-scope-unavailable for scope TEST; 409 score-table-exists (with tableId) when the exam skill already has a table.",
+        "operationId" : "create_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScoreTableRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScoreTableVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create the conversion table of an exam skill (version 1, a draft)",
+        "tags" : [ "score-table-controller" ]
+      }
+    },
+    "/api/cms/score-tables/{id}" : {
+      "get" : {
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "version",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScoreTableVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One table: its latest version, or the numbered one",
+        "tags" : [ "score-table-controller" ]
+      },
+      "put" : {
+        "operationId" : "update_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScoreTableRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScoreTableVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Edit a table: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)",
+        "tags" : [ "score-table-controller" ]
+      }
+    },
+    "/api/cms/score-tables/{id}/submit" : {
+      "post" : {
+        "operationId" : "submit_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScoreTableSubmitted"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit the open draft for review",
+        "tags" : [ "score-table-controller" ]
+      }
+    },
+    "/api/cms/score-tables/{id}/versions" : {
+      "get" : {
+        "operationId" : "versions_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScoreTableVersion"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Every version of a table, oldest first",
+        "tags" : [ "score-table-controller" ]
       }
     },
     "/api/cms/strategy-lessons" : {
@@ -3366,7 +4335,7 @@
     },
     "/api/me/notifications" : {
       "get" : {
-        "operationId" : "list_6",
+        "operationId" : "list_8",
         "parameters" : [ {
           "in" : "query",
           "name" : "limit",

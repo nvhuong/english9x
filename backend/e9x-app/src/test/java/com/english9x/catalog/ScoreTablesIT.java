@@ -84,6 +84,8 @@ class ScoreTablesIT {
         su = new JdbcTemplate(TestPostgres.superuser(DB));
         // P2.6 lifts the refusal of TEST scope (CatalogTestScopeRefusedIT measures it); this throwaway database does it now
         su.execute("alter table score_tables drop constraint score_tables_test_scope_refused_ck");
+        // this fixture keeps a draft and a version under review beside the published one; P2.5 allows one open version per table (the CMS path), not the fixtures of a resolver test
+        su.execute("drop index score_table_versions_one_open_uq");
         com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_E9, T_E9);
         com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_E9_V2, T_E9);
         com.english9x.catalog.internal.TestLookupStubConfig.version(TEST_A, T_A);
