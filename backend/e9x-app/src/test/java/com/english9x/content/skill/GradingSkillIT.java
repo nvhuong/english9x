@@ -43,7 +43,12 @@ class GradingSkillIT extends QuestionIT {
             props.set(code, JSON.createObjectNode().put("type", "number").put("minimum", 0).put("maximum", 9));
         }
         props.set("feedback", JSON.createObjectNode().put("type", "string"));
-        return JSON.createObjectNode().put("type", "object").<ObjectNode>set("properties", props).set("required", JSON.createArrayNode().add("feedback"));
+        ArrayNode required = JSON.createArrayNode();
+        for (String code : declared) {
+            required.add(code);
+        }
+        required.add("feedback");
+        return JSON.createObjectNode().put("type", "object").<ObjectNode>set("properties", props).set("required", required);
     }
 
     private ArrayNode samples(Staff s) {
@@ -144,7 +149,40 @@ class GradingSkillIT extends QuestionIT {
             assertEquals(List.of("resultSchema"), fields(refused));
         }
 
-        // every criterion declared (and a local $ref is fine): accepted
+        // declared but not usable: a property that accepts anything (or a string), a criterion the model may omit, a $ref that is not numeric
+        ObjectNode anything = schema(CODES.toArray(String[]::new));
+        ((ObjectNode) anything.get("properties")).set("lexical_resource", JSON.createObjectNode());
+        ObjectNode stringy = schema(CODES.toArray(String[]::new));
+        ((ObjectNode) stringy.get("properties")).set("lexical_resource", JSON.createObjectNode().put("type", "string"));
+        ObjectNode optional = schema(CODES.toArray(String[]::new));
+        ArrayNode req = JSON.createArrayNode();
+        optional.get("required").forEach(n -> { if (!n.asText().equals("lexical_resource")) req.add(n); });
+        optional.set("required", req);
+        ObjectNode noRequired = schema(CODES.toArray(String[]::new));
+        noRequired.remove("required");
+        ObjectNode badRef = schema(CODES.toArray(String[]::new));
+        ((ObjectNode) badRef.get("properties")).set("lexical_resource", JSON.createObjectNode().put("$ref", "#/$defs/label"));
+        badRef.set("$defs", JSON.createObjectNode().<ObjectNode>set("label", JSON.createObjectNode().put("type", "string")));
+        ObjectNode missingRef = schema(CODES.toArray(String[]::new));
+        ((ObjectNode) missingRef.get("properties")).set("lexical_resource", JSON.createObjectNode().put("$ref", "#/$defs/nope"));
+        for (ObjectNode weak : List.of(anything, stringy, badRef)) {
+            Map<String, Object> b = body(s);
+            b.put("resultSchema", weak);
+            Res refused = create(s, b);
+            assertEquals(422, refused.status(), weak + " " + refused.raw());
+            assertEquals(List.of("resultSchema.properties.lexical_resource"), fields(refused), weak.toString());
+        }
+        Map<String, Object> dangling = body(s);
+        dangling.put("resultSchema", missingRef);
+        assertEquals(422, create(s, dangling).status(), "a $ref to nothing is refused (as the schema does not compile, or as not numeric)");
+        Map<String, Object> omit = body(s);
+        omit.put("resultSchema", optional);
+        assertEquals(List.of("resultSchema.required"), fields(create(s, omit)), "a criterion the model may leave out");
+        omit.put("resultSchema", noRequired);
+        assertEquals(List.of("resultSchema.required"), fields(create(s, omit)), "no required list: every criterion may be left out");
+        assertEquals(0, su.queryForObject("select count(*) from grading_skills where owner_org_id = ?", Long.class, s.org()), "nothing was written");
+
+        // every criterion declared, required and numeric (and a local $ref to a number is fine): accepted
         Map<String, Object> ok = body(s);
         ObjectNode good = schema(CODES.toArray(String[]::new));
         ((ObjectNode) good.get("properties")).set("task_response", JSON.createObjectNode().put("$ref", "#/$defs/band"));

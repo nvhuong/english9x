@@ -245,11 +245,47 @@ class SkillValidator {
             errors.add(new FieldProblem("resultSchema.type", "must be \"object\": the AI answers with one JSON object"));
         }
         JsonNode properties = schema.path("properties");
+        Set<String> required = new HashSet<>();
+        if (schema.path("required").isArray()) {
+            schema.path("required").forEach(n -> {
+                if (n.isTextual()) {
+                    required.add(n.asText());
+                }
+            });
+        }
+        List<String> optional = new ArrayList<>();
         for (String code : codes) {
             if (!properties.isObject() || !properties.has(code)) {
                 errors.add(new FieldProblem("resultSchema.properties." + code, "must declare a property for the criterion " + code));
+            } else if (!numeric(schema, properties.get(code), 0)) {
+                errors.add(new FieldProblem("resultSchema.properties." + code, "must be a number: type \"number\" or \"integer\" (or a $ref inside the schema to one)"));
+            }
+            if (properties.isObject() && properties.has(code) && !required.contains(code)) {
+                optional.add(code);
             }
         }
+        if (!optional.isEmpty()) {
+            errors.add(new FieldProblem("resultSchema.required", "must list every criterion code (the AI may not leave one out); missing " + String.join(", ", optional)));
+        }
+    }
+
+    /** True when the property is a number or an integer, directly or through {@code $ref}s that stay inside the schema (fail-closed: anything else is false). */
+    private static boolean numeric(JsonNode root, JsonNode property, int depth) {
+        if (depth > 8 || !property.isObject()) {
+            return false;
+        }
+        JsonNode ref = property.path("$ref");
+        if (ref.isTextual()) {
+            JsonNode target;
+            try {
+                target = root.at(ref.asText().substring(1));
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+            return !target.isMissingNode() && numeric(root, target, depth + 1);
+        }
+        JsonNode type = property.path("type");
+        return type.isTextual() && ("number".equals(type.asText()) || "integer".equals(type.asText()));
     }
 
     /** The addresses the schema would reach outside itself: a {@code $ref} that does not start with #, an {@code $id}, another {@code $schema}. */

@@ -277,7 +277,7 @@ public final class SweepFixtures {
         // The dry run answers 501 until the AI grader exists (P4.2), so it has no 2xx control; the ids it walks are checked like the others.
         String criteria = "[{\"code\":\"task_response\",\"name\":\"Task response\",\"min\":0,\"max\":9,\"step\":0.5}]";
         String skillRest = "\"rubric\":\"r\",\"criteria\":" + criteria + ",\"promptTemplate\":\"{{rubric}} {{samples}} {{task}} {{response}}\",\"samples\":[],"
-                + "\"resultSchema\":{\"type\":\"object\",\"properties\":{\"task_response\":{\"type\":\"number\"}}}";
+                + "\"resultSchema\":{\"type\":\"object\",\"properties\":{\"task_response\":{\"type\":\"number\"}},\"required\":[\"task_response\"]}";
         all.put("POST /api/cms/grading-skills", ForeignIdSweep.Fixture.write("{\"questionTypeCode\":\"IELTS_W_TASK2\"," + skillRest + "}", List.of(), none));
         all.put("PUT /api/cms/grading-skills/{id}", ForeignIdSweep.Fixture.write("{" + skillRest + "}", List.of(), new ForeignIdSweep.Control(slot("id", skillAForPut), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/grading-skills/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", skillAForSubmit), null, ForeignIdSweep.AUTHOR)));

@@ -113,7 +113,7 @@ test.describe('F16 grading skill', () => {
       criteria: [{ code: 'a', name: 'A', min: 0, max: 9, step: 0.5 }],
       promptTemplate: '{{rubric}} {{samples}} {{task}} {{response}}',
       samples: [],
-      resultSchema: { type: 'object', properties: { a: { type: 'number' } } },
+      resultSchema: { type: 'object', properties: { a: { type: 'number' } }, required: ['a'] },
     };
     const post = (body: unknown) => org.api(s.author.token, 'POST', '/api/cms/grading-skills', { org: s.orgId, body });
     const fields = (r: { body: { errors: Array<{ field: string }> } }) => r.body.errors.map((e) => e.field);
@@ -123,8 +123,10 @@ test.describe('F16 grading skill', () => {
     expect(fields(noResponse)).toEqual(['promptTemplate']);
     expect(fields(await post({ ...base, promptTemplate: '{{rubric}} {{samples}} {{task}} {{response}} {{student}}' }))).toEqual(['promptTemplate']);
     expect(fields(await post({ ...base, criteria: [{ code: 'a', name: 'A', min: 0, max: 9, step: 0.7 }] }))).toEqual(['criteria[0].step']);
-    expect(fields(await post({ ...base, resultSchema: { type: 'object', properties: { a: { type: 'number' } }, $ref: 'https://example.test/s.json' } }))).toEqual(['resultSchema']);
+    expect(fields(await post({ ...base, resultSchema: { type: 'object', properties: { a: { type: 'number' } }, required: ['a'], $ref: 'https://example.test/s.json' } }))).toEqual(['resultSchema']);
     expect(fields(await post({ ...base, questionTypeCode: 'IELTS_R_SHORT_ANSWER' }))).toEqual(['questionTypeCode']);
+    expect(fields(await post({ ...base, resultSchema: { type: 'object', properties: { a: { type: 'string' } }, required: ['a'] } }))).toEqual(['resultSchema.properties.a']);
+    expect(fields(await post({ ...base, resultSchema: { type: 'object', properties: { a: { type: 'number' } } } }))).toEqual(['resultSchema.required']);
 
     const ok = await post(base);
     expect(ok.status, ok.text).toBe(201);
