@@ -377,6 +377,9 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.gemini.timeout` | `60s` | Thời gian chờ mỗi lần gọi | Cấu hình |
 | `e9x.gemini.price-per-1k-input` / `-output` | theo bảng giá hiện hành | Dùng để ước tính chi phí hiển thị | Cấu hình |
 | `e9x.content.media.max-upload-size` | `200MB` | Dung lượng tối đa một file media | Cấu hình |
+| `e9x.content.question.max-json-size` | `256KB` | Dung lượng tối đa của phần nội dung và (riêng) của đáp án trong một phiên bản câu hỏi hay nhóm câu (P2.3); quá cỡ thì bị từ chối 422 theo đường dẫn | Cấu hình |
+| `e9x.content.question.default-page-size` / `max-page-size` | `50` / `100` | Số câu mỗi trang của danh sách câu hỏi trong CMS khi yêu cầu không nói / nhiều nhất được xin (P2.3) | Cấu hình |
+| `e9x.content.question.max-group-members` | `100` | Số câu tối đa trong một phiên bản nhóm câu (P2.3) | Cấu hình |
 
 ---
 
