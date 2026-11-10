@@ -165,7 +165,7 @@ test.describe('F12 media', () => {
     const id = (await (await upload(request, token, { name: MP3, type: 'audio/mpeg', data: bytes(MP3) })).json()).id as string;
     const link = new URL((await org.api(token, 'GET', `/api/media/${id}/url`)).body.url as string);
     const sig = link.search;
-    const looksLikeMinio = (t: string) => t.includes('<?xml') || t.includes('<Error>') || t.includes('minio');
+    const looksLikeMinio = (t: string) => t.includes('<?xml') || t.includes('<Error>') || t.includes('"MinIO"');
     for (const [what, path, init] of [
       ['the bucket listing', `/e9x-media/${sig}`, {}],
       ['a nested key', `/e9x-media/a/${id}${sig}`, {}],
