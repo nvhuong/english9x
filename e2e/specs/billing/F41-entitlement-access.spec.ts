@@ -13,12 +13,12 @@ test.describe('F41 entitlement access', () => {
     const expired = await seed.billing.course();
     const soon = await seed.billing.course();
     await seed.billing.entitlement({ userId: learner.userId, courseId: active.courseId, startsInDays: -10, endsInDays: 30 });
-    await seed.billing.entitlement({ userId: learner.userId, courseId: expired.courseId, startsInDays: -40, endsInHours: -1 });
+    await seed.billing.entitlement({ userId: learner.userId, courseId: expired.courseId, startsInDays: -40, endsInDays: -1 });
     await seed.billing.entitlement({ userId: learner.userId, courseId: soon.courseId, startsInDays: -27, endsInDays: 3 });
 
     // the gate: new learning only while the plan is valid; an attempt begun while it was valid may be finished
     expect(await seed.billing.gate({ userId: learner.userId, courseId: active.courseId })).toMatchObject({ activeFor: true });
-    expect(await seed.billing.gate({ userId: learner.userId, courseId: expired.courseId, attemptStartedDaysAgo: 0 })).toMatchObject({ activeFor: false, canContinueAttempt: true });
+    expect(await seed.billing.gate({ userId: learner.userId, courseId: expired.courseId, attemptStartedDaysAgo: 10 })).toMatchObject({ activeFor: false, canContinueAttempt: true });
     expect(await seed.billing.gate({ userId: learner.userId, courseId: expired.courseId, attemptStartedDaysAgo: 60 })).toMatchObject({ activeFor: false, canContinueAttempt: false });
     const stranger = await seed.verifiedLearner({ email: uniqueEmail('f41-stranger') });
     expect(await seed.billing.gate({ userId: stranger.userId, courseId: active.courseId })).toMatchObject({ activeFor: false });
