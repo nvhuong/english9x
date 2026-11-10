@@ -23,7 +23,6 @@ export default function OrgLicensesPage() {
   const [activation, setActivation] = useState<'QR' | 'CONTRACT'>('CONTRACT');
   const [contractNo, setContractNo] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
-  const [touched, setTouched] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +47,6 @@ export default function OrgLicensesPage() {
         className="flex max-w-xl flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault();
-          setTouched(true);
           setNotice(null);
           setError(null);
           if (!valid) {
@@ -68,7 +66,6 @@ export default function OrgLicensesPage() {
             {
               onSuccess: (r) => {
                 setNotice(r.license.activation === 'QR' ? t('licenses.admin.createdQr', { code: r.license.orderCode ?? '', note: r.transferNote ?? '' }) : t('licenses.admin.createdContract'));
-                setTouched(false);
                 setSeats('');
                 setMonths('');
                 setPrice('');
@@ -81,7 +78,7 @@ export default function OrgLicensesPage() {
         }}
       >
         <h2 className="font-serif text-xl font-semibold">{t('licenses.admin.formTitle')}</h2>
-        <Select label={t('licenses.admin.org')} value={orgId} onValueChange={setOrgId} options={(orgs.data ?? []).map((o) => ({ value: o.id, label: o.name }))} error={touched && !orgId ? t('licenses.admin.invalid') : undefined} />
+        <Select label={t('licenses.admin.org')} value={orgId} onValueChange={setOrgId} options={(orgs.data ?? []).map((o) => ({ value: o.id, label: o.name }))} />
         <Input label={t('licenses.admin.seats')} inputMode="numeric" value={seats} onChange={(e) => setSeats(e.target.value)} />
         <Input label={t('licenses.admin.months')} inputMode="numeric" value={months} onChange={(e) => setMonths(e.target.value)} />
         <Input label={t('licenses.admin.price')} inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} />

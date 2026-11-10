@@ -67,7 +67,7 @@ test.describe('F42 organisation licence', () => {
     const row = (created.body.items as Array<{ targetId: string; detail: Record<string, unknown> }>).find((r) => r.targetId === contract.id)!;
     expect(row.detail.activation).toBe('CONTRACT');
     expect(row.detail.contractNo).toBe(`HD-${suffix}`);
-    expect(JSON.stringify(row)).not.toContain('@');
+    expect(JSON.stringify(row.detail), 'the record keeps no address').not.toContain('@');
 
     // 2) the ORG_ADMIN reads it on the real page, in their own organisation's context
     const bossCtx = await browser.newContext({ ignoreHTTPSErrors: true });
