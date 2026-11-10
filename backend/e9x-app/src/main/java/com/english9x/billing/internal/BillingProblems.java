@@ -31,6 +31,21 @@ public final class BillingProblems {
         return of(HttpStatus.CONFLICT, "plan-not-available", "Plan not available", "This plan is not on sale.", List.of());
     }
 
+    /** The order is not PENDING_PAYMENT any more (already confirmed, rejected or expired): a decision on it changes nothing. */
+    public static ErrorResponseException orderNotPending() {
+        return of(HttpStatus.CONFLICT, "order-not-pending", "Order not pending", "This order is no longer waiting for payment.", List.of());
+    }
+
+    /** Two administrators changed the payment account at the same moment; the later one asks again. */
+    public static ErrorResponseException paymentAccountChanged() {
+        return of(HttpStatus.CONFLICT, "payment-account-changed", "Payment account changed", "The payment account was changed at the same time. Try again.", List.of());
+    }
+
+    /** A reject without a usable reason (422: the request is well-formed, the decision is not complete). */
+    public static ErrorResponseException reasonRequired(String message) {
+        return of(HttpStatus.UNPROCESSABLE_ENTITY, "reason-required", "Reason required", message, List.of(new FieldProblem("reason", null, "ReasonRequired", message)));
+    }
+
     private static ErrorResponseException of(HttpStatus status, String slug, String title, String detail, List<FieldProblem> errors) {
         ProblemDetail p = ProblemDetail.forStatusAndDetail(status, detail);
         p.setType(URI.create("urn:e9x:problem:" + slug));

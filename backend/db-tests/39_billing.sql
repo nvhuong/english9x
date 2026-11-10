@@ -28,8 +28,10 @@ BEGIN
   ASSERT failed, 'an order for somebody else is refused';
   failed := false; BEGIN INSERT INTO orders(code,user_id,plan_id,plan_months,amount_vnd,status) VALUES ('CCCCCC','c0000000-0000-0000-0000-000000000002','c2000000-0000-0000-0000-000000000001',1,1,'CONFIRMED'); EXCEPTION WHEN insufficient_privilege OR check_violation THEN failed := true; END;
   ASSERT failed, 'a learner cannot place a CONFIRMED order';
-  failed := false; BEGIN UPDATE orders SET status = 'CONFIRMED'; EXCEPTION WHEN insufficient_privilege THEN failed := true; END;
-  ASSERT failed, 'a learner cannot update an order';
+  UPDATE orders SET status = 'CONFIRMED', confirmed_at = now();   -- P5.2 granted the decision columns, to a real SYS_ADMIN only (43_payment_accounts.sql)
+  ASSERT (SELECT status FROM orders) = 'PENDING_PAYMENT', 'a learner cannot update an order';
+  failed := false; BEGIN UPDATE orders SET amount_vnd = 1; EXCEPTION WHEN insufficient_privilege THEN failed := true; END;
+  ASSERT failed, 'and never the price';
   failed := false; BEGIN INSERT INTO order_items(order_id,user_id,course_id,course_code) VALUES ('c3000000-0000-0000-0000-000000000001','c0000000-0000-0000-0000-000000000003','c1000000-0000-0000-0000-000000000001','BILL01'); EXCEPTION WHEN insufficient_privilege OR foreign_key_violation THEN failed := true; END;
   ASSERT failed, 'an item cannot be filed under another person';
   ASSERT (SELECT count(*) FROM orders) = 1, 'sees own order';

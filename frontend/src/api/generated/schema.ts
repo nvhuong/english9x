@@ -7,7 +7,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -64,6 +64,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/orders/{code}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/orders/{code}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/organizations": {
         parameters: {
             query?: never;
@@ -74,6 +122,22 @@ export interface paths {
         get: operations["list_7"];
         put?: never;
         post: operations["create_7"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/payment-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["current"];
+        put: operations["replace"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -962,6 +1026,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orders/{code}/qr.png": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["qr"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orgs/{id}/invitations": {
         parameters: {
             query?: never;
@@ -1071,6 +1151,28 @@ export interface components {
             /** @example accepted */
             status: string;
         };
+        AdminOrderView: {
+            /** Format: int64 */
+            amountVnd: number;
+            bankRef?: string;
+            code: string;
+            /** Format: date-time */
+            confirmedAt?: string;
+            courseCodes: string[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int32 */
+            planMonths: number;
+            rejectReason?: string;
+            /** @description PENDING_PAYMENT, CONFIRMED, REJECTED or EXPIRED */
+            status: string;
+            /** @description What the payer should have put in the transfer, to match it against the bank statement */
+            transferNote: string;
+            userEmail?: string;
+            /** Format: uuid */
+            userId: string;
+            userName?: string;
+        };
         AdminOrgView: {
             /** Format: date-time */
             createdAt: string;
@@ -1127,6 +1229,10 @@ export interface components {
         AuthConfig: {
             /** @description false when Google sign-in is not configured: hide the button */
             googleEnabled: boolean;
+        };
+        ConfirmOrderRequest: {
+            /** @description The bank's transaction reference, if the administrator has it (at most 100 characters) */
+            bankRef?: string;
         };
         CreateOrderRequest: {
             /** @description Published English9x courses, at most the plan's maxCourses */
@@ -1416,9 +1522,11 @@ export interface components {
             amountVnd: number;
             /** @description 6 characters, A-Z and 0-9 */
             orderCode: string;
-            /** @description The VietQR text for the QR code. Null until the payment account and the QR are built (P5.2) */
+            /** @description The bank account to pay into. Null while no payment account is configured */
+            payTo?: components["schemas"]["PayTo"];
+            /** @description The VietQR text for the QR code. Null while no payment account is configured */
             qrPayload?: string;
-            /** @description URL of the QR image. Null until P5.2 */
+            /** @description URL of the QR image (PNG, 512 px). Null while no payment account is configured */
             qrPngUrl?: string;
             /** @description Text the payer puts in the bank transfer: E9X, the order code and the course codes (the order code alone when too long) */
             transferNote: string;
@@ -1430,10 +1538,16 @@ export interface components {
             courses: components["schemas"]["OrderCourse"][];
             /** Format: date-time */
             createdAt: string;
+            /** @description The bank account to pay into; same rule as qrPayload */
+            payTo?: components["schemas"]["PayTo"];
             /** Format: uuid */
             planId: string;
             /** Format: int32 */
             planMonths: number;
+            /** @description The VietQR text; only while the order is PENDING_PAYMENT and an account is configured */
+            qrPayload?: string;
+            /** @description URL of the QR image; same rule as qrPayload */
+            qrPngUrl?: string;
             /** @description Why the order was not confirmed (REJECTED) */
             rejectReason?: string;
             /** @description PENDING_PAYMENT, CONFIRMED, REJECTED or EXPIRED */
@@ -1447,6 +1561,26 @@ export interface components {
             id: string;
             name: string;
             type: components["schemas"]["OrgType"];
+        };
+        PayTo: {
+            accountName: string;
+            accountNo: string;
+            bankBin: string;
+        };
+        PaymentAccountRequest: {
+            /** @description Name of the account holder, shown to the payer */
+            accountName: string;
+            /** @description 1 to 19 letters or digits */
+            accountNo: string;
+            /** @description The bank's 6-digit NAPAS BIN */
+            bankBin: string;
+        };
+        PaymentAccountView: {
+            accountName: string;
+            accountNo: string;
+            bankBin: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         PlanRequest: {
             active: boolean;
@@ -1662,6 +1796,10 @@ export interface components {
             /** @example pending_verification */
             status: string;
         };
+        RejectOrderRequest: {
+            /** @description Why the payment was not accepted: 1 to 500 characters, shown to the learner */
+            reason: string;
+        };
         ResetConfirmRequest: {
             newPassword: string;
             token: string;
@@ -1867,7 +2005,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 action?: string;
@@ -2025,6 +2163,108 @@ export interface operations {
             };
         };
     };
+    list_9: {
+        parameters: {
+            query?: {
+                status?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminOrderView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ConfirmOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminOrderView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RejectOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminOrderView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_7: {
         parameters: {
             query?: never;
@@ -2074,6 +2314,68 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AdminOrgView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    current: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaymentAccountView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PaymentAccountView"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -4166,6 +4468,37 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["OrderView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    qr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
                 };
             };
             /** @description Error (RFC 7807 problem details) */

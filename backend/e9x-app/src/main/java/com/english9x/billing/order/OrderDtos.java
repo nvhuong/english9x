@@ -1,5 +1,6 @@
 package com.english9x.billing.order;
 
+import com.english9x.billing.payment.PaymentInstructions.PayTo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -22,8 +23,9 @@ final class OrderDtos {
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "6 characters, A-Z and 0-9") String orderCode,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "The price of the plan when the order was placed") long amountVnd,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED, description = "Text the payer puts in the bank transfer: E9X, the order code and the course codes (the order code alone when too long)") String transferNote,
-            @Schema(nullable = true, description = "The VietQR text for the QR code. Null until the payment account and the QR are built (P5.2)") String qrPayload,
-            @Schema(nullable = true, description = "URL of the QR image. Null until P5.2") String qrPngUrl) {}
+            @Schema(nullable = true, description = "The VietQR text for the QR code. Null while no payment account is configured") String qrPayload,
+            @Schema(nullable = true, description = "URL of the QR image (PNG, 512 px). Null while no payment account is configured") String qrPngUrl,
+            @Schema(nullable = true, description = "The bank account to pay into. Null while no payment account is configured") PayTo payTo) {}
 
     @Schema(name = "OrderCourse")
     record OrderCourse(UUID id, String code) {}
@@ -38,5 +40,8 @@ final class OrderDtos {
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant createdAt,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String transferNote,
             @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<OrderCourse> courses,
-            @Schema(nullable = true, description = "Why the order was not confirmed (REJECTED)") String rejectReason) {}
+            @Schema(nullable = true, description = "Why the order was not confirmed (REJECTED)") String rejectReason,
+            @Schema(nullable = true, description = "The VietQR text; only while the order is PENDING_PAYMENT and an account is configured") String qrPayload,
+            @Schema(nullable = true, description = "URL of the QR image; same rule as qrPayload") String qrPngUrl,
+            @Schema(nullable = true, description = "The bank account to pay into; same rule as qrPayload") PayTo payTo) {}
 }

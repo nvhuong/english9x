@@ -17,6 +17,7 @@ class ModuleEventsTest {
             Map.entry("ReviewRequested", "workflow"),
             Map.entry("ReviewChangesRequested", "workflow"),
             Map.entry("ReviewApproved", "workflow"),
+            Map.entry("OrderPlaced", "billing"),
             Map.entry("OrderConfirmed", "billing"),
             Map.entry("OrderRejected", "billing"),
             Map.entry("SeatAssigned", "billing"),

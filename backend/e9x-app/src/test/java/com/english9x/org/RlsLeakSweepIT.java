@@ -100,6 +100,7 @@ class RlsLeakSweepIT {
         assertEquals(404, call(new ForeignIdSweep.Call("GET", "/api/media/{id}/url", "/api/media/" + FIXTURES.mediaB + "/url", null, ForeignIdSweep.AUTHOR)),
                 "A's author does not sign B's file");
         assertEquals(200, getAsOrgA("/api/orders/" + FIXTURES.orderCodeA), "positive control: A's member reads A's member's order");
+        assertEquals(200, getAsOrgA("/api/orders/" + FIXTURES.orderCodeA + "/qr.png"), "positive control: A's member gets the QR of A's member's pending order");
         SweepFixtures.Catalog catalog = FIXTURES.foreignIds(Map.of());
         assertEquals(List.of(), catalog.problems(), "every table must have a foreign row or a reason");
         List<UUID> foreign = catalog.ids();
@@ -119,7 +120,8 @@ class RlsLeakSweepIT {
                 "DELETE /api/orgs/{id}/invitations/{invitationId}", "DELETE /api/admin/invitations/{invitationId}",
                 "POST /api/invitations/{token}/accept", "POST /api/admin/invitations", "POST /api/admin/organizations",
                 "GET /api/media/{id}/url", "POST /api/cms/media",
-                "POST /api/admin/plans", "PUT /api/admin/plans/{id}", "GET /api/orders/{code}",
+                "POST /api/admin/plans", "PUT /api/admin/plans/{id}", "GET /api/orders/{code}", "GET /api/orders/{code}/qr.png",
+                "PUT /api/admin/payment-account", "POST /api/admin/orders/{code}/confirm", "POST /api/admin/orders/{code}/reject",
                 "POST /api/cms/questions", "PUT /api/cms/questions/{id}", "POST /api/cms/questions/{id}/submit", "GET /api/cms/questions/{id}",
                 "GET /api/cms/questions/{id}/versions", "POST /api/cms/question-groups", "PUT /api/cms/question-groups/{id}",
                 "POST /api/cms/question-groups/{id}/submit", "GET /api/cms/question-groups/{id}", "GET /api/cms/question-groups/{id}/versions",
