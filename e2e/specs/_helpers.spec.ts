@@ -151,7 +151,6 @@ test.describe('seed API and not-yet-built fixtures', () => {
 
   test('seed functions of unbuilt modules throw a clear error instead of faking data', async ({ seed }) => {
     const calls: Array<[string, () => unknown, RegExp]> = [
-      ['seed.learnerWithPlan', () => seed.learnerWithPlan({ courses: ['ielts-ac'] }), /seed\.learnerWithPlan is not implemented until P5\.1/],
       ['seed.publishedToeicTest', () => seed.publishedToeicTest(), /not implemented until P2\.6/],
       ['seed.publishedIeltsTest', () => seed.publishedIeltsTest({ variant: 'AC' }), /not implemented until P2\.6/],
       ['seed.center', () => seed.center({ teachers: 1, learners: 2 }), /not implemented until P6\.1/],

@@ -85,6 +85,10 @@ e9x:
     priority-types: auto_submit_attempt  # claimed by 1 extra dedicated thread (general threads claim them too), so a burst of ai_grade jobs cannot delay them
     lease: 10m                       # a claim is valid this long without a heartbeat; see JobStore
     heartbeat-interval: 0s           # 0 = lease / 3; renews the lease of a running job
+    retention: 7d                    # finished jobs (payload, dedupe key) are deleted this long after they end (purge_finished_jobs); the database never purges under a day
+    recurring:
+      enabled: true                  # this instance queues the ticks of periodic jobs (several instances may: one tick per time bucket is queued)
+      poll: 1m                       # how often it looks at the clock
     max-run: 30m                     # the heartbeat stops after this; override per type with e9x.jobs.<type>.max-run
     default-retry-delays: 30s,2m,10m # a type without its own e9x.jobs.<type>.retry-delays; ai_grade uses e9x.grading.ai.retry-delays
     # The worker's own small pool, as e9x_worker_login (member of e9x_worker, jobs table only). Not the primary
@@ -111,6 +115,8 @@ e9x:
     order-expiry: 7d
     transfer-note-max-length: 50
     expiry-reminder: 7d
+    job-interval: 1h                 # period of expire_orders, expire_entitlements and plan_expiry_reminder (a tick = one time bucket of this length)
+    expired-notice-window: 14d       # expire_entitlements tells the learners whose plan ended this recently; an older end is never announced
   content:
     import:
       max-rows: 2000

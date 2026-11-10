@@ -50,7 +50,7 @@
             "type" : "string"
           },
           "actorKind" : {
-            "description" : "USER, or OPERATOR for what was done outside the application",
+            "description" : "USER; OPERATOR for what was done outside the application; SYSTEM for what a background job changed on its own",
             "type" : "string"
           },
           "actorName" : {
@@ -75,7 +75,7 @@
             "type" : "string"
           },
           "orgId" : {
-            "description" : "The context the actor was in; null = English9x (for the actor kind OPERATOR: outside the application)",
+            "description" : "The context the actor was in; null = English9x (for the actor kinds OPERATOR and SYSTEM: none)",
             "format" : "uuid",
             "type" : "string"
           },
@@ -131,6 +131,26 @@
         "required" : [ "googleEnabled" ],
         "type" : "object"
       },
+      "CreateOrderRequest" : {
+        "properties" : {
+          "courseIds" : {
+            "description" : "Published English9x courses, at most the plan's maxCourses",
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "maxItems" : 100,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "planId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "courseIds", "planId" ],
+        "type" : "object"
+      },
       "CreateOrganizationRequest" : {
         "properties" : {
           "name" : {
@@ -155,6 +175,40 @@
           }
         },
         "required" : [ "email" ],
+        "type" : "object"
+      },
+      "EntitlementView" : {
+        "properties" : {
+          "active" : {
+            "description" : "Valid right now: new lessons and attempts can be opened",
+            "type" : "boolean"
+          },
+          "courseCode" : {
+            "description" : "Null when the course is no longer visible to the caller",
+            "type" : "string"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "source" : {
+            "description" : "ORDER (a paid plan) or SEAT (an organisation's licence)",
+            "type" : "string"
+          },
+          "validFrom" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "validUntil" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "active", "courseId", "id", "source", "validFrom", "validUntil" ],
         "type" : "object"
       },
       "ExamInfo" : {
@@ -564,6 +618,87 @@
         "required" : [ "code", "consent" ],
         "type" : "object"
       },
+      "OrderCourse" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "OrderCreated" : {
+        "properties" : {
+          "amountVnd" : {
+            "description" : "The price of the plan when the order was placed",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "orderCode" : {
+            "description" : "6 characters, A-Z and 0-9",
+            "type" : "string"
+          },
+          "qrPayload" : {
+            "description" : "The VietQR text for the QR code. Null until the payment account and the QR are built (P5.2)",
+            "type" : "string"
+          },
+          "qrPngUrl" : {
+            "description" : "URL of the QR image. Null until P5.2",
+            "type" : "string"
+          },
+          "transferNote" : {
+            "description" : "Text the payer puts in the bank transfer: E9X, the order code and the course codes (the order code alone when too long)",
+            "type" : "string"
+          }
+        },
+        "required" : [ "amountVnd", "orderCode", "transferNote" ],
+        "type" : "object"
+      },
+      "OrderView" : {
+        "properties" : {
+          "amountVnd" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "courses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/OrderCourse"
+            },
+            "type" : "array"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "planId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "planMonths" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rejectReason" : {
+            "description" : "Why the order was not confirmed (REJECTED)",
+            "type" : "string"
+          },
+          "status" : {
+            "description" : "PENDING_PAYMENT, CONFIRMED, REJECTED or EXPIRED",
+            "type" : "string"
+          },
+          "transferNote" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "amountVnd", "code", "courses", "createdAt", "planId", "planMonths", "status", "transferNote" ],
+        "type" : "object"
+      },
       "OrgType" : {
         "enum" : [ "CENTER", "ENTERPRISE" ],
         "type" : "string"
@@ -582,6 +717,69 @@
           }
         },
         "required" : [ "id", "name", "type" ],
+        "type" : "object"
+      },
+      "PlanRequest" : {
+        "properties" : {
+          "active" : {
+            "type" : "boolean"
+          },
+          "maxCourses" : {
+            "format" : "int32",
+            "maximum" : 50,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "months" : {
+            "format" : "int32",
+            "maximum" : 60,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "name" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "priceVnd" : {
+            "format" : "int64",
+            "maximum" : 1000000000000,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "active", "maxCourses", "months", "name", "priceVnd" ],
+        "type" : "object"
+      },
+      "PlanView" : {
+        "properties" : {
+          "active" : {
+            "description" : "On sale; a learner sees only active plans",
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "maxCourses" : {
+            "description" : "Most courses one order of this plan may select",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "months" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "priceVnd" : {
+            "description" : "Price in VND, locked onto an order when it is placed",
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "active", "id", "maxCourses", "months", "name", "priceVnd" ],
         "type" : "object"
       },
       "Pong" : {
@@ -1059,7 +1257,7 @@
         "tags" : [ "org-controller" ]
       },
       "post" : {
-        "operationId" : "create",
+        "operationId" : "create_2",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1093,6 +1291,120 @@
           }
         },
         "tags" : [ "org-controller" ]
+      }
+    },
+    "/api/admin/plans" : {
+      "get" : {
+        "operationId" : "all",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PlanView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "plan-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlanView"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "plan-controller" ]
+      }
+    },
+    "/api/admin/plans/{id}" : {
+      "put" : {
+        "operationId" : "update",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlanView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "plan-controller" ]
       }
     },
     "/api/auth/config" : {
@@ -1666,6 +1978,37 @@
         "tags" : [ "org-controller" ]
       }
     },
+    "/api/me/entitlements" : {
+      "get" : {
+        "operationId" : "mine_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/EntitlementView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "my-entitlements" ]
+      }
+    },
     "/api/me/notification-prefs" : {
       "get" : {
         "operationId" : "prefs",
@@ -1961,6 +2304,109 @@
         "tags" : [ "media-controller" ]
       }
     },
+    "/api/orders" : {
+      "get" : {
+        "operationId" : "mine",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/OrderView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "order-controller" ]
+      },
+      "post" : {
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateOrderRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrderCreated"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "order-controller" ]
+      }
+    },
+    "/api/orders/{code}" : {
+      "get" : {
+        "operationId" : "one",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "code",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrderView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "order-controller" ]
+      }
+    },
     "/api/orgs/{id}/invitations" : {
       "get" : {
         "operationId" : "list_1",
@@ -2164,6 +2610,37 @@
           }
         },
         "tags" : [ "role-grant-controller" ]
+      }
+    },
+    "/api/plans" : {
+      "get" : {
+        "operationId" : "onSale",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/PlanView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "plan-controller" ]
       }
     },
     "/api/platform/ping" : {

@@ -99,6 +99,7 @@ class RlsLeakSweepIT {
                 "positive control: A's author signs A's file");
         assertEquals(404, call(new ForeignIdSweep.Call("GET", "/api/media/{id}/url", "/api/media/" + FIXTURES.mediaB + "/url", null, ForeignIdSweep.AUTHOR)),
                 "A's author does not sign B's file");
+        assertEquals(200, getAsOrgA("/api/orders/" + FIXTURES.orderCodeA), "positive control: A's member reads A's member's order");
         SweepFixtures.Catalog catalog = FIXTURES.foreignIds(Map.of());
         assertEquals(List.of(), catalog.problems(), "every table must have a foreign row or a reason");
         List<UUID> foreign = catalog.ids();
@@ -117,7 +118,8 @@ class RlsLeakSweepIT {
                 "POST /api/me/notifications/{id}/read", "POST /api/orgs/{id}/invitations", "PUT /api/orgs/{id}/role-grants",
                 "DELETE /api/orgs/{id}/invitations/{invitationId}", "DELETE /api/admin/invitations/{invitationId}",
                 "POST /api/invitations/{token}/accept", "POST /api/admin/invitations", "POST /api/admin/organizations",
-                "GET /api/media/{id}/url", "POST /api/cms/media")),
+                "GET /api/media/{id}/url", "POST /api/cms/media",
+                "POST /api/admin/plans", "PUT /api/admin/plans/{id}", "GET /api/orders/{code}")),
                 "visited " + r.visited());
     }
 

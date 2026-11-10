@@ -25,7 +25,7 @@ import org.springframework.mock.env.MockEnvironment;
 /** The polling loop and its health indicator, without a database. */
 class JobWorkerResilienceTest {
 
-    static final JobsProperties FAST = new JobsProperties(Duration.ofMillis(10), 1, Duration.ofMinutes(10), Duration.ZERO, List.of());
+    static final JobsProperties FAST = new JobsProperties(Duration.ofMillis(10), 1, Duration.ofMinutes(10), Duration.ZERO, List.of(), Duration.ofDays(7), new JobsProperties.Recurring(false, Duration.ofMinutes(1)));
 
     /** A store whose claim throws an Error (not an Exception) every time. */
     static class ExplodingStore extends JobStore {

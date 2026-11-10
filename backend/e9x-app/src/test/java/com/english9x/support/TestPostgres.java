@@ -107,6 +107,8 @@ public final class TestPostgres {
         registry.add("e9x.jobs.worker-datasource.url", () -> jdbcUrl(database));
         registry.add("e9x.jobs.worker-datasource.username", () -> WORKER_LOGIN);
         registry.add("e9x.jobs.worker-datasource.password", () -> WORKER_PASSWORD);
+        // The ticks of periodic jobs are queued by the tests that exercise them (RecurringJobScheduler#tick), never by a scheduler thread in the background
+        registry.add("e9x.jobs.recurring.enabled", () -> "false");
         TestAuth.configure(registry);
     }
 }

@@ -29,6 +29,11 @@ public final class SweepFixtures {
     public final UUID staffInvitation = UUID.randomUUID();
     public final UUID notificationA = UUID.randomUUID();
     public final String courseCodeB = "B00001";
+    /** P5.1: a plan on sale, a published English9x course, and an order of A's member and one of B's member (the order code is a text key of the walk). */
+    public final UUID planId = UUID.randomUUID();
+    public final UUID publishedCourse = UUID.randomUUID();
+    public final String orderCodeA = "SWA001";
+    public final String orderCodeB = "SWB001";
     /** Raw tokens of an invitation of org B, and of one org A's member may really accept (plausible: 40-64 URL-safe characters). */
     public final String tokenB = "sweep-foreign-invitation-token-of-org-b-0001";
     public final String tokenForA = "sweep-own-invitation-token-for-the-a-member1";
@@ -102,6 +107,14 @@ public final class SweepFixtures {
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
+        // P5.1: plans are a price list shared by everybody; orders belong to a person (B's member has one, with an item; A's member has one too, the positive control)
+        su.update("insert into plans(id,name,price_vnd,months,max_courses) values (?,'Sweep plan',100000,1,2)", planId);
+        su.update("insert into courses(id,owner_org_id,exam_code,code,title,status) values (?,null,'IELTS','SWPUB1','Published','PUBLISHED')", publishedCourse);
+        for (Object[] o : new Object[][] {{orderCodeA, userA}, {orderCodeB, userB}}) {
+            UUID order = UUID.randomUUID();
+            su.update("insert into orders(id,code,user_id,plan_id,plan_months,amount_vnd) values (?,?,?,?,1,100000)", order, o[0], o[1], planId);
+            su.update("insert into order_items(order_id,user_id,course_id,course_code) values (?,?,?,'SWPUB1')", order, o[1], publishedCourse);
+        }
     }
 
     // ---- the operations of the API that are not simply read with an id: the one list of exemptions, and the fixtures ------------------------------
@@ -125,7 +138,8 @@ public final class SweepFixtures {
             Map.entry("POST /api/me/notifications/read-all", OWN),
             Map.entry("PUT /api/me/notification-prefs", OWN),
             Map.entry("POST /api/me/telegram/link", OWN),
-            Map.entry("DELETE /api/me/telegram", OWN));
+            Map.entry("DELETE /api/me/telegram", OWN),
+            Map.entry("POST /api/orders", OWN + " (the plan and the courses are shared catalogue rows, not a tenant's; OrderServiceIT covers who may order what)"));
     // (POST /api/cms/media is not exempt: it has a typed fixture below, with a multipart body)
 
     /** A minimal valid invitation: what makes the answer depend on who asks, not on the body. */
@@ -173,6 +187,13 @@ public final class SweepFixtures {
         // P2.2: the upload takes no id of a tenant (the owner is the bound context, the exam a query parameter). The sweep's caller is an ORG_ADMIN with no
         // AUTHOR role: refused; the author of org A in org A's context really uploads. "MULTIPART:" is turned into a multipart request by the IT.
         all.put("POST /api/cms/media", ForeignIdSweep.Fixture.write(MULTIPART_PNG, List.of(), new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.AUTHOR)));
+        // P5.1: an order is the caller's own (user_id = the person), never an organisation's. A's member really orders; the plan routes are the English9x SYS_ADMIN's
+        // (A's ORG_ADMIN is refused with 403 whatever the id); an order code of B's member is a 404 as much as a code nobody has.
+        String plan = "{\"name\":\"Sweep\",\"priceVnd\":1000,\"months\":1,\"maxCourses\":1,\"active\":true}";
+        all.put("POST /api/admin/plans", ForeignIdSweep.Fixture.write(plan, List.of(), new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.ADMIN)));
+        all.put("PUT /api/admin/plans/{id}", ForeignIdSweep.Fixture.write(plan, List.of(), new ForeignIdSweep.Control(slot("id", planId), null, ForeignIdSweep.ADMIN)));
+        all.put("GET /api/orders/{code}", ForeignIdSweep.Fixture.read(List.of(
+                new ForeignIdSweep.Attempt(slot("code", orderCodeB)), new ForeignIdSweep.Attempt(slot("code", "NOSUCH")))));
         return all;
     }
 
@@ -199,6 +220,7 @@ public final class SweepFixtures {
             Map.entry("password_resets", "P1.4: as refresh_tokens"),
             Map.entry("notification_deliveries", "P1.8: RLS on with no policy, no privilege for the request role, only the delivery functions touch it"),
             Map.entry("event_publication", "P1.8: Spring Modulith's registry of module events: ids, no tenant column, no endpoint reads it"),
+            Map.entry("plans", "P5.1: the price list, the same for every tenant; the request role reads active plans and only a real SYS_ADMIN writes (OrderServiceIT.planAdminIsSysAdminOnly...)"),
             Map.entry("exams", "reference data every tenant shares (IELTS, TOEIC), the same for everybody; read-only for the application (P2.1)"),
             Map.entry("exam_sections", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"),
             Map.entry("interaction_kinds", "P2.1: reference data of the catalog, the same for everybody, read-only for the application"),

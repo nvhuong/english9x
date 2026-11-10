@@ -22,6 +22,12 @@ class JobsConfiguration {
         return new JdbcJobQueue(jdbc, mapper, clock);
     }
 
+    /** Retention of the queue itself, hourly. */
+    @Bean
+    com.english9x.platform.jobs.api.RecurringJob purgeFinishedJobsSchedule() {
+        return new com.english9x.platform.jobs.api.RecurringJob(PurgeFinishedJobs.TYPE, java.time.Duration.ofHours(1));
+    }
+
     /** A web-only instance (worker disabled) still starts handler beans that inject WorkerJdbc; using it fails clearly. */
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnProperty(prefix = "app.worker", name = "enabled", havingValue = "false")

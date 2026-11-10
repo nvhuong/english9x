@@ -48,9 +48,30 @@ export const seed = {
   requireVerified: async (userId: string): Promise<number> =>
     (await request(`${env.baseURL}/api/test/seed/require-verified`, { method: 'POST', headers: seedHeaders(), body: JSON.stringify({ userId }) })).status,
 
-  /** A verified learner holding an active plan with the given courses. Needs billing, course modules. */
-  learnerWithPlan: (_opts: { courses: string[] }): Promise<SeededLearner> =>
-    notImplemented('seed.learnerWithPlan', 'P5.1 (plans/entitlements), after P3.1 (courses); sign-in itself exists since P1.4 (seed.verifiedLearner)'),
+  /**
+   * A verified learner who holds an active plan on `courses` published courses (order-sourced entitlements of 30 days, as the confirmation of
+   * an order in P5.2 will make them). The courses are real rows of the catalog's course table (billing seed, P5.1); the lesson pages come with P3.1.
+   */
+  learnerWithPlan: async (opts: { courses: number | string[] } = { courses: 1 }): Promise<SeededLearner & { courseIds: string[] }> => {
+    const learner = await seed.verifiedLearner();
+    const n = Array.isArray(opts.courses) ? opts.courses.length : opts.courses;
+    const courseIds: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const course = await seed.billing.course();
+      await seed.billing.entitlement({ userId: learner.userId, courseId: course.courseId, endsInDays: 30 });
+      courseIds.push(course.courseId);
+    }
+    return { ...learner, courseIds };
+  },
+
+  /** Billing fixtures (P5.1): courses, entitlements with any dates, aged orders, the real jobs on demand, the real access gate asked as a person. */
+  billing: {
+    course: () => post<{ courseId: string; code: string }>('billing/course'),
+    entitlement: (opts: { userId: string; courseId: string; startsInDays?: number; endsInDays?: number; endsInHours?: number }) => post<{ entitlementId: string }>('billing/entitlement', opts),
+    agedOrder: (opts: { userId: string; planId: string; ageDays: number }) => post<{ orderId: string; code: string }>('billing/aged-order', opts),
+    runJob: (type: 'expire_orders' | 'expire_entitlements' | 'plan_expiry_reminder') => post<{ queued: string }>('billing/run-job', { type }),
+    gate: (opts: { userId: string; courseId: string; attemptStartedDaysAgo?: number }) => post<{ activeFor: boolean; canContinueAttempt?: boolean }>('billing/gate', opts),
+  },
 
   /** A published TOEIC L&R test (200 questions). Needs content + exam modules. */
   publishedToeicTest: (): Promise<SeededTest> => notImplemented('seed.publishedToeicTest', 'P2.6 (test assembly) and P3.3 (exam backend)'),

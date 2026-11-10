@@ -10,7 +10,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /** What may be written to the audit log: the shape of names and the content of {@code detail}. Pure, so {@code AuditEntriesTest} covers it without a database. */
-final class AuditEntries {
+public final class AuditEntries {
 
     private static final Pattern NAME = Pattern.compile("[a-z][a-z0-9]*([.-][a-z0-9]+)*");
     static final int MAX_ACTION = 80;
@@ -30,7 +30,7 @@ final class AuditEntries {
 
     private AuditEntries() {}
 
-    static void checkNames(String action, String targetType, String targetId) {
+    public static void checkNames(String action, String targetType, String targetId) {
         if (action == null || action.length() > MAX_ACTION || !NAME.matcher(action).matches()) {
             throw new IllegalArgumentException("audit action must be lower-case words joined by '.' or '-', at most " + MAX_ACTION + " characters");
         }
@@ -43,7 +43,7 @@ final class AuditEntries {
     }
 
     /** Validates {@code detail} and returns it as JSON text of at most {@code maxBytes} bytes. Never echoes a refused value in the message. */
-    static String detailJson(Map<String, Object> detail, int maxBytes) {
+    public static String detailJson(Map<String, Object> detail, int maxBytes) {
         Map<String, Object> clean = detail == null ? Map.of() : asMap(detail, 0, "detail");
         try {
             String json = JSON.writeValueAsString(clean);

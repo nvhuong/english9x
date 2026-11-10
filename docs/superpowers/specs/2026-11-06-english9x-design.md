@@ -337,6 +337,8 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.billing.order-expiry` | `7d` | Đơn chờ quá hạn thì `EXPIRED` | Quản trị |
 | `e9x.billing.transfer-note-max-length` | `50` | Độ dài tối đa nội dung chuyển khoản | Cấu hình |
 | `e9x.billing.expiry-reminder` | `7d` | Báo trước khi gói hết hạn | Quản trị |
+| `e9x.billing.job-interval` | `1h` | Chu kỳ của ba việc nền `expire_orders`, `expire_entitlements`, `plan_expiry_reminder` (P5.1) | Cấu hình |
+| `e9x.billing.expired-notice-window` | `14d` | `expire_entitlements` chỉ báo "gói đã hết hạn" cho gói hết hạn trong khoảng này; hết hạn cũ hơn không báo nữa (P5.1) | Cấu hình |
 | `e9x.content.import.max-rows` | `2000` | Số dòng tối đa mỗi lô Excel | Quản trị |
 | `e9x.content.import.max-media-size` | `500MB` | Dung lượng ZIP media tối đa mỗi lô | Quản trị |
 | `e9x.media.url-ttl` | `10m` | Hạn của link media | Cấu hình |
