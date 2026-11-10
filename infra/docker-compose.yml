@@ -20,6 +20,7 @@ services:
       E9X_DB_PASSWORD: ${E9X_DB_PASSWORD:-e9x_app_dev_password}
       E9X_WORKER_DB_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-e9x_minio_dev_password}
+      E9X_MINIO_SECRET_KEY: ${E9X_MINIO_SECRET_KEY:-e9x_media_dev_secret}
     volumes:
       - ./preflight.sh:/preflight.sh:ro
     restart: "no"
@@ -68,6 +69,24 @@ services:
       retries: 20
     restart: unless-stopped
 
+  # Runs once and exits (idempotent): creates the private media bucket and the application's own key, limited to that bucket (infra/minio/init.sh).
+  # The app starts only after it, so the app never holds the MinIO root credentials. Nothing publishes MinIO's ports: Caddy is the only way in.
+  minio-init:
+    image: chainguard/minio-client@sha256:10388d580a724f356b94c9b2631b5a179039cabe8c76e9b37d86ed007d569b05
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["bash", "/init.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-e9x_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-e9x_minio_dev_password}
+      E9X_MINIO_BUCKET: ${E9X_MINIO_BUCKET:-e9x-media}
+      E9X_MINIO_ACCESS_KEY: ${E9X_MINIO_ACCESS_KEY:-e9x_media_app}
+      E9X_MINIO_SECRET_KEY: ${E9X_MINIO_SECRET_KEY:-e9x_media_dev_secret}
+    volumes:
+      - ./minio/init.sh:/init.sh:ro
+    restart: "no"
+
   app:
     build:
       context: ..
@@ -77,6 +96,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     environment:
       E9X_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-e9x}
       E9X_DB_USER: e9x_app_login
@@ -87,6 +108,12 @@ services:
       E9X_WORKER_DB_USER: e9x_worker_login
       E9X_WORKER_DB_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
       E9X_GEMINI_API_KEY: ${E9X_GEMINI_API_KEY:-}
+      # Media (P2.2). The app talks to MinIO inside the Compose network with a key limited to the one bucket (not the root credentials), and signs links for
+      # the public address, which Caddy serves under /<bucket>/ (infra/Caddyfile). The links are signed for E9X_PUBLIC_BASE_URL (https://$E9X_DOMAIN).
+      E9X_MINIO_ENDPOINT: http://minio:9000
+      E9X_MINIO_BUCKET: ${E9X_MINIO_BUCKET:-e9x-media}
+      E9X_MINIO_ACCESS_KEY: ${E9X_MINIO_ACCESS_KEY:-e9x_media_app}
+      E9X_MINIO_SECRET_KEY: ${E9X_MINIO_SECRET_KEY:-e9x_media_dev_secret}
       # Identity (P1.4). The JWT secret and the SMTP host have NO default: Compose stops right here with the message below when they are missing.
       # Generate the secret with `openssl rand -hex 32`. Dev/E2E: scripts/e2e.sh does it for you.
       E9X_DOMAIN: ${E9X_DOMAIN:-localhost}
@@ -128,6 +155,7 @@ services:
       - "443:443"
     environment:
       E9X_DOMAIN: ${E9X_DOMAIN:-localhost}
+      E9X_MINIO_BUCKET: ${E9X_MINIO_BUCKET:-e9x-media}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddydata:/data
@@ -153,14 +181,19 @@ services:
       PGUSER: ${POSTGRES_USER:-e9x}
       PGPASSWORD: ${POSTGRES_PASSWORD:-e9x_dev_password}
       E9X_OWNER_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}   # restore.sh only; this container already holds the superuser's
-      MINIO_DATA_DIR: /minio-data
       E9X_BACKUP_RETENTION: ${E9X_BACKUP_RETENTION:-14}
+      # the media bucket is mirrored through the S3 API (mc mirror), with the root credentials: this container already holds the database superuser's
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_BUCKET: ${E9X_MINIO_BUCKET:-e9x-media}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-e9x_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-e9x_minio_dev_password}
     volumes:
       - backups:/backups
-      - miniodata:/minio-data:ro
     depends_on:
       postgres:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     healthcheck:
       # healthy once a dump from the past 26h exists (startup run + every 24h)
       test: ["CMD-SHELL", "find /backups -name 'pg-*.sql.gz' -mmin -1560 | grep -q ."]
