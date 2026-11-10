@@ -6,10 +6,11 @@
 // (10m) is asserted by MediaAccessIT.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test, expect } from '../../fixtures';
 import { env } from '../../helpers/env';
 
-const FILES = join(__dirname, '..', '..', 'fixtures', 'media');
+const FILES = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', 'fixtures', 'media');
 const bytes = (name: string) => readFileSync(join(FILES, name));
 const MP3 = 'tone.mp3';
 
