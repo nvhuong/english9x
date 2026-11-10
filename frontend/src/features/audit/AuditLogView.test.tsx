@@ -57,6 +57,16 @@ describe('AuditLogView', () => {
   });
 });
 
+describe('AuditLogView system actor', () => {
+  it('shows what a background job changed as the system, with no person and no "personal" context', () => {
+    render(<AuditLogView entries={[entry({ actorKind: 'SYSTEM', actorId: undefined, actorName: undefined, actorEmail: undefined, action: 'order.expire', targetType: 'order' })]} />);
+    const row = screen.getByTestId('audit-row');
+    expect(within(row).getByText('Hệ thống tự động')).toBeInTheDocument();
+    expect(within(row).getByText('Đơn hết hạn chờ thanh toán')).toBeInTheDocument();
+    expect(within(row).queryByText('Tài khoản đã bị xoá')).toBeNull();
+  });
+});
+
 describe('AuditLogView invitations and context', () => {
   const invitation = (over: Partial<AuditEntry> = {}) => entry({ action: 'invitation.send', targetType: 'invitation', targetId: 'inv-1', detail: { roles: ['LEARNER'] }, ...over });
 

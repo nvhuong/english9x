@@ -40,6 +40,7 @@
     "operator": "Quản trị viên máy chủ",
     "unknownActor": "Tài khoản đã bị xoá",
     "english9x": "English9x",
+    "systemActor": "Hệ thống tự động",
     "system": "Hệ thống",
     "personal": "Cá nhân",
     "invitedGone": "Địa chỉ đã được xoá"
@@ -56,6 +57,10 @@
     "review_approve_bundle": "Duyệt cả cụm",
     "review_request_changes": "Yêu cầu sửa",
     "review_request_bundle_changes": "Yêu cầu sửa cả cụm",
-    "sys_admin_grant": "Cấp quyền quản trị hệ thống đầu tiên"
+    "sys_admin_grant": "Cấp quyền quản trị hệ thống đầu tiên",
+    "order_create": "Đặt đơn",
+    "order_expire": "Đơn hết hạn chờ thanh toán",
+    "plan_create": "Tạo gói",
+    "plan_update": "Sửa gói"
   }
 }

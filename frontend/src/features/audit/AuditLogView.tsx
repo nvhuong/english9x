@@ -31,6 +31,8 @@ export function AuditLogView({ entries }: { entries: readonly AuditEntry[] }) {
             <TableCell>
               {e.actorKind === 'OPERATOR' ? (
                 <Badge tone="warning">{t('table.operator')}</Badge>
+              ) : e.actorKind === 'SYSTEM' ? (
+                <Badge tone="neutral">{t('table.systemActor')}</Badge>
               ) : (
                 <span className="flex flex-col">
                   <span>{e.actorName ?? e.actorEmail ?? t('table.unknownActor')}</span>
@@ -39,7 +41,7 @@ export function AuditLogView({ entries }: { entries: readonly AuditEntry[] }) {
                 </span>
               )}
             </TableCell>
-            <TableCell>{e.orgId ? (e.orgName ?? e.orgId) : e.actorKind === 'OPERATOR' ? t('table.system') : PERSONAL_ACTIONS.has(e.action) ? t('table.personal') : t('table.english9x')}</TableCell>
+            <TableCell>{e.orgId ? (e.orgName ?? e.orgId) : e.actorKind === 'OPERATOR' || e.actorKind === 'SYSTEM' ? t('table.system') : PERSONAL_ACTIONS.has(e.action) ? t('table.personal') : t('table.english9x')}</TableCell>
             <TableCell>
               <span className="flex flex-col">
                 <span>{actionLabel(t, e.action)}</span>

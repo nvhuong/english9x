@@ -81,7 +81,8 @@ class JobRolesIT {
         denied(() -> worker.update("update jobs set payload = '{}'"), "payload is read-only");
         denied(() -> worker.update("update jobs set type = 'other'"), "type is read-only");
         denied(() -> worker.update("insert into jobs(id,type,payload,status,run_at) values (gen_random_uuid(),'x','{}','QUEUED',now())"), "insert");
-        denied(() -> worker.update("delete from jobs"), "delete");
+        // it deletes only finished jobs older than a day (retention, policy jobs_worker_purge): this one is RUNNING
+        assertEquals(0, worker.update("delete from jobs"), "delete reaches nothing that is not long finished");
 
         // and nothing else of the system, until a later migration says so
         for (String table : new String[] {"role_grants", "org_memberships", "users", "organizations", "entitlements", "classes", "questions", "exam_attempts"}) {

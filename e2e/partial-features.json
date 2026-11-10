@@ -4,8 +4,8 @@
   "features": [
     {
       "id": "F01",
-      "pending": "'chưa xác thực thì không mua được gói' through the real checkout: an unverified learner opens a plan, tries to pay and is refused; after verifying, the same order goes through. Today the rule is asserted at UserDirectory#requireVerified (via the seed API) and in the banner.",
-      "owner": "P5.1 / P5.2"
+      "pending": "'chưa xác thực thì không mua được gói' through the checkout SCREEN: POST /api/orders already refuses an unverified learner (F39 asserts urn:e9x:problem:email-not-verified at the real endpoint, OrderServiceIT.unverifiedEmailCannotOrder), but there is no plan/checkout page yet, so the browser scenario (open a plan, try to pay, get refused, verify, the same order goes through) is pending.",
+      "owner": "P5.4 (checkout screens), P5.2 (payment)"
     },
     {
       "id": "F06",
@@ -23,14 +23,19 @@
       "owner": "P3.1 (courses), P6.1 (classes)"
     },
     {
-      "id": "F58",
-      "pending": "The 8 main screens of the design mockups are not built yet: 01 course catalogue, 02 chapter map, 03 lesson, 04 exam room Reading, 05 exam room Speaking, 06 result, 07 CMS review queue, 08 admin QR orders. They move from PENDING_MAIN_SCREENS to SCREENS in the spec as they appear (see its header and the P1.12 note in the foundation plan).",
-      "owner": "P3.1 (01, 02), P3.2 (03), P3.4 (04, 05), P4.4 (06), P2.9 (07), P5.4 (08)"
+      "id": "F39",
+      "pending": "Driven through the real API of the running stack (plans, order within the course limit, locked price, verified-email rule, order code and transfer note, expiry job with a SYSTEM audit record). Pending: the browser steps (choose a plan and courses on the checkout page) and the QR/transfer step with the administrator's confirmation.",
+      "owner": "P5.4 (plan and checkout screens), P5.2 (QR, payment account, confirmation)"
+    },
+    {
+      "id": "F41",
+      "pending": "The gate (billing.api.Entitlements) and the PLAN_EXPIRING / PLAN_EXPIRED notices are asserted through the seed API and the learner's own API. Pending: 'cannot open a lesson / can still read old results' on the real screens, which call the gate: lesson page and exam room do not exist yet.",
+      "owner": "P3.1 (lesson gate), P3.3 (exam: canContinueAttempt), P4.4 (results page)"
     },
     {
       "id": "F52",
-      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the same scenario started by a real submit/approve/request-changes in the CMS, and the other spec §13 events (orders, plan expiry, scores, grading queue, assignments, session reminders), whose source modules do not exist yet.",
-      "owner": "P2.9 (CMS review queue); sources: P5.1/P5.2 (orders, plan), P4.2/P4.3 (scores, grading), P6.2/P6.3 (assignments, sessions)"
+      "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), but the TRIGGER is a stand-in: the seed API (POST /api/test/seed/review-event) publishes the event the review workflow would, because the CMS review screens do not exist yet. Pending: the same scenario started by a real submit/approve/request-changes in the CMS, and the other spec §13 events (new/confirmed/rejected orders (P5.2), scores, grading queue, assignments, session reminders), whose source modules do not exist yet.",
+      "owner": "P2.9 (CMS review queue); sources: P5.2 (orders; the plan-expiry notices are real since P5.1 and asserted in F41), P4.2/P4.3 (scores, grading), P6.2/P6.3 (assignments, sessions)"
     },
     {
       "id": "F53",
@@ -51,6 +56,11 @@
       "id": "F57",
       "pending": "The acceptance line names three kinds of record: order confirmation, seat revocation and content approval. The spec covers what exists, through the real screens and the real services: organisation creation, role changes, invitation send/revoke/accept and content approval (a real ReviewService run over a stand-in e2e_doc version through seed.reviewFlow, since the CMS review screens do not exist yet), read on the real audit-log screen by the SYS_ADMIN and refused to everybody else. Pending: the order-confirmation record (billing module, no module yet) and the seat-revocation record (billing seats, P5.3, no module yet); those modules must call AuditLog#record and extend this spec with the two rows. Content approval through the real CMS review screen instead of the seed arrives with P2.9.",
       "owner": "P5.2 (order confirm/reject), P5.3 (seat assign/revoke), P2.9 (review screen replaces seed.reviewFlow)"
+    },
+    {
+      "id": "F58",
+      "pending": "The 8 main screens of the design mockups are not built yet: 01 course catalogue, 02 chapter map, 03 lesson, 04 exam room Reading, 05 exam room Speaking, 06 result, 07 CMS review queue, 08 admin QR orders. They move from PENDING_MAIN_SCREENS to SCREENS in the spec as they appear (see its header and the P1.12 note in the foundation plan).",
+      "owner": "P3.1 (01, 02), P3.2 (03), P3.4 (04, 05), P4.4 (06), P2.9 (07), P5.4 (08)"
     }
   ]
 }

@@ -40,6 +40,7 @@
     "operator": "Server operator",
     "unknownActor": "Deleted account",
     "english9x": "English9x",
+    "systemActor": "Automatic system job",
     "system": "System",
     "personal": "Personal",
     "invitedGone": "Address erased"
@@ -56,6 +57,10 @@
     "review_approve_bundle": "Bundle approved",
     "review_request_changes": "Changes requested",
     "review_request_bundle_changes": "Bundle changes requested",
-    "sys_admin_grant": "First system admin granted"
+    "sys_admin_grant": "First system admin granted",
+    "order_create": "Order placed",
+    "order_expire": "Unpaid order expired",
+    "plan_create": "Plan created",
+    "plan_update": "Plan changed"
   }
 }

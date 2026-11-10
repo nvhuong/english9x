@@ -49,8 +49,8 @@ BEGIN
   BEGIN INSERT INTO jobs(id,type,payload,status,run_at) VALUES (gen_random_uuid(),'x','{}','QUEUED',now());
     RAISE EXCEPTION 'worker must not insert';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
-  BEGIN DELETE FROM jobs; RAISE EXCEPTION 'worker must not delete';
-  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  DELETE FROM jobs;
+  ASSERT (SELECT count(*) FROM jobs) = 2, 'worker deletes only finished jobs older than a day (retention policy), none of these';
   BEGIN PERFORM count(*) FROM role_grants; RAISE EXCEPTION 'worker must not read role_grants';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN PERFORM count(*) FROM entitlements; RAISE EXCEPTION 'worker must not read entitlements';
