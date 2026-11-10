@@ -42,6 +42,8 @@ public final class ForeignIdSweep {
     }
 
     public static final String ADMIN = "sys-admin";
+    /** An AUTHOR of IELTS in org A: the positive control of the routes that only authors may use (media, P2.2). */
+    public static final String AUTHOR = "author-a";
 
     /** One attempt: a value per path parameter (ids or strings such as tokens), and a body when this attempt needs its own. */
     public record Attempt(Map<String, String> slots, String body) {

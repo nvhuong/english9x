@@ -74,6 +74,11 @@
       <version>${json-schema-validator.version}</version>
     </dependency>
     <dependency>
+      <groupId>io.minio</groupId>
+      <artifactId>minio</artifactId>
+      <version>${minio.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
       <version>${springdoc.version}</version>

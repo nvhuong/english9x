@@ -16,6 +16,7 @@ bad=""
 [ "${E9X_DB_PASSWORD:-}" = "e9x_app_dev_password" ] && bad="$bad E9X_DB_PASSWORD"
 [ "${E9X_WORKER_DB_PASSWORD:-}" = "e9x_worker_dev_password" ] && bad="$bad E9X_WORKER_DB_PASSWORD"
 [ "${MINIO_ROOT_PASSWORD:-}" = "e9x_minio_dev_password" ] && bad="$bad MINIO_ROOT_PASSWORD"
+[ "${E9X_MINIO_SECRET_KEY:-}" = "e9x_media_dev_secret" ] && bad="$bad E9X_MINIO_SECRET_KEY"
 if [ -n "$bad" ]; then
   echo "preflight: refusing to start on E9X_DOMAIN=$domain: still the development default:$bad" >&2
   echo "preflight: generate each with 'openssl rand -hex 24' and set it in infra/.env (see infra/.env.example)" >&2

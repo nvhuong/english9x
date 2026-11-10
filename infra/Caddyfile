@@ -28,7 +28,32 @@
 	request_body @api {
 		max_size 10MB
 	}
-	reverse_proxy app:8080
+
+	# Media (P2.2). The app signs links for THIS host (https://{$E9X_DOMAIN}/<bucket>/<id>?X-Amz-...) and the browser fetches them here, same origin, so
+	# the CSP needs no extra source and MinIO needs no published port. What makes this not an open proxy:
+	#  * only GET (a presigned link is valid for the method it was signed for, and players use GET with Range), only the one bucket, only a path of exactly one object key (the app's keys are row ids: hex and dashes), and only with a
+	#    SigV4 signature in the query. Anything else under that bucket path, another bucket, the MinIO admin API (/minio/...) and the console are never
+	#    forwarded: they fall through to the app and are a 404 there;
+	#  * the bucket is private and the signature binds method, path, query, expiry and Host, so MinIO (not Caddy) refuses an unsigned, altered or expired
+	#    request; Caddy forwards the signature, it does not know the secret;
+	#  * no header_up Host: Caddy's reverse_proxy keeps the Host the client sent, which is what was signed. Rewriting it to minio:9000 (header_up Host
+	#    {upstream_hostport}) breaks every signature (measured in scripts/test-infra.sh);
+	#  * the answer is marked as a download-only sandbox (CSP default-src 'none'; sandbox) and nosniff, whatever the object holds; the server banner is dropped.
+	@media {
+		method GET
+		path_regexp media ^/{$E9X_MINIO_BUCKET:e9x-media}/[0-9a-f-]+$
+		query X-Amz-Signature=*
+	}
+	handle @media {
+		reverse_proxy minio:9000 {
+			header_down Content-Security-Policy "default-src 'none'; sandbox"
+			header_down X-Content-Type-Options nosniff
+			header_down -Server
+		}
+	}
+	handle {
+		reverse_proxy app:8080
+	}
 }
 
 # Only the container's own healthcheck reaches this (bound to loopback, not published): "/" through Caddy to the app.

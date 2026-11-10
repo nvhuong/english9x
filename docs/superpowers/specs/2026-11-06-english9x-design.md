@@ -340,6 +340,13 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.content.import.max-rows` | `2000` | Số dòng tối đa mỗi lô Excel | Quản trị |
 | `e9x.content.import.max-media-size` | `500MB` | Dung lượng ZIP media tối đa mỗi lô | Quản trị |
 | `e9x.media.url-ttl` | `10m` | Hạn của link media | Cấu hình |
+| `e9x.media.storage.endpoint` | không có mặc định | Địa chỉ MinIO mà ứng dụng gọi (trong mạng Compose: `http://minio:9000`); để trống = tắt media (tải lên trả 503) | Cấu hình (biến môi trường `E9X_MINIO_ENDPOINT`) |
+| `e9x.media.storage.public-url` | `e9x.public-base-url` | Địa chỉ công khai mà link media được ký cho và trình duyệt gọi (qua cùng origin, Caddy chuyển `/<bucket>/<id>` tới MinIO và giữ nguyên Host đã ký) | Cấu hình |
+| `e9x.media.storage.bucket` | `e9x-media` | Tên bucket riêng tư (cũng là đường dẫn Caddy chuyển tiếp) | Cấu hình (`E9X_MINIO_BUCKET`) |
+| `e9x.media.storage.access-key` / `secret-key` | không có mặc định | Khoá riêng của ứng dụng, chỉ có quyền trên bucket này (không phải tài khoản gốc của MinIO) | Cấu hình (biến môi trường `E9X_MINIO_ACCESS_KEY`, `E9X_MINIO_SECRET_KEY`) |
+| `e9x.media.storage.ensure-bucket` | `true` | Tạo bucket khi khởi động nếu chưa có (idempotent) | Cấu hình |
+| `e9x.media.ffprobe-path` | `ffprobe` | Công cụ đọc độ dài và loại luồng của audio/video đã tải lên; file mà ffprobe không đọc được bị từ chối | Cấu hình (`E9X_FFPROBE_PATH`) |
+| `e9x.media.probe-timeout` | `30s` | Thời gian tối đa cho một lần đọc bằng ffprobe | Cấu hình |
 | `e9x.auth.access-token-ttl` | `15m` | Hạn access token | Cấu hình |
 | `e9x.auth.refresh-token-ttl` | `30d` | Hạn refresh token | Cấu hình |
 | `e9x.auth.login-rate-limit` | `10/15m` | Giới hạn đăng nhập sai theo IP + email | Cấu hình |

@@ -103,4 +103,21 @@ class ConfigurationKeysTest {
     void workerFlagExists() throws Exception {
         assertEquals("true", String.valueOf(load().getProperty("app.worker.enabled")));
     }
+
+    /** P2.2: the media keys; the storage credentials and the address have no usable default, the multipart ceiling is made from the two content keys. */
+    @Test
+    void mediaKeysAreThereAndTheStorageSecretsHaveNoDefault() throws Exception {
+        PropertySource<?> p = load();
+        assertEquals("${E9X_MINIO_ENDPOINT:}", String.valueOf(p.getProperty("e9x.media.storage.endpoint")), "no endpoint = media storage off (tests without MinIO)");
+        assertEquals("${E9X_MINIO_BUCKET:e9x-media}", String.valueOf(p.getProperty("e9x.media.storage.bucket")));
+        assertEquals("${E9X_MINIO_ACCESS_KEY:}", String.valueOf(p.getProperty("e9x.media.storage.access-key")));
+        assertEquals("${E9X_MINIO_SECRET_KEY:}", String.valueOf(p.getProperty("e9x.media.storage.secret-key")), "no default secret");
+        assertEquals("${E9X_FFPROBE_PATH:ffprobe}", String.valueOf(p.getProperty("e9x.media.ffprobe-path")));
+        assertEquals("true", String.valueOf(p.getProperty("spring.servlet.multipart.resolve-lazily")),
+                "the upload route decides who may upload before a byte of the body is spooled to disk");
+        assertEquals("200MB", String.valueOf(p.getProperty("e9x.content.media.max-upload-size")));
+        assertEquals("500MB", String.valueOf(p.getProperty("e9x.content.import.max-media-size")));
+        assertEquals(false, p.containsProperty("spring.servlet.multipart.max-file-size"),
+                "the multipart ceiling is derived from the two content keys (MultipartLimits), not a number of its own");
+    }
 }

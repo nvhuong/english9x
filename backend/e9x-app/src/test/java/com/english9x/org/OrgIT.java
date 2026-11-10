@@ -137,6 +137,17 @@ public abstract class OrgIT {
         }
     }
 
+    /** For tests that make their own request (multipart, say) and want the same shape of answer. */
+    protected Res toRes(ResponseEntity<String> r) {
+        try {
+            String raw = r.getBody() == null ? "" : r.getBody();
+            String trimmed = raw.trim();
+            return new Res(r.getStatusCode().value(), trimmed.startsWith("{") || trimmed.startsWith("[") ? JSON.readTree(raw) : JSON.createObjectNode(), r.getHeaders(), raw);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     protected Res get(String path, UUID asUser, UUID inOrg) {
         return call(HttpMethod.GET, path, null, asUser, inOrg);
     }

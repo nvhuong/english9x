@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.english9x.org.sweep.ForeignIdSweep;
 import com.english9x.org.sweep.SweepFixtures;
+import com.english9x.org.sweep.SweepHttp;
 import com.english9x.support.TestAuth;
+import com.english9x.support.TestMinio;
 import com.english9x.support.TestPostgres;
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +61,7 @@ class RlsLeakSweepIT {
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
         TestPostgres.connect(registry, DB);
+        TestMinio.configure(registry); // the media routes are real: the upload's positive control stores a file
     }
 
     @Autowired
@@ -73,17 +76,9 @@ class RlsLeakSweepIT {
         return call(new ForeignIdSweep.Call("GET", path, path, null, null));
     }
 
-    /** The real request path: a signed token and the real X-Org-Context header (no test filter). */
+    /** The real request path: a signed token and the real X-Org-Context header (no test filter); see {@link SweepHttp}. */
     private int call(ForeignIdSweep.Call c) {
-        HttpHeaders h = new HttpHeaders();
-        if (ForeignIdSweep.ADMIN.equals(c.caller())) {
-            h.setBearerAuth(TestAuth.accessToken(FIXTURES.admin));
-        } else {
-            h.add("X-Org-Context", FIXTURES.orgA.toString());
-            h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA));
-        }
-        h.setContentType(MediaType.APPLICATION_JSON);
-        return http.exchange(c.path(), HttpMethod.valueOf(c.method()), new HttpEntity<>(c.body(), h), String.class).getStatusCode().value();
+        return SweepHttp.status(http, FIXTURES, c);
     }
 
     @Test
@@ -99,6 +94,11 @@ class RlsLeakSweepIT {
         assertEquals(200, getAsOrgA("/api/sweep/classes/" + FIXTURES.classA + "/members/" + FIXTURES.userA), "positive control, two parameters");
         assertEquals(200, getAsOrgA("/api/orgs/" + FIXTURES.orgA + "/role-grants"), "positive control: A's admin lists A's members");
         assertEquals(200, getAsOrgA("/api/orgs/" + FIXTURES.orgA + "/invitations"), "positive control: A's admin lists A's invitations");
+        // P2.2: A's author gets a link for A's file (the sweep walks the url route with B's ids as A's ORG_ADMIN, who is no author: 404 for B's file and for A's own)
+        assertEquals(200, call(new ForeignIdSweep.Call("GET", "/api/media/{id}/url", "/api/media/" + FIXTURES.mediaA + "/url", null, ForeignIdSweep.AUTHOR)),
+                "positive control: A's author signs A's file");
+        assertEquals(404, call(new ForeignIdSweep.Call("GET", "/api/media/{id}/url", "/api/media/" + FIXTURES.mediaB + "/url", null, ForeignIdSweep.AUTHOR)),
+                "A's author does not sign B's file");
         SweepFixtures.Catalog catalog = FIXTURES.foreignIds(Map.of());
         assertEquals(List.of(), catalog.problems(), "every table must have a foreign row or a reason");
         List<UUID> foreign = catalog.ids();
@@ -116,7 +116,8 @@ class RlsLeakSweepIT {
                 "GET /api/orgs/{id}/role-grants", "GET /api/orgs/{id}/invitations",
                 "POST /api/me/notifications/{id}/read", "POST /api/orgs/{id}/invitations", "PUT /api/orgs/{id}/role-grants",
                 "DELETE /api/orgs/{id}/invitations/{invitationId}", "DELETE /api/admin/invitations/{invitationId}",
-                "POST /api/invitations/{token}/accept", "POST /api/admin/invitations", "POST /api/admin/organizations")),
+                "POST /api/invitations/{token}/accept", "POST /api/admin/invitations", "POST /api/admin/organizations",
+                "GET /api/media/{id}/url", "POST /api/cms/media")),
                 "visited " + r.visited());
     }
 

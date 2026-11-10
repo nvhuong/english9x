@@ -1,0 +1,69 @@
+{
+  "nav": {
+    "media": "Tệp media"
+  },
+  "title": "Tệp media",
+  "description": "Tải lên âm thanh, hình ảnh và video cho đề thi và bài học. Loại tệp được xác định bằng nội dung tệp, không phải bằng tên tệp; độ dài âm thanh và video được đọc từ chính tệp.",
+  "exam": {
+    "noneTitle": "Chưa thể tải tệp lên",
+    "label": "Kỳ thi",
+    "none": "Bạn chưa là người biên soạn của kỳ thi nào trong ngữ cảnh này, nên chưa thể tải tệp lên.",
+    "placeholder": "Chọn kỳ thi"
+  },
+  "uploader": {
+    "title": "Tải tệp lên",
+    "choose": "Chọn tệp",
+    "chooseLabel": "Tệp media",
+    "hint": "Âm thanh MP3, M4A, WebM, OGG; hình ảnh PNG, JPG, WebP; video MP4, WebM. Tối đa {{max}} mỗi tệp.",
+    "hintLoading": "Đang tải giới hạn tải lên…",
+    "selected": "Đã chọn: {{name}} ({{size}})",
+    "none": "Chưa chọn tệp nào.",
+    "upload": "Tải lên",
+    "cancel": "Hủy",
+    "another": "Tải tệp khác"
+  },
+  "progress": {
+    "label": "Tiến độ tải lên",
+    "text": "Đang tải lên {{percent}}%",
+    "processing": "Đã gửi xong, máy chủ đang kiểm tra tệp…"
+  },
+  "done": {
+    "title": "Đã tải lên",
+    "summary": "{{kind}} · {{name}}",
+    "duration": "Thời lượng {{duration}}",
+    "size": "Dung lượng {{size}}",
+    "id": "Mã tệp"
+  },
+  "kind": {
+    "AUDIO": "Âm thanh",
+    "IMAGE": "Hình ảnh",
+    "VIDEO": "Video"
+  },
+  "errors": {
+    "type": "Loại tệp này không được phép. Chỉ nhận MP3, M4A, WebM, OGG, PNG, JPG, WebP và MP4. Loại tệp được xác định bằng nội dung tệp.",
+    "extension": "Đuôi tệp không khớp với nội dung thật của tệp. Hãy xuất lại hoặc đổi tên tệp cho đúng.",
+    "extensionClient": "Đuôi tệp {{ext}} không nằm trong danh sách được phép.",
+    "tooLarge": "Tệp có dung lượng {{size}}, vượt quá giới hạn {{max}}.",
+    "serverTooLarge": "Tệp vượt quá dung lượng tối đa cho phép.",
+    "unreadable": "Không đọc được nội dung âm thanh hoặc video của tệp (có thể tệp bị hỏng hoặc bị cắt), nên không biết được thời lượng. Hãy thử xuất lại tệp.",
+    "empty": "Tệp trống. Hãy chọn một tệp có nội dung.",
+    "forbidden": "Bạn không có quyền tải tệp lên cho kỳ thi này trong ngữ cảnh hiện tại.",
+    "notFound": "Không tìm thấy tệp, hoặc bạn không có quyền mở.",
+    "unavailable": "Hệ thống lưu trữ tệp tạm thời không dùng được. Hãy thử lại sau ít phút.",
+    "network": "Mất kết nối khi tải lên. Hãy kiểm tra mạng rồi thử lại.",
+    "generic": "Không tải lên được. Hãy thử lại."
+  },
+  "preview": {
+    "title": "Xem trước",
+    "loading": "Đang lấy liên kết…",
+    "show": "Xem trước",
+    "hide": "Ẩn xem trước",
+    "audio": "Nghe thử {{name}}",
+    "video": "Xem thử {{name}}",
+    "image": "{{name}}"
+  },
+  "session": {
+    "title": "Đã tải lên trong phiên này",
+    "empty": "Chưa có tệp nào được tải lên trong phiên này."
+  }
+}

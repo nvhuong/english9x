@@ -1,0 +1,69 @@
+{
+  "nav": {
+    "media": "Media files"
+  },
+  "title": "Media files",
+  "description": "Upload audio, images and video for tests and lessons. The type of a file is decided by what it contains, not by its name; the length of audio and video is read from the file itself.",
+  "exam": {
+    "noneTitle": "You cannot upload files yet",
+    "label": "Exam",
+    "none": "You are not an author of any exam in this context, so you cannot upload files yet.",
+    "placeholder": "Choose an exam"
+  },
+  "uploader": {
+    "title": "Upload a file",
+    "choose": "Choose a file",
+    "chooseLabel": "Media file",
+    "hint": "MP3, M4A, WebM, OGG audio; PNG, JPG, WebP images; MP4, WebM video. Up to {{max}} per file.",
+    "hintLoading": "Loading the upload limit…",
+    "selected": "Selected: {{name}} ({{size}})",
+    "none": "No file chosen.",
+    "upload": "Upload",
+    "cancel": "Cancel",
+    "another": "Upload another file"
+  },
+  "progress": {
+    "label": "Upload progress",
+    "text": "Uploading {{percent}}%",
+    "processing": "Sent. The server is checking the file…"
+  },
+  "done": {
+    "title": "Uploaded",
+    "summary": "{{kind}} · {{name}}",
+    "duration": "Length {{duration}}",
+    "size": "Size {{size}}",
+    "id": "File id"
+  },
+  "kind": {
+    "AUDIO": "Audio",
+    "IMAGE": "Image",
+    "VIDEO": "Video"
+  },
+  "errors": {
+    "type": "This type of file is not allowed. Only MP3, M4A, WebM, OGG, PNG, JPG, WebP and MP4 are accepted. The type is decided by what the file contains.",
+    "extension": "The file extension does not match what the file really contains. Export it again or rename it correctly.",
+    "extensionClient": "The extension {{ext}} is not on the allowed list.",
+    "tooLarge": "The file is {{size}}, over the limit of {{max}}.",
+    "serverTooLarge": "The file is larger than the maximum allowed size.",
+    "unreadable": "The audio or video in the file could not be read (it may be damaged or cut short), so its length is unknown. Try exporting it again.",
+    "empty": "The file is empty. Choose a file with content.",
+    "forbidden": "You may not upload files for this exam in the current context.",
+    "notFound": "The file was not found, or you may not open it.",
+    "unavailable": "File storage is not available right now. Try again in a few minutes.",
+    "network": "The connection was lost while uploading. Check your network and try again.",
+    "generic": "The upload failed. Please try again."
+  },
+  "preview": {
+    "title": "Preview",
+    "loading": "Getting the link…",
+    "show": "Preview",
+    "hide": "Hide preview",
+    "audio": "Listen to {{name}}",
+    "video": "Watch {{name}}",
+    "image": "{{name}}"
+  },
+  "session": {
+    "title": "Uploaded in this session",
+    "empty": "Nothing has been uploaded in this session yet."
+  }
+}

@@ -81,6 +81,9 @@ services:
       E9X_SMTP_HOST: mailpit
       E9X_SMTP_PORT: "1025"
       E9X_AUTH_REGISTER_RATE_LIMIT: 1000/1h
+      # F12 watches a signed link expire: a ten-minute link would make that spec wait ten minutes (the default is asserted by MediaAccessIT)
+      # (relaxed binding maps E9X_MEDIA_URLTTL to e9x.media.url-ttl; E9X_MEDIA_URL_TTL would be e9x.media.url.ttl and bind to nothing)
+      E9X_MEDIA_URLTTL: 10s
       E9X_GOOGLE_CLIENT_ID: fake-google-client
       E9X_GOOGLE_CLIENT_SECRET: fake-google-secret-e2e-only
       E9X_GOOGLE_AUTHORIZATION_URI: http://localhost:${E9X_FAKE_OIDC_PORT:-8083}/authorize
