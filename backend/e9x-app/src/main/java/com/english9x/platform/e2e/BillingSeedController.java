@@ -1,12 +1,9 @@
 package com.english9x.platform.e2e;
 
-import com.english9x.billing.api.Entitlements;
-import com.english9x.org.api.CurrentContextHolder;
 import com.english9x.platform.jobs.api.JobQueue;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.context.annotation.Profile;
@@ -21,8 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * E2E seeds of billing (P5.1), under the profile {@code e2e} and the seed secret like the others: a published course, an entitlement with any
- * dates, an order of any age, the real billing jobs run on demand (a tick queued under a unique key, then handled by the real worker), and the
- * real learning-access gate asked as a person (the lesson page and the exam room that call it arrive with P3.1 and P3.3).
+ * dates, an order of any age and the real billing jobs run on demand (a tick queued under a unique key, then handled by the real worker). The gate probe lives in the
+ * billing module (BillingGateProbe): this module may not depend on billing.
  */
 @RestController
 @Profile("e2e")
@@ -30,13 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 class BillingSeedController {
 
     private final SeedDatabase db;
-    private final Entitlements gate;
     private final JobQueue jobs;
     private final TransactionTemplate tx;
 
-    BillingSeedController(SeedDatabase db, Entitlements gate, JobQueue jobs, PlatformTransactionManager tm) {
+    BillingSeedController(SeedDatabase db, JobQueue jobs, PlatformTransactionManager tm) {
         this.db = db;
-        this.gate = gate;
         this.jobs = jobs;
         this.tx = new TransactionTemplate(tm);
     }
@@ -86,21 +81,5 @@ class BillingSeedController {
         }
         tx.executeWithoutResult(s -> jobs.enqueueOnce(r.type(), null, Instant.now(), "e2e:" + UUID.randomUUID()));
         return Map.of("queued", r.type());
-    }
-
-    record GateRequest(UUID userId, UUID courseId, Integer attemptStartedDaysAgo) {}
-
-    /** What the gate answers for that person right now: new learning, and (when asked) continuing an attempt that began that many days ago. */
-    @PostMapping("/gate")
-    Map<String, Object> gate(@RequestBody GateRequest r) {
-        Map<String, Object> out = new LinkedHashMap<>();
-        try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(r.userId(), null)) {
-            Instant now = Instant.now();
-            out.put("activeFor", gate.activeFor(r.userId(), r.courseId(), now));
-            if (r.attemptStartedDaysAgo() != null) {
-                out.put("canContinueAttempt", gate.canContinueAttempt(r.userId(), r.courseId(), now.minus(Duration.ofDays(r.attemptStartedDaysAgo()))));
-            }
-        }
-        return out;
     }
 }
