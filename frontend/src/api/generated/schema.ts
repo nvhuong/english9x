@@ -1343,8 +1343,6 @@ export interface components {
         SubmittedForReview: {
             /** Format: uuid */
             reviewId?: string;
-            /** Format: uuid */
-            versionId?: string;
         };
         TelegramLink: {
             deepLink?: string;

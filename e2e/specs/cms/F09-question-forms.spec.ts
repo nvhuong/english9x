@@ -101,7 +101,7 @@ test.describe('F09 question forms', () => {
     // the list shows it, with its status
     await page.goto('/cms/questions');
     await expect(page.getByRole('link', { name: stem })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Bản nháp' })).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: stem }).getByRole('cell', { name: 'Bản nháp' })).toBeVisible();
   });
 
   test('F09 a file field takes the id of an uploaded file, or uploads one right there', async ({ page, request, auth, org, uniqueEmail }) => {

@@ -98,11 +98,11 @@ export async function publishedQuestion(s: Staffed, typeCode: string): Promise<{
 
 /**
  * Chooses a question type in the editor's select. A list of 23 types is taller than the page: the browser cannot click the first item through the
- * scroll arrows that cover it, so the type is chosen the way a keyboard user does it (type the label, Enter), which works for any length.
+ * scroll arrows that cover it, so the type is chosen the way a keyboard user does it (move the focus to the item, Enter), which works for any length.
  */
 export async function chooseQuestionType(page: import('@playwright/test').Page, exam: string, code: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Dạng câu' }).click();
-  await page.keyboard.type(`${exam} · ${code}`);
+  await page.getByRole('option', { name: `${exam} · ${code}`, exact: true }).focus();
   await page.keyboard.press('Enter');
   await page.getByText(code, { exact: true }).waitFor();
 }

@@ -1241,10 +1241,6 @@
           "reviewId" : {
             "format" : "uuid",
             "type" : "string"
-          },
-          "versionId" : {
-            "format" : "uuid",
-            "type" : "string"
           }
         },
         "type" : "object"
