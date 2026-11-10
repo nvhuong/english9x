@@ -1,0 +1,320 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:e9x:strategy-block",
+  "title": "Strategy lesson block (one element of blocks[]); the service validates each block against $defs/<its type>",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/heading"
+    },
+    {
+      "$ref": "#/$defs/paragraph"
+    },
+    {
+      "$ref": "#/$defs/table"
+    },
+    {
+      "$ref": "#/$defs/image"
+    },
+    {
+      "$ref": "#/$defs/audio"
+    },
+    {
+      "$ref": "#/$defs/video-upload"
+    },
+    {
+      "$ref": "#/$defs/video-embed"
+    },
+    {
+      "$ref": "#/$defs/callout"
+    },
+    {
+      "$ref": "#/$defs/embedded-question"
+    },
+    {
+      "$ref": "#/$defs/worked-example"
+    }
+  ],
+  "$defs": {
+    "heading": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "heading"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 4
+        },
+        "text": {
+          "title": "Heading",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "type",
+        "level",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "paragraph": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "paragraph"
+        },
+        "text": {
+          "title": "Paragraph",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "type",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "table": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "table"
+        },
+        "header": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "maxLength": 1000
+            }
+          }
+        },
+        "caption": {
+          "title": "Caption",
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "type",
+        "header",
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "image"
+        },
+        "imageMediaId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "alt": {
+          "title": "Alternative text",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "pattern": "\\S"
+        },
+        "caption": {
+          "title": "Caption",
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "type",
+        "imageMediaId",
+        "alt"
+      ],
+      "additionalProperties": false
+    },
+    "audio": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "audio"
+        },
+        "audioMediaId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "caption": {
+          "title": "Caption",
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "type",
+        "audioMediaId"
+      ],
+      "additionalProperties": false
+    },
+    "video-upload": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "video-upload"
+        },
+        "videoMediaId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        },
+        "caption": {
+          "title": "Caption",
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "type",
+        "videoMediaId"
+      ],
+      "additionalProperties": false
+    },
+    "video-embed": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "video-embed"
+        },
+        "provider": {
+          "enum": [
+            "youtube",
+            "vimeo"
+          ]
+        },
+        "url": {
+          "title": "Video address",
+          "type": "string",
+          "maxLength": 500
+        },
+        "caption": {
+          "title": "Caption",
+          "type": "string",
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "type",
+        "provider",
+        "url"
+      ],
+      "additionalProperties": false
+    },
+    "callout": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "callout"
+        },
+        "kind": {
+          "enum": [
+            "tip",
+            "trap"
+          ]
+        },
+        "text": {
+          "title": "Text",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5000,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "type",
+        "kind",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "embedded-question": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "embedded-question"
+        },
+        "questionVersionId": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+        }
+      },
+      "required": [
+        "type",
+        "questionVersionId"
+      ],
+      "additionalProperties": false
+    },
+    "worked-example": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "worked-example"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "pattern": "\\S"
+        },
+        "problem": {
+          "title": "Problem",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 5000,
+          "pattern": "\\S"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 30,
+          "items": {
+            "title": "Step",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 5000,
+            "pattern": "\\S"
+          }
+        },
+        "answer": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "type",
+        "title",
+        "problem",
+        "steps"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

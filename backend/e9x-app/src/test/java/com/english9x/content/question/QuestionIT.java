@@ -18,7 +18,7 @@ import java.util.function.Supplier;
  * (src/test/resources/catalog/examples, written by P2.1) with its file ids replaced by real media rows of the organisation and exam, and the
  * calls the CMS makes. Files are rows of media_assets written as the superuser (what the upload would have recorded): no MinIO is needed here.
  */
-abstract class QuestionIT extends OrgIT {
+public abstract class QuestionIT extends OrgIT {
 
     @org.springframework.beans.factory.annotation.Autowired
     protected com.english9x.workflow.api.ReviewService reviews;

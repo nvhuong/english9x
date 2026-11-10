@@ -1,0 +1,162 @@
+{
+  "nav": {
+    "lessons": "Bài phương pháp"
+  },
+  "loading": "Đang tải…",
+  "status": {
+    "DRAFT": "Bản nháp",
+    "IN_REVIEW": "Đang chờ duyệt",
+    "CHANGES_REQUESTED": "Cần sửa",
+    "PUBLISHED": "Đã xuất bản",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "blockType": {
+    "heading": "Tiêu đề",
+    "paragraph": "Đoạn văn",
+    "table": "Bảng",
+    "image": "Hình ảnh",
+    "audio": "Âm thanh",
+    "video-upload": "Video tải lên",
+    "video-embed": "Video YouTube/Vimeo",
+    "callout": "Hộp mẹo/bẫy",
+    "embedded-question": "Câu hỏi nhúng",
+    "worked-example": "Ví dụ giải"
+  },
+  "callout": {
+    "tip": "Mẹo",
+    "trap": "Bẫy"
+  },
+  "field": {
+    "lessonTitle": "Tên bài",
+    "level": "Cấp tiêu đề",
+    "text": "Nội dung",
+    "caption": "Chú thích (không bắt buộc)",
+    "alt": "Mô tả hình cho người dùng trình đọc màn hình",
+    "altHint": "Bắt buộc: nói hình cho thấy điều gì.",
+    "imageMediaId": "Mã tệp hình ảnh",
+    "audioMediaId": "Mã tệp âm thanh",
+    "videoMediaId": "Mã tệp video",
+    "provider": "Nhà cung cấp",
+    "url": "Địa chỉ video",
+    "urlHint": "Dán địa chỉ https của video YouTube hoặc Vimeo. Địa chỉ của trang khác bị từ chối.",
+    "kind": "Loại hộp",
+    "questionVersionId": "Mã phiên bản câu hỏi",
+    "title": "Tên ví dụ",
+    "problem": "Đề bài",
+    "steps": "Các bước giải",
+    "stepsHint": "Mỗi dòng một bước.",
+    "answer": "Kết quả (không bắt buộc)",
+    "tableHeader": "Dòng tiêu đề của bảng",
+    "tableHint": "Các ô cách nhau bằng dấu |.",
+    "tableRows": "Các dòng của bảng (mỗi dòng một hàng, các ô cách nhau bằng dấu |)"
+  },
+  "media": {
+    "help": {
+      "AUDIO": "Dán mã của tệp âm thanh đã tải lên cho kỳ thi này, hoặc tải tệp mới ở dưới.",
+      "IMAGE": "Dán mã của tệp hình ảnh đã tải lên cho kỳ thi này, hoặc tải tệp mới ở dưới.",
+      "VIDEO": "Dán mã của tệp video đã tải lên cho kỳ thi này, hoặc tải tệp mới ở dưới."
+    },
+    "uploadNew": "Tải tệp mới lên",
+    "showPreview": "Xem thử tệp",
+    "hidePreview": "Ẩn bản xem thử"
+  },
+  "embedded": {
+    "pick": "Chọn câu hỏi của kỳ thi",
+    "pickPlaceholder": "Chọn một câu hỏi",
+    "hint": "Câu hỏi phải được xuất bản trước khi bài này được xuất bản.",
+    "untitled": "(không có tiêu đề)"
+  },
+  "types": {
+    "legend": "Dạng câu bài này dạy",
+    "hint": "Chọn ít nhất một dạng câu của kỳ thi."
+  },
+  "blocks": {
+    "title": "Các khối nội dung",
+    "empty": "Chưa có khối nào. Thêm khối đầu tiên bên dưới.",
+    "label": "Khối {{n}}: {{type}}",
+    "up": "Lên",
+    "down": "Xuống",
+    "remove": "Xoá khối",
+    "addLabel": "Thêm khối",
+    "addPlaceholder": "Chọn loại khối"
+  },
+  "actions": {
+    "createDraft": "Lưu bản nháp",
+    "save": "Lưu bản nháp",
+    "saveNewVersion": "Lưu thành phiên bản mới",
+    "submit": "Gửi duyệt"
+  },
+  "new": {
+    "title": "Bài phương pháp mới",
+    "description": "Soạn bài từ các khối: tiêu đề, đoạn văn, bảng, hình, âm thanh, video, mẹo/bẫy, câu hỏi nhúng và ví dụ giải.",
+    "exam": "Kỳ thi",
+    "examPlaceholder": "Chọn kỳ thi",
+    "noneTitle": "Chưa có kỳ thi để soạn",
+    "none": "Bạn chưa có quyền soạn bài cho kỳ thi nào trong ngữ cảnh này."
+  },
+  "edit": {
+    "title": "Bài phương pháp",
+    "back": "Về danh sách bài phương pháp",
+    "version": "Phiên bản {{n}}",
+    "saved": "Đã lưu bản nháp.",
+    "savedNewVersion": "Đã tạo bản nháp mới, phiên bản {{n}}. Bản đã xuất bản vẫn giữ nguyên.",
+    "submitted": "Đã gửi duyệt. Bản này được khoá cho tới khi người duyệt quyết định.",
+    "publishedNote": "Bản này đã xuất bản và không sửa được. Lưu thay đổi sẽ tạo bản nháp mới (phiên bản {{next}}).",
+    "inReviewNote": "Bản này đang chờ duyệt nên bị khoá.",
+    "archivedNote": "Bản này đã được lưu trữ và không sửa được.",
+    "notFoundTitle": "Không tìm thấy bài",
+    "notFound": "Bài không tồn tại, hoặc bạn không có quyền mở nó trong ngữ cảnh này."
+  },
+  "list": {
+    "title": "Bài phương pháp",
+    "description": "Các bài phương pháp của những kỳ thi bạn soạn hoặc duyệt trong ngữ cảnh này, mỗi bài hiện phiên bản mới nhất.",
+    "new": "Bài mới",
+    "exam": "Kỳ thi",
+    "status": "Trạng thái",
+    "all": "Tất cả",
+    "caption": "Danh sách bài phương pháp",
+    "colTitle": "Tên bài",
+    "colExam": "Kỳ thi",
+    "colStatus": "Trạng thái",
+    "colVersion": "Phiên bản",
+    "emptyTitle": "Chưa có bài",
+    "empty": "Không có bài nào khớp bộ lọc.",
+    "pagination": "Phân trang",
+    "previous": "Trang trước",
+    "next": "Trang sau",
+    "range": "{{from}}–{{to}} trên {{total}}"
+  },
+  "errors": {
+    "invalid": "Bài chưa đúng. Sửa các mục dưới đây rồi lưu lại.",
+    "underReview": "Phiên bản mới nhất đang chờ duyệt nên không sửa được.",
+    "anotherAuthor": "Bản nháp này là của người soạn khác; chỉ họ sửa và gửi duyệt được.",
+    "archived": "Bài này đã được lưu trữ.",
+    "notEditable": "Không có bản nháp nào để gửi duyệt.",
+    "conflict": "Có người vừa thay đổi bài này. Tải lại rồi thử lại.",
+    "forbidden": "Bạn không có quyền với bài này.",
+    "notFound": "Không tìm thấy bài.",
+    "generic": "Có lỗi xảy ra. Thử lại sau ít phút."
+  },
+  "view": {
+    "tip": "Mẹo",
+    "trap": "Bẫy",
+    "workedExample": "Ví dụ giải",
+    "problem": "Đề bài",
+    "step": "Bước {{n}}",
+    "answer": "Kết quả",
+    "showAnswer": "Xem kết quả",
+    "video": "Video: {{caption}}",
+    "videoBlocked": "Video này không phát được ở đây.",
+    "mediaMissing": "Tệp này chưa mở được.",
+    "questionMissing": "Câu hỏi này chưa mở được.",
+    "question": "Thử một câu",
+    "yourAnswer": "Câu trả lời của bạn",
+    "check": "Kiểm tra",
+    "checking": "Đang kiểm tra…",
+    "correct": "Đúng",
+    "wrong": "Chưa đúng",
+    "correctAnswer": "Đáp án: {{answer}}",
+    "explanation": "Giải thích",
+    "types": "Dạng câu bài này dạy"
+  }
+}

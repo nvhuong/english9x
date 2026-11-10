@@ -380,6 +380,9 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.content.question.max-json-size` | `256KB` | Dung lượng tối đa của phần nội dung và (riêng) của đáp án trong một phiên bản câu hỏi hay nhóm câu (P2.3); quá cỡ thì bị từ chối 422 theo đường dẫn | Cấu hình |
 | `e9x.content.question.default-page-size` / `max-page-size` | `50` / `100` | Số câu mỗi trang của danh sách câu hỏi trong CMS khi yêu cầu không nói / nhiều nhất được xin (P2.3) | Cấu hình |
 | `e9x.content.question.max-group-members` | `100` | Số câu tối đa trong một phiên bản nhóm câu (P2.3) | Cấu hình |
+| `e9x.content.strategy.max-json-size` | `512KB` | Dung lượng tối đa của phần khối (`blocks`) trong một phiên bản bài phương pháp (P2.4); quá cỡ thì bị từ chối 422 | Cấu hình |
+| `e9x.content.strategy.max-blocks` | `200` | Số khối tối đa trong một phiên bản bài phương pháp (P2.4), từ 1 đến 1000 | Cấu hình |
+| `e9x.content.strategy.video-hosts` | `youtube.com,www.youtube.com,m.youtube.com,youtu.be,vimeo.com,www.vimeo.com,player.vimeo.com` | Các host được phép trong địa chỉ của khối `video-embed` (chỉ https; host khác bị từ chối 422 theo đường dẫn `blocks[i].url`). `e9x.security.csp` có `frame-src` đúng hai nguồn `https://www.youtube.com https://player.vimeo.com`; thêm host nhúng khác phải sửa cả hai chỗ (P2.4) | Cấu hình |
 
 ---
 
