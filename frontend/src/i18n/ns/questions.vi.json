@@ -1,7 +1,12 @@
 {
-  "nav": { "questions": "Câu hỏi" },
+  "nav": {
+    "questions": "Câu hỏi"
+  },
   "loading": "Đang tải…",
-  "sections": { "content": "Nội dung câu hỏi", "answerKey": "Đáp án và phần giải (chỉ người soạn và người duyệt thấy)" },
+  "sections": {
+    "content": "Nội dung câu hỏi",
+    "answerKey": "Đáp án và phần giải (chỉ người soạn và người duyệt thấy)"
+  },
   "fields": {
     "explanation": "Giải thích (hiện sau khi nộp bài)",
     "points": "Điểm",
@@ -35,7 +40,15 @@
     "slots": "Đáp án chấp nhận (mỗi chỗ trống một danh sách các cách viết)",
     "transcript": "Lời thoại (tài liệu xem lại sau khi nộp)",
     "sampleAnswer": "Bài mẫu",
-    "notes": "Ghi chú cho người chấm"
+    "notes": "Ghi chú cho người chấm",
+    "optionsItem": "Lựa chọn",
+    "choicesItem": "Lựa chọn",
+    "itemsItem": "Mục",
+    "questionsItem": "Câu",
+    "bulletPointsItem": "Ý gợi ý",
+    "passageNumbersItem": "Đoạn",
+    "slotsItem": "Chỗ trống",
+    "slotsItemItem": "Cách viết chấp nhận"
   },
   "media": {
     "help": {
@@ -122,5 +135,13 @@
     "forbidden": "Bạn không có quyền với câu hỏi này.",
     "notFound": "Không tìm thấy câu hỏi.",
     "generic": "Có lỗi xảy ra. Thử lại sau ít phút."
+  },
+  "rjsf": {
+    "add": "Thêm mục",
+    "remove": "Xoá",
+    "moveUp": "Chuyển lên",
+    "moveDown": "Chuyển xuống",
+    "copy": "Nhân đôi",
+    "emptyList": "Chưa có mục nào. Dùng nút bên dưới để thêm."
   }
 }

@@ -26,7 +26,7 @@ class QuestionTypesController {
 
     @Schema(name = "QuestionTypeForm")
     record QuestionTypeForm(String code, String examCode, String section, String kind,
-                            @Schema(type = "object") JsonNode contentSchema, @Schema(type = "object") JsonNode answerKeySchema) {}
+                            @Schema(implementation = Object.class) JsonNode contentSchema, @Schema(implementation = Object.class) JsonNode answerKeySchema) {}
 
     private final QuestionTypes types;
     private final Authz authz;

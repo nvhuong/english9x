@@ -34,14 +34,14 @@ class QuestionController {
     record QuestionRequest(
             @Schema(description = "the question type; fixed for the life of the question", example = "TOEIC_P5_INCOMPLETE_SENTENCE") String typeCode,
             @Schema(description = "the group the question is written for (optional; fixed when the question is made)", nullable = true) UUID groupId,
-            @Schema(type = "object", description = "what the learner sees; checked against the content schema of the type") JsonNode content,
-            @Schema(type = "object", description = "the solution side: answers, transcript, sample answer; checked against the answer-key schema of the type") JsonNode answerKey,
+            @Schema(implementation = Object.class, description = "what the learner sees; checked against the content schema of the type") JsonNode content,
+            @Schema(implementation = Object.class, description = "the solution side: answers, transcript, sample answer; checked against the answer-key schema of the type") JsonNode answerKey,
             @Schema(description = "shown after submitting", nullable = true) String explanation,
             @Schema(description = "default 1", nullable = true) BigDecimal points) {}
 
     @Schema(name = "QuestionVersion")
     record QuestionVersionDto(UUID versionId, UUID questionId, int versionNo, ContentStatus status, @Schema(nullable = true) UUID ownerOrgId, String examCode,
-                              String typeCode, @Schema(type = "object") JsonNode content, @Schema(type = "object") JsonNode answerKey,
+                              String typeCode, @Schema(implementation = Object.class) JsonNode content, @Schema(implementation = Object.class) JsonNode answerKey,
                               @Schema(nullable = true) String explanation, BigDecimal points, UUID createdBy, Instant createdAt, Instant updatedAt) {
         static QuestionVersionDto of(QuestionVersionView v) {
             return new QuestionVersionDto(v.versionId(), v.questionId(), v.versionNo(), v.status(), v.ownerOrgId().orElse(null), v.examCode(), v.typeCode(),

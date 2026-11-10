@@ -81,7 +81,7 @@ function uiFor(name: string, schema: Schema, t: TFunction<'questions'>, exists: 
   if (schema.properties) {
     for (const [child, sub] of Object.entries(schema.properties)) ui[child] = uiFor(child, sub, t, exists);
   }
-  if (schema.items) ui.items = uiFor('', schema.items, t, exists);
+  if (schema.items) ui.items = uiFor(`${name}Item`, schema.items, t, exists);
   return ui;
 }
 

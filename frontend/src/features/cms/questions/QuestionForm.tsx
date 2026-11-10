@@ -1,4 +1,5 @@
 import Form from '@rjsf/core';
+import { TranslatableString } from '@rjsf/utils';
 import validator from '@rjsf/validator-ajv8';
 import { useId, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -40,6 +41,29 @@ export function QuestionForm({ type, model, onChange, onSave, issues, locked = f
   const [text, setText] = useState('');
   const [textProblem, setTextProblem] = useState<string | null>(null);
 
+  // the form library's own words (buttons of the lists, empty-list hint): ours, in the language of the page
+  const translateString = useMemo(
+    () => (key: TranslatableString, params?: string[]) => {
+      switch (key) {
+        case TranslatableString.AddItemButton:
+        case TranslatableString.AddButton:
+          return t('rjsf.add');
+        case TranslatableString.RemoveButton:
+          return t('rjsf.remove');
+        case TranslatableString.MoveUpButton:
+          return t('rjsf.moveUp');
+        case TranslatableString.MoveDownButton:
+          return t('rjsf.moveDown');
+        case TranslatableString.CopyButton:
+          return t('rjsf.copy');
+        case TranslatableString.EmptyArray:
+          return t('rjsf.emptyList');
+        default:
+          return key.replace(/%(\d)/g, (_, n: string) => params?.[Number(n) - 1] ?? '');
+      }
+    },
+    [t],
+  );
   const schema = useMemo(() => formSchema(type, t), [type, t]);
   const uiSchema = useMemo(() => formUiSchema(type, t, (key) => i18n.exists(`questions:${key}`)), [type, t]);
   const extraErrors = useMemo(() => (issues.length ? errorSchemaOf(issues) : undefined), [issues]);
@@ -112,6 +136,7 @@ export function QuestionForm({ type, model, onChange, onSave, issues, locked = f
             noValidate
             noHtml5Validate
             showErrorList={false}
+            translateString={translateString}
             disabled={locked}
             onChange={(e) => onChange(e.formData as FormModel)}
             onSubmit={(e) => onSave(e.formData as FormModel)}

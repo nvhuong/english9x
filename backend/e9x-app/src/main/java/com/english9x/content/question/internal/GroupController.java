@@ -28,13 +28,13 @@ class GroupController {
     @Schema(name = "QuestionGroupRequest")
     record GroupRequest(
             @Schema(description = "the exam; fixed for the life of the group") String examCode,
-            @Schema(type = "object", description = "title (required), instructions, passage, audioMediaId, imageMediaId: what the learner sees") JsonNode content,
-            @Schema(type = "object", description = "transcript, notes: the solution side, never shown before submitting", nullable = true) JsonNode solution,
+            @Schema(implementation = Object.class, description = "title (required), instructions, passage, audioMediaId, imageMediaId: what the learner sees") JsonNode content,
+            @Schema(implementation = Object.class, description = "transcript, notes: the solution side, never shown before submitting", nullable = true) JsonNode solution,
             @Schema(description = "the member question versions, in order; each one a question of this exam that the author can read") List<UUID> questionVersionIds) {}
 
     @Schema(name = "QuestionGroupVersion")
     record GroupVersionDto(UUID versionId, UUID groupId, int versionNo, ContentStatus status, @Schema(nullable = true) UUID ownerOrgId, String examCode,
-                           @Schema(type = "object") JsonNode content, @Schema(type = "object") JsonNode solution, List<UUID> questionVersionIds, UUID createdBy,
+                           @Schema(implementation = Object.class) JsonNode content, @Schema(implementation = Object.class) JsonNode solution, List<UUID> questionVersionIds, UUID createdBy,
                            Instant createdAt, Instant updatedAt) {
         static GroupVersionDto of(QuestionGroupVersionView v) {
             return new GroupVersionDto(v.versionId(), v.groupId(), v.versionNo(), v.status(), v.ownerOrgId().orElse(null), v.examCode(), v.content(),

@@ -123,6 +123,14 @@ export const seed = {
   reviewFlow: (opts: { authorId: string; reviewerId?: string; examCode?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
     post<{ reviewId: string; versionId: string; outcome: string }>('review-flow', { examCode: 'IELTS', orgId: null, outcome: 'approved', ...opts }),
 
+  /**
+   * The same REAL review (Authz, RLS, lifecycle trigger, events, audit) for a version the CMS made: `type` 'question' or 'question_group', the id of
+   * the version. The author submits it (and must be its creator), the reviewer approves it (outcome 'approved'), sends it back ('changes'), or it is
+   * left in review ('submitted'). A stand-in for the CMS review screens (P2.9).
+   */
+  reviewVersion: (opts: { type: 'question' | 'question_group'; versionId: string; authorId: string; reviewerId?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
+    post<{ reviewId: string; versionId: string; outcome: string }>('review-version', { orgId: null, outcome: 'approved', ...opts }),
+
   /** A centre with teachers and learners (classes, members). Needs the classroom module. */
   center: (_opts: { teachers: number; learners: number }): Promise<SeededCenter> =>
     notImplemented('seed.center', 'P6.1 (members and classes); organisations themselves exist since P1.5 (seed.organization, seed.member)'),

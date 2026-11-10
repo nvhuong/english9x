@@ -1,7 +1,12 @@
 {
-  "nav": { "questions": "Questions" },
+  "nav": {
+    "questions": "Questions"
+  },
   "loading": "Loading…",
-  "sections": { "content": "Question content", "answerKey": "Answer key and solution (only the author and the reviewer see this)" },
+  "sections": {
+    "content": "Question content",
+    "answerKey": "Answer key and solution (only the author and the reviewer see this)"
+  },
   "fields": {
     "explanation": "Explanation (shown after submitting)",
     "points": "Points",
@@ -35,7 +40,15 @@
     "slots": "Accepted answers (one list of spellings per gap)",
     "transcript": "Transcript (review material, shown after submitting)",
     "sampleAnswer": "Sample answer",
-    "notes": "Notes for the grader"
+    "notes": "Notes for the grader",
+    "optionsItem": "Option",
+    "choicesItem": "Choice",
+    "itemsItem": "Item",
+    "questionsItem": "Question",
+    "bulletPointsItem": "Bullet point",
+    "passageNumbersItem": "Passage",
+    "slotsItem": "Gap",
+    "slotsItemItem": "Accepted spelling"
   },
   "media": {
     "help": {
@@ -122,5 +135,13 @@
     "forbidden": "You have no access to this question.",
     "notFound": "Question not found.",
     "generic": "Something went wrong. Try again in a moment."
+  },
+  "rjsf": {
+    "add": "Add item",
+    "remove": "Remove",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "copy": "Duplicate",
+    "emptyList": "No items yet. Use the button below to add one."
   }
 }
