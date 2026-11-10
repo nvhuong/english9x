@@ -81,6 +81,12 @@ END $$;
 ALTER TABLE score_tables DROP CONSTRAINT score_tables_test_scope_refused_ck;
 ALTER TABLE grading_policies DROP CONSTRAINT grading_policies_test_scope_refused_ck;
 
+-- P2.5 (V202611110005) allows one open version per table and per skill. These fixtures hold several open versions of one table on purpose
+-- (a draft, one under review, the author's submission), so the two indexes are dropped here; 42_scoring_guards.sql tests them. The decision
+-- trigger stays: the version under review below has its open review, the way the workflow service always has it.
+DROP INDEX score_table_versions_one_open_uq;
+DROP INDEX grading_skill_versions_one_open_uq;
+
 -- fixtures (as the owner): two tests of org A, one of org B, an English9x default, skills and policies
 INSERT INTO score_tables(id,owner_org_id,exam_code,skill,scope,test_id) VALUES
  ('51000000-0000-0000-0000-00000000000a','aaaaaaaa-0000-0000-0000-00000000000a','IELTS','LISTENING','TEST','71000000-0000-0000-0000-00000000000a'),
@@ -95,6 +101,8 @@ INSERT INTO score_table_versions(id,score_table_id,owner_org_id,exam_code,versio
  ('52000000-0000-0000-0000-0000000b0002','51000000-0000-0000-0000-00000000000b','bbbbbbbb-0000-0000-0000-00000000000b','IELTS',2,'DRAFT','[{"raw":0,"scaled":1}]'),
  ('52000000-0000-0000-0000-000000e90001','51000000-0000-0000-0000-0000000000e9',NULL,'IELTS',1,'PUBLISHED','[{"raw":0,"scaled":0}]'),
  ('52000000-0000-0000-0000-000000e90002','51000000-0000-0000-0000-0000000000e9',NULL,'IELTS',2,'DRAFT','[{"raw":0,"scaled":1}]');
+INSERT INTO review_requests(content_type,version_id,owner_org_id,exam_code,author_id,submitted_by) VALUES
+ ('score_table','52000000-0000-0000-0000-0000000a0003','aaaaaaaa-0000-0000-0000-00000000000a','IELTS','c1000000-0000-0000-0000-000000000001','c1000000-0000-0000-0000-000000000001');
 INSERT INTO grading_skills(id,owner_org_id,exam_code,question_type_code) VALUES
  ('61000000-0000-0000-0000-00000000000a','aaaaaaaa-0000-0000-0000-00000000000a','IELTS','IELTS_W_TASK2'),
  ('61000000-0000-0000-0000-00000000000b','bbbbbbbb-0000-0000-0000-00000000000b','IELTS','IELTS_W_TASK2'),
@@ -105,6 +113,11 @@ INSERT INTO grading_skill_versions(id,grading_skill_id,owner_org_id,exam_code,ve
  ('62000000-0000-0000-0000-0000000b0001','61000000-0000-0000-0000-00000000000b','bbbbbbbb-0000-0000-0000-00000000000b','IELTS',1,'PUBLISHED','rubric B'),
  ('62000000-0000-0000-0000-000000e90001','61000000-0000-0000-0000-0000000000e9',NULL,'IELTS',1,'PUBLISHED','rubric E9'),
  ('62000000-0000-0000-0000-000000e90002','61000000-0000-0000-0000-0000000000e9',NULL,'IELTS',2,'DRAFT','rubric E9 draft');
+-- an author edits only a version they created (V202611110005): the drafts of org A are the author's
+UPDATE score_table_versions SET created_by = 'c1000000-0000-0000-0000-000000000001' WHERE id = '52000000-0000-0000-0000-0000000a0002';
+UPDATE grading_skill_versions SET created_by = 'c1000000-0000-0000-0000-000000000001' WHERE id = '62000000-0000-0000-0000-0000000a0002';
+UPDATE score_table_versions SET created_by = 'c1000000-0000-0000-0000-000000000005' WHERE id = '52000000-0000-0000-0000-000000e90002';
+UPDATE grading_skill_versions SET created_by = 'c1000000-0000-0000-0000-000000000005' WHERE id = '62000000-0000-0000-0000-000000e90002';
 INSERT INTO grading_policies(id,owner_org_id,exam_code,scope,test_id,mode) VALUES
  ('63000000-0000-0000-0000-0000000000e9',NULL,'IELTS','EXAM',NULL,'AI'),
  ('63000000-0000-0000-0000-00000000000a','aaaaaaaa-0000-0000-0000-00000000000a','IELTS','ORG',NULL,'TEACHER'),

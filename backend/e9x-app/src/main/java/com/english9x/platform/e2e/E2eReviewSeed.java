@@ -74,7 +74,7 @@ class E2eReviewSeed {
 
     /**
      * The same real review for a REAL content version made through the CMS (a question, a question group): the author submits it and the reviewer
-     * approves it or sends it back. Stands in for the CMS review screens (P2.9), like {@link #reviewFlow}, but the content row is the one the CMS
+     * approves it or sends it back (a version already submitted on a CMS screen is decided through its open review). Stands in for the CMS review screens (P2.9), like {@link #reviewFlow}, but the content row is the one the CMS
      * made, so what is published is exactly what the editor saved. {@code outcome}: {@code submitted}, {@code approved} or {@code changes}.
      */
     @PostMapping("/review-version")
@@ -85,19 +85,24 @@ class E2eReviewSeed {
                 || (!"submitted".equals(outcome) && req.reviewerId() == null)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "type, versionId, authorId; reviewerId unless outcome=submitted; outcome: submitted | approved | changes");
         }
-        UUID reviewId;
-        try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(req.authorId(), req.orgId())) {
-            reviewId = reviews.submit(new VersionRef(req.type(), req.versionId()));
+        // a version the author already submitted on the CMS screen has its open review: decide that one instead of submitting again
+        UUID reviewId = db.jdbc().queryForList("select id from review_requests where content_type = ? and version_id = ? and status = 'IN_REVIEW'", UUID.class,
+                req.type(), req.versionId()).stream().findFirst().orElse(null);
+        if (reviewId == null) {
+            try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(req.authorId(), req.orgId())) {
+                reviewId = reviews.submit(new VersionRef(req.type(), req.versionId()));
+            }
         }
+        final UUID review = reviewId;
         if ("approved".equals(outcome)) {
             try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(req.reviewerId(), req.orgId())) {
-                reviews.approve(reviewId);
+                reviews.approve(review);
             }
         } else if ("changes".equals(outcome)) {
             try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(req.reviewerId(), req.orgId())) {
-                reviews.requestChanges(reviewId, "e2e feedback");
+                reviews.requestChanges(review, "e2e feedback");
             }
         }
-        return Map.of("reviewId", reviewId.toString(), "versionId", req.versionId().toString(), "outcome", outcome);
+        return Map.of("reviewId", review.toString(), "versionId", req.versionId().toString(), "outcome", outcome);
     }
 }

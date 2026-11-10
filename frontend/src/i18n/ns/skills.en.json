@@ -1,0 +1,112 @@
+{
+  "nav": {
+    "gradingSkills": "Grading skills"
+  },
+  "loading": "Loading…",
+  "status": {
+    "DRAFT": "Draft",
+    "IN_REVIEW": "In review",
+    "CHANGES_REQUESTED": "Changes requested",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "field": {
+    "rubric": "Rubric",
+    "rubricHint": "Write it in markdown: for each criterion, describe every level of the score.",
+    "promptTemplate": "Prompt template",
+    "promptTemplateHint": "Use all four variables {{rubric}}, {{samples}}, {{task}}, {{response}}; no other variable or syntax. They are replaced by the rubric, the samples, the task and the candidate's answer when grading.",
+    "resultSchema": "JSON Schema of the AI's result",
+    "resultSchemaHint": "It must declare a property for every criterion code. It may refer only to itself (\"$ref\": \"#/...\"); no $id.",
+    "schemaFromCriteria": "Generate from the criteria"
+  },
+  "criteria": {
+    "title": "Criteria",
+    "hint": "Each criterion has a code (used in the AI's result), a name and a scale: lowest, highest and step (the step divides the range from lowest to highest).",
+    "label": "Criterion {{n}}",
+    "code": "Criterion code",
+    "name": "Criterion name",
+    "min": "Lowest",
+    "max": "Highest",
+    "step": "Step",
+    "add": "Add a criterion",
+    "remove": "Remove criterion"
+  },
+  "samples": {
+    "title": "Scored samples",
+    "hint": "The AI calibrates against scored examples. Each has a band, its content as text or as the id of a recording or image file, and the examiner's commentary.",
+    "empty": "No samples yet.",
+    "label": "Sample {{n}}",
+    "band": "Band",
+    "text": "Sample answer (text)",
+    "mediaId": "Or the id of a recording or image file",
+    "commentary": "Examiner's commentary",
+    "add": "Add a sample",
+    "remove": "Remove sample"
+  },
+  "dryRun": {
+    "title": "Dry run",
+    "hint": "Run the saved skill on a sample answer to see what the AI returns. No score is kept.",
+    "response": "Sample answer to run",
+    "run": "Run",
+    "unavailable": "A dry run needs the AI grader, which is not built yet. The skill is saved and reviewed as usual."
+  },
+  "actions": {
+    "createDraft": "Save draft",
+    "save": "Save draft",
+    "saveNewVersion": "Save as a new version",
+    "submit": "Submit for review"
+  },
+  "new": {
+    "title": "New grading skill",
+    "description": "A grading skill is the rubric, criteria, prompt and samples the AI uses to grade one Writing or Speaking question type.",
+    "type": "Question type",
+    "typePlaceholder": "Choose a question type",
+    "noneTitle": "No question type to write a skill for",
+    "none": "You may not write a skill for any Writing or Speaking type in this context."
+  },
+  "edit": {
+    "title": "Grading skill {{type}}",
+    "back": "Back to the grading skills",
+    "version": "Version {{n}}",
+    "saved": "Draft saved.",
+    "savedNewVersion": "A new draft was made, version {{n}}. The published version is unchanged.",
+    "submitted": "Submitted for review. This version is locked until the reviewer decides.",
+    "publishedNote": "This version is published and cannot be edited. Saving makes a new draft (version {{next}}).",
+    "inReviewNote": "This version is waiting for review and is locked.",
+    "archivedNote": "This version is archived and cannot be edited.",
+    "notFoundTitle": "Skill not found",
+    "notFound": "The skill does not exist, or you may not open it in this context."
+  },
+  "list": {
+    "title": "Grading skills",
+    "description": "The grading skills of the exams you write or review in this context, each showing its latest version.",
+    "new": "New skill",
+    "exam": "Exam",
+    "status": "Status",
+    "all": "All",
+    "caption": "Grading skills",
+    "colType": "Question type",
+    "colExam": "Exam",
+    "colStatus": "Status",
+    "colVersion": "Version",
+    "emptyTitle": "No skills yet",
+    "empty": "No skill matches the filter.",
+    "pagination": "Pagination",
+    "previous": "Previous page",
+    "next": "Next page",
+    "range": "{{from}}–{{to}} of {{total}}"
+  },
+  "errors": {
+    "invalid": "The skill is not valid. Fix the items below and save again.",
+    "schemaJson": "The JSON Schema cannot be read: check the brackets and commas.",
+    "exists": "This question type already has a skill. Open it in the list to edit it.",
+    "underReview": "The latest version is being reviewed and cannot be edited.",
+    "anotherAuthor": "This draft belongs to another author; only they can edit or submit it.",
+    "archived": "This skill has been archived.",
+    "notEditable": "There is no draft to submit.",
+    "conflict": "Somebody just changed this skill. Reload and try again.",
+    "forbidden": "You may not do this with this skill.",
+    "notFound": "Skill not found.",
+    "generic": "Something went wrong. Try again in a few minutes."
+  }
+}

@@ -39,6 +39,9 @@ public final class SweepFixtures {
     public final UUID lessonVersionB = UUID.randomUUID();
     public final UUID lessonAForPut = UUID.randomUUID();
     public final UUID lessonAForSubmit = UUID.randomUUID();
+    /** P2.5: A's author's own draft grading skills (one per route that changes a skill): the positive controls of PUT and submit. */
+    public final UUID skillAForPut = UUID.randomUUID();
+    public final UUID skillAForSubmit = UUID.randomUUID();
     public final UUID mediaB = UUID.randomUUID();
     public final UUID invitationA = UUID.randomUUID();
     public final UUID invitationB = UUID.randomUUID();
@@ -157,6 +160,13 @@ public final class SweepFixtures {
             su.update(lessonVersion, version, own, orgA, authorA);
             su.update(lessonType, version, orgA);
         }
+        // P2.5: grading skills are owned like lessons (the bound context); two draft skills of A's author for two other Writing types than the one POST creates
+        String skill = "insert into grading_skills(id,owner_org_id,exam_code,question_type_code) values (?,?,'IELTS',?)";
+        String skillVersion = "insert into grading_skill_versions(id,grading_skill_id,owner_org_id,exam_code,version_no,created_by) values (?,?,?,'IELTS',1,?)";
+        su.update(skill, skillAForPut, orgA, "IELTS_W_AC_TASK1");
+        su.update(skillVersion, UUID.randomUUID(), skillAForPut, orgA, authorA);
+        su.update(skill, skillAForSubmit, orgA, "IELTS_W_GT_TASK1");
+        su.update(skillVersion, UUID.randomUUID(), skillAForSubmit, orgA, authorA);
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
@@ -263,6 +273,23 @@ public final class SweepFixtures {
         all.put("POST /api/cms/strategy-lessons", ForeignIdSweep.Fixture.write(lessonBody, List.of(), none));
         all.put("PUT /api/cms/strategy-lessons/{id}", ForeignIdSweep.Fixture.write(lessonBody, List.of(), new ForeignIdSweep.Control(slot("id", lessonAForPut), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/strategy-lessons/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", lessonAForSubmit), null, ForeignIdSweep.AUTHOR)));
+        // P2.5: grading skills, like lessons: A's ORG_ADMIN (no AUTHOR grant) is refused on every route and every foreign id; A's author really writes A's drafts.
+        // The dry run answers 501 until the AI grader exists (P4.2), so it has no 2xx control; the ids it walks are checked like the others.
+        String criteria = "[{\"code\":\"task_response\",\"name\":\"Task response\",\"min\":0,\"max\":9,\"step\":0.5}]";
+        String skillRest = "\"rubric\":\"r\",\"criteria\":" + criteria + ",\"promptTemplate\":\"{{rubric}} {{samples}} {{task}} {{response}}\",\"samples\":[],"
+                + "\"resultSchema\":{\"type\":\"object\",\"properties\":{\"task_response\":{\"type\":\"number\"}},\"required\":[\"task_response\"]}";
+        all.put("POST /api/cms/grading-skills", ForeignIdSweep.Fixture.write("{\"questionTypeCode\":\"IELTS_W_TASK2\"," + skillRest + "}", List.of(), none));
+        all.put("PUT /api/cms/grading-skills/{id}", ForeignIdSweep.Fixture.write("{" + skillRest + "}", List.of(), new ForeignIdSweep.Control(slot("id", skillAForPut), null, ForeignIdSweep.AUTHOR)));
+        all.put("POST /api/cms/grading-skills/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", skillAForSubmit), null, ForeignIdSweep.AUTHOR)));
+        all.put("POST /api/cms/grading-skills/{id}/dry-run", new ForeignIdSweep.Fixture("{\"response\":\"x\"}", List.of(), null,
+                "answers 501 whoever asks until the AI grader exists (P4.2); GradingSkillIT.dryRunWaitsForTheAiGrader measures who is refused before that"));
+        // P2.5: the conversion table of an exam is English9x's (owner NULL, scope EXAM): the sweep's callers are all in organisation contexts and are refused (403)
+        // whatever the id, so there is no 2xx control to give; ScoreTableServiceIT measures the English9x staff's own writes and every refusal.
+        String englishNine = "an exam default belongs to English9x: a caller in an organisation's context is always refused; ScoreTableServiceIT.onlyTheStaffOfTheExamWriteAndRead measures it";
+        String table = "{\"examCode\":\"IELTS\",\"skill\":\"LISTENING\",\"scope\":\"EXAM\",\"rows\":[{\"raw\":0,\"scaled\":0},{\"raw\":1,\"scaled\":4.5}]}";
+        all.put("POST /api/cms/score-tables", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
+        all.put("PUT /api/cms/score-tables/{id}", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
+        all.put("POST /api/cms/score-tables/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null, englishNine));
         return all;
     }
 
