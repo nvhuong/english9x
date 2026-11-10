@@ -121,6 +121,13 @@ A request names its organisation with `X-Org-Context: <uuid>` (absent = "C√° nh√
 - **The answer key never reaches a learner**: the version tables are readable only by the AUTHOR or REVIEWER of the exam in the version's own context (row-level security); a learner, a teacher, another exam's author and another organisation see no row. The exam room and the lessons read the content side through `content.question.api` (`QuestionVersions#examView`, `QuestionGroupVersions#examView`, SECURITY DEFINER functions behind them), whose DTOs have no answer-side field (`QuestionExamViewTest`).
 - Only the author of an open draft edits and submits it (no co-editing: the review's self-approval check compares with one person). `POST/PUT/GET /api/cms/questions`, `/api/cms/question-groups`, `/api/cms/question-types` (the schemas the editor's form is built from). A 422 lists `errors[]` by JSON path (`content.options[2].key`).
 
+## Tests (P2.6, F13)
+
+- A test is a header (`tests`: owner, exam, variant AC/GT) plus immutable **versions** (`test_versions`), each with ordered **parts** (`test_parts`: a TOEIC part or an IELTS skill, with its time limit) that list **group versions** (`test_part_groups`). Same lifecycle and roles as a question group; the group versions are the test's dependencies in the review (it cannot be approved while one is not PUBLISHED); the parts have their own guards (nothing changes unless the version is DRAFT / CHANGES_REQUESTED). `POST /api/cms/tests`, `PUT /api/cms/tests/{id}/structure`, `GET`, `/versions`, `/submit`.
+- The structure is checked against `exam_sections` (TOEIC 6/25/39/30/30/16/54, IELTS 40/40/2/3): a count that differs is a warning in the answer; a skill with no question blocks `submit` (422 `test-skill-missing`).
+- `TestVersions#forExamRoom(versionId)` is the learner's side: parts, groups and questions built only from the question module's exam views (content and points: no answer key, transcript, sample answer, notes or explanation). It serves PUBLISHED and ARCHIVED versions, so an attempt keeps its version.
+- TEST scope of score tables and grading policies (an override keyed by the test, kept by every version of it) is enabled by V202611120002: foreign key to `tests`, the row's owner is the test's owner, written only by the administrator of that owner, the grading mode frozen once the test is published.
+
 ## Audit log (P1.9)
 Who did what, when and in which context (`/admin/audit-log`, SYS_ADMIN only; there is no organisation-level log). The table is append-only for
 everyone, the table owner included (a trigger refuses UPDATE, DELETE and TRUNCATE); a record is written in the same transaction as the action

@@ -8,7 +8,7 @@ import java.util.UUID;
 public interface GradingPolicies {
 
     /**
-     * The mode by spec 10.3: the policy of the test the version belongs to (keyed by test, see {@code ScoreTables}; none before P2.6), else the organisation's, else the exam's, else the configured default
+     * The mode by spec 10.3: the policy of the test the version belongs to (keyed by test, see {@code ScoreTables}; written by the administrator of the test's owner, frozen once the test is published), else the organisation's, else the exam's, else the configured default
      * ({@code e9x.grading.default-mode}). Resolution is {@code GradingPolicyResolver}. Sees only rows the bound context may read: the
      * policy of an organisation other than the bound one is never found, so it cannot decide here.
      */
