@@ -57,6 +57,10 @@ public final class SweepFixtures {
     /** P5.1: a plan on sale, a published English9x course, and an order of A's member and one of B's member (the order code is a text key of the walk). */
     public final UUID planId = UUID.randomUUID();
     public final UUID publishedCourse = UUID.randomUUID();
+    /** P5.3: an ACTIVE licence of each organisation over {@link #publishedCourse}; A's has a seat held by {@link #holderA} (the positive control of the revoke route). */
+    public final UUID licenseA = UUID.randomUUID();
+    public final UUID licenseB = UUID.randomUUID();
+    public final UUID holderA = UUID.randomUUID();
     public final String orderCodeA = "SWA001";
     public final String orderCodeB = "SWB001";
     /** P5.2: two more pending orders of A's member, one for the confirm route's positive control and one for the reject route's (each decision changes its order). */
@@ -184,9 +188,9 @@ public final class SweepFixtures {
         su.update(skillVersion, UUID.randomUUID(), skillAForPut, orgA, authorA);
         su.update(skill, skillAForSubmit, orgA, "IELTS_W_GT_TASK1");
         su.update(skillVersion, UUID.randomUUID(), skillAForSubmit, orgA, authorA);
-        su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
-                + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
-                userB, orgB, orgB);
+        for (UUID course : su.queryForList("select id from courses where owner_org_id = ?", UUID.class, orgB)) {
+            com.english9x.support.SeatFixtures.seatEntitlement(su, orgB, userB, course, java.time.Instant.now().minus(java.time.Duration.ofDays(1)), java.time.Instant.now().plus(java.time.Duration.ofDays(1)));
+        }
         // P5.1: plans are a price list shared by everybody; orders belong to a person (B's member has one, with an item; A's member has one too, the positive control)
         su.update("insert into plans(id,name,price_vnd,months,max_courses) values (?,'Sweep plan',100000,1,2)", planId);
         su.update("insert into courses(id,owner_org_id,exam_code,code,title,status) values (?,null,'IELTS','SWPUB1','Published','PUBLISHED')", publishedCourse);
@@ -195,6 +199,15 @@ public final class SweepFixtures {
             su.update("insert into orders(id,code,user_id,plan_id,plan_months,amount_vnd) values (?,?,?,?,1,100000)", order, o[0], o[1], planId);
             su.update("insert into order_items(order_id,user_id,course_id,course_code) values (?,?,?,'SWPUB1')", order, o[1], publishedCourse);
         }
+        // P5.3: a licence of each organisation (ACTIVE, 5 seats, the published course); B's member holds a seat of B's, A's holder one of A's
+        for (Object[] l : new Object[][] {{licenseA, orgA}, {licenseB, orgB}}) {
+            su.update("insert into org_licenses(id,org_id,seats,months,price_vnd,activation,contract_no,status,valid_from,valid_until,created_by) "
+                    + "values (?,?,5,12,1000,'CONTRACT','SWEEP','ACTIVE',now() - interval '1 day',now() + interval '300 days',?)", l[0], l[1], admin);
+            su.update("insert into org_license_courses(license_id,org_id,course_id) values (?,?,?)", l[0], l[1], publishedCourse);
+        }
+        su.update("insert into users(id,email,email_verified_at,consent_at) values (?,'holder-a@x.test',now(),now())", holderA);
+        su.update("insert into org_memberships(org_id,user_id) values (?,?)", orgA, holderA);
+        su.update("insert into seat_assignments(license_id,org_id,user_id,assigned_by) values (?,?,?,?),(?,?,?,?)", licenseA, orgA, holderA, userA, licenseB, orgB, userB, userB);
         // P5.2: the receiving account (one active row, shared by everybody who pays)
         su.update("insert into payment_accounts(bank_bin,account_no,account_name) values ('970436','SWEEP123456','Sweep account')");
     }
@@ -286,6 +299,22 @@ public final class SweepFixtures {
         all.put("POST /api/admin/orders/{code}/reject", ForeignIdSweep.Fixture.write("{\"reason\":\"sweep\"}", List.of(
                 new ForeignIdSweep.Attempt(slot("code", orderCodeB)), new ForeignIdSweep.Attempt(slot("code", "NOSUCH"))),
                 new ForeignIdSweep.Control(slot("code", orderCodeRejectA), null, ForeignIdSweep.ADMIN)));
+        // P5.3: licences. A's ORG_ADMIN is refused with 403 on the SYS_ADMIN's creation route whatever the body; the SYS_ADMIN control really creates one for A. Seats: the
+        // organisation and the licence are both walked (each foreign, and mixed with the caller's own), the control is A's own licence and A's own member.
+        String licenseBody = "{\"orgId\":\"" + orgA + "\",\"seats\":2,\"months\":3,\"courseIds\":[\"" + publishedCourse + "\"],\"priceVnd\":1000000,\"activation\":\"CONTRACT\",\"contractNo\":\"SW-1\"}";
+        all.put("POST /api/admin/org-licenses", ForeignIdSweep.Fixture.write(licenseBody, List.of(), new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.ADMIN)));
+        String seatBody = "{\"userId\":\"" + memberA + "\",\"courseIds\":[\"" + publishedCourse + "\"]}";
+        all.put("POST /api/orgs/{orgId}/licenses/{id}/seats", ForeignIdSweep.Fixture.write(seatBody, List.of(
+                new ForeignIdSweep.Attempt(slots("orgId", orgB, "id", licenseB)),
+                new ForeignIdSweep.Attempt(slots("orgId", orgA, "id", licenseB)),
+                new ForeignIdSweep.Attempt(slots("orgId", orgB, "id", licenseA))),
+                ForeignIdSweep.Control.of(slots("orgId", orgA, "id", licenseA), seatBody)));
+        all.put("DELETE /api/orgs/{orgId}/licenses/{id}/seats/{userId}", ForeignIdSweep.Fixture.write(null, List.of(
+                new ForeignIdSweep.Attempt(Map.of("orgId", orgB.toString(), "id", licenseB.toString(), "userId", userB.toString())),
+                new ForeignIdSweep.Attempt(Map.of("orgId", orgA.toString(), "id", licenseB.toString(), "userId", userB.toString())),
+                new ForeignIdSweep.Attempt(Map.of("orgId", orgB.toString(), "id", licenseA.toString(), "userId", holderA.toString())),
+                new ForeignIdSweep.Attempt(Map.of("orgId", orgA.toString(), "id", licenseA.toString(), "userId", userB.toString()))),
+                ForeignIdSweep.Control.of(Map.of("orgId", orgA.toString(), "id", licenseA.toString(), "userId", holderA.toString()), null)));
         all.put("GET /api/orders/{code}/qr.png", ForeignIdSweep.Fixture.read(List.of(
                 new ForeignIdSweep.Attempt(slot("code", orderCodeB)), new ForeignIdSweep.Attempt(slot("code", "NOSUCH")))));
         // P2.3: questions and groups. The caller (A's ORG_ADMIN, no AUTHOR grant) is refused on every route and every foreign id; A's author really writes

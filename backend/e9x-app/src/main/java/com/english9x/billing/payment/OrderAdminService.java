@@ -4,6 +4,7 @@ import com.english9x.audit.api.AuditLog;
 import com.english9x.billing.api.events.OrderConfirmed;
 import com.english9x.billing.api.events.OrderRejected;
 import com.english9x.billing.internal.BillingProblems;
+import com.english9x.billing.license.LicenseActivation;
 import com.english9x.billing.internal.BillingProperties;
 import com.english9x.billing.payment.OrderAdminDtos.AdminOrderView;
 import com.english9x.billing.payment.OrderAdminRepository.AdminOrder;
@@ -55,8 +56,10 @@ class OrderAdminService {
     private final BillingProperties props;
     private final Clock clock;
     private final ApplicationEventPublisher events;
+    private final LicenseActivation licenses;
 
-    OrderAdminService(OrderAdminRepository repo, Authz authz, AuditLog audit, UserDirectory users, BillingProperties props, Clock clock, ApplicationEventPublisher events) {
+    OrderAdminService(OrderAdminRepository repo, Authz authz, AuditLog audit, UserDirectory users, BillingProperties props, Clock clock, ApplicationEventPublisher events,
+            LicenseActivation licenses) {
         this.repo = repo;
         this.authz = authz;
         this.audit = audit;
@@ -64,6 +67,7 @@ class OrderAdminService {
         this.props = props;
         this.clock = clock;
         this.events = events;
+        this.licenses = licenses;
     }
 
     /** Orders newest first, optionally of one status; {@code q} matches (case-insensitively) the code, the payer's email or name. At most 100. */
@@ -107,6 +111,21 @@ class OrderAdminService {
         Instant now = clock.instant();
         Map<UUID, String> items = repo.items(o.id());
         // the domain object decides the dates; the amount, the length and the courses are the ones locked on the order
+        if (o.licenseId() != null) {
+            // the order of an organisation licence: the payment activates the licence (its months from now, the price and length locked on it), no personal entitlement
+            if (!repo.confirm(o.code(), now, ref)) {
+                throw BillingProblems.orderNotPending();
+            }
+            licenses.activate(o.licenseId(), now);
+            Map<String, Object> d = baseDetail(o, items.values());
+            d.put("licenseId", o.licenseId().toString());
+            if (ref != null) {
+                d.put("bankRef", ref);
+            }
+            audit.record("order.confirm", "order", o.id(), d);
+            events.publishEvent(new OrderConfirmed(o.id(), o.userId(), List.of(), now));
+            return view(repo.find(o.code()).orElseThrow(), List.copyOf(items.values()), users.findById(o.userId()));
+        }
         Order domain = new Order(o.code(), o.userId().toString(), o.amountVnd(), items.keySet().stream().map(UUID::toString).toList(), o.createdAt());
         domain.confirm(now, ref);
         List<Entitlement> granted = Entitlements.forConfirmedOrder(domain, new Plan(o.planId().toString(), o.amountVnd(), o.planMonths(), Math.max(1, items.size())), PLAN_ZONE);
@@ -140,6 +159,9 @@ class OrderAdminService {
             throw BillingProblems.orderNotPending();
         }
         Map<UUID, String> items = repo.items(o.id());
+        if (o.licenseId() != null) {
+            licenses.cancel(o.licenseId());
+        }
         Map<String, Object> detail = baseDetail(o, items.values());
         detail.put("rejectReasonLength", text.length());
         audit.record("order.reject", "order", o.id(), detail);

@@ -1,7 +1,9 @@
 {
   "nav": {
     "orders": "Orders",
-    "paymentAccount": "Receiving account"
+    "paymentAccount": "Receiving account",
+    "licenses": "Seat licences",
+    "orgLicenses": "Sell seat licences"
   },
   "order": {
     "title": "Order {{code}}",
@@ -95,6 +97,92 @@
       "binInvalid": "A BIN is exactly 6 digits.",
       "noInvalid": "An account number is 1 to 19 letters or digits.",
       "nameInvalid": "Enter the account holder (at most 100 characters)."
+    }
+  },
+  "licenses": {
+    "title": "Seat licences",
+    "description": "Each licence has a fixed number of seats. Assign a seat to a member of the organisation for chosen courses; taking a seat back ends access at once and returns the seat to the pool.",
+    "loading": "Loading licences…",
+    "loadFailed": "The licences could not be loaded. Try again later.",
+    "retry": "Try again",
+    "empty": "The organisation has no licence yet.",
+    "emptyHint": "Contact English9x to buy a seat licence.",
+    "status": {
+      "PENDING_PAYMENT": "Waiting for payment",
+      "ACTIVE": "Active",
+      "CANCELLED": "Cancelled"
+    },
+    "seatsUsed": "{{used}} of {{total}} seats used",
+    "validity": "Valid until {{date}}",
+    "pending": "This licence waits for the payment of order {{code}}. Seats cannot be assigned yet.",
+    "courses": "Courses: {{list}}",
+    "holders": "Seat holders",
+    "noHolders": "Nobody holds a seat yet.",
+    "col": {
+      "name": "Member",
+      "email": "Email",
+      "courses": "Courses",
+      "assigned": "Assigned",
+      "actions": "Actions"
+    },
+    "assign": {
+      "title": "Assign a seat",
+      "member": "Member",
+      "courses": "Courses they can learn",
+      "submit": "Assign seat",
+      "done": "Seat assigned to {{name}}.",
+      "noCourses": "Choose at least one course.",
+      "noMember": "Choose a member.",
+      "noSeats": "No seats left."
+    },
+    "revoke": {
+      "label": "Take back the seat of {{name}}",
+      "confirmTitle": "Take the seat back?",
+      "confirmDescription": "{{name}} loses access to these courses at once and the seat returns to the pool.",
+      "submit": "Take seat back",
+      "cancel": "Cancel",
+      "done": "Seat of {{name}} taken back."
+    },
+    "errors": {
+      "no-seat-available": "No seats left. Take one back first.",
+      "seat-already-assigned": "This person already holds a seat of the licence.",
+      "license-not-active": "The licence is not active or has ended.",
+      "course-not-in-license": "A course is not part of the licence.",
+      "not-an-org-member": "Only a member of the organisation can hold a seat.",
+      "failed": "It could not be done. Try again later."
+    },
+    "admin": {
+      "title": "Organisation licences",
+      "description": "Sell seats to an organisation: a contract is active at once; QR files an order its administrator pays by bank transfer, confirmed on the Orders page.",
+      "formTitle": "Create a licence",
+      "org": "Organisation",
+      "seats": "Seats",
+      "months": "Months",
+      "price": "Price (VND)",
+      "courses": "Courses of the licence",
+      "activation": "Activation",
+      "QR": "QR (bank transfer)",
+      "CONTRACT": "Contract (active at once)",
+      "contractNo": "Contract number",
+      "submit": "Create licence",
+      "createdContract": "The licence was created and is active.",
+      "createdQr": "The licence was created and waits for payment. Order {{code}}, transfer note: {{note}}",
+      "failed": "The licence could not be created.",
+      "noAdmin": "The organisation has no administrator to pay.",
+      "invalid": "Check the fields: seats, months, price, courses and contract number.",
+      "listTitle": "Licences",
+      "listCaption": "Licences of the organisations",
+      "col": {
+        "org": "Organisation",
+        "seats": "Seats",
+        "price": "Price",
+        "status": "Status",
+        "order": "Order",
+        "contract": "Contract"
+      },
+      "loading": "Loading…",
+      "loadFailed": "The list could not be loaded.",
+      "empty": "No licence yet."
     }
   }
 }

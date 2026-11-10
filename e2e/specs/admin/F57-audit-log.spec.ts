@@ -3,9 +3,9 @@
 // inviting and revoking, accepting an invitation (all through the admin screens and the invitation page), and approving content
 // (a real ReviewService run on a stand-in version, seed.reviewFlow, until the CMS review screens of P2.9 exist). The SYS_ADMIN then
 // reads all of it on the audit-log screen, filters it, and nobody else can open it.
-// Order confirmation (billing, P5.2) is covered: a real order is placed and confirmed by the SYS_ADMIN, and the record is read on the screen.
-// PENDING (see e2e/partial-features.json): seat revocation (billing seats, P5.3) has no module yet; it calls AuditLog#record and extends this
-// spec with its row.
+// Order confirmation (billing, P5.2) and seat revocation (billing seats, P5.3) are covered: a real order is placed and confirmed by the SYS_ADMIN,
+// a real licence's seat is assigned and taken back by the organisation's ORG_ADMIN, and both records are read on the screen.
+// PENDING (see e2e/partial-features.json): content approval goes through the CMS review screen (P2.9) instead of seed.reviewFlow.
 import { test, expect } from '../../fixtures';
 import type { Page } from '@playwright/test';
 
@@ -95,6 +95,25 @@ test.describe('F57 audit log', () => {
     const orderCode: string = placed.body.orderCode;
     expect((await org.api(adminApi.token, 'POST', `/api/admin/orders/${orderCode}/confirm`, { body: { bankRef: 'FT57' } })).status).toBe(200);
 
+    // 8) revoking a seat: the SYS_ADMIN sells a licence, the organisation's ORG_ADMIN assigns a seat to a member and takes it back (one transaction each: seat, access, audit record)
+    const company = await seed.organization({ name: `Doanh nghiệp Nhật Ký ${suffix}`, type: 'ENTERPRISE' });
+    const boss = await seed.verifiedLearner({ email: uniqueEmail('f57-boss'), displayName: 'Quản Trị Suất F57' });
+    const holder = await seed.verifiedLearner({ email: uniqueEmail('f57-holder'), displayName: 'Người Giữ Suất F57' });
+    await seed.member({ orgId: company.orgId, userId: boss.userId, roles: [{ role: 'ORG_ADMIN' }] });
+    await seed.member({ orgId: company.orgId, userId: holder.userId, roles: [{ role: 'LEARNER' }] });
+    const seatCourse = await seed.billing.course();
+    const licensed = await org.api(adminApi.token, 'POST', '/api/admin/org-licenses', {
+      body: { orgId: company.orgId, seats: 1, months: 1, courseIds: [seatCourse.courseId], priceVnd: 1000000, activation: 'CONTRACT', contractNo: `HD-F57-${suffix}` },
+    });
+    expect(licensed.status).toBe(201);
+    const licenseId: string = licensed.body.license.id;
+    const bossApi = await org.apiLogin(boss);
+    const seatPath = `/api/orgs/${company.orgId}/licenses/${licenseId}/seats`;
+    expect((await org.api(bossApi.token, 'POST', seatPath, { org: company.orgId, body: { userId: holder.userId, courseIds: [seatCourse.courseId] } })).status).toBe(201);
+    expect((await org.api(bossApi.token, 'DELETE', `${seatPath}/${holder.userId}`, { org: company.orgId })).status).toBe(204);
+    const seatId = ((await org.api(adminApi.token, 'GET', '/api/admin/audit-log?action=seat.revoke&targetType=seat&size=100')).body.items as Array<{ targetId: string; detail: Record<string, unknown> }>)
+      .find((r) => r.detail.licenseId === licenseId)!.targetId;
+
     // the SYS_ADMIN reads it all on the screen
     await openAuditLog(page);
     await filterBy(page, { actor: admin.email });
@@ -145,6 +164,18 @@ test.describe('F57 audit log', () => {
     await expect(confirmRow).toContainText(orderCode);
     await expect(confirmRow).toContainText('250000');
     await expect(confirmRow).toContainText('FT57');
+
+    // seat revocation: the record is the ORG_ADMIN's, filed under the seat, naming the person and the course by id, never an address
+    await filterBy(page, { targetId: seatId });
+    await expect(rowsOf(page)).toHaveCount(2);
+    const revokeRow = rowsOf(page).filter({ hasText: 'seat.revoke' });
+    await expect(revokeRow).toHaveCount(1);
+    await expect(revokeRow).toContainText('Thu hồi suất');
+    await expect(revokeRow).toContainText('Quản Trị Suất F57');
+    await expect(revokeRow).toContainText(holder.userId);
+    await expect(revokeRow).toContainText(seatCourse.courseId);
+    await expect(revokeRow).not.toContainText(holder.email);
+    await expect(rowsOf(page).filter({ hasText: 'seat.assign' })).toContainText('Gán suất');
 
     // a filter that matches nothing says so and offers the way back
     await filterBy(page, { actor: `nobody-${suffix}@example.test` });

@@ -22,6 +22,12 @@ INSERT INTO exams(code,name) VALUES ('IELTS','IELTS') ON CONFLICT DO NOTHING;
 INSERT INTO courses(id,owner_org_id,exam_code,code,title,status)
  VALUES ('dddddddd-0000-0000-0000-00000000000d',NULL,'IELTS','E9PUB1','c','PUBLISHED');
 
+-- P5.3: a seat entitlement needs a real seat of a real licence (foreign key and guard); the seat rows are fixtures written as the owner
+INSERT INTO org_licenses(id,org_id,seats,months,price_vnd,activation,contract_no,status,valid_from,valid_until,created_by) VALUES
+ ('11000000-0000-0000-0000-00000000000a','a1a1a1a1-0000-0000-0000-00000000000a',5,12,1000,'CONTRACT','C-1','ACTIVE',now() - interval '30 days','2099-01-01 00:00:00+00','a0000000-0000-0000-0000-00000000000a');
+INSERT INTO org_license_courses(license_id,org_id,course_id) SELECT id, org_id, 'dddddddd-0000-0000-0000-00000000000d' FROM org_licenses WHERE id = '11000000-0000-0000-0000-00000000000a';
+INSERT INTO seat_assignments(id,license_id,org_id,user_id,assigned_by) VALUES ('5ea70000-0000-0000-0000-00000000000a','11000000-0000-0000-0000-00000000000a','a1a1a1a1-0000-0000-0000-00000000000a','a0000000-0000-0000-0000-00000000000c','a0000000-0000-0000-0000-00000000000a');
+
 SET ROLE e9x_app;
 
 -- ORG_ADMIN of A assigns a seat to a member of A, then revokes it
@@ -32,7 +38,7 @@ DO $$
 DECLARE n int;
 BEGIN
   INSERT INTO entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id)
-   VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now() - interval '1 day',now()+interval '90 days',gen_random_uuid(),'a1a1a1a1-0000-0000-0000-00000000000a');
+   VALUES ('a0000000-0000-0000-0000-00000000000c','dddddddd-0000-0000-0000-00000000000d',now() - interval '1 day',now()+interval '90 days','5ea70000-0000-0000-0000-00000000000a','a1a1a1a1-0000-0000-0000-00000000000a');
   ASSERT (SELECT count(*) FROM entitlements) = 1, 'the org admin sees the seat entitlement of a member';
   UPDATE entitlements SET valid_until = now() WHERE user_id = 'a0000000-0000-0000-0000-00000000000c';
   GET DIAGNOSTICS n = ROW_COUNT;

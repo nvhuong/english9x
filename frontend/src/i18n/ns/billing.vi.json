@@ -1,7 +1,9 @@
 {
   "nav": {
     "orders": "Đơn hàng",
-    "paymentAccount": "Tài khoản nhận tiền"
+    "paymentAccount": "Tài khoản nhận tiền",
+    "licenses": "Giấy phép suất",
+    "orgLicenses": "Bán giấy phép suất"
   },
   "order": {
     "title": "Đơn {{code}}",
@@ -95,6 +97,92 @@
       "binInvalid": "BIN gồm đúng 6 chữ số.",
       "noInvalid": "Số tài khoản gồm 1 đến 19 chữ hoặc số.",
       "nameInvalid": "Nhập tên chủ tài khoản (tối đa 100 ký tự)."
+    }
+  },
+  "licenses": {
+    "title": "Giấy phép suất",
+    "description": "Mỗi giấy phép có số suất cố định. Gán suất cho thành viên của tổ chức theo từng khoá học; thu hồi suất sẽ chấm dứt quyền học ngay và trả suất về kho.",
+    "loading": "Đang tải giấy phép…",
+    "loadFailed": "Không tải được giấy phép. Thử lại sau.",
+    "retry": "Thử lại",
+    "empty": "Tổ chức chưa có giấy phép nào.",
+    "emptyHint": "Liên hệ English9x để mua giấy phép suất.",
+    "status": {
+      "PENDING_PAYMENT": "Chờ thanh toán",
+      "ACTIVE": "Đang hiệu lực",
+      "CANCELLED": "Đã huỷ"
+    },
+    "seatsUsed": "Đã dùng {{used}}/{{total}} suất",
+    "validity": "Hiệu lực đến {{date}}",
+    "pending": "Giấy phép chờ thanh toán đơn {{code}}. Chưa gán được suất.",
+    "courses": "Khoá học: {{list}}",
+    "holders": "Người đang giữ suất",
+    "noHolders": "Chưa có ai giữ suất.",
+    "col": {
+      "name": "Thành viên",
+      "email": "Email",
+      "courses": "Khoá học",
+      "assigned": "Ngày gán",
+      "actions": "Thao tác"
+    },
+    "assign": {
+      "title": "Gán suất",
+      "member": "Thành viên",
+      "courses": "Khoá học được học",
+      "submit": "Gán suất",
+      "done": "Đã gán suất cho {{name}}.",
+      "noCourses": "Chọn ít nhất một khoá học.",
+      "noMember": "Chọn một thành viên.",
+      "noSeats": "Đã hết suất."
+    },
+    "revoke": {
+      "label": "Thu hồi suất của {{name}}",
+      "confirmTitle": "Thu hồi suất?",
+      "confirmDescription": "{{name}} sẽ mất quyền học các khoá này ngay lập tức và suất được trả về.",
+      "submit": "Thu hồi suất",
+      "cancel": "Huỷ",
+      "done": "Đã thu hồi suất của {{name}}."
+    },
+    "errors": {
+      "no-seat-available": "Đã hết suất. Hãy thu hồi một suất trước.",
+      "seat-already-assigned": "Người này đã giữ một suất của giấy phép.",
+      "license-not-active": "Giấy phép chưa hiệu lực hoặc đã hết hạn.",
+      "course-not-in-license": "Có khoá học không thuộc giấy phép.",
+      "not-an-org-member": "Chỉ thành viên của tổ chức mới giữ được suất.",
+      "failed": "Không thực hiện được. Thử lại sau."
+    },
+    "admin": {
+      "title": "Giấy phép tổ chức",
+      "description": "Bán suất cho một tổ chức: hợp đồng có hiệu lực ngay; QR tạo đơn để quản trị viên của tổ chức chuyển khoản, xác nhận ở trang Đơn hàng.",
+      "formTitle": "Tạo giấy phép",
+      "org": "Tổ chức",
+      "seats": "Số suất",
+      "months": "Số tháng",
+      "price": "Giá (đ)",
+      "courses": "Khoá học của giấy phép",
+      "activation": "Kích hoạt",
+      "QR": "QR (chuyển khoản)",
+      "CONTRACT": "Hợp đồng (hiệu lực ngay)",
+      "contractNo": "Số hợp đồng",
+      "submit": "Tạo giấy phép",
+      "createdContract": "Đã tạo giấy phép và kích hoạt ngay.",
+      "createdQr": "Đã tạo giấy phép chờ thanh toán. Mã đơn {{code}}, nội dung chuyển khoản: {{note}}",
+      "failed": "Không tạo được giấy phép.",
+      "noAdmin": "Tổ chức chưa có quản trị viên để thanh toán.",
+      "invalid": "Kiểm tra lại các trường: số suất, số tháng, giá, khoá học và số hợp đồng.",
+      "listTitle": "Giấy phép đã tạo",
+      "listCaption": "Giấy phép của các tổ chức",
+      "col": {
+        "org": "Tổ chức",
+        "seats": "Suất",
+        "price": "Giá",
+        "status": "Trạng thái",
+        "order": "Mã đơn",
+        "contract": "Hợp đồng"
+      },
+      "loading": "Đang tải…",
+      "loadFailed": "Không tải được danh sách.",
+      "empty": "Chưa có giấy phép nào."
     }
   }
 }

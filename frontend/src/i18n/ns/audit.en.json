@@ -64,6 +64,10 @@
     "order_create": "Order placed",
     "order_expire": "Unpaid order expired",
     "plan_create": "Plan created",
-    "plan_update": "Plan changed"
+    "plan_update": "Plan changed",
+    "seat_assign": "Seat assigned",
+    "seat_revoke": "Seat revoked",
+    "license_create": "Seat licence created",
+    "license_change": "Seat licence changed"
   }
 }

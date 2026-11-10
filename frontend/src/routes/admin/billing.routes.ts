@@ -14,4 +14,10 @@ export default defineRoutes([
     nav: { labelKey: 'nav.paymentAccount', ns: 'billing', order: 61 },
     lazy: async () => ({ Component: (await import('../../features/admin/PaymentAccountPage')).default }),
   },
+  {
+    path: 'org-licenses',
+    role: 'SYS_ADMIN',
+    nav: { labelKey: 'nav.orgLicenses', ns: 'billing', order: 62 },
+    lazy: async () => ({ Component: (await import('../../features/admin/OrgLicensesPage')).default }),
+  },
 ]);

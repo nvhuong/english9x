@@ -147,7 +147,7 @@ class OrderService {
     private OrderView view(OrderRow o, List<OrderCourse> courses) {
         String note = transferNote(o.code(), courses);
         Optional<PayTo> to = "PENDING_PAYMENT".equals(o.status()) ? payment.payTo() : Optional.empty();
-        return new OrderView(o.code(), o.status(), o.amountVnd(), o.planId(), o.planMonths(), o.createdAt(), note, courses, o.rejectReason(),
+        return new OrderView(o.code(), o.status(), o.amountVnd(), o.planId(), o.licenseId(), o.planMonths(), o.createdAt(), note, courses, o.rejectReason(),
                 to.map(t -> payment.qrPayload(t, o.amountVnd(), note)).orElse(null), to.map(t -> qrUrl(o.code())).orElse(null), to.orElse(null));
     }
 

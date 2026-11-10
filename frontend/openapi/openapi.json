@@ -91,6 +91,27 @@
         "required" : [ "createdAt", "id", "name", "type" ],
         "type" : "object"
       },
+      "AssignSeatRequest" : {
+        "properties" : {
+          "courseIds" : {
+            "description" : "A subset of the licence's courses",
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "maxItems" : 100,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "userId" : {
+            "description" : "A member of the organisation",
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "courseIds", "userId" ],
+        "type" : "object"
+      },
       "AuditEntry" : {
         "properties" : {
           "action" : {
@@ -551,6 +572,56 @@
         "required" : [ "courseIds", "planId" ],
         "type" : "object"
       },
+      "CreateOrgLicenseRequest" : {
+        "properties" : {
+          "activation" : {
+            "description" : "QR: an order the organisation's administrator pays by bank transfer; CONTRACT: active at once, paid under a contract",
+            "enum" : [ "QR", "CONTRACT" ],
+            "type" : "string"
+          },
+          "contractNo" : {
+            "description" : "Required for CONTRACT, 1 to 100 characters; not allowed for QR",
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "courseIds" : {
+            "description" : "Published English9x courses the seats may cover",
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "maxItems" : 100,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "months" : {
+            "description" : "Length in months, 1 to 60",
+            "format" : "int32",
+            "maximum" : 60,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "priceVnd" : {
+            "description" : "The agreed price; locked at creation",
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "seats" : {
+            "description" : "People who can hold a seat at once, 1 to 100000",
+            "format" : "int32",
+            "maximum" : 100000,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "activation", "courseIds", "months", "orgId", "priceVnd", "seats" ],
+        "type" : "object"
+      },
       "CreateOrganizationRequest" : {
         "properties" : {
           "name" : {
@@ -953,6 +1024,22 @@
         "type" : "object"
       },
       "JsonNode" : { },
+      "LicenseCourse" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "id" ],
+        "type" : "object"
+      },
       "LoginRequest" : {
         "properties" : {
           "email" : {
@@ -1300,11 +1387,17 @@
             "format" : "date-time",
             "type" : "string"
           },
+          "licenseId" : {
+            "description" : "The organisation licence this order pays for; null for a plan order",
+            "format" : "uuid",
+            "type" : "string"
+          },
           "payTo" : {
             "$ref" : "#/components/schemas/PayTo",
             "description" : "The bank account to pay into; same rule as qrPayload"
           },
           "planId" : {
+            "description" : "The plan of a personal order; null for the order of an organisation licence",
             "format" : "uuid",
             "type" : "string"
           },
@@ -1332,7 +1425,97 @@
             "type" : "string"
           }
         },
-        "required" : [ "amountVnd", "code", "courses", "createdAt", "planId", "planMonths", "status", "transferNote" ],
+        "required" : [ "amountVnd", "code", "courses", "createdAt", "planMonths", "status", "transferNote" ],
+        "type" : "object"
+      },
+      "OrgLicenseCreated" : {
+        "properties" : {
+          "license" : {
+            "$ref" : "#/components/schemas/OrgLicenseView"
+          },
+          "payTo" : {
+            "$ref" : "#/components/schemas/PayTo"
+          },
+          "qrPayload" : {
+            "type" : "string"
+          },
+          "transferNote" : {
+            "description" : "QR: the transfer note the payer puts in the bank transfer",
+            "type" : "string"
+          }
+        },
+        "required" : [ "license" ],
+        "type" : "object"
+      },
+      "OrgLicenseView" : {
+        "properties" : {
+          "activation" : {
+            "description" : "QR: an order the organisation's administrator pays by bank transfer; CONTRACT: active at once, paid under a contract",
+            "enum" : [ "QR", "CONTRACT" ],
+            "type" : "string"
+          },
+          "contractNo" : {
+            "type" : "string"
+          },
+          "courses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LicenseCourse"
+            },
+            "type" : "array"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "holders" : {
+            "description" : "Who holds a seat now; filled for the organisation's own reading, empty in the administrators' list",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatHolder"
+            },
+            "type" : "array"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "months" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "orderCode" : {
+            "description" : "The order of a QR licence",
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "priceVnd" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "seats" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "seatsUsed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "status" : {
+            "description" : "PENDING_PAYMENT, ACTIVE or CANCELLED",
+            "type" : "string"
+          },
+          "validFrom" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "validUntil" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "activation", "courses", "createdAt", "holders", "id", "months", "orgId", "priceVnd", "seats", "seatsUsed", "status" ],
         "type" : "object"
       },
       "OrgType" : {
@@ -2105,6 +2288,33 @@
         },
         "type" : "object"
       },
+      "SeatHolder" : {
+        "properties" : {
+          "assignedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "courseIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "assignedAt", "courseIds", "userId" ],
+        "type" : "object"
+      },
       "SetRolesRequest" : {
         "properties" : {
           "roles" : {
@@ -2689,6 +2899,104 @@
           }
         },
         "tags" : [ "order-admin-controller" ]
+      }
+    },
+    "/api/admin/org-licenses" : {
+      "get" : {
+        "operationId" : "listAll",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/OrgLicenseView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "license-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_8",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateOrgLicenseRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrgLicenseCreated"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "license-controller" ]
+      }
+    },
+    "/api/admin/org-licenses/courses" : {
+      "get" : {
+        "operationId" : "licensableCourses",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/LicenseCourse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "license-controller" ]
       }
     },
     "/api/admin/organizations" : {
@@ -5756,7 +6064,7 @@
     },
     "/api/orgs/{id}/invitations/{invitationId}" : {
       "delete" : {
-        "operationId" : "revoke",
+        "operationId" : "revoke_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -5872,6 +6180,147 @@
           }
         },
         "tags" : [ "role-grant-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/licenses" : {
+      "get" : {
+        "operationId" : "ofOrg",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/OrgLicenseView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "license-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/licenses/{id}/seats" : {
+      "post" : {
+        "operationId" : "assign",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssignSeatRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SeatHolder"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "license-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/licenses/{id}/seats/{userId}" : {
+      "delete" : {
+        "operationId" : "revoke",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "license-controller" ]
       }
     },
     "/api/plans" : {

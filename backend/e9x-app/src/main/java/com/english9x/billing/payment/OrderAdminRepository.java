@@ -16,10 +16,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 class OrderAdminRepository {
 
-    record AdminOrder(UUID id, String code, UUID userId, UUID planId, int planMonths, long amountVnd, String status, Instant createdAt, Instant confirmedAt,
+    record AdminOrder(UUID id, String code, UUID userId, UUID planId, UUID licenseId, int planMonths, long amountVnd, String status, Instant createdAt, Instant confirmedAt,
                       String bankRef, String rejectReason) {}
 
-    private static final String COLUMNS = "id, code, user_id, plan_id, plan_months, amount_vnd, status, created_at, confirmed_at, bank_ref, reject_reason";
+    private static final String COLUMNS = "id, code, user_id, plan_id, license_id, plan_months, amount_vnd, status, created_at, confirmed_at, bank_ref, reject_reason";
 
     private final JdbcTemplate jdbc;
 
@@ -79,7 +79,7 @@ class OrderAdminRepository {
 
     private static AdminOrder row(java.sql.ResultSet rs) throws java.sql.SQLException {
         Timestamp confirmed = rs.getTimestamp("confirmed_at");
-        return new AdminOrder(rs.getObject("id", UUID.class), rs.getString("code").strip(), rs.getObject("user_id", UUID.class), rs.getObject("plan_id", UUID.class),
+        return new AdminOrder(rs.getObject("id", UUID.class), rs.getString("code").strip(), rs.getObject("user_id", UUID.class), rs.getObject("plan_id", UUID.class), rs.getObject("license_id", UUID.class),
                 rs.getInt("plan_months"), rs.getLong("amount_vnd"), rs.getString("status"), rs.getTimestamp("created_at").toInstant(),
                 confirmed == null ? null : confirmed.toInstant(), rs.getString("bank_ref"), rs.getString("reject_reason"));
     }
