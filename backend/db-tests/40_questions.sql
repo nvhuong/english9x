@@ -61,6 +61,10 @@ INSERT INTO question_versions(id,question_id,owner_org_id,exam_code,type_code,ve
  ('f4000000-0000-0000-0000-000000000031','c4000000-0000-0000-0000-000000000003','bbbbbbbb-0000-0000-0000-00000000000b','IELTS','IELTS_R_SHORT_ANSWER',1,'PUBLISHED','{"stem":"b1"}','{"slots":[["K"]]}','d4000000-0000-0000-0000-000000000004'),
  ('f4000000-0000-0000-0000-000000000041','c4000000-0000-0000-0000-000000000004',NULL,'IELTS','IELTS_R_SHORT_ANSWER',1,'PUBLISHED','{"stem":"e1"}','{"slots":[["K"]]}','d4000000-0000-0000-0000-000000000005');
 
+-- the open review of q2's version (what the workflow service has when it decides): the decision trigger asks for it
+INSERT INTO review_requests(content_type,version_id,owner_org_id,exam_code,author_id,submitted_by) VALUES
+ ('question','f4000000-0000-0000-0000-000000000021','aaaaaaaa-0000-0000-0000-00000000000a','IELTS','d4000000-0000-0000-0000-000000000001','d4000000-0000-0000-0000-000000000001');
+
 CREATE FUNCTION public.t_attempt(stmt text) RETURNS text LANGUAGE plpgsql AS $$
 DECLARE n int;
 BEGIN
@@ -142,7 +146,10 @@ BEGIN
   ASSERT public.t_attempt('UPDATE question_versions SET content = ''{"stem":"x"}'' WHERE id = ''f4000000-0000-0000-0000-000000000021''') = 'err:23000' ,'review: content of a version under review is frozen even for the reviewer';
   ASSERT public.t_attempt('UPDATE question_versions SET content = ''{"stem":"x"}'' WHERE id = ''f4000000-0000-0000-0000-000000000011''') = 'err:23000', 'and so is a published one';
   ASSERT public.t_refused('UPDATE question_versions SET status = ''DRAFT'' WHERE id = ''f4000000-0000-0000-0000-000000000021'''), 'cannot send it back to draft';
-  ASSERT public.t_attempt('UPDATE question_versions SET status = ''PUBLISHED'' WHERE id = ''f4000000-0000-0000-0000-000000000021''') = 'rows:1', 'decides: IN_REVIEW to PUBLISHED';
+  -- the draft the author submitted above has no review request behind it: a plain UPDATE does not publish it, whoever the reviewer is
+  ASSERT public.t_attempt('UPDATE question_versions SET status = ''PUBLISHED'' WHERE id = ''f4000000-0000-0000-0000-000000000012''') = 'err:23000', 'no decision without an open review';
+  ASSERT public.t_attempt('UPDATE question_versions SET status = ''CHANGES_REQUESTED'' WHERE id = ''f4000000-0000-0000-0000-000000000012''') = 'err:23000', 'nor a return to the author';
+  ASSERT public.t_attempt('UPDATE question_versions SET status = ''PUBLISHED'' WHERE id = ''f4000000-0000-0000-0000-000000000021''') = 'rows:1', 'decides: IN_REVIEW to PUBLISHED, with its open review';
   ASSERT public.t_attempt('UPDATE question_versions SET status = ''ARCHIVED'' WHERE id = ''f4000000-0000-0000-0000-000000000011''') = 'rows:1', 'archives a published version';
 END $$;
 

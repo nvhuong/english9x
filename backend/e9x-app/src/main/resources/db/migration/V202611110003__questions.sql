@@ -160,6 +160,28 @@ END $$;
 CREATE TRIGGER question_group_items_guard_trg BEFORE INSERT OR UPDATE OR DELETE ON question_group_items
   FOR EACH ROW EXECUTE FUNCTION question_group_items_guard();
 
+-- ---- a decision needs its review (P1 final review, triage of ledger 142) -------------------------------------------------------------
+-- The lifecycle guard refuses shortcuts between states but cannot know WHY a version moved: a REVIEWER of the exam could set IN_REVIEW to PUBLISHED with a
+-- plain UPDATE and no review behind it. For these two content types a version leaves IN_REVIEW (to PUBLISHED or CHANGES_REQUESTED) only while an open
+-- review_requests row for it exists, which the workflow service always has locked at that moment. (The decision trigger of review_requests then keeps the
+-- decider away from their own work.) Invoker rights: the caller must see the review under its own policies, as a REVIEWER of the exam does. The owner
+-- (migrations, seed data) and a superuser are exempt, like the INSERT rule of the lifecycle guard.
+CREATE FUNCTION e9x_guard_version_decision() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = pg_catalog, public, pg_temp AS $$
+BEGIN
+  IF OLD.status = 'IN_REVIEW' AND NEW.status IN ('PUBLISHED', 'CHANGES_REQUESTED')
+     AND current_user <> 'e9x_owner'
+     AND NOT (SELECT r.rolsuper FROM pg_roles r WHERE r.rolname = current_user)
+     AND NOT EXISTS (SELECT 1 FROM review_requests rr WHERE rr.content_type = TG_ARGV[0] AND rr.version_id = NEW.id AND rr.status = 'IN_REVIEW') THEN
+    RAISE EXCEPTION 'a version is decided only through its open review' USING ERRCODE = '23000';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER question_versions_decision BEFORE UPDATE ON question_versions
+  FOR EACH ROW EXECUTE FUNCTION e9x_guard_version_decision('question');
+CREATE TRIGGER question_group_versions_decision BEFORE UPDATE ON question_group_versions
+  FOR EACH ROW EXECUTE FUNCTION e9x_guard_version_decision('question_group');
+
 -- ==== policies ==================================================================================================================
 -- ---- headers (insert-only for the application)
 CREATE POLICY question_groups_select ON question_groups FOR SELECT TO e9x_app

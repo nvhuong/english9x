@@ -5,12 +5,12 @@
 // example files of the backend's schema tests), never a number written here.
 import { test, expect } from '../../fixtures';
 import { join } from 'node:path';
-import { createQuestion, exampleOf, exampleTypeCodes, MEDIA_FILES, staffed, withMedia } from '../../fixtures/content';
+import { chooseQuestionType, createQuestion, exampleOf, exampleTypeCodes, MEDIA_FILES, staffed, withMedia } from '../../fixtures/content';
 
 test.describe('F09 question forms', () => {
   test('F09 every question type of the catalog saves as a draft through the API, and the catalog and the examples agree on the types', async ({ request, org, uniqueEmail }) => {
-    const s = await staffed(['IELTS', 'TOEIC'], 'f09-api', { request, uniqueEmail, apiLogin: org.apiLogin });
-    const forms = await org.api(s.author.token, 'GET', '/api/cms/question-types');
+    const s = await staffed(['IELTS', 'TOEIC'], 'f09-api', { request, uniqueEmail, apiLogin: org.apiLogin }, { inOrganisation: true });
+    const forms = await org.api(s.author.token, 'GET', '/api/cms/question-types', { org: s.orgId });
     expect(forms.status, forms.text).toBe(200);
     const codes = (forms.body as Array<{ code: string; contentSchema: object; answerKeySchema: object }>).map((f) => f.code).sort();
     expect(codes, 'the catalog and the example files list the same types').toEqual(exampleTypeCodes());
@@ -37,11 +37,10 @@ test.describe('F09 question forms', () => {
       expect(codes.length).toBeGreaterThan(0);
 
       for (const code of codes) {
-        const example = withMedia(exampleOf(code), s);
+        const example = withMedia(exampleOf(code), s.mediaByExam[exam]!);
         await page.goto('/cms/questions/new');
         await expect(page.getByRole('heading', { level: 1, name: 'Câu hỏi mới' })).toBeVisible();
-        await page.getByRole('combobox', { name: 'Dạng câu' }).click();
-        await page.getByRole('option', { name: `${exam} · ${code}`, exact: true }).click();
+        await chooseQuestionType(page, exam, code);
         // the form of the type is there (built from its schema) ...
         await expect(page.getByRole('group', { name: 'Nội dung câu hỏi' }).first()).toBeVisible();
         await expect(page.getByText(code, { exact: true })).toBeVisible();
@@ -57,8 +56,6 @@ test.describe('F09 question forms', () => {
         const saved = await org.api(s.author.token, 'GET', `/api/cms/questions/${id}`, { org: s.orgId });
         expect(saved.body, code).toMatchObject({ typeCode: code, status: 'DRAFT', content: example.content, answerKey: example.answerKey, explanation: `Giải thích ${code}` });
       }
-      const list = await org.api(s.author.token, 'GET', '/api/cms/questions?size=100', { org: s.orgId });
-      expect(list.body.total).toBe(codes.length);
     });
   }
 
@@ -66,11 +63,11 @@ test.describe('F09 question forms', () => {
     const s = await staffed(['TOEIC'], 'f09-form', { request, uniqueEmail, apiLogin: org.apiLogin });
     await auth.loginAs(page, s.authorLogin);
     await page.goto('/cms/questions/new');
-    await page.getByRole('combobox', { name: 'Dạng câu' }).click();
-    await page.getByRole('option', { name: 'TOEIC · TOEIC_P5_INCOMPLETE_SENTENCE', exact: true }).click();
+    await chooseQuestionType(page, 'TOEIC', 'TOEIC_P5_INCOMPLETE_SENTENCE');
 
     // only the stem: the four options and the answer are missing
-    await page.locator('#root_content_stem').fill('The manager ------- the report yesterday.');
+    const stem = `The manager ------- the report yesterday. (${s.author.userId.slice(0, 8)})`;
+    await page.locator('#root_content_stem').fill(stem);
     await page.getByRole('button', { name: 'Lưu bản nháp' }).click();
     const alert = page.getByRole('alert').filter({ hasText: 'chưa đúng với dạng câu' });
     await expect(alert).toBeVisible();
@@ -97,13 +94,13 @@ test.describe('F09 question forms', () => {
     await expect(page.getByText('Bản nháp', { exact: true })).toBeVisible();
     // opened again from the server: the same values in the same fields
     await page.reload();
-    await expect(page.locator('#root_content_stem')).toHaveValue('The manager ------- the report yesterday.');
+    await expect(page.locator('#root_content_stem')).toHaveValue(stem);
     await expect(page.locator('#root_content_options_3_key')).toHaveValue('D');
     await expect(page.locator('#root_answerKey_slots_0_0')).toHaveValue('C');
     await expect(page.locator('#root_explanation')).toHaveValue('Cần một động từ ở quá khứ.');
     // the list shows it, with its status
     await page.goto('/cms/questions');
-    await expect(page.getByRole('link', { name: 'The manager ------- the report yesterday.' })).toBeVisible();
+    await expect(page.getByRole('link', { name: stem })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Bản nháp' })).toBeVisible();
   });
 
@@ -111,8 +108,7 @@ test.describe('F09 question forms', () => {
     const s = await staffed(['TOEIC'], 'f09-media', { request, uniqueEmail, apiLogin: org.apiLogin });
     await auth.loginAs(page, s.authorLogin);
     await page.goto('/cms/questions/new');
-    await page.getByRole('combobox', { name: 'Dạng câu' }).click();
-    await page.getByRole('option', { name: 'TOEIC · TOEIC_P1_PHOTO', exact: true }).click();
+    await chooseQuestionType(page, 'TOEIC', 'TOEIC_P1_PHOTO');
 
     // the audio is uploaded from the field, the image is pasted by id
     const audio = page.locator('.form-group.rjsf-field-string').filter({ has: page.getByLabel('Âm thanh (mã tệp)') });

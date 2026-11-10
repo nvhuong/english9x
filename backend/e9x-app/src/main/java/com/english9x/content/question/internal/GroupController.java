@@ -94,6 +94,6 @@ class GroupController {
     @PostMapping("/{id}/submit")
     @Operation(summary = "Submit the open draft for review; it is approved only when every member question is PUBLISHED")
     ResponseEntity<QuestionController.SubmittedDto> submit(@PathVariable UUID id) {
-        return ResponseEntity.status(HttpStatus.ACCEPTED).cacheControl(CacheControl.noStore()).body(new QuestionController.SubmittedDto(service.submit(id), null));
+        return ResponseEntity.status(HttpStatus.ACCEPTED).cacheControl(CacheControl.noStore()).body(new QuestionController.SubmittedDto(service.submit(id)));
     }
 }

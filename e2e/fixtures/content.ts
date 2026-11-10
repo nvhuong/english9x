@@ -14,7 +14,12 @@ const EXAMPLES = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', 
 export const MEDIA_FILES = join(fileURLToPath(new URL('.', import.meta.url)), 'media');
 
 export interface QuestionExample { content: Record<string, unknown>; answerKey: Record<string, unknown> }
-export interface Staffed { orgId: string | null; author: { userId: string; token: string }; reviewer: { userId: string; token: string }; audioId: string; imageId: string }
+export interface Media { audioId: string; imageId: string }
+/** `audioId` / `imageId` are the files of the first exam; `mediaByExam` has one pair per exam (a question may only point at files of its own exam). */
+export interface Staffed { orgId: string | null; author: { userId: string; token: string }; reviewer: { userId: string; token: string }; audioId: string; imageId: string; mediaByExam: Record<string, Media> }
+
+/** The exam a question type belongs to: the part of its code before the first underscore. */
+export const examOfType = (code: string) => code.split('_')[0]!;
 
 /** Every question type that has an example, from the files (the count is the catalog's, not a number written here). */
 export function exampleTypeCodes(): string[] {
@@ -67,12 +72,18 @@ export async function staffed(exams: string[], label: string, deps: StaffedDeps,
   const a = await deps.apiLogin(author);
   const r = await deps.apiLogin(reviewer);
   const orgId = org?.orgId ?? null;
-  const audioId = await uploadFile(deps.request, a.token, orgId, exams[0]!, 'tone.mp3', 'audio/mpeg');
-  const imageId = await uploadFile(deps.request, a.token, orgId, exams[0]!, 'pixel.png', 'image/png');
-  return { orgId, orgName: org?.name ?? null, authorLogin: author, author: { userId: a.userId, token: a.token }, reviewer: { userId: r.userId, token: r.token }, audioId, imageId };
+  const mediaByExam: Record<string, Media> = {};
+  for (const exam of exams) {
+    mediaByExam[exam] = {
+      audioId: await uploadFile(deps.request, a.token, orgId, exam, 'tone.mp3', 'audio/mpeg'),
+      imageId: await uploadFile(deps.request, a.token, orgId, exam, 'pixel.png', 'image/png'),
+    };
+  }
+  const first = mediaByExam[exams[0]!]!;
+  return { orgId, orgName: org?.name ?? null, authorLogin: author, author: { userId: a.userId, token: a.token }, reviewer: { userId: r.userId, token: r.token }, ...first, mediaByExam };
 }
 
-export async function createQuestion(s: Staffed, typeCode: string, example: QuestionExample = withMedia(exampleOf(typeCode), s)) {
+export async function createQuestion(s: Staffed, typeCode: string, example: QuestionExample = withMedia(exampleOf(typeCode), s.mediaByExam[examOfType(typeCode)] ?? s)) {
   return api(s.author.token, 'POST', '/api/cms/questions', { org: s.orgId, body: { typeCode, content: example.content, answerKey: example.answerKey, explanation: 'because', points: 1 } });
 }
 
@@ -83,4 +94,15 @@ export async function publishedQuestion(s: Staffed, typeCode: string): Promise<{
   const { questionId, versionId } = made.body as { questionId: string; versionId: string };
   await seed.reviewVersion({ type: 'question', versionId, authorId: s.author.userId, reviewerId: s.reviewer.userId, orgId: s.orgId, outcome: 'approved' });
   return { questionId, versionId };
+}
+
+/**
+ * Chooses a question type in the editor's select. A list of 23 types is taller than the page: the browser cannot click the first item through the
+ * scroll arrows that cover it, so the type is chosen the way a keyboard user does it (type the label, Enter), which works for any length.
+ */
+export async function chooseQuestionType(page: import('@playwright/test').Page, exam: string, code: string): Promise<void> {
+  await page.getByRole('combobox', { name: 'Dạng câu' }).click();
+  await page.keyboard.type(`${exam} · ${code}`);
+  await page.keyboard.press('Enter');
+  await page.getByText(code, { exact: true }).waitFor();
 }

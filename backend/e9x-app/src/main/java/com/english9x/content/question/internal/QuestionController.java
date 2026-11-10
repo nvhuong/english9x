@@ -57,7 +57,7 @@ class QuestionController {
     record QuestionPageDto(List<QuestionSummaryDto> items, long total, int offset, int limit) {}
 
     @Schema(name = "SubmittedForReview")
-    record SubmittedDto(UUID reviewId, UUID versionId) {}
+    record SubmittedDto(UUID reviewId) {}
 
     private final QuestionService service;
 
@@ -108,7 +108,7 @@ class QuestionController {
     @Operation(summary = "Submit the open draft for review (the workflow records the author, audits and notifies the reviewers)")
     ResponseEntity<SubmittedDto> submit(@PathVariable UUID id) {
         UUID reviewId = service.submit(id);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).cacheControl(CacheControl.noStore()).body(new SubmittedDto(reviewId, null));
+        return ResponseEntity.status(HttpStatus.ACCEPTED).cacheControl(CacheControl.noStore()).body(new SubmittedDto(reviewId));
     }
 
     private static QuestionService.Body toBody(QuestionRequest r) {

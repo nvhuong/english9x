@@ -20,10 +20,11 @@ test.describe('F18 versioning', () => {
     await page.goto(`/cms/questions/${questionId}`);
     await expect(page.getByText('Đã xuất bản', { exact: true })).toBeVisible();
     await expect(page.getByText(/Bản này đã xuất bản và không sửa được/)).toBeVisible();
-    await page.locator('#root_content_stem').fill('What is the main effect of the policy?');
+    const mine = `What is the main effect of the policy? (${s.author.userId.slice(0, 8)})`;
+    await page.locator('#root_content_stem').fill(mine);
     await page.getByRole('button', { name: 'Lưu thành bản nháp mới' }).click();
     await expect(page.getByText(/Đã tạo bản nháp mới, phiên bản 2/)).toBeVisible();
-    await expect(page.getByText('Phiên bản 2')).toBeVisible();
+    await expect(page.getByText('Phiên bản 2', { exact: true })).toBeVisible();
     await expect(page.getByText('Bản nháp', { exact: true })).toBeVisible();
 
     // the published version has not changed by a character; the draft holds the edit
@@ -31,19 +32,20 @@ test.describe('F18 versioning', () => {
     expect(all.map((v) => [v.versionNo, v.status])).toEqual([[1, 'PUBLISHED'], [2, 'DRAFT']]);
     expect(all[0]!.versionId).toBe(v1);
     expect(all[0]!.content.stem).toBe(original.stem);
-    expect(all[1]!.content.stem).toBe('What is the main effect of the policy?');
+    expect(all[1]!.content.stem).toBe(mine);
 
     // saving again changes the open draft in place; it does not pile up versions
-    await page.locator('#root_content_stem').fill('What is the main effect of the new policy?');
+    const newer = `${mine} again`;
+    await page.locator('#root_content_stem').fill(newer);
     await page.getByRole('button', { name: 'Lưu thay đổi' }).click();
     await expect(page.getByText('Đã lưu bản nháp.')).toBeVisible();
     all = await versions();
     expect(all).toHaveLength(2);
-    expect(all[1]!.content.stem).toBe('What is the main effect of the new policy?');
+    expect(all[1]!.content.stem).toBe(newer);
 
     // the list shows the latest version of the question
     await page.goto('/cms/questions');
-    await expect(page.getByRole('link', { name: 'What is the main effect of the new policy?' })).toBeVisible();
+    await expect(page.getByRole('link', { name: newer })).toBeVisible();
 
     // submit it: the version is locked while the reviewer decides (the approval itself is the next test: the review screens are P2.9's)
     await page.goto(`/cms/questions/${questionId}`);
