@@ -123,6 +123,11 @@ e9x:
       max-media-size: 500MB
     media:
       max-upload-size: 200MB
+    question:
+      max-json-size: 256KB
+      default-page-size: 50
+      max-page-size: 100
+      max-group-members: 100
   media:
     url-ttl: 10m
     # The private bucket (MinIO). Links are signed for public-url and fetched through the site's own origin (infra/Caddyfile: /<bucket>/*, which keeps the

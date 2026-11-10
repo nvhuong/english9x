@@ -1,0 +1,147 @@
+{
+  "nav": {
+    "questions": "Questions"
+  },
+  "loading": "Loading…",
+  "sections": {
+    "content": "Question content",
+    "answerKey": "Answer key and solution (only the author and the reviewer see this)"
+  },
+  "fields": {
+    "explanation": "Explanation (shown after submitting)",
+    "points": "Points",
+    "stem": "Question",
+    "options": "Options",
+    "key": "Key",
+    "text": "Text",
+    "choices": "List of choices",
+    "items": "Items",
+    "questions": "Questions",
+    "statement": "Statement",
+    "prompt": "Prompt",
+    "topic": "Topic",
+    "title": "Title",
+    "instruction": "Instruction",
+    "marker": "Position marker",
+    "labelNumber": "Label number",
+    "gapNumber": "Gap number",
+    "passageNumbers": "Passage numbers",
+    "bulletPoints": "Bullet points",
+    "allowReuse": "Allow a choice to be used again",
+    "selectCount": "How many choices to select",
+    "minWords": "Minimum words",
+    "maxWords": "Maximum words",
+    "prepareSeconds": "Preparation time (seconds)",
+    "speakSeconds": "Speaking time (seconds)",
+    "x": "Horizontal position",
+    "y": "Vertical position",
+    "audioMediaId": "Audio (file id)",
+    "imageMediaId": "Image (file id)",
+    "slots": "Accepted answers (one list of spellings per gap)",
+    "transcript": "Transcript (review material, shown after submitting)",
+    "sampleAnswer": "Sample answer",
+    "notes": "Notes for the grader",
+    "optionsItem": "Option",
+    "choicesItem": "Choice",
+    "itemsItem": "Item",
+    "questionsItem": "Question",
+    "bulletPointsItem": "Bullet point",
+    "passageNumbersItem": "Passage",
+    "slotsItem": "Gap",
+    "slotsItemItem": "Accepted spelling"
+  },
+  "media": {
+    "help": {
+      "AUDIO": "Paste the id of an audio file uploaded for this exam, or upload a new one below.",
+      "IMAGE": "Paste the id of an image uploaded for this exam, or upload a new one below.",
+      "VIDEO": "Paste the id of a video uploaded for this exam, or upload a new one below."
+    },
+    "uploadNew": "Upload a new file",
+    "showPreview": "Preview the file",
+    "hidePreview": "Hide the preview"
+  },
+  "json": {
+    "show": "Edit as JSON",
+    "hide": "Back to the form",
+    "label": "Question as JSON (content, answerKey, explanation, points)",
+    "help": "The same data as the form. The server checks it against the schema of this question type.",
+    "invalid": "This text is not valid JSON."
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "IN_REVIEW": "In review",
+    "CHANGES_REQUESTED": "Changes requested",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "actions": {
+    "createDraft": "Save draft",
+    "save": "Save changes",
+    "saveNewVersion": "Save as a new draft",
+    "submit": "Submit for review"
+  },
+  "new": {
+    "title": "New question",
+    "description": "Choose a question type and fill in the form. The question is saved as a draft; it is published and used in tests only once a reviewer approves it.",
+    "type": "Question type",
+    "typePlaceholder": "Choose a question type",
+    "noneTitle": "Nothing to write yet",
+    "none": "You are not an author of any exam in this context."
+  },
+  "edit": {
+    "title": "Question",
+    "back": "Back to the questions",
+    "version": "Version {{n}}",
+    "saved": "Draft saved.",
+    "savedNewVersion": "A new draft was made, version {{n}}. The published version is unchanged.",
+    "submitted": "Submitted for review. This version is locked until the reviewer decides.",
+    "publishedNote": "This version is published and cannot be changed. Saving makes a new draft (version {{next}}); learners keep seeing the published version until the new one is approved.",
+    "inReviewNote": "This version is waiting for review, so it is locked.",
+    "archivedNote": "This version is archived and cannot be changed.",
+    "notFoundTitle": "Question not found",
+    "notFound": "The question does not exist, or you may not open it in this context.",
+    "noTypeTitle": "The form cannot be opened",
+    "noType": "You can no longer write questions of this type."
+  },
+  "list": {
+    "title": "Questions",
+    "description": "The questions of the exams you write or review in this context, each at its latest version.",
+    "new": "New question",
+    "exam": "Exam",
+    "type": "Question type",
+    "status": "Status",
+    "all": "All",
+    "caption": "Questions",
+    "colQuestion": "Question",
+    "colType": "Type",
+    "colStatus": "Status",
+    "colVersion": "Version",
+    "untitled": "(no title)",
+    "emptyTitle": "No questions yet",
+    "empty": "No question matches the filters.",
+    "pagination": "Pagination",
+    "previous": "Previous page",
+    "next": "Next page",
+    "range": "{{from}}–{{to}} of {{total}}"
+  },
+  "errors": {
+    "invalid": "The question does not match this question type. Fix the items below and save again.",
+    "general": "(general)",
+    "underReview": "The latest version is waiting for review and cannot be changed.",
+    "anotherAuthor": "This draft belongs to another author; only they can edit and submit it.",
+    "archived": "This question has been archived.",
+    "notEditable": "There is no draft to submit.",
+    "conflict": "Somebody just changed this question. Reload and try again.",
+    "forbidden": "You have no access to this question.",
+    "notFound": "Question not found.",
+    "generic": "Something went wrong. Try again in a moment."
+  },
+  "rjsf": {
+    "add": "Add item",
+    "remove": "Remove",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "copy": "Duplicate",
+    "emptyList": "No items yet. Use the button below to add one."
+  }
+}

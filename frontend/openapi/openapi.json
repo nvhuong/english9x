@@ -843,6 +843,299 @@
           }
         }
       },
+      "QuestionGroupPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/QuestionGroupSummary"
+            },
+            "type" : "array"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "offset" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "QuestionGroupRequest" : {
+        "properties" : {
+          "content" : {
+            "description" : "title (required), instructions, passage, audioMediaId, imageMediaId: what the learner sees"
+          },
+          "examCode" : {
+            "description" : "the exam; fixed for the life of the group",
+            "type" : "string"
+          },
+          "questionVersionIds" : {
+            "description" : "the member question versions, in order; each one a question of this exam that the author can read",
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "solution" : {
+            "description" : "transcript, notes: the solution side, never shown before submitting"
+          }
+        },
+        "type" : "object"
+      },
+      "QuestionGroupSummary" : {
+        "properties" : {
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "groupId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "members" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "QuestionGroupVersion" : {
+        "properties" : {
+          "content" : { },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "groupId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "questionVersionIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "solution" : { },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "QuestionPage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/QuestionSummary"
+            },
+            "type" : "array"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "offset" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "QuestionRequest" : {
+        "properties" : {
+          "answerKey" : {
+            "description" : "the solution side: answers, transcript, sample answer; checked against the answer-key schema of the type"
+          },
+          "content" : {
+            "description" : "what the learner sees; checked against the content schema of the type"
+          },
+          "explanation" : {
+            "description" : "shown after submitting",
+            "type" : "string"
+          },
+          "groupId" : {
+            "description" : "the group the question is written for (optional; fixed when the question is made)",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "points" : {
+            "description" : "default 1",
+            "type" : "number"
+          },
+          "typeCode" : {
+            "description" : "the question type; fixed for the life of the question",
+            "example" : "TOEIC_P5_INCOMPLETE_SENTENCE",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "QuestionSummary" : {
+        "properties" : {
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "points" : {
+            "type" : "number"
+          },
+          "questionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "QuestionTypeForm" : {
+        "properties" : {
+          "answerKeySchema" : { },
+          "code" : {
+            "type" : "string"
+          },
+          "contentSchema" : { },
+          "examCode" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "section" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "QuestionVersion" : {
+        "properties" : {
+          "answerKey" : { },
+          "content" : { },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "explanation" : {
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "points" : {
+            "type" : "number"
+          },
+          "questionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "RefreshRequest" : {
         "properties" : {
           "refreshToken" : {
@@ -943,6 +1236,15 @@
         "required" : [ "roles", "userId" ],
         "type" : "object"
       },
+      "SubmittedForReview" : {
+        "properties" : {
+          "reviewId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "TelegramLink" : {
         "properties" : {
           "deepLink" : {
@@ -1011,7 +1313,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_4",
+        "operationId" : "list_6",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -1228,7 +1530,7 @@
     },
     "/api/admin/organizations" : {
       "get" : {
-        "operationId" : "list_2",
+        "operationId" : "list_4",
         "responses" : {
           "200" : {
             "content" : {
@@ -1257,7 +1559,7 @@
         "tags" : [ "org-controller" ]
       },
       "post" : {
-        "operationId" : "create_2",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1324,7 +1626,7 @@
         "tags" : [ "plan-controller" ]
       },
       "post" : {
-        "operationId" : "create_1",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1362,7 +1664,7 @@
     },
     "/api/admin/plans/{id}" : {
       "put" : {
-        "operationId" : "update",
+        "operationId" : "update_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -1914,6 +2216,600 @@
         "tags" : [ "media-controller" ]
       }
     },
+    "/api/cms/question-groups" : {
+      "get" : {
+        "operationId" : "list_3",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuestionGroupPage"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "List groups (the latest version of each) the caller may read",
+        "tags" : [ "group-controller" ]
+      },
+      "post" : {
+        "description" : "422 with errors[] by JSON path, as for a question.",
+        "operationId" : "create_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/QuestionGroupRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuestionGroupVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create a question group (version 1, a draft) with its members",
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/cms/question-groups/{id}" : {
+      "get" : {
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "version",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuestionGroupVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One group: its latest version, or the numbered one, with the solution side",
+        "tags" : [ "group-controller" ]
+      },
+      "put" : {
+        "operationId" : "update_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/QuestionGroupRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuestionGroupVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Edit a group: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)",
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/cms/question-groups/{id}/submit" : {
+      "post" : {
+        "operationId" : "submit_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SubmittedForReview"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit the open draft for review; it is approved only when every member question is PUBLISHED",
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/cms/question-groups/{id}/versions" : {
+      "get" : {
+        "operationId" : "versions_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/QuestionGroupVersion"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Every version of a group, oldest first",
+        "tags" : [ "group-controller" ]
+      }
+    },
+    "/api/cms/question-types" : {
+      "get" : {
+        "operationId" : "forms",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/QuestionTypeForm"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "question-types-controller" ]
+      }
+    },
+    "/api/cms/questions" : {
+      "get" : {
+        "operationId" : "list_2",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "type",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "groupId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuestionPage"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "List questions (the latest version of each) the caller may read, newest change first",
+        "tags" : [ "question-controller" ]
+      },
+      "post" : {
+        "description" : "422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.",
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/QuestionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuestionVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create a question (version 1, a draft) of a question type",
+        "tags" : [ "question-controller" ]
+      }
+    },
+    "/api/cms/questions/{id}" : {
+      "get" : {
+        "operationId" : "get",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "version",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuestionVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One question: its latest version, or the numbered one, with the answer key",
+        "tags" : [ "question-controller" ]
+      },
+      "put" : {
+        "operationId" : "update",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/QuestionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QuestionVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Edit a question: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)",
+        "tags" : [ "question-controller" ]
+      }
+    },
+    "/api/cms/questions/{id}/submit" : {
+      "post" : {
+        "operationId" : "submit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SubmittedForReview"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit the open draft for review (the workflow records the author, audits and notifies the reviewers)",
+        "tags" : [ "question-controller" ]
+      }
+    },
+    "/api/cms/questions/{id}/versions" : {
+      "get" : {
+        "operationId" : "versions",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/QuestionVersion"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Every version of a question, oldest first, with the answer key (for comparing versions)",
+        "tags" : [ "question-controller" ]
+      }
+    },
     "/api/invitations/{token}/accept" : {
       "post" : {
         "operationId" : "accept",
@@ -2068,7 +2964,7 @@
     },
     "/api/me/notifications" : {
       "get" : {
-        "operationId" : "list_3",
+        "operationId" : "list_5",
         "parameters" : [ {
           "in" : "query",
           "name" : "limit",

@@ -23,6 +23,17 @@ public final class SweepFixtures {
     /** An AUTHOR of IELTS in org A, with a media file of org A: the positive control of the media routes (the sweep's caller is an ORG_ADMIN, who is no author). */
     public final UUID authorA = UUID.randomUUID();
     public final UUID mediaA = UUID.randomUUID();
+    /** P2.3: org B's question and group (with their versions), and A's author's own drafts: the positive controls of PUT and submit (each changes its own). */
+    public final UUID questionB = UUID.randomUUID();
+    public final UUID questionVersionB = UUID.randomUUID();
+    public final UUID groupB = UUID.randomUUID();
+    public final UUID groupVersionB = UUID.randomUUID();
+    public final UUID questionAForPut = UUID.randomUUID();
+    /** The version of {@link #questionAForPut}: a member A's groups may list. */
+    public final UUID questionVersionA = UUID.randomUUID();
+    public final UUID questionAForSubmit = UUID.randomUUID();
+    public final UUID groupAForPut = UUID.randomUUID();
+    public final UUID groupAForSubmit = UUID.randomUUID();
     public final UUID mediaB = UUID.randomUUID();
     public final UUID invitationA = UUID.randomUUID();
     public final UUID invitationB = UUID.randomUUID();
@@ -56,7 +67,6 @@ public final class SweepFixtures {
         su.update("insert into classes(id,owner_org_id,name) values (?,?,'class A'),(?,?,'class B')", classA, orgA, classB, orgB);
         su.update("insert into exams(code,name) values ('IELTS','IELTS') on conflict do nothing");
         su.update("insert into courses(owner_org_id,exam_code,code,title,status) values (?,'IELTS',?,'B draft','DRAFT')", orgB, courseCodeB);
-        su.update("insert into questions(owner_org_id,exam_code,content,answer_key,status) values (?,'IELTS','{}','{}','DRAFT')", orgB);
         su.update("insert into exam_attempts(user_id,owner_org_id,test_version_id,status) values (?,?,gen_random_uuid(),'IN_PROGRESS')", userB, orgB);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userB, orgB);
         // A's member is A's ORG_ADMIN, so the org-admin endpoints (/api/orgs/{id}/...) have a positive control
@@ -104,6 +114,28 @@ public final class SweepFixtures {
                 + "values (?,?,'IELTS','AUDIO','audio/mpeg',1000,1500,'sweep.mp3',?)";
         su.update(media, mediaB, orgB, userB);
         su.update(media, mediaA, orgA, authorA);
+        // P2.3: org B's question and group, each with a PUBLISHED version (the group with a member); A's author owns two draft questions and two draft groups, one per
+        // positive control (a PUT or a submit changes the draft it is aimed at)
+        String q = "insert into questions(id,owner_org_id,exam_code,type_code,created_by) values (?,?,'IELTS','IELTS_R_SHORT_ANSWER',?)";
+        String qv = "insert into question_versions(id,question_id,owner_org_id,exam_code,type_code,version_no,status,content,answer_key,created_by) "
+                + "values (?,?,?,'IELTS','IELTS_R_SHORT_ANSWER',1,?,'{\"stem\":\"s\",\"prompt\":\"p\"}','{\"slots\":[[\"k\"]]}',?)";
+        su.update(q, questionB, orgB, userB);
+        su.update(qv, questionVersionB, questionB, orgB, "PUBLISHED", userB);
+        su.update("insert into question_groups(id,owner_org_id,exam_code,created_by) values (?,?,'IELTS',?)", groupB, orgB, userB);
+        su.update("insert into question_group_versions(id,group_id,owner_org_id,exam_code,version_no,status,content,created_by) values (?,?,?,'IELTS',1,'DRAFT','{\"title\":\"b\"}',?)",
+                groupVersionB, groupB, orgB, userB);
+        su.update("insert into question_group_items(group_version_id,position,question_version_id,owner_org_id,exam_code) values (?,1,?,?,'IELTS')", groupVersionB, questionVersionB, orgB);
+        su.update("update question_group_versions set status = 'IN_REVIEW' where id = ?", groupVersionB);
+        su.update("update question_group_versions set status = 'PUBLISHED' where id = ?", groupVersionB);
+        for (UUID own : List.of(questionAForPut, questionAForSubmit)) {
+            su.update(q, own, orgA, authorA);
+            su.update(qv, own.equals(questionAForPut) ? questionVersionA : UUID.randomUUID(), own, orgA, "DRAFT", authorA);
+        }
+        for (UUID own : List.of(groupAForPut, groupAForSubmit)) {
+            su.update("insert into question_groups(id,owner_org_id,exam_code,created_by) values (?,?,'IELTS',?)", own, orgA, authorA);
+            su.update("insert into question_group_versions(id,group_id,owner_org_id,exam_code,version_no,status,content,created_by) values (?,?,?,'IELTS',1,'DRAFT','{\"title\":\"a\"}',?)",
+                    UUID.randomUUID(), own, orgA, authorA);
+        }
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
@@ -194,7 +226,30 @@ public final class SweepFixtures {
         all.put("PUT /api/admin/plans/{id}", ForeignIdSweep.Fixture.write(plan, List.of(), new ForeignIdSweep.Control(slot("id", planId), null, ForeignIdSweep.ADMIN)));
         all.put("GET /api/orders/{code}", ForeignIdSweep.Fixture.read(List.of(
                 new ForeignIdSweep.Attempt(slot("code", orderCodeB)), new ForeignIdSweep.Attempt(slot("code", "NOSUCH")))));
+        // P2.3: questions and groups. The caller (A's ORG_ADMIN, no AUTHOR grant) is refused on every route and every foreign id; A's author really writes
+        // A's own drafts (one per route, because each write changes the draft it is aimed at). The foreign ids are walked on the routes with one uuid.
+        String question = questionBody();
+        String group = "{\"examCode\":\"IELTS\",\"content\":{\"title\":\"Sweep\"},\"questionVersionIds\":[\"" + questionVersionA + "\"]}";
+        ForeignIdSweep.Control none = new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.AUTHOR);
+        all.put("POST /api/cms/questions", ForeignIdSweep.Fixture.write(question, List.of(), none));
+        all.put("PUT /api/cms/questions/{id}", ForeignIdSweep.Fixture.write(question, List.of(), new ForeignIdSweep.Control(slot("id", questionAForPut), null, ForeignIdSweep.AUTHOR)));
+        all.put("POST /api/cms/questions/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", questionAForSubmit), null, ForeignIdSweep.AUTHOR)));
+        all.put("POST /api/cms/question-groups", ForeignIdSweep.Fixture.write(group, List.of(), none));
+        all.put("PUT /api/cms/question-groups/{id}", ForeignIdSweep.Fixture.write(group, List.of(), new ForeignIdSweep.Control(slot("id", groupAForPut), null, ForeignIdSweep.AUTHOR)));
+        all.put("POST /api/cms/question-groups/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", groupAForSubmit), null, ForeignIdSweep.AUTHOR)));
         return all;
+    }
+
+    /** The valid example of IELTS_R_SHORT_ANSWER (no file ids) as the body of a question. */
+    private static String questionBody() {
+        try {
+            com.fasterxml.jackson.databind.node.ObjectNode example = (com.fasterxml.jackson.databind.node.ObjectNode) new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readTree(java.nio.file.Path.of("src/test/resources/catalog/examples/IELTS_R_SHORT_ANSWER.valid.json").toFile());
+            example.put("typeCode", "IELTS_R_SHORT_ANSWER");
+            return example.toString();
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private List<ForeignIdSweep.Attempt> foreignOrgsWithRoles(String ownBody) {

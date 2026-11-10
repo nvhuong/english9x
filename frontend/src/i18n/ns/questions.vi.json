@@ -1,0 +1,147 @@
+{
+  "nav": {
+    "questions": "Câu hỏi"
+  },
+  "loading": "Đang tải…",
+  "sections": {
+    "content": "Nội dung câu hỏi",
+    "answerKey": "Đáp án và phần giải (chỉ người soạn và người duyệt thấy)"
+  },
+  "fields": {
+    "explanation": "Giải thích (hiện sau khi nộp bài)",
+    "points": "Điểm",
+    "stem": "Câu hỏi",
+    "options": "Các lựa chọn",
+    "key": "Ký hiệu",
+    "text": "Nội dung",
+    "choices": "Danh sách lựa chọn",
+    "items": "Các mục",
+    "questions": "Các câu",
+    "statement": "Nhận định",
+    "prompt": "Đề bài",
+    "topic": "Chủ đề",
+    "title": "Tiêu đề",
+    "instruction": "Hướng dẫn",
+    "marker": "Ký hiệu vị trí",
+    "labelNumber": "Số nhãn",
+    "gapNumber": "Số chỗ trống",
+    "passageNumbers": "Số đoạn văn",
+    "bulletPoints": "Các ý gợi ý",
+    "allowReuse": "Cho phép dùng lại lựa chọn",
+    "selectCount": "Số lựa chọn phải chọn",
+    "minWords": "Số từ tối thiểu",
+    "maxWords": "Số từ tối đa",
+    "prepareSeconds": "Thời gian chuẩn bị (giây)",
+    "speakSeconds": "Thời gian nói (giây)",
+    "x": "Tọa độ ngang",
+    "y": "Tọa độ dọc",
+    "audioMediaId": "Âm thanh (mã tệp)",
+    "imageMediaId": "Hình ảnh (mã tệp)",
+    "slots": "Đáp án chấp nhận (mỗi chỗ trống một danh sách các cách viết)",
+    "transcript": "Lời thoại (tài liệu xem lại sau khi nộp)",
+    "sampleAnswer": "Bài mẫu",
+    "notes": "Ghi chú cho người chấm",
+    "optionsItem": "Lựa chọn",
+    "choicesItem": "Lựa chọn",
+    "itemsItem": "Mục",
+    "questionsItem": "Câu",
+    "bulletPointsItem": "Ý gợi ý",
+    "passageNumbersItem": "Đoạn",
+    "slotsItem": "Chỗ trống",
+    "slotsItemItem": "Cách viết chấp nhận"
+  },
+  "media": {
+    "help": {
+      "AUDIO": "Dán mã của tệp âm thanh đã tải lên cho kỳ thi này, hoặc tải tệp mới ở dưới.",
+      "IMAGE": "Dán mã của tệp hình ảnh đã tải lên cho kỳ thi này, hoặc tải tệp mới ở dưới.",
+      "VIDEO": "Dán mã của tệp video đã tải lên cho kỳ thi này, hoặc tải tệp mới ở dưới."
+    },
+    "uploadNew": "Tải tệp mới lên",
+    "showPreview": "Xem thử tệp",
+    "hidePreview": "Ẩn bản xem thử"
+  },
+  "json": {
+    "show": "Soạn bằng JSON",
+    "hide": "Quay lại biểu mẫu",
+    "label": "Câu hỏi dạng JSON (content, answerKey, explanation, points)",
+    "help": "Cùng dữ liệu với biểu mẫu. Máy chủ kiểm tra theo đúng lược đồ của dạng câu này.",
+    "invalid": "Văn bản này không phải JSON hợp lệ."
+  },
+  "status": {
+    "DRAFT": "Bản nháp",
+    "IN_REVIEW": "Đang chờ duyệt",
+    "CHANGES_REQUESTED": "Cần sửa",
+    "PUBLISHED": "Đã xuất bản",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "actions": {
+    "createDraft": "Lưu bản nháp",
+    "save": "Lưu thay đổi",
+    "saveNewVersion": "Lưu thành bản nháp mới",
+    "submit": "Gửi duyệt"
+  },
+  "new": {
+    "title": "Câu hỏi mới",
+    "description": "Chọn dạng câu rồi điền biểu mẫu. Câu hỏi được lưu thành bản nháp; chỉ khi người duyệt chấp nhận, bản đó mới được xuất bản và dùng trong đề.",
+    "type": "Dạng câu",
+    "typePlaceholder": "Chọn dạng câu",
+    "noneTitle": "Chưa thể soạn câu hỏi",
+    "none": "Bạn chưa là người biên soạn của kỳ thi nào trong ngữ cảnh này."
+  },
+  "edit": {
+    "title": "Câu hỏi",
+    "back": "Về danh sách câu hỏi",
+    "version": "Phiên bản {{n}}",
+    "saved": "Đã lưu bản nháp.",
+    "savedNewVersion": "Đã tạo bản nháp mới, phiên bản {{n}}. Bản đã xuất bản vẫn giữ nguyên.",
+    "submitted": "Đã gửi duyệt. Bản này được khoá cho tới khi người duyệt quyết định.",
+    "publishedNote": "Bản này đã xuất bản và không sửa được. Lưu thay đổi sẽ tạo bản nháp mới (phiên bản {{next}}); học viên tiếp tục thấy bản đã xuất bản cho tới khi bản mới được duyệt.",
+    "inReviewNote": "Bản này đang chờ duyệt nên bị khoá.",
+    "archivedNote": "Bản này đã được lưu trữ và không sửa được.",
+    "notFoundTitle": "Không tìm thấy câu hỏi",
+    "notFound": "Câu hỏi không tồn tại, hoặc bạn không có quyền mở nó trong ngữ cảnh này.",
+    "noTypeTitle": "Không mở được biểu mẫu",
+    "noType": "Bạn không còn quyền soạn dạng câu của câu hỏi này."
+  },
+  "list": {
+    "title": "Câu hỏi",
+    "description": "Các câu hỏi của những kỳ thi bạn soạn hoặc duyệt trong ngữ cảnh này, mỗi câu hiện phiên bản mới nhất.",
+    "new": "Câu hỏi mới",
+    "exam": "Kỳ thi",
+    "type": "Dạng câu",
+    "status": "Trạng thái",
+    "all": "Tất cả",
+    "caption": "Danh sách câu hỏi",
+    "colQuestion": "Câu hỏi",
+    "colType": "Dạng câu",
+    "colStatus": "Trạng thái",
+    "colVersion": "Phiên bản",
+    "untitled": "(không có tiêu đề)",
+    "emptyTitle": "Chưa có câu hỏi",
+    "empty": "Không có câu hỏi nào khớp bộ lọc.",
+    "pagination": "Phân trang",
+    "previous": "Trang trước",
+    "next": "Trang sau",
+    "range": "{{from}}–{{to}} trên {{total}}"
+  },
+  "errors": {
+    "invalid": "Câu hỏi chưa đúng với dạng câu này. Sửa các mục dưới đây rồi lưu lại.",
+    "general": "(chung)",
+    "underReview": "Phiên bản mới nhất đang chờ duyệt nên không sửa được.",
+    "anotherAuthor": "Bản nháp này là của người soạn khác; chỉ họ sửa và gửi duyệt được.",
+    "archived": "Câu hỏi này đã được lưu trữ.",
+    "notEditable": "Không có bản nháp nào để gửi duyệt.",
+    "conflict": "Có người vừa thay đổi câu hỏi này. Tải lại rồi thử lại.",
+    "forbidden": "Bạn không có quyền với câu hỏi này.",
+    "notFound": "Không tìm thấy câu hỏi.",
+    "generic": "Có lỗi xảy ra. Thử lại sau ít phút."
+  },
+  "rjsf": {
+    "add": "Thêm mục",
+    "remove": "Xoá",
+    "moveUp": "Chuyển lên",
+    "moveDown": "Chuyển xuống",
+    "copy": "Nhân đôi",
+    "emptyList": "Chưa có mục nào. Dùng nút bên dưới để thêm."
+  }
+}

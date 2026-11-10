@@ -115,6 +115,12 @@ A request names its organisation with `X-Org-Context: <uuid>` (absent = "C√° nh√
 - Periodic jobs: declare a `RecurringJob(type, every)` bean and a `@JobHandler`; `platform.jobs.RecurringJobScheduler` queues one tick per time bucket (`JobQueue#enqueueOnce`, unique `(type, dedupe_key)`), from any instance. Billing runs `expire_orders`, `expire_entitlements` (PLAN_EXPIRED) and `plan_expiry_reminder` (PLAN_EXPIRING) every `e9x.billing.job-interval`; finished jobs are deleted after `e9x.jobs.retention` by `purge_finished_jobs`.
 - What the system changes is audited with the actor kind `SYSTEM` (`audit.api.SystemAuditLog`, inside the worker transaction). The worker has no table access to billing: only the definer functions `billing_expire_orders` and `billing_entitlements_due`. A new system action is added to the list in `audit_log_record_system` by a migration.
 
+## Questions and question groups (P2.3, F09, F18)
+
+- A question is a header plus immutable **versions** (`question_versions`: `content` is what the learner sees, `answer_key` and `explanation` are the solution side). Editing a PUBLISHED question makes a new DRAFT version; one open version per question. Groups (`question_group_versions` + the ordered members in `question_group_items`) are the shared stimulus of several questions, and depend on their member versions in the review workflow.
+- **The answer key never reaches a learner**: the version tables are readable only by the AUTHOR or REVIEWER of the exam in the version's own context (row-level security); a learner, a teacher, another exam's author and another organisation see no row. The exam room and the lessons read the content side through `content.question.api` (`QuestionVersions#examView`, `QuestionGroupVersions#examView`, SECURITY DEFINER functions behind them), whose DTOs have no answer-side field (`QuestionExamViewTest`).
+- Only the author of an open draft edits and submits it (no co-editing: the review's self-approval check compares with one person). `POST/PUT/GET /api/cms/questions`, `/api/cms/question-groups`, `/api/cms/question-types` (the schemas the editor's form is built from). A 422 lists `errors[]` by JSON path (`content.options[2].key`).
+
 ## Audit log (P1.9)
 Who did what, when and in which context (`/admin/audit-log`, SYS_ADMIN only; there is no organisation-level log). The table is append-only for
 everyone, the table owner included (a trigger refuses UPDATE, DELETE and TRUNCATE); a record is written in the same transaction as the action

@@ -69,4 +69,35 @@ class E2eReviewSeed {
         }
         return Map.of("reviewId", reviewId.toString(), "versionId", versionId.toString(), "outcome", outcome);
     }
+
+    record ReviewVersionRequest(String type, UUID versionId, UUID authorId, UUID reviewerId, UUID orgId, String outcome) {}
+
+    /**
+     * The same real review for a REAL content version made through the CMS (a question, a question group): the author submits it and the reviewer
+     * approves it or sends it back. Stands in for the CMS review screens (P2.9), like {@link #reviewFlow}, but the content row is the one the CMS
+     * made, so what is published is exactly what the editor saved. {@code outcome}: {@code submitted}, {@code approved} or {@code changes}.
+     */
+    @PostMapping("/review-version")
+    @ResponseStatus(HttpStatus.CREATED)
+    Map<String, Object> reviewVersion(@RequestBody ReviewVersionRequest req) {
+        String outcome = req.outcome() == null ? "approved" : req.outcome();
+        if (!java.util.List.of("submitted", "approved", "changes").contains(outcome) || req.type() == null || req.versionId() == null || req.authorId() == null
+                || (!"submitted".equals(outcome) && req.reviewerId() == null)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "type, versionId, authorId; reviewerId unless outcome=submitted; outcome: submitted | approved | changes");
+        }
+        UUID reviewId;
+        try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(req.authorId(), req.orgId())) {
+            reviewId = reviews.submit(new VersionRef(req.type(), req.versionId()));
+        }
+        if ("approved".equals(outcome)) {
+            try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(req.reviewerId(), req.orgId())) {
+                reviews.approve(reviewId);
+            }
+        } else if ("changes".equals(outcome)) {
+            try (CurrentContextHolder.Scope ignored = CurrentContextHolder.bind(req.reviewerId(), req.orgId())) {
+                reviews.requestChanges(reviewId, "e2e feedback");
+            }
+        }
+        return Map.of("reviewId", reviewId.toString(), "versionId", req.versionId().toString(), "outcome", outcome);
+    }
 }
