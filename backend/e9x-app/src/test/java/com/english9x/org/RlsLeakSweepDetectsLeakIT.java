@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.english9x.org.sweep.ForeignIdSweep;
 import com.english9x.org.sweep.SweepFixtures;
+import com.english9x.org.sweep.SweepHttp;
 import com.english9x.support.TestAuth;
 import com.english9x.support.TestPostgres;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ class RlsLeakSweepDetectsLeakIT {
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) {
         TestPostgres.connect(registry, DB);
+        com.english9x.support.TestMinio.configure(registry); // the upload route's positive control stores a file
         registry.add("e9x.test.leaky-url", () -> TestPostgres.jdbcUrl(DB));
         registry.add("e9x.test.leaky-user", () -> TestPostgres.container().getUsername());
         registry.add("e9x.test.leaky-password", () -> TestPostgres.container().getPassword());
@@ -61,17 +63,8 @@ class RlsLeakSweepDetectsLeakIT {
         fixtures.put("PUT /api/sweep-leaky/classes/{id}", ForeignIdSweep.Fixture.write(null, List.of(),
                 ForeignIdSweep.Control.of(Map.of("id", FIXTURES.classA.toString()), null)));
 
-        ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, FIXTURES.foreignIds(Map.of()).ids(), SweepFixtures.EXEMPT_OPERATIONS, fixtures, c -> {
-            HttpHeaders h = new HttpHeaders();
-            if (ForeignIdSweep.ADMIN.equals(c.caller())) {
-                h.setBearerAuth(TestAuth.accessToken(FIXTURES.admin));
-            } else {
-                h.add("X-Org-Context", FIXTURES.orgA.toString());
-                h.setBearerAuth(TestAuth.accessToken(FIXTURES.userA));
-            }
-            h.setContentType(MediaType.APPLICATION_JSON);
-            return http.exchange(c.path(), HttpMethod.valueOf(c.method()), new HttpEntity<>(c.body(), h), String.class).getStatusCode().value();
-        });
+        ForeignIdSweep.Result r = ForeignIdSweep.run(openApi, FIXTURES.foreignIds(Map.of()).ids(), SweepFixtures.EXEMPT_OPERATIONS, fixtures,
+                c -> SweepHttp.status(http, FIXTURES, c));
 
         assertTrue(r.visited().containsAll(List.of("GET /api/sweep/classes/{id}", "GET /api/sweep-leaky/classes/{id}", "PUT /api/sweep-leaky/classes/{id}")), r.visited().toString());
         assertEquals(2, r.leaks().stream().filter(l -> l.contains(FIXTURES.classB.toString())).count(), "the leaky read and the leaky write of class B: " + r.leaks());

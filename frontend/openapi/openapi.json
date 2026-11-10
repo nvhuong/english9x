@@ -341,6 +341,73 @@
         "required" : [ "grants", "organizations" ],
         "type" : "object"
       },
+      "MediaLimits" : {
+        "properties" : {
+          "extensions" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "maxUploadBytes" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "MediaLink" : {
+        "properties" : {
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MediaUploadForm" : {
+        "properties" : {
+          "file" : {
+            "description" : "the file; its type is read from its bytes",
+            "format" : "binary",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MediaView" : {
+        "properties" : {
+          "durationMs" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "AUDIO", "IMAGE", "VIDEO" ],
+            "type" : "string"
+          },
+          "mimeType" : {
+            "type" : "string"
+          },
+          "originalFilename" : {
+            "type" : "string"
+          },
+          "sizeBytes" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "MemberView" : {
         "properties" : {
           "displayName" : {
@@ -1460,6 +1527,81 @@
         "tags" : [ "catalog-controller" ]
       }
     },
+    "/api/cms/media" : {
+      "post" : {
+        "operationId" : "upload",
+        "parameters" : [ {
+          "description" : "the exam the file is for; the caller must be an AUTHOR of it in the current context",
+          "in" : "query",
+          "name" : "examCode",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MediaUploadForm"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediaView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Upload an audio, image or video file for an exam",
+        "tags" : [ "media-controller" ]
+      }
+    },
+    "/api/cms/media/limits" : {
+      "get" : {
+        "operationId" : "limits",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediaLimits"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "media-controller" ]
+      }
+    },
     "/api/invitations/{token}/accept" : {
       "post" : {
         "operationId" : "accept",
@@ -1780,6 +1922,43 @@
           }
         },
         "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/media/{id}/url" : {
+      "get" : {
+        "operationId" : "link_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MediaLink"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "media-controller" ]
       }
     },
     "/api/orgs/{id}/invitations" : {

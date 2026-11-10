@@ -288,6 +288,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cms/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload an audio, image or video file for an exam */
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/media/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["limits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invitations/{token}/accept": {
         parameters: {
             query?: never;
@@ -426,6 +459,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["link"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/media/{id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["link_1"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -656,6 +705,36 @@ export interface components {
             contextOrgId?: string;
             grants: components["schemas"]["GrantView"][];
             organizations: components["schemas"]["OrgView"][];
+        };
+        MediaLimits: {
+            extensions?: string[];
+            /** Format: int64 */
+            maxUploadBytes?: number;
+        };
+        MediaLink: {
+            /** Format: date-time */
+            expiresAt?: string;
+            url?: string;
+        };
+        MediaUploadForm: {
+            /**
+             * Format: binary
+             * @description the file; its type is read from its bytes
+             */
+            file?: string;
+        };
+        MediaView: {
+            /** Format: int64 */
+            durationMs?: number;
+            examCode?: string;
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            kind?: "AUDIO" | "IMAGE" | "VIDEO";
+            mimeType?: string;
+            originalFilename?: string;
+            /** Format: int64 */
+            sizeBytes?: number;
         };
         MemberView: {
             displayName?: string;
@@ -1439,6 +1518,71 @@ export interface operations {
             };
         };
     };
+    upload: {
+        parameters: {
+            query: {
+                /** @description the exam the file is for; the caller must be an AUTHOR of it in the current context */
+                examCode: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["MediaUploadForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MediaView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    limits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MediaLimits"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     accept: {
         parameters: {
             query?: never;
@@ -1748,6 +1892,37 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TelegramLink"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    link_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MediaLink"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

@@ -20,6 +20,10 @@ public final class SweepFixtures {
     public final UUID memberA = UUID.randomUUID();
     /** Holds SYS_ADMIN: the positive control of the routes that org A's admin must be refused. */
     public final UUID admin = UUID.randomUUID();
+    /** An AUTHOR of IELTS in org A, with a media file of org A: the positive control of the media routes (the sweep's caller is an ORG_ADMIN, who is no author). */
+    public final UUID authorA = UUID.randomUUID();
+    public final UUID mediaA = UUID.randomUUID();
+    public final UUID mediaB = UUID.randomUUID();
     public final UUID invitationA = UUID.randomUUID();
     public final UUID invitationB = UUID.randomUUID();
     public final UUID staffInvitation = UUID.randomUUID();
@@ -86,6 +90,15 @@ public final class SweepFixtures {
         su.update("insert into grading_skills(id,owner_org_id,exam_code,question_type_code) values (?,?,'IELTS','IELTS_W_TASK2')", skillB, orgB);
         su.update("insert into grading_skill_versions(grading_skill_id,owner_org_id,exam_code,version_no,status) values (?,?,'IELTS',1,'PUBLISHED')", skillB, orgB);
         su.update("insert into grading_policies(owner_org_id,exam_code,scope,mode) values (?,'IELTS','ORG','BOTH')", orgB);
+        // P2.2: org B's media file (the url endpoint takes its id; A's ORG_ADMIN must get neither a link nor a different answer than for an id nobody has) and an
+        // author of org A with a file of A for the positive control
+        su.update("insert into users(id,email,email_verified_at,consent_at) values (?,'author-a@x.test',now(),now())", authorA);
+        su.update("insert into org_memberships(org_id,user_id) values (?,?)", orgA, authorA);
+        su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,'IELTS','AUTHOR')", authorA, orgA);
+        String media = "insert into media_assets(id,owner_org_id,exam_code,kind,mime_type,size_bytes,duration_ms,original_filename,uploaded_by) "
+                + "values (?,?,'IELTS','AUDIO','audio/mpeg',1000,1500,'sweep.mp3',?)";
+        su.update(media, mediaB, orgB, userB);
+        su.update(media, mediaA, orgA, authorA);
         su.update("insert into entitlements(user_id,course_id,valid_from,valid_until,source_seat_id,source_org_id) "
                 + "select ?, id, now() - interval '1 day', now() + interval '1 day', gen_random_uuid(), ? from courses where owner_org_id = ?",
                 userB, orgB, orgB);
@@ -113,9 +126,13 @@ public final class SweepFixtures {
             Map.entry("PUT /api/me/notification-prefs", OWN),
             Map.entry("POST /api/me/telegram/link", OWN),
             Map.entry("DELETE /api/me/telegram", OWN));
+    // (POST /api/cms/media is not exempt: it has a typed fixture below, with a multipart body)
 
     /** A minimal valid invitation: what makes the answer depend on who asks, not on the body. */
     private static final String INVITE = "{\"email\":\"sweep-new@x.test\",\"roles\":[{\"role\":\"LEARNER\"}]}";
+
+    /** A body the IT turns into a multipart upload of a real PNG for IELTS (see RlsLeakSweepIT#call). */
+    public static final String MULTIPART_PNG = "MULTIPART:IELTS:pixel.png";
 
     private static Map<String, String> slot(String name, Object value) {
         return Map.of(name, value.toString());
@@ -131,7 +148,7 @@ public final class SweepFixtures {
      */
     public Map<String, ForeignIdSweep.Fixture> writeFixtures() {
         String roles = "{\"userId\":\"" + memberA + "\",\"roles\":[{\"role\":\"LEARNER\"}]}";
-        return Map.of(
+        Map<String, ForeignIdSweep.Fixture> all = new java.util.HashMap<>(Map.of(
                 "POST /api/me/notifications/{id}/read", ForeignIdSweep.Fixture.write(null, List.of(), ForeignIdSweep.Control.of(slot("id", notificationA), null)),
                 "POST /api/orgs/{id}/invitations", ForeignIdSweep.Fixture.write(INVITE, List.of(), ForeignIdSweep.Control.of(slot("id", orgA), INVITE)),
                 // the walk with A's member named in the body, then A's own organisation with B's member in the body
@@ -152,7 +169,11 @@ public final class SweepFixtures {
                 "POST /api/invitations/{token}/accept", ForeignIdSweep.Fixture.write(null, List.of(
                         new ForeignIdSweep.Attempt(slot("token", tokenB)),
                         new ForeignIdSweep.Attempt(slot("token", "no-such-token-no-such-token-no-such-token-000"))),
-                        ForeignIdSweep.Control.of(slot("token", tokenForA), null)));
+                        ForeignIdSweep.Control.of(slot("token", tokenForA), null))));
+        // P2.2: the upload takes no id of a tenant (the owner is the bound context, the exam a query parameter). The sweep's caller is an ORG_ADMIN with no
+        // AUTHOR role: refused; the author of org A in org A's context really uploads. "MULTIPART:" is turned into a multipart request by the IT.
+        all.put("POST /api/cms/media", ForeignIdSweep.Fixture.write(MULTIPART_PNG, List.of(), new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.AUTHOR)));
+        return all;
     }
 
     private List<ForeignIdSweep.Attempt> foreignOrgsWithRoles(String ownBody) {

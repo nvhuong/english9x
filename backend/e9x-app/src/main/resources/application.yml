@@ -33,6 +33,11 @@ spring:
       jdbc:
         schema-initialization:
           enabled: false
+  servlet:
+    multipart:
+      # The upload endpoint checks who the caller is before it reads the body (the part is parsed when the controller asks for it).
+      # The size limits are not set here: platform.web.MultipartLimits derives them from e9x.content.media.max-upload-size and e9x.content.import.max-media-size.
+      resolve-lazily: true
   jpa:
     open-in-view: false
     hibernate:
@@ -114,6 +119,18 @@ e9x:
       max-upload-size: 200MB
   media:
     url-ttl: 10m
+    # The private bucket (MinIO). Links are signed for public-url and fetched through the site's own origin (infra/Caddyfile: /<bucket>/*, which keeps the
+    # Host the browser sent, the one thing SigV4 signs). A blank endpoint = media off (uploads answer 503). The application's key is limited to this bucket.
+    storage:
+      endpoint: ${E9X_MINIO_ENDPOINT:}
+      public-url: ${E9X_MEDIA_PUBLIC_URL:${e9x.public-base-url:}}
+      bucket: ${E9X_MINIO_BUCKET:e9x-media}
+      access-key: ${E9X_MINIO_ACCESS_KEY:}
+      secret-key: ${E9X_MINIO_SECRET_KEY:}
+      region: us-east-1
+      ensure-bucket: true            # create the bucket at start-up when it is missing (idempotent)
+    ffprobe-path: ${E9X_FFPROBE_PATH:ffprobe}
+    probe-timeout: 30s
   auth:
     access-token-ttl: 15m
     refresh-token-ttl: 30d
