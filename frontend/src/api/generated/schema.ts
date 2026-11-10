@@ -1182,13 +1182,13 @@ export interface components {
         };
         QuestionGroupRequest: {
             /** @description title (required), instructions, passage, audioMediaId, imageMediaId: what the learner sees */
-            content?: string;
+            content?: unknown;
             /** @description the exam; fixed for the life of the group */
             examCode?: string;
             /** @description the member question versions, in order; each one a question of this exam that the author can read */
             questionVersionIds?: string[];
             /** @description transcript, notes: the solution side, never shown before submitting */
-            solution?: string;
+            solution?: unknown;
         };
         QuestionGroupSummary: {
             /** Format: uuid */
@@ -1209,7 +1209,7 @@ export interface components {
             versionNo?: number;
         };
         QuestionGroupVersion: {
-            content?: string;
+            content?: unknown;
             /** Format: date-time */
             createdAt?: string;
             /** Format: uuid */
@@ -1220,7 +1220,7 @@ export interface components {
             /** Format: uuid */
             ownerOrgId?: string;
             questionVersionIds?: string[];
-            solution?: string;
+            solution?: unknown;
             /** @enum {string} */
             status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
             /** Format: date-time */
@@ -1241,9 +1241,9 @@ export interface components {
         };
         QuestionRequest: {
             /** @description the solution side: answers, transcript, sample answer; checked against the answer-key schema of the type */
-            answerKey?: string;
+            answerKey?: unknown;
             /** @description what the learner sees; checked against the content schema of the type */
-            content?: string;
+            content?: unknown;
             /** @description shown after submitting */
             explanation?: string;
             /**
@@ -1278,16 +1278,16 @@ export interface components {
             versionNo?: number;
         };
         QuestionTypeForm: {
-            answerKeySchema?: components["schemas"]["JsonNode"];
+            answerKeySchema?: unknown;
             code?: string;
-            contentSchema?: components["schemas"]["JsonNode"];
+            contentSchema?: unknown;
             examCode?: string;
             kind?: string;
             section?: string;
         };
         QuestionVersion: {
-            answerKey?: string;
-            content?: string;
+            answerKey?: unknown;
+            content?: unknown;
             /** Format: date-time */
             createdAt?: string;
             /** Format: uuid */

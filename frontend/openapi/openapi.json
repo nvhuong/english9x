@@ -865,8 +865,7 @@
       "QuestionGroupRequest" : {
         "properties" : {
           "content" : {
-            "description" : "title (required), instructions, passage, audioMediaId, imageMediaId: what the learner sees",
-            "type" : "string"
+            "description" : "title (required), instructions, passage, audioMediaId, imageMediaId: what the learner sees"
           },
           "examCode" : {
             "description" : "the exam; fixed for the life of the group",
@@ -881,8 +880,7 @@
             "type" : "array"
           },
           "solution" : {
-            "description" : "transcript, notes: the solution side, never shown before submitting",
-            "type" : "string"
+            "description" : "transcript, notes: the solution side, never shown before submitting"
           }
         },
         "type" : "object"
@@ -928,9 +926,7 @@
       },
       "QuestionGroupVersion" : {
         "properties" : {
-          "content" : {
-            "type" : "string"
-          },
+          "content" : { },
           "createdAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -957,9 +953,7 @@
             },
             "type" : "array"
           },
-          "solution" : {
-            "type" : "string"
-          },
+          "solution" : { },
           "status" : {
             "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
             "type" : "string"
@@ -1005,12 +999,10 @@
       "QuestionRequest" : {
         "properties" : {
           "answerKey" : {
-            "description" : "the solution side: answers, transcript, sample answer; checked against the answer-key schema of the type",
-            "type" : "string"
+            "description" : "the solution side: answers, transcript, sample answer; checked against the answer-key schema of the type"
           },
           "content" : {
-            "description" : "what the learner sees; checked against the content schema of the type",
-            "type" : "string"
+            "description" : "what the learner sees; checked against the content schema of the type"
           },
           "explanation" : {
             "description" : "shown after submitting",
@@ -1076,15 +1068,11 @@
       },
       "QuestionTypeForm" : {
         "properties" : {
-          "answerKeySchema" : {
-            "$ref" : "#/components/schemas/JsonNode"
-          },
+          "answerKeySchema" : { },
           "code" : {
             "type" : "string"
           },
-          "contentSchema" : {
-            "$ref" : "#/components/schemas/JsonNode"
-          },
+          "contentSchema" : { },
           "examCode" : {
             "type" : "string"
           },
@@ -1099,12 +1087,8 @@
       },
       "QuestionVersion" : {
         "properties" : {
-          "answerKey" : {
-            "type" : "string"
-          },
-          "content" : {
-            "type" : "string"
-          },
+          "answerKey" : { },
+          "content" : { },
           "createdAt" : {
             "format" : "date-time",
             "type" : "string"
