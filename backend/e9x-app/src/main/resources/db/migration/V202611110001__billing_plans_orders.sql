@@ -85,7 +85,7 @@ REVOKE ALL ON plans, orders, order_items FROM PUBLIC;
 GRANT SELECT, INSERT ON plans TO e9x_app;
 GRANT UPDATE (name, price_vnd, months, max_courses, active, updated_at) ON plans TO e9x_app;
 GRANT SELECT ON orders, order_items TO e9x_app;
-GRANT INSERT (code, user_id, plan_id, plan_months, amount_vnd, created_at) ON orders TO e9x_app;
+GRANT INSERT (id, code, user_id, plan_id, plan_months, amount_vnd, created_at) ON orders TO e9x_app;
 GRANT INSERT ON order_items TO e9x_app;
 
 -- ---- the worker's two narrow doors ---------------------------------------------------------------------------------------------------
