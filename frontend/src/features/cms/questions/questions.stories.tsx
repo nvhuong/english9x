@@ -7,6 +7,7 @@ import { LIMITS } from '../media/testUtils';
 import { QuestionForm } from './QuestionForm';
 import { modelOf, type FormModel } from './schema';
 import { QUESTION, TOEIC_P3 } from './testUtils';
+import type { QuestionTypeForm } from './types';
 import type { FieldIssue } from './problems';
 
 // The upload limits (read by the media widget's uploader) are in the query cache, so the stories need no server.
@@ -43,3 +44,20 @@ export const WithServerErrors: S = {
   ),
 };
 export const LockedUnderReview: S = { render: () => <Story locked /> };
+
+/** Content of an IELTS gap type: the table of options and the accepted spellings, one per line. */
+const GAP: QuestionTypeForm = {
+  code: 'IELTS_R_SHORT_ANSWER',
+  examCode: 'IELTS',
+  section: 'R',
+  kind: 'SHORT_ANSWER',
+  contentSchema: { type: 'object', properties: { stem: { type: 'string' } } },
+  answerKeySchema: { type: 'object', properties: { slots: { type: 'array', items: { type: 'array', items: { type: 'string' } } }, maxWords: { type: 'integer' } } },
+};
+export const AcceptedVariants: S = {
+  render: () => (
+    <QueryClientProvider client={seeded()}>
+      <QuestionForm type={GAP} model={{ content: { stem: 'What is the cause?' }, answerKey: { slots: [['pollution', 'air pollution']], maxWords: 2 }, explanation: '', points: 1 }} onChange={() => {}} onSave={() => {}} issues={[]} saveLabel="Lưu bản nháp" />
+    </QueryClientProvider>
+  ),
+};

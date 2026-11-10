@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../../../api/useApi';
 import { ctxKey, useContextStore } from '../../../app/stores/context';
-import type { QuestionDraft, QuestionFilters, QuestionPage, QuestionTypeForm, QuestionVersion } from './types';
+import { narrowPage } from './narrow';
+import type { QuestionDraft, QuestionFilters, QuestionTypeForm, QuestionVersion } from './types';
 
 /**
  * The forms of the question types the person may write or review in this context. The list depends on the grants, which depend on the context, so
@@ -23,8 +24,7 @@ export function useQuestionList(filters: QuestionFilters) {
   return useQuery({
     queryKey: ctxKey(ctx, 'cms', 'questions', 'list', filters),
     queryFn: async () =>
-      (await api.GET('/api/cms/questions', { params: { query: { exam: filters.exam, type: filters.type, status: filters.status, page: filters.page } } }))
-        .data as unknown as QuestionPage,
+      narrowPage((await api.GET('/api/cms/questions', { params: { query: { exam: filters.exam, type: filters.type, status: filters.status, page: filters.page, size: filters.size } } })).data),
   });
 }
 

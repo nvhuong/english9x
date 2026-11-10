@@ -122,7 +122,9 @@
     "pagination": "Pagination",
     "previous": "Previous page",
     "next": "Next page",
-    "range": "{{from}}–{{to}} of {{total}}"
+    "range": "{{from}}–{{to}} of {{total}}",
+    "colActions": "Actions",
+    "preview": "Preview"
   },
   "errors": {
     "invalid": "The question does not match this question type. Fix the items below and save again.",
@@ -143,5 +145,21 @@
     "moveDown": "Move down",
     "copy": "Duplicate",
     "emptyList": "No items yet. Use the button below to add one."
+  },
+  "variants": {
+    "label": "Accepted spellings, gap {{n}}",
+    "help": "One spelling per line; each counts as right."
+  },
+  "rows": {
+    "add": "Add row",
+    "remove": "Remove",
+    "removeRow": "Remove row {{n}}",
+    "cell": "{{column}}, row {{n}}",
+    "actions": "Actions",
+    "count_one": "{{count}} row",
+    "count_other": "{{count}} rows"
+  },
+  "preview": {
+    "link": "Preview as the learner"
   }
 }

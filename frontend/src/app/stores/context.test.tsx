@@ -93,8 +93,7 @@ describe('inverted default: everything except public keys is dropped on switch',
     const rendered: string[] = [];
     function Courses() {
       const org = useContextStore((s) => s.orgId);
-      // deliberately NOT built with a helper: the lint rule forbids it, the runtime must still be safe
-      // eslint-disable-next-line e9x/query-key-helper
+      // deliberately NOT built with a helper (the lint rule is off in tests for this): the runtime must still be safe
       const q = useQuery({ queryKey: ['courses'], queryFn: () => (org === 'a' ? slowA.promise : Promise.resolve(['B-COURSE'])) });
       rendered.push(q.data?.join(',') ?? '-');
       return <p data-testid="out">{q.data ? q.data.join(',') : 'loading'}</p>;

@@ -27,3 +27,28 @@ describe('e9x/query-key-helper', () => {
     expect(lint('const o = { key: 1, queryKeys: 2 };')).toEqual([]);
   });
 });
+
+describe('e9x/query-key-helper: the places a key is read, not only written', () => {
+  it('rejects a literal key given straight to the query client', () => {
+    for (const m of ['invalidateQueries', 'removeQueries', 'cancelQueries', 'resetQueries', 'refetchQueries', 'getQueryData', 'setQueryData', 'getQueryState', 'ensureQueryData', 'prefetchQuery', 'fetchQuery']) {
+      expect(lint(`qc.${m}(['cms', 'questions']);`), m).toHaveLength(1);
+      expect(lint(`queryClient.${m}(ctxKey(org, 'a'));`), `${m} with helper`).toEqual([]);
+      expect(lint(`queryClient.${m}({ queryKey: ctxKey(org, 'a') });`), `${m} with object`).toEqual([]);
+    }
+    expect(lint('qc.invalidateQueries({ predicate: (q) => true });')).toEqual([]);
+    expect(lint("qc.setQueriesData({ queryKey: ['x'] }, d);")).toHaveLength(1);
+  });
+  it('rejects a context-free first argument of ctxKey (the organisation is what scopes the key)', () => {
+    expect(lint("useQuery({ queryKey: ctxKey('cms', 'questions'), queryFn });")).toHaveLength(1);
+    expect(lint('useQuery({ queryKey: ctxKey(`cms`, 1), queryFn });')).toHaveLength(1);
+    expect(lint("useQuery({ queryKey: ctxKey(null, 'cms'), queryFn });")).toEqual([]);
+    expect(lint("useQuery({ queryKey: ctxKey(ctx, 'cms'), queryFn });")).toEqual([]);
+    expect(lint("useQuery({ queryKey: ctxKey(useContextStore((s) => s.orgId), 'cms'), queryFn });")).toEqual([]);
+  });
+  it('rejects a key that is built by spreading or concatenating around the helper', () => {
+    expect(lint("useQuery({ queryKey: [...ctxKey(org, 'a'), 'b'], queryFn });")).toHaveLength(1);
+  });
+  it('rejects a bare useQueries key inside the list', () => {
+    expect(lint("useQueries({ queries: ids.map((id) => ({ queryKey: ['x', id], queryFn })) });")).toHaveLength(1);
+  });
+});

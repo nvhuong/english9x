@@ -18,4 +18,10 @@ export default defineRoutes([
     role: ['AUTHOR', 'REVIEWER'],
     lazy: async () => ({ Component: (await import('../../features/cms/questions/QuestionEditorPage')).default }),
   },
+  {
+    // "Xem trước như học viên" (F10): the content as a learner sees it, never the solution side.
+    path: 'questions/:id/preview',
+    role: ['AUTHOR', 'REVIEWER'],
+    lazy: async () => ({ Component: (await import('../../features/cms/preview/PreviewPage')).default }),
+  },
 ]);

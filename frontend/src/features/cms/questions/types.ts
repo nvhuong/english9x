@@ -7,6 +7,7 @@ export type JsonObject = { [key: string]: Json };
 type Schemas = components['schemas'];
 
 export type ContentStatus = NonNullable<Schemas['QuestionVersion']['status']>;
+export const ContentStatuses: readonly ContentStatus[] = ['DRAFT', 'IN_REVIEW', 'CHANGES_REQUESTED', 'PUBLISHED', 'ARCHIVED'];
 
 /** A question version as the editor gets it: with the solution side (the answer key is for the exam's author and reviewer only). */
 export interface QuestionVersion extends Omit<Schemas['QuestionVersion'], 'content' | 'answerKey' | 'status'> {
@@ -31,7 +32,7 @@ export interface QuestionTypeForm {
 }
 
 export type QuestionSummary = Required<Pick<Schemas['QuestionSummary'], 'questionId' | 'versionId' | 'versionNo' | 'status' | 'examCode' | 'typeCode'>> &
-  Pick<Schemas['QuestionSummary'], 'title' | 'points' | 'updatedAt'>;
+  Pick<Schemas['QuestionSummary'], 'title' | 'points' | 'updatedAt' | 'createdBy'>;
 
 export interface QuestionPage {
   items: QuestionSummary[];
@@ -55,4 +56,6 @@ export interface QuestionFilters {
   type?: string;
   status?: ContentStatus;
   page?: number;
+  /** Page size; the server's default when left out. */
+  size?: number;
 }

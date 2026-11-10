@@ -1,0 +1,27 @@
+{
+  "nav": "Hàng việc của tôi",
+  "title": "Hàng việc của tôi",
+  "description": "Việc đang chờ bạn trong các kỳ thi bạn được giao ở ngữ cảnh này: bản nháp của bạn, câu bị yêu cầu sửa và câu chờ bạn duyệt.",
+  "loading": "Đang tải…",
+  "noRoleTitle": "Chưa có việc nào được giao",
+  "noRole": "Bạn chưa là người soạn hay người duyệt của kỳ thi nào trong ngữ cảnh này.",
+  "emptyTitle": "Hàng việc trống",
+  "empty": "Không có bản nháp, yêu cầu sửa hay câu chờ duyệt nào dành cho bạn.",
+  "errorTitle": "Không tải được hàng việc",
+  "error": "Có lỗi xảy ra khi tải. Thử lại sau ít phút.",
+  "retry": "Tải lại",
+  "sections": {
+    "drafts": "Bản nháp của tôi",
+    "changes": "Bị yêu cầu sửa",
+    "review": "Chờ tôi duyệt"
+  },
+  "hints": {
+    "drafts": "Câu bạn đang soạn, chưa gửi duyệt.",
+    "changes": "Người duyệt đã trả về; sửa rồi gửi duyệt lại.",
+    "review": "Câu của người khác đã gửi duyệt trong kỳ thi bạn duyệt. Bạn không duyệt được bản của chính mình."
+  },
+  "none": "Không có mục nào.",
+  "untitled": "(không có tiêu đề)",
+  "version": "phiên bản {{n}}",
+  "preview": "Xem trước"
+}

@@ -1,5 +1,6 @@
 import type { ErrorSchema, RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
+import { columnsOf } from '../question-form/RowsTableField';
 import type { Json, JsonObject, QuestionDraft, QuestionTypeForm, QuestionVersion } from './types';
 
 /** What the form edits: the two documents the server validates, and the two plain fields next to them. */
@@ -77,6 +78,14 @@ function uiFor(name: string, schema: Schema, t: TFunction<'questions'>, exists: 
   } else if (schema.type === 'string' && (schema.maxLength ?? 0) > 300) {
     ui['ui:widget'] = 'textarea';
     ui['ui:options'] = { rows: 6 };
+  } else if (schema.type === 'array' && columnsOf(schema.items)) {
+    // a list of flat records (options, choices, items) is a table: one row each
+    ui['ui:field'] = 'rowsTable';
+    return ui;
+  } else if (schema.type === 'array' && (schema.items as Schema | undefined)?.type === 'string' && name.endsWith('Item')) {
+    // the accepted spellings of one gap: one per line
+    ui['ui:widget'] = 'variants';
+    return ui;
   }
   if (schema.properties) {
     for (const [child, sub] of Object.entries(schema.properties)) ui[child] = uiFor(child, sub, t, exists);

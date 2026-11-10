@@ -97,6 +97,7 @@ export default function QuestionListPage() {
                 <TableHeaderCell>{t('list.colType')}</TableHeaderCell>
                 <TableHeaderCell>{t('list.colStatus')}</TableHeaderCell>
                 <TableHeaderCell>{t('list.colVersion')}</TableHeaderCell>
+                <TableHeaderCell>{t('list.colActions')}</TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -114,6 +115,11 @@ export default function QuestionListPage() {
                     <Badge>{t(`status.${q.status}`)}</Badge>
                   </TableCell>
                   <TableCell>{q.versionNo}</TableCell>
+                  <TableCell>
+                    <Link to={`/cms/questions/${q.questionId}/preview`} className="text-primary underline">
+                      {t('list.preview')}
+                    </Link>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
