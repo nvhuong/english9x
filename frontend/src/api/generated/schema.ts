@@ -73,7 +73,39 @@ export interface paths {
         };
         get: operations["list_2"];
         put?: never;
-        post: operations["create"];
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["all"];
+        put?: never;
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -353,6 +385,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/notification-prefs": {
         parameters: {
             query?: never;
@@ -481,6 +529,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["mine"];
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["one"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orgs/{id}/invitations": {
         parameters: {
             query?: never;
@@ -522,6 +602,22 @@ export interface paths {
         };
         get: operations["list"];
         put: operations["set"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["onSale"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -588,7 +684,7 @@ export interface components {
             actorEmail?: string;
             /** Format: uuid */
             actorId?: string;
-            /** @description USER, or OPERATOR for what was done outside the application */
+            /** @description USER; OPERATOR for what was done outside the application; SYSTEM for what a background job changed on its own */
             actorKind: string;
             /** @description Looked up now; null when the account no longer exists */
             actorName?: string;
@@ -604,7 +700,7 @@ export interface components {
             invitedEmail?: string;
             /**
              * Format: uuid
-             * @description The context the actor was in; null = English9x (for the actor kind OPERATOR: outside the application)
+             * @description The context the actor was in; null = English9x (for the actor kinds OPERATOR and SYSTEM: none)
              */
             orgId?: string;
             orgName?: string;
@@ -631,6 +727,12 @@ export interface components {
             /** @description false when Google sign-in is not configured: hide the button */
             googleEnabled: boolean;
         };
+        CreateOrderRequest: {
+            /** @description Published English9x courses, at most the plan's maxCourses */
+            courseIds: string[];
+            /** Format: uuid */
+            planId: string;
+        };
         CreateOrganizationRequest: {
             name: string;
             type: components["schemas"]["OrgType"];
@@ -638,6 +740,22 @@ export interface components {
         EmailRequest: {
             /** Format: email */
             email: string;
+        };
+        EntitlementView: {
+            /** @description Valid right now: new lessons and attempts can be opened */
+            active: boolean;
+            /** @description Null when the course is no longer visible to the caller */
+            courseCode?: string;
+            /** Format: uuid */
+            courseId: string;
+            /** Format: uuid */
+            id: string;
+            /** @description ORDER (a paid plan) or SEAT (an organisation's licence) */
+            source: string;
+            /** Format: date-time */
+            validFrom: string;
+            /** Format: date-time */
+            validUntil: string;
         };
         ExamInfo: {
             code?: string;
@@ -786,6 +904,43 @@ export interface components {
             code: string;
             consent: boolean;
         };
+        OrderCourse: {
+            code?: string;
+            /** Format: uuid */
+            id?: string;
+        };
+        OrderCreated: {
+            /**
+             * Format: int64
+             * @description The price of the plan when the order was placed
+             */
+            amountVnd: number;
+            /** @description 6 characters, A-Z and 0-9 */
+            orderCode: string;
+            /** @description The VietQR text for the QR code. Null until the payment account and the QR are built (P5.2) */
+            qrPayload?: string;
+            /** @description URL of the QR image. Null until P5.2 */
+            qrPngUrl?: string;
+            /** @description Text the payer puts in the bank transfer: E9X, the order code and the course codes (the order code alone when too long) */
+            transferNote: string;
+        };
+        OrderView: {
+            /** Format: int64 */
+            amountVnd: number;
+            code: string;
+            courses: components["schemas"]["OrderCourse"][];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            planId: string;
+            /** Format: int32 */
+            planMonths: number;
+            /** @description Why the order was not confirmed (REJECTED) */
+            rejectReason?: string;
+            /** @description PENDING_PAYMENT, CONFIRMED, REJECTED or EXPIRED */
+            status: string;
+            transferNote: string;
+        };
         /** @enum {string} */
         OrgType: "CENTER" | "ENTERPRISE";
         OrgView: {
@@ -793,6 +948,35 @@ export interface components {
             id: string;
             name: string;
             type: components["schemas"]["OrgType"];
+        };
+        PlanRequest: {
+            active: boolean;
+            /** Format: int32 */
+            maxCourses: number;
+            /** Format: int32 */
+            months: number;
+            name: string;
+            /** Format: int64 */
+            priceVnd: number;
+        };
+        PlanView: {
+            /** @description On sale; a learner sees only active plans */
+            active: boolean;
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int32
+             * @description Most courses one order of this plan may select
+             */
+            maxCourses: number;
+            /** Format: int32 */
+            months: number;
+            name: string;
+            /**
+             * Format: int64
+             * @description Price in VND, locked onto an order when it is placed
+             */
+            priceVnd: number;
         };
         Pong: {
             status?: string;
@@ -1078,7 +1262,7 @@ export interface operations {
             };
         };
     };
-    create: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -1098,6 +1282,103 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AdminOrgView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    all: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlanView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlanView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlanView"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -1643,6 +1924,35 @@ export interface operations {
             };
         };
     };
+    mine_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["EntitlementView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     prefs: {
         parameters: {
             query?: never;
@@ -1936,6 +2246,99 @@ export interface operations {
             };
         };
     };
+    mine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrderView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrderCreated"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    one: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["OrderView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     list_1: {
         parameters: {
             query?: never;
@@ -2085,6 +2488,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MemberView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    onSale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PlanView"][];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

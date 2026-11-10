@@ -108,6 +108,13 @@ The accepting account must be signed in with the invited address, verified; a di
 A request names its organisation with `X-Org-Context: <uuid>` (absent = "Cá nhân"); a non-member, an unknown or a malformed value gets the same 403.
 `join_codes` exists with its policies and a redeem function (`org_join_code_redeem`, verified accounts only); the endpoint and screens are P6.1 (F44).
 
+## Billing: plans, orders, entitlements, periodic jobs (P5.1)
+
+- `GET /api/plans` (on sale), `GET/POST/PUT /api/admin/plans` (SYS_ADMIN, audited), `POST /api/orders {planId, courseIds}` (verified email only; published English9x courses, at most the plan's `maxCourses`; price and length locked on the order; 6-character code, unique by index, retried on a collision), `GET /api/orders[/{code}]` (your own only), `GET /api/me/entitlements`. The QR fields of the order answer are `null` until P5.2.
+- The access gate is `billing.api.Entitlements#activeFor` (new lessons/attempts) and `#canContinueAttempt` (an attempt begun while entitled may be finished after expiry). It reads under the caller's RLS: bind the person first.
+- Periodic jobs: declare a `RecurringJob(type, every)` bean and a `@JobHandler`; `platform.jobs.RecurringJobScheduler` queues one tick per time bucket (`JobQueue#enqueueOnce`, unique `(type, dedupe_key)`), from any instance. Billing runs `expire_orders`, `expire_entitlements` (PLAN_EXPIRED) and `plan_expiry_reminder` (PLAN_EXPIRING) every `e9x.billing.job-interval`; finished jobs are deleted after `e9x.jobs.retention` by `purge_finished_jobs`.
+- What the system changes is audited with the actor kind `SYSTEM` (`audit.api.SystemAuditLog`, inside the worker transaction). The worker has no table access to billing: only the definer functions `billing_expire_orders` and `billing_entitlements_due`. A new system action is added to the list in `audit_log_record_system` by a migration.
+
 ## Audit log (P1.9)
 Who did what, when and in which context (`/admin/audit-log`, SYS_ADMIN only; there is no organisation-level log). The table is append-only for
 everyone, the table owner included (a trigger refuses UPDATE, DELETE and TRUNCATE); a record is written in the same transaction as the action
