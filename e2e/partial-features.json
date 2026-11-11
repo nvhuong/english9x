@@ -86,6 +86,11 @@
       "id": "F10",
       "pending": "Done through the real stack (P2.8): the preview of every question type of the catalog is opened from the editor, shows the learner's side (stem, options, gaps, media) and never a word of the solution side (answer key, explanation, transcript, model answer). Pending: 'giống phòng thi': until the exam room of P3.4 exists the preview is the CMS's minimal renderer keyed by InteractionKind; P3.4 replaces it with the room's own question component and this spec must then also compare the preview with the room's rendering of the same question.",
       "owner": "P3.4 (exam room component replaces the minimal renderer)"
+    },
+    {
+      "id": "F19",
+      "pending": "Done through the real stack (P3.1): the author builds a STRICT course on the screen (the server checks the six-character code; a taken code is 409), a review publishes it, and the REAL lesson gate answers ALLOWED / LOCKED / NOT_ENTITLED as the rule, the learner's progress (stated by the test through seed.course.gate) and the entitlement say, for STRICT, COMPLETION (score ignored) and FREE. Pending: the same through the learner's own screens, with progress written by real lesson completions and chapter tests (the lesson page and the learning module that owns progress are P3.2's).",
+      "owner": "P3.2 (lesson page, chapter map, real progress)"
     }
   ]
 }

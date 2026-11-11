@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "catalog": "Courses"
+  },
+  "loading": "Loading…",
+  "rule": {
+    "STRICT": "Strict: finish each lesson and pass each chapter test to go on",
+    "COMPLETION": "Finish each lesson to go on",
+    "FREE": "Every lesson is open"
+  },
+  "kind": {
+    "LESSON": "Lesson",
+    "CHAPTER_TEST": "Chapter test",
+    "MOCK_TEST": "Mock test"
+  },
+  "list": {
+    "title": "Courses",
+    "description": "Browse the courses. You can see what each one teaches without signing in; the lessons open after you order.",
+    "exam": "Exam",
+    "all": "All",
+    "emptyTitle": "No course yet",
+    "empty": "No course is on offer for this exam yet.",
+    "caption": "Courses on offer",
+    "counts": "{{chapters}} chapters, {{lessons}} lessons",
+    "by": "By {{author}}"
+  },
+  "outline": {
+    "heading": "What is inside",
+    "chapterN": "Chapter {{n}}: {{title}}",
+    "back": "All courses",
+    "notFoundTitle": "Course not found",
+    "notFound": "There is no such course on offer."
+  },
+  "errors": {
+    "generic": "Something went wrong. Try again."
+  }
+}

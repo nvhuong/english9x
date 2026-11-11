@@ -73,6 +73,12 @@ export const seed = {
     gate: (opts: { userId: string; courseId: string; attemptStartedDaysAgo?: number }) => post<{ activeFor: boolean; canContinueAttempt?: boolean }>('billing/gate', opts),
   },
 
+  /** Course fixtures (P3.1): the REAL lesson gate asked as a person, with the progress the test states (the learning module that owns the real progress is P3.2). */
+  course: {
+    gate: (opts: { userId: string; orgId: string | null; lessonId: string; completed?: Array<{ lessonId: string; score?: number | null }> }) =>
+      post<{ access: 'ALLOWED' | 'NOT_ENTITLED' | 'LOCKED' }>('course/gate', opts),
+  },
+
   /** A published TOEIC L&R test (200 questions). Needs content + exam modules. */
   publishedToeicTest: (): Promise<SeededTest> => notImplemented('seed.publishedToeicTest', 'P2.6 (test assembly) and P3.3 (exam backend)'),
 
@@ -128,7 +134,7 @@ export const seed = {
    * the version. The author submits it (and must be its creator), the reviewer approves it (outcome 'approved'), sends it back ('changes'), or it is
    * left in review ('submitted'). A stand-in for the CMS review screens (P2.9).
    */
-  reviewVersion: (opts: { type: 'question' | 'question_group' | 'strategy_lesson' | 'score_table' | 'grading_skill' | 'test'; versionId: string; authorId: string; reviewerId?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
+  reviewVersion: (opts: { type: 'question' | 'question_group' | 'strategy_lesson' | 'score_table' | 'grading_skill' | 'test' | 'course'; versionId: string; authorId: string; reviewerId?: string; orgId?: string | null; outcome?: 'submitted' | 'approved' | 'changes' }) =>
     post<{ reviewId: string; versionId: string; outcome: string }>('review-version', { orgId: null, outcome: 'approved', ...opts }),
 
   /** A centre with teachers and learners (classes, members). Needs the classroom module. */

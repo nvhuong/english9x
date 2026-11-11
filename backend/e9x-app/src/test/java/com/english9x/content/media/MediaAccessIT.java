@@ -84,7 +84,7 @@ class MediaAccessIT extends MediaIT {
         UUID id = uploaded(a, "tone.mp3");
         UUID learner = user("learner");
         grant(learner, a[0], null, "LEARNER");
-        // until P3.1 every learner is refused, with an entitlement or without one (it has no lessons to be entitled through yet)
+        // a learner with no course that uses the file is refused (CourseMediaAccessIT covers the entitled learner: P3.1)
         Res own = url(id, learner, a[0]);
         assertEquals(404, own.status(), own.raw());
         assertFalse(own.raw().contains("X-Amz"), own.raw());

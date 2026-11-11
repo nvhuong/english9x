@@ -207,6 +207,365 @@
         "required" : [ "googleEnabled" ],
         "type" : "object"
       },
+      "CatalogChapter" : {
+        "properties" : {
+          "lessons" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CatalogLesson"
+            },
+            "type" : "array"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CatalogCourse" : {
+        "properties" : {
+          "authorDisplay" : {
+            "type" : "string"
+          },
+          "chapters" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "lessons" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "shared" : {
+            "description" : "true when the course comes from the shared pool of an organisation",
+            "type" : "boolean"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "unlockRule" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CatalogCourseOutline" : {
+        "properties" : {
+          "authorDisplay" : {
+            "type" : "string"
+          },
+          "chapters" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CatalogChapter"
+            },
+            "type" : "array"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "shared" : {
+            "type" : "boolean"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "unlockRule" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CatalogLesson" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCourseChapter" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lessons" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsCourseLesson"
+            },
+            "type" : "array"
+          },
+          "passThreshold" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCourseChapterRequest" : {
+        "properties" : {
+          "lessons" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsCourseLessonRequest"
+            },
+            "type" : "array"
+          },
+          "passThreshold" : {
+            "description" : "score in [0, 1] a chapter test must reach under STRICT; default 0.7",
+            "format" : "double",
+            "type" : "number"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCourseLesson" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "maxAttempts" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "refId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCourseLessonRequest" : {
+        "properties" : {
+          "kind" : {
+            "description" : "LESSON (a strategy lesson version), CHAPTER_TEST or MOCK_TEST (a test version)",
+            "type" : "string"
+          },
+          "maxAttempts" : {
+            "description" : "how many attempts a learner has at a test; null = unlimited",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "refId" : {
+            "description" : "the version of the strategy lesson or test",
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCoursePage" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsCourseSummary"
+            },
+            "type" : "array"
+          },
+          "limit" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "offset" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCourseRequest" : {
+        "properties" : {
+          "authorDisplay" : {
+            "description" : "the author as the catalog shows them",
+            "type" : "string"
+          },
+          "chapters" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsCourseChapterRequest"
+            },
+            "type" : "array"
+          },
+          "code" : {
+            "description" : "exactly 6 characters, capital letters and digits; fixed for the life of the course (on update: omit or repeat)",
+            "example" : "AB12CD",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "examCode" : {
+            "description" : "the exam; fixed for the life of the course (on update: omit or repeat)",
+            "example" : "IELTS",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "unlockRule" : {
+            "description" : "STRICT, COMPLETION or FREE",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCourseSubmitted" : {
+        "properties" : {
+          "reviewId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCourseSummary" : {
+        "properties" : {
+          "chapters" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "lessons" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sharedStatus" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "CmsCourseVersion" : {
+        "properties" : {
+          "authorDisplay" : {
+            "type" : "string"
+          },
+          "chapters" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CmsCourseChapter"
+            },
+            "type" : "array"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sharedStatus" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "unlockRule" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "CmsTestCreateRequest" : {
         "properties" : {
           "examCode" : {
@@ -3065,7 +3424,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_12",
+        "operationId" : "list_14",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -3282,7 +3641,7 @@
     },
     "/api/admin/orders" : {
       "get" : {
-        "operationId" : "list_11",
+        "operationId" : "list_13",
         "parameters" : [ {
           "in" : "query",
           "name" : "status",
@@ -3447,7 +3806,7 @@
         "tags" : [ "license-controller" ]
       },
       "post" : {
-        "operationId" : "create_9",
+        "operationId" : "create_10",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3516,7 +3875,7 @@
     },
     "/api/admin/organizations" : {
       "get" : {
-        "operationId" : "list_9",
+        "operationId" : "list_10",
         "responses" : {
           "200" : {
             "content" : {
@@ -3545,7 +3904,7 @@
         "tags" : [ "org-controller" ]
       },
       "post" : {
-        "operationId" : "create_8",
+        "operationId" : "create_9",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3676,7 +4035,7 @@
         "tags" : [ "plan-controller" ]
       },
       "post" : {
-        "operationId" : "create_7",
+        "operationId" : "create_8",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3714,7 +4073,7 @@
     },
     "/api/admin/plans/{id}" : {
       "put" : {
-        "operationId" : "update_5",
+        "operationId" : "update_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4160,6 +4519,83 @@
         "tags" : [ "auth-controller" ]
       }
     },
+    "/api/catalog/courses" : {
+      "get" : {
+        "operationId" : "list_12",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/CatalogCourse"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The public course catalog: PUBLISHED English9x courses and APPROVED shared ones; no sign-in needed",
+        "tags" : [ "course-catalog-controller" ]
+      }
+    },
+    "/api/catalog/courses/{code}" : {
+      "get" : {
+        "operationId" : "detail",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "code",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CatalogCourseOutline"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One course of the catalog by its code: description, chapters and lesson titles, author; never lesson content",
+        "tags" : [ "course-catalog-controller" ]
+      }
+    },
     "/api/catalog/exams" : {
       "get" : {
         "operationId" : "exams",
@@ -4189,6 +4625,270 @@
           }
         },
         "tags" : [ "catalog-controller" ]
+      }
+    },
+    "/api/cms/courses" : {
+      "get" : {
+        "operationId" : "list_9",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsCoursePage"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "List courses (the latest version of each) the caller may read",
+        "tags" : [ "course-controller" ]
+      },
+      "post" : {
+        "description" : "422 with errors[] by JSON path (examCode, code, title, unlockRule, chapters[i]...); 409 course-code-taken.",
+        "operationId" : "create_7",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CmsCourseRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsCourseVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create a course (version 1, a draft)",
+        "tags" : [ "course-controller" ]
+      }
+    },
+    "/api/cms/courses/{id}" : {
+      "get" : {
+        "operationId" : "get_5",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "version",
+          "required" : false,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsCourseVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One course: its latest version, or the numbered one",
+        "tags" : [ "course-controller" ]
+      },
+      "put" : {
+        "description" : "422 with errors[] by JSON path.",
+        "operationId" : "update_5",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CmsCourseRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsCourseVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Save a course: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)",
+        "tags" : [ "course-controller" ]
+      }
+    },
+    "/api/cms/courses/{id}/submit" : {
+      "post" : {
+        "description" : "The review approves it only when every lesson and test it names is PUBLISHED.",
+        "operationId" : "submit_7",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsCourseSubmitted"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit the open draft for review",
+        "tags" : [ "course-controller" ]
+      }
+    },
+    "/api/cms/courses/{id}/versions" : {
+      "get" : {
+        "operationId" : "versions_6",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/CmsCourseVersion"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Every version of a course, oldest first",
+        "tags" : [ "course-controller" ]
       }
     },
     "/api/cms/grading-skills" : {
@@ -6992,7 +7692,7 @@
     },
     "/api/me/notifications" : {
       "get" : {
-        "operationId" : "list_10",
+        "operationId" : "list_11",
         "parameters" : [ {
           "in" : "query",
           "name" : "limit",

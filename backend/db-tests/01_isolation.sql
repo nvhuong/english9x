@@ -30,7 +30,7 @@ BEGIN
   ASSERT EXISTS (SELECT 1 FROM courses WHERE code='BSHAR1'), 'sees B approved+published';
   ASSERT NOT EXISTS (SELECT 1 FROM courses WHERE code='BDRAF1'), 'must not see B draft';
   ASSERT NOT EXISTS (SELECT 1 FROM courses WHERE code='BPRIV1'), 'must not see B unshared';
-  ASSERT EXISTS (SELECT 1 FROM courses WHERE code='ADRAF1'), 'sees own draft';
+  ASSERT NOT EXISTS (SELECT 1 FROM courses WHERE code='ADRAF1'), 'a member with no AUTHOR/REVIEWER role does not see the org draft (P3.1)';
   ASSERT (SELECT count(*) FROM organizations) = 1, 'sees only own org';
   BEGIN
     INSERT INTO classes(owner_org_id,name) VALUES ('bbbbbbbb-0000-0000-0000-000000000002','evil');

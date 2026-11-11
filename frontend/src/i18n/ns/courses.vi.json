@@ -1,0 +1,120 @@
+{
+  "nav": {
+    "courses": "Khoá học"
+  },
+  "loading": "Đang tải…",
+  "status": {
+    "DRAFT": "Bản nháp",
+    "IN_REVIEW": "Đang duyệt",
+    "CHANGES_REQUESTED": "Cần sửa",
+    "PUBLISHED": "Đã xuất bản",
+    "ARCHIVED": "Đã lưu trữ"
+  },
+  "rule": {
+    "STRICT": "Nghiêm ngặt: học xong từng bài và đạt bài kiểm tra chương mới sang tiếp",
+    "COMPLETION": "Hoàn thành: học xong từng bài là sang tiếp, không xét điểm",
+    "FREE": "Tự do: mọi bài đều mở"
+  },
+  "ruleHint": {
+    "STRICT": "Học viên chỉ mở bài kế tiếp sau khi học xong bài trước, và bài kiểm tra chương chỉ tính khi điểm đạt ngưỡng của chương.",
+    "COMPLETION": "Học viên mở bài kế tiếp sau khi học xong bài trước; điểm bài kiểm tra chương không quan trọng.",
+    "FREE": "Mọi bài đều mở ngay từ đầu."
+  },
+  "kind": {
+    "LESSON": "Bài học",
+    "CHAPTER_TEST": "Kiểm tra chương",
+    "MOCK_TEST": "Thi thử"
+  },
+  "refKind": {
+    "LESSON": "bài chiến lược",
+    "TEST": "đề thi"
+  },
+  "actions": {
+    "create": "Tạo khoá học",
+    "save": "Lưu bản nháp",
+    "saveNewVersion": "Lưu thành phiên bản mới",
+    "submit": "Gửi duyệt"
+  },
+  "new": {
+    "title": "Khoá học mới",
+    "exam": "Kỳ thi",
+    "examPlaceholder": "Chọn kỳ thi",
+    "code": "Mã khoá học",
+    "codeHint": "Đúng 6 ký tự: chữ in hoa và chữ số. Không đổi được về sau."
+  },
+  "form": {
+    "heading": "Về khoá học",
+    "name": "Tên khoá học",
+    "description": "Mô tả",
+    "author": "Tác giả hiển thị cho học viên",
+    "authorHint": "Ví dụ tên giáo viên",
+    "unlockRule": "Luật mở khoá"
+  },
+  "chapters": {
+    "heading": "Các chương",
+    "empty": "Chưa có chương nào: thêm chương đầu tiên.",
+    "chapterN": "Chương {{n}}",
+    "title": "Tên chương",
+    "passPercent": "Điểm đạt (%)",
+    "passPercentHint": "Điểm bài kiểm tra chương cần đạt theo luật nghiêm ngặt",
+    "add": "Thêm chương",
+    "remove": "Xoá chương"
+  },
+  "lessons": {
+    "of": "Các bài của chương {{n}}",
+    "kind": "Loại",
+    "add": "Thêm bài học hoặc đề",
+    "addPlaceholder": "Chọn một mục",
+    "chooseExamFirst": "Chọn kỳ thi trước",
+    "option": "{{title}} ({{what}}, {{status}})",
+    "up": "Chuyển {{title}} lên",
+    "down": "Chuyển {{title}} xuống",
+    "remove": "Xoá {{title}}",
+    "removeShort": "Xoá"
+  },
+  "list": {
+    "title": "Khoá học",
+    "description": "Các khoá học của kỳ thi bạn soạn hoặc duyệt. Khoá học được duyệt như mọi nội dung khác trước khi học viên thấy.",
+    "new": "Khoá học mới",
+    "exam": "Kỳ thi",
+    "status": "Trạng thái",
+    "all": "Tất cả",
+    "emptyTitle": "Chưa có khoá học",
+    "empty": "Không có gì khớp. Hãy tạo khoá học hoặc đổi bộ lọc.",
+    "caption": "Khoá học",
+    "colTitle": "Tên",
+    "colCode": "Mã",
+    "colExam": "Kỳ thi",
+    "colStatus": "Trạng thái",
+    "colVersion": "Phiên bản",
+    "colLessons": "Nội dung",
+    "lessonsCount": "{{chapters}} chương, {{lessons}} bài",
+    "pagination": "Phân trang",
+    "previous": "Trước",
+    "next": "Sau"
+  },
+  "edit": {
+    "back": "Tất cả khoá học",
+    "version": "Phiên bản {{n}}",
+    "notFoundTitle": "Không tìm thấy khoá học",
+    "notFound": "Không có khoá học này, hoặc bạn không được mở.",
+    "publishedNote": "Phiên bản này đã xuất bản và không đổi được. Lưu sẽ tạo bản nháp mới, phiên bản {{next}}.",
+    "inReviewNote": "Phiên bản này đang được duyệt, không sửa được.",
+    "archivedNote": "Phiên bản này đã được thay thế, không sửa được.",
+    "saved": "Đã lưu bản nháp.",
+    "savedNewVersion": "Đã lưu thành phiên bản {{n}}, một bản nháp mới.",
+    "submitted": "Đã gửi duyệt."
+  },
+  "errors": {
+    "generic": "Có lỗi xảy ra. Hãy thử lại.",
+    "invalid": "Khoá học còn lỗi. Xem các ô được đánh dấu.",
+    "codeTaken": "Mã này đã có khoá học khác dùng. Hãy chọn mã khác.",
+    "underReview": "Phiên bản mới nhất đang được duyệt; hãy chờ quyết định.",
+    "anotherAuthor": "Tác giả khác đang sửa bản nháp đang mở.",
+    "archived": "Khoá học này đã được lưu trữ.",
+    "notEditable": "Không có bản nháp để gửi.",
+    "conflict": "Có người vừa thay đổi cùng lúc. Hãy tải lại và thử lại.",
+    "forbidden": "Bạn không được thực hiện việc này.",
+    "notFound": "Không có khoá học này, hoặc bạn không được mở."
+  }
+}

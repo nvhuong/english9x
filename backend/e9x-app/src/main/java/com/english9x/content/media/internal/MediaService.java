@@ -44,8 +44,11 @@ class MediaService {
     private final ObjectStore store;
     private final MediaRepository repository;
     private final MediaUrls urls;
+    private final org.springframework.beans.factory.ObjectProvider<com.english9x.content.media.api.MediaAccessPolicy> policies;
 
-    MediaService(Authz authz, UploadLimits limits, MediaProbe probe, ObjectStore store, MediaRepository repository, MediaUrls urls) {
+    MediaService(Authz authz, UploadLimits limits, MediaProbe probe, ObjectStore store, MediaRepository repository, MediaUrls urls,
+                 org.springframework.beans.factory.ObjectProvider<com.english9x.content.media.api.MediaAccessPolicy> policies) {
+        this.policies = policies;
         this.authz = authz;
         this.limits = limits;
         this.probe = probe;
@@ -211,6 +214,9 @@ class MediaService {
 
     /** A link for the file when the caller may see it (row-level security decides), empty when not: the same answer for "not yours" and "not there". */
     Optional<MediaUrls.SignedUrl> linkFor(UUID id) {
-        return repository.find(id).map(info -> urls.signedUrl(id));
+        if (repository.find(id).isPresent() || policies.stream().anyMatch(p -> p.mayPlay(id))) {
+            return Optional.of(urls.signedUrl(id));
+        }
+        return Optional.empty();
     }
 }
