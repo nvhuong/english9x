@@ -26,7 +26,7 @@ for (const variant of ['AC', 'GT'] as const) {
       const listening = partOf(exam.parts, 'LISTENING').questions;
       for (const [i, q] of listening.entries()) {
         await answerIelts(page, q, i + 1);
-        if (i < listening.length - 1) await page.keyboard.press('ArrowRight');
+        if (i < listening.length - 1) await page.getByRole('button', { name: 'Câu sau' }).click(); // not the arrow key: focus is in a typed gap, where it moves the caret
       }
       await expect(page.getByRole('group', { name: 'Danh sách câu hỏi' }).getByRole('button', { name: /chưa trả lời/ })).toHaveCount(0);
       await finishSection(page);
@@ -37,7 +37,7 @@ for (const variant of ['AC', 'GT'] as const) {
       const reading = partOf(exam.parts, 'READING').questions;
       for (const [i, q] of reading.entries()) {
         await answerIelts(page, q, i + 1, { wrong: i === 1 });
-        if (i < reading.length - 1) await page.keyboard.press('ArrowRight');
+        if (i < reading.length - 1) await page.getByRole('button', { name: 'Câu sau' }).click(); // not the arrow key: focus is in a typed gap, where it moves the caret
       }
       await finishSection(page);
 

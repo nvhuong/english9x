@@ -62,7 +62,8 @@ async function sit(token: string, testVersionId: string, listening: string[]): P
 }
 
 test.describe('F33 automatic scoring', () => {
-  test('F33 a valid variant is accepted, a slot over the word limit is wrong, the score is converted with the published table of the test and that version is kept', async ({ request, uniqueEmail, org }) => {
+  test('F33 a valid variant is accepted, a slot over the word limit is wrong, the score is converted with the published table of the test and that version is kept', async ({ request, uniqueEmail, org, gemini }) => {
+    // the AI grading now also reads Writing and Speaking of this attempt: hold the shared fake Gemini (success scenario) so that it cannot disturb F37's counts
     // two minutes of late-sync grace (e9x.exam.late-sync-grace) are waited out for real: the job is queued for the end of it
     test.setTimeout(480_000);
     const s = await staffed(['IELTS'], 'f33', { request, uniqueEmail, apiLogin: org.apiLogin });
@@ -91,10 +92,13 @@ test.describe('F33 automatic scoring', () => {
     }, { timeoutMs: 60_000, intervalMs: 2_000 });
 
     for (const r of [scoresA, scoresB]) {
-      expect(r.scores.map((x) => x.skill), 'Listening and Reading only: Writing and Speaking wait for the AI or a teacher').toEqual(['LISTENING', 'READING']);
-      expect(r.scores.every((x) => x.kind === 'OFFICIAL' && x.source === 'AUTO')).toBe(true);
+      // Since P4.2 Writing and Speaking are no longer left unscored: the AI grader (or, failing that, a teacher) writes their rows, with source AI. Automatic scoring owns
+      // Listening and Reading ONLY, and never writes a Writing or Speaking score itself.
+      const auto = r.scores.filter((x) => x.source === 'AUTO');
+      expect(auto.map((x) => x.skill), 'automatic scoring: Listening and Reading only').toEqual(['LISTENING', 'READING']);
+      expect(auto.every((x) => x.kind === 'OFFICIAL')).toBe(true);
+      expect(r.scores.filter((x) => x.source !== 'AUTO').every((x) => ['WRITING', 'SPEAKING'].includes(x.skill) && x.source === 'AI')).toBe(true);
       expect(r.interrupted).toBe(false);
-      expect(r.announced, 'no AttemptScored while Writing and Speaking have no score').toBe(false);
       const reading = r.scores.find((x) => x.skill === 'READING')!;
       expect(reading).toMatchObject({ raw: 1, rawMax: 1, scaled: 6, scoreTableVersionId: readingTable.versionId });
     }

@@ -132,7 +132,8 @@ test.describe('F57 audit log', () => {
     await expect(roleRow).toContainText('LEARNER, TEACHER/IELTS');
     await expect(rowsOf(page).filter({ hasText: 'invitation.send' })).toHaveCount(2);
     // the log keeps no address (it could not be erased): the screen reads it from the invitation, which still exists here
-    await expect(rowsOf(page).filter({ hasText: invitee.email })).toContainText('Gửi lời mời');
+    // (the address also appears in the record of the invitee accepting, as its actor: pick the sending record)
+    await expect(rowsOf(page).filter({ hasText: invitee.email }).filter({ hasText: 'invitation.send' })).toContainText('Gửi lời mời');
     const revoked = rowsOf(page).filter({ hasText: 'invitation.revoke' });
     await expect(revoked).toHaveCount(1);
     await expect(revoked).toContainText(dropped);

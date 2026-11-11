@@ -52,12 +52,12 @@ export const seed = {
    * A verified learner who holds an active plan on `courses` published courses (order-sourced entitlements of 30 days, as the confirmation of
    * an order in P5.2 will make them). The courses are real rows of the catalog's course table (billing seed, P5.1); the lesson pages come with P3.1.
    */
-  learnerWithPlan: async (opts: { courses: number | string[] } = { courses: 1 }): Promise<SeededLearner & { courseIds: string[] }> => {
+  learnerWithPlan: async (opts: { courses: number | string[]; examCode?: 'IELTS' | 'TOEIC' } = { courses: 1 }): Promise<SeededLearner & { courseIds: string[] }> => {
     const learner = await seed.verifiedLearner();
     const n = Array.isArray(opts.courses) ? opts.courses.length : opts.courses;
     const courseIds: string[] = [];
     for (let i = 0; i < n; i++) {
-      const course = await seed.billing.course();
+      const course = await seed.billing.course(opts.examCode);
       await seed.billing.entitlement({ userId: learner.userId, courseId: course.courseId, endsInDays: 30 });
       courseIds.push(course.courseId);
     }
@@ -66,7 +66,7 @@ export const seed = {
 
   /** Billing fixtures (P5.1): courses, entitlements with any dates, aged orders, the real jobs on demand, the real access gate asked as a person. */
   billing: {
-    course: () => post<{ courseId: string; code: string }>('billing/course'),
+    course: (examCode?: string) => post<{ courseId: string; code: string }>('billing/course', examCode ? { examCode } : undefined),
     entitlement: (opts: { userId: string; courseId: string; startsInDays?: number; endsInDays?: number; endsInHours?: number }) => post<{ entitlementId: string }>('billing/entitlement', opts),
     agedOrder: (opts: { userId: string; planId: string; ageDays: number }) => post<{ orderId: string; code: string }>('billing/aged-order', opts),
     runJob: (type: 'expire_orders' | 'expire_entitlements' | 'plan_expiry_reminder') => post<{ queued: string }>('billing/run-job', { type }),

@@ -309,6 +309,8 @@ export function syncSessionAcrossTabs(): () => void {
  */
 export function clearCacheOnUserChange(queryClient: QueryClient): () => void {
   return useAuthStore.subscribe((state, prev) => {
-    if (state.user?.id !== prev.user?.id) void queryClient.clear();
+    // reset, not clear: a screen that is already mounted (a page opened by URL asks while the stored session is still being restored) keeps its observers, and
+    // every ACTIVE query is fetched again for the new person; clear() would drop the query under such an observer and leave it "loading" for good.
+    if (state.user?.id !== prev.user?.id) void queryClient.resetQueries();
   });
 }

@@ -38,10 +38,11 @@ class BillingSeedController {
 
     @PostMapping("/course")
     @ResponseStatus(HttpStatus.CREATED)
-    Map<String, Object> course() {
-        db.requireCatalogExam("IELTS");
+    Map<String, Object> course(@RequestBody(required = false) Map<String, String> body) {
+        String exam = body == null || body.get("examCode") == null ? "IELTS" : body.get("examCode");
+        db.requireCatalogExam(exam);
         String code = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
-        UUID id = db.jdbc().queryForObject("insert into courses(owner_org_id, exam_code, code, title, status) values (null, 'IELTS', ?, 'E2E course', 'PUBLISHED') returning id", UUID.class, code);
+        UUID id = db.jdbc().queryForObject("insert into courses(owner_org_id, exam_code, code, title, status) values (null, ?, ?, 'E2E course', 'PUBLISHED') returning id", UUID.class, exam, code);
         return Map.of("courseId", id.toString(), "code", code);
     }
 

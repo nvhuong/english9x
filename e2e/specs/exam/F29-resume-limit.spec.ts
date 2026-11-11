@@ -14,7 +14,9 @@ test.describe('F29 resume limit', () => {
     await enterExam(page, exam.testVersionId);
     await navigator(page).nth(3).click();
     await page.getByRole('textbox').fill('kept');
+    const saved = page.waitForResponse((r) => r.request().method() === 'PUT' && /\/api\/exam\/attempts\/[^/]+\/responses\//.test(r.url()));
     await navigator(page).nth(0).click(); // leaving the question saves it
+    expect((await saved).status(), 'the answer reached the server before the page is reloaded').toBe(204);
 
     for (const n of [1, 2]) {
       await page.reload();

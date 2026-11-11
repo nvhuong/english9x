@@ -132,6 +132,6 @@ export async function publishedIeltsTest(opts: { variant: 'AC' | 'GT' }): Promis
     { sectionCode: 'LISTENING', skill: 'LISTENING', durationSec: 600, groups: [{ audio: true, content: { title: 'Listening group' }, questions: [{ typeCode: 'IELTS_L_MULTIPLE_CHOICE' }, { typeCode: 'IELTS_L_SENTENCE_COMPLETION' }, { typeCode: 'IELTS_L_MATCHING' }, { typeCode: 'IELTS_L_SHORT_ANSWER' }] }] },
     { sectionCode: 'READING', skill: 'READING', durationSec: 600, groups: [{ content: { title: 'Reading group', passage: 'The bridge was finished in 1932.\n\nThe writer disagrees with the plan.' }, questions: [{ typeCode: 'IELTS_R_IDENTIFYING_INFORMATION' }, { typeCode: 'IELTS_R_IDENTIFYING_WRITERS_VIEWS' }, { typeCode: 'IELTS_R_SHORT_ANSWER' }] }] },
     { sectionCode: 'WRITING', skill: 'WRITING', durationSec: 600, groups: [{ content: { title: 'Writing tasks' }, questions: [{ typeCode: task1 }, { typeCode: 'IELTS_W_TASK2' }] }] },
-    { sectionCode: 'SPEAKING', skill: 'SPEAKING', durationSec: 600, groups: [{ content: { title: 'Speaking part 2' }, questions: [{ typeCode: 'IELTS_S_PART2', content: { prepareSeconds: 1, speakSeconds: 4 } }] }] },
+    { sectionCode: 'SPEAKING', skill: 'SPEAKING', durationSec: 600, groups: [{ content: { title: 'Speaking part 2' }, questions: [{ typeCode: 'IELTS_S_PART2', content: { prepareSeconds: 1, speakSeconds: 30 } }] }] },
   ]);
 }

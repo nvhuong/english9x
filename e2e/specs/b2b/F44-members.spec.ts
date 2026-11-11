@@ -74,7 +74,8 @@ test.describe('F44 members', () => {
       body: { expiresAt: new Date(Date.now() + 86400000).toISOString(), maxUses: 5 },
     });
     expect(made.status).toBe(201);
-    await org.api(adminToken, 'DELETE', `/api/orgs/${center.orgId}/join-codes/${made.body.id}`, { org: center.orgId });
+    const revoked = await org.api(adminToken, 'DELETE', `/api/orgs/${center.orgId}/join-codes/${made.body.joinCode.id}`, { org: center.orgId });
+    expect(revoked.status, revoked.text).toBe(204);
     const stranger = await seed.verifiedLearner({ email: uniqueEmail('f44b-stranger') });
     const strangerToken = (await org.apiLogin(stranger)).token;
     expect((await org.api(strangerToken, 'POST', `/api/join/${made.body.code}`)).status).toBe(410);
@@ -115,11 +116,16 @@ test.describe('F44 members', () => {
     const { center, admin } = await adminOf(seed, auth, org, page, uniqueEmail, 'f44d');
     const leaver = await seed.verifiedLearner({ email: uniqueEmail('f44d-leaver'), displayName: 'Học Viên Rời Đi' });
     await seed.member({ orgId: center.orgId, userId: leaver.userId, roles: [{ role: 'LEARNER' }] });
+    const before = await org.api((await org.apiLogin(leaver)).token, 'GET', '/api/me/context');
+    expect(JSON.stringify(before.body.grants), 'a member holds a grant of the organisation until removed').toContain(center.orgId);
     await page.reload();
     await page.getByRole('button', { name: 'Xoá Học Viên Rời Đi' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Xoá', exact: true }).click();
     await expect(page.getByRole('row', { name: /Học Viên Rời Đi/ })).toHaveCount(0);
-    expect(await seed.authz({ userId: leaver.userId, role: 'LEARNER', orgId: center.orgId })).toMatchObject({ allowed: false });
+    // seed.authz would still say "allowed": every person holds the GLOBAL learner role, which covers any context. What removal takes back is the organisation's grants.
+    const leaverToken = (await org.apiLogin(leaver)).token;
+    const ctx = await org.api(leaverToken, 'GET', '/api/me/context');
+    expect(JSON.stringify(ctx.body.grants)).not.toContain(center.orgId);
 
     // the last administrator cannot be removed
     const adminToken = (await org.apiLogin(admin)).token;

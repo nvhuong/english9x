@@ -32,15 +32,16 @@ export const test = base.extend<{
   seed: async ({}, use) => { await use(seed); },
   auth: async ({}, use) => { await use({ loginAs, registerLearner }); },
   org: async ({}, use) => { await use({ switchContext, acceptInvitation, apiLogin, api }); },
-  gemini: async ({}, use) => {
-    const release = await acquireGeminiLock();
+  // Waiting for another test's lock (F34 / F37 hold it for the 2-minute grace plus the grading) is setup time, not the test's: its own, longer timeout.
+  gemini: [async ({}, use) => {
+    const release = await acquireGeminiLock(840_000);
     try {
       await geminiHelper.reset();
       await use(geminiHelper);
     } finally {
       try { await geminiHelper.reset(); } finally { await release(); }
     }
-  },
+  }, { timeout: 900_000 }],
 });
 
 export { expect };

@@ -17,7 +17,7 @@ test.describe('F25 TOEIC full test', () => {
     const scaled = Array.from({ length: 101 }, (_, i) => i * 5);
     await seed.grading.scoreTable({ testVersionId: exam.testVersionId, skill: 'LISTENING', scaled });
     await seed.grading.scoreTable({ testVersionId: exam.testVersionId, skill: 'READING', scaled });
-    const learner = await seed.learnerWithPlan({ courses: 1 });
+    const learner = await seed.learnerWithPlan({ courses: 1, examCode: 'TOEIC' });
     await auth.loginAs(page, learner);
     const attemptId = await enterExam(page, exam.testVersionId);
 
