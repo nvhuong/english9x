@@ -5,12 +5,13 @@ import { FormAlert } from '../auth/components';
 import { useMyEntitlements, useMyOrders } from './queries';
 
 const TONE: Record<string, BadgeTone> = { PENDING_PAYMENT: 'warning', CONFIRMED: 'success', REJECTED: 'danger', EXPIRED: 'neutral' };
-const money = (vnd: number) => new Intl.NumberFormat('vi-VN').format(vnd);
-const day = (iso: string) => new Date(iso).toLocaleDateString('vi-VN');
+const money = (vnd: number, locale: string) => new Intl.NumberFormat(locale).format(vnd);
+const day = (iso: string, locale: string) => new Date(iso).toLocaleDateString(locale);
 
 /** /orders: the person's orders with their status, and the access they hold; a plan that ran out is shown as read only. */
 export default function MyOrdersPage() {
-  const { t } = useTranslation('billing');
+  const { t, i18n } = useTranslation('billing');
+  const lang = i18n.language;
   const orders = useMyOrders();
   const ents = useMyEntitlements();
   return (
@@ -44,7 +45,7 @@ export default function MyOrdersPage() {
                   {o.code}
                 </Link>
                 <p className="text-sm text-muted">
-                  {t('mine.placed', { date: day(o.createdAt), months: o.planMonths, amount: money(o.amountVnd) })}
+                  {t('mine.placed', { date: day(o.createdAt, lang), months: o.planMonths, amount: money(o.amountVnd, lang) })}
                 </p>
                 {o.courses.length > 0 && <p className="text-sm text-muted">{o.courses.map((c) => c.code).join(', ')}</p>}
               </div>
@@ -64,7 +65,7 @@ export default function MyOrdersPage() {
               <li key={e.id} data-testid="my-entitlement" className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line px-3 py-2">
                 <span>
                   <span className="font-semibold">{e.courseCode ?? '–'}</span>{' '}
-                  <span className="text-sm text-muted">{t('mine.until', { date: day(e.validUntil) })}</span>
+                  <span className="text-sm text-muted">{t('mine.until', { date: day(e.validUntil, lang) })}</span>
                 </span>
                 <Badge tone={e.active ? 'success' : 'neutral'}>{e.active ? t('mine.active') : t('mine.readOnly')}</Badge>
               </li>

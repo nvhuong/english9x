@@ -20,7 +20,8 @@ export default function CheckoutPage() {
   const [picked, setPicked] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const plan = plans.data?.find((p) => p.id === planId);
-  // orders take English9x courses only: the shared courses of organisations are not for sale
+  // the server accepts English9x courses only (spec: an order covers published English9x courses; an organisation's shared course is not for sale), so the picker
+  // does not offer them; the server still validates every id
   const courses = (catalog.data ?? []).filter((c) => !c.shared).map((c) => ({ id: c.id, code: c.code, title: c.title, examCode: c.examCode }));
 
   const problemText = (err: unknown) => {

@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import type { PlanView } from './queries';
 
-const money = (vnd: number) => new Intl.NumberFormat('vi-VN').format(vnd);
+const money = (vnd: number, locale: string) => new Intl.NumberFormat(locale).format(vnd);
 
 /** The plans on sale as a radio group: name, months, price and how many courses one order may hold. */
 export function PlanPicker({ plans, value, onChange }: { plans: PlanView[]; value: string | null; onChange: (id: string) => void }) {
-  const { t } = useTranslation('billing');
+  const { t, i18n } = useTranslation('billing');
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className="font-serif text-xl font-semibold text-ink">{t('checkout.planLegend')}</legend>
@@ -15,7 +15,7 @@ export function PlanPicker({ plans, value, onChange }: { plans: PlanView[]; valu
           <span>
             <span className="block font-semibold text-ink">{p.name}</span>
             <span className="block text-sm text-muted">
-              {t('checkout.planDetail', { months: p.months, max: p.maxCourses, price: money(p.priceVnd) })}
+              {t('checkout.planDetail', { months: p.months, max: p.maxCourses, price: money(p.priceVnd, i18n.language) })}
             </span>
           </span>
         </label>

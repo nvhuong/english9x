@@ -43,6 +43,9 @@ class BillingSeedController {
         db.requireCatalogExam(exam);
         String code = UUID.randomUUID().toString().replace("-", "").substring(0, 6).toUpperCase();
         UUID id = db.jdbc().queryForObject("insert into courses(owner_org_id, exam_code, code, title, status) values (null, ?, ?, 'E2E course', 'PUBLISHED') returning id", UUID.class, exam, code);
+        // the public catalogue lists a course by its PUBLISHED version (as the table owner may insert, like a finished review would leave it), so the course shows on the checkout screen
+        db.jdbc().update("insert into course_versions(course_id, owner_org_id, exam_code, version_no, status, title, description, author_display, unlock_rule, created_by) "
+                + "values (?, null, ?, 1, 'PUBLISHED', 'E2E course', 'A course of the E2E seed', 'English9x', 'FREE', (select id from users order by created_at limit 1))", id, exam);
         return Map.of("courseId", id.toString(), "code", code);
     }
 
