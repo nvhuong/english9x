@@ -76,6 +76,8 @@ public final class SweepFixtures {
     public final UUID publishedTestVersion = UUID.randomUUID();
     public final UUID assignmentA = UUID.randomUUID();
     public final UUID assignmentB = UUID.randomUUID();
+    public final UUID sessionA = UUID.randomUUID();
+    public final UUID sessionB = UUID.randomUUID();
     public final String courseCodeB = "B00001";
     /** P5.1: a plan on sale, a published English9x course, and an order of A's member and one of B's member (the order code is a text key of the walk). */
     public final UUID planId = UUID.randomUUID();
@@ -164,6 +166,10 @@ public final class SweepFixtures {
         su.update("insert into assignments(id,class_id,org_id,test_version_id,due_at,created_by) values (?,?,?,?,now()+interval '2 days',?),(?,?,?,?,now()+interval '2 days',?)",
                 assignmentA, classA, orgA, publishedTestVersion, userA, assignmentB, classB, orgB, publishedTestVersion, userB);
         su.update("insert into assignment_submissions(assignment_id,org_id,user_id,status,submitted_at) values (?,?,?,'SUBMITTED',now())", assignmentB, orgB, userB);
+        // P6.3: a session of A's class and one of B's (with B's learner marked present): tenant data the sweep walks
+        su.update("insert into class_sessions(id,class_id,org_id,mode,starts_at,ends_at,room,created_by) values (?,?,?,'OFFLINE',now()+interval '1 day',now()+interval '1 day 2 hours','R1',?),(?,?,?,'OFFLINE',now()+interval '1 day',now()+interval '1 day 2 hours','R2',?)",
+                sessionA, classA, orgA, userA, sessionB, classB, orgB, userB);
+        su.update("insert into attendance(session_id,org_id,user_id,status,marked_by) values (?,?,?,'PRESENT',?)", sessionB, orgB, userB, userB);
         su.update("insert into users(id,email,email_verified_at,consent_at) values (?,'removable-a@x.test',now(),now())", removableA);
         su.update("insert into org_memberships(org_id,user_id) values (?,?)", orgA, removableA);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'LEARNER')", removableA, orgA);
@@ -353,6 +359,10 @@ public final class SweepFixtures {
         return Map.of(name, value.toString());
     }
 
+    private static Map<String, String> slots(String a, Object av, String b, Object bv, String c, Object cv) {
+        return Map.of(a, av.toString(), b, bv.toString(), c, cv.toString());
+    }
+
     private static Map<String, String> slots(String a, Object av, String b, Object bv) {
         return Map.of(a, av.toString(), b, bv.toString());
     }
@@ -426,6 +436,20 @@ public final class SweepFixtures {
         all.put("POST /api/orgs/{id}/classes/{cid}/courses", ForeignIdSweep.Fixture.write(coursesBody, classTrio, ForeignIdSweep.Control.of(slots("id", orgA, "cid", classA), coursesBody)));
         String assignmentBody = "{\"testVersionId\":\"" + publishedTestVersion + "\",\"dueAt\":\"" + java.time.Instant.now().plus(java.time.Duration.ofDays(5)) + "\"}";
         all.put("POST /api/orgs/{id}/classes/{cid}/assignments", ForeignIdSweep.Fixture.write(assignmentBody, classTrio, ForeignIdSweep.Control.of(slots("id", orgA, "cid", classA), assignmentBody)));
+        // P6.3: sessions and attendance follow the class like assignments do; the session is walked too (each of B's, in A's class and the other way round)
+        String sessionBody = "{\"mode\":\"OFFLINE\",\"startsAt\":\"" + java.time.Instant.now().plus(java.time.Duration.ofDays(6)) + "\",\"endsAt\":\"" + java.time.Instant.now().plus(java.time.Duration.ofDays(6)).plus(java.time.Duration.ofHours(2)) + "\",\"room\":\"Sweep\"}";
+        all.put("POST /api/orgs/{id}/classes/{cid}/sessions", ForeignIdSweep.Fixture.write(sessionBody, classTrio, ForeignIdSweep.Control.of(slots("id", orgA, "cid", classA), sessionBody)));
+        all.put("GET /api/orgs/{id}/classes/{cid}/sessions", ForeignIdSweep.Fixture.read(classTrio));
+        all.put("GET /api/orgs/{id}/classes/{cid}/attendance", ForeignIdSweep.Fixture.read(classTrio));
+        List<ForeignIdSweep.Attempt> sessionTrio = List.of(
+                new ForeignIdSweep.Attempt(slots("id", orgB, "cid", classB, "sid", sessionB)),
+                new ForeignIdSweep.Attempt(slots("id", orgA, "cid", classB, "sid", sessionB)),
+                new ForeignIdSweep.Attempt(slots("id", orgA, "cid", classA, "sid", sessionB)),
+                new ForeignIdSweep.Attempt(slots("id", orgB, "cid", classA, "sid", sessionA)));
+        all.put("GET /api/orgs/{id}/classes/{cid}/sessions/{sid}/attendance", ForeignIdSweep.Fixture.read(sessionTrio));
+        String attendanceBody = "[{\"userId\":\"" + classMemberA + "\",\"status\":\"PRESENT\"}]";
+        all.put("PUT /api/orgs/{id}/classes/{cid}/sessions/{sid}/attendance", ForeignIdSweep.Fixture.write(attendanceBody, sessionTrio,
+                ForeignIdSweep.Control.of(slots("id", orgA, "cid", classA, "sid", sessionA), attendanceBody)));
         // P2.2: the upload takes no id of a tenant (the owner is the bound context, the exam a query parameter). The sweep's caller is an ORG_ADMIN with no
         // AUTHOR role: refused; the author of org A in org A's context really uploads. "MULTIPART:" is turned into a multipart request by the IT.
         all.put("POST /api/cms/media", ForeignIdSweep.Fixture.write(MULTIPART_PNG, List.of(), new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.AUTHOR)));

@@ -132,6 +132,7 @@ e9x:
   classroom:
     due-soon: 24h                   # ASSIGNMENT_DUE_SOON goes out this long before an assignment's due date (job assignment_due_soon)
     job-interval: 1h                # period of assignment_due_soon
+    session-job-interval: 5m        # period of session_reminder (SESSION_REMINDER goes out when a session starts within e9x.notification.session-reminder)
   content:
     import:
       max-rows: 2000

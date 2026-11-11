@@ -8,6 +8,12 @@ export type ClassMemberView = components['schemas']['ClassMemberView'];
 export type AssignmentView = components['schemas']['AssignmentView'];
 export type AssignmentReport = components['schemas']['AssignmentReport'];
 export type MyAssignment = components['schemas']['MyAssignment'];
+export type SessionView = components['schemas']['SessionView'];
+export type ScheduleItem = components['schemas']['ScheduleItem'];
+export type AttendanceStatus = components['schemas']['AttendanceStatus'];
+export type AttendanceSheet = components['schemas']['AttendanceSheet'];
+export type AttendanceReport = components['schemas']['AttendanceReport'];
+export type AttendanceMark = components['schemas']['AttendanceMark'];
 export type AssignClassCoursesResponse = components['schemas']['AssignClassCoursesResponse'];
 
 
@@ -122,5 +128,74 @@ export function useMyAssignments() {
     queryKey: ctxKey(ctx, 'classroom', 'me', 'assignments'),
     retry: false,
     queryFn: async () => (await api.GET('/api/me/assignments')).data as MyAssignment[],
+  });
+}
+
+export function useClassSessions(orgId: string, classId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: useCtxKey('classroom', orgId, 'class', classId, 'sessions'),
+    retry: false,
+    queryFn: async () => (await api.GET('/api/orgs/{id}/classes/{cid}/sessions', { params: { path: { id: orgId, cid: classId } } })).data as SessionView[],
+  });
+}
+
+export function useCreateSession(orgId: string, classId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  const ctx = useContextStore((s) => s.orgId);
+  const keyParts = [orgId, 'class', classId, 'sessions'] as const;
+  return useMutation({
+    mutationFn: async (v: { mode: 'OFFLINE' | 'ONLINE'; startsAt: string; endsAt: string; room?: string; meetingUrl?: string }) =>
+      (await api.POST('/api/orgs/{id}/classes/{cid}/sessions', { params: { path: { id: orgId, cid: classId } }, body: v })).data as SessionView,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ctxKey(ctx, 'classroom', ...keyParts) });
+      void qc.invalidateQueries({ queryKey: ctxKey(ctx, 'classroom', 'me', 'schedule') });
+    },
+  });
+}
+
+/** The person's own sessions (as a learner or as a teacher) starting in [from, to) in the organisation of the current context. */
+export function useMySchedule(from: string, to: string) {
+  const api = useApi();
+  const ctx = useContextStore((s) => s.orgId);
+  return useQuery({
+    queryKey: ctxKey(ctx, 'classroom', 'me', 'schedule', from, to),
+    retry: false,
+    queryFn: async () => (await api.GET('/api/me/schedule', { params: { query: { from, to } } })).data as ScheduleItem[],
+  });
+}
+
+export function useAttendanceSheet(orgId: string, classId: string, sessionId: string, enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: useCtxKey('classroom', orgId, 'class', classId, 'attendance', sessionId),
+    enabled,
+    retry: false,
+    queryFn: async () =>
+      (await api.GET('/api/orgs/{id}/classes/{cid}/sessions/{sid}/attendance', { params: { path: { id: orgId, cid: classId, sid: sessionId } } })).data as AttendanceSheet,
+  });
+}
+
+export function useMarkAttendance(orgId: string, classId: string, sessionId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  const ctx = useContextStore((s) => s.orgId);
+  return useMutation({
+    mutationFn: async (marks: AttendanceMark[]) =>
+      (await api.PUT('/api/orgs/{id}/classes/{cid}/sessions/{sid}/attendance', { params: { path: { id: orgId, cid: classId, sid: sessionId } }, body: marks })).data as AttendanceSheet,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ctxKey(ctx, 'classroom', orgId, 'class', classId, 'attendance') });
+      void qc.invalidateQueries({ queryKey: ctxKey(ctx, 'classroom', 'me', 'schedule') });
+    },
+  });
+}
+
+export function useAttendanceReport(orgId: string, classId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: useCtxKey('classroom', orgId, 'class', classId, 'attendance'),
+    retry: false,
+    queryFn: async () => (await api.GET('/api/orgs/{id}/classes/{cid}/attendance', { params: { path: { id: orgId, cid: classId } } })).data as AttendanceReport,
   });
 }

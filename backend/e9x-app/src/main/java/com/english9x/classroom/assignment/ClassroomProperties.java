@@ -9,6 +9,9 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *
  * @param dueSoon     how long before an assignment is due the learner who has not handed it in is told ({@code ASSIGNMENT_DUE_SOON})
  * @param jobInterval period of the {@code assignment_due_soon} job
+ * @param sessionJobInterval period of the {@code session_reminder} job; it tells everybody whose session starts within
+ *                           {@code e9x.notification.session-reminder} (1h), so the notice reaches them between 1h and 1h minus one period before the start
  */
 @ConfigurationProperties("e9x.classroom")
-public record ClassroomProperties(@DefaultValue("24h") Duration dueSoon, @DefaultValue("1h") Duration jobInterval) {}
+public record ClassroomProperties(@DefaultValue("24h") Duration dueSoon, @DefaultValue("1h") Duration jobInterval,
+        @DefaultValue("5m") Duration sessionJobInterval) {}

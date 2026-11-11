@@ -66,7 +66,7 @@ class RecurringJobsIT {
     @Test
     void aBucketIsQueuedOnceHoweverManyInstancesTry() throws Exception {
         int a = scheduler.tick();
-        assertEquals(7, a, "test_ok, the three billing jobs, the purge, release_expired_claim (P4.3) and assignment_due_soon (P6.2)");
+        assertEquals(8, a, "test_ok, the three billing jobs, the purge, release_expired_claim (P4.3), assignment_due_soon (P6.2) and session_reminder (P6.3)");
         assertEquals(0, scheduler.tick(), "same bucket: nothing new");
         assertEquals(1, ticks());
         su.update("delete from jobs");

@@ -1,7 +1,8 @@
 {
   "nav": {
     "classes": "Lớp học",
-    "assignments": "Bài được giao"
+    "assignments": "Bài được giao",
+    "schedule": "Lịch học"
   },
   "retry": "Thử lại",
   "kind": {
@@ -104,7 +105,11 @@
     "teacher": "Chọn giáo viên phụ trách.",
     "member": "Chọn một thành viên.",
     "courses": "Chọn giấy phép và ít nhất một khoá học.",
-    "assignment": "Nhập mã bài và hạn nộp."
+    "assignment": "Nhập mã bài và hạn nộp.",
+    "session": "Nhập thời gian bắt đầu và kết thúc.",
+    "sessionEnd": "Kết thúc phải sau bắt đầu.",
+    "meetingUrl": "Buổi trực tuyến cần liên kết bắt đầu bằng https://.",
+    "room": "Buổi tại lớp nhập phòng học (không có liên kết)."
   },
   "problem": {
     "generic": "Có lỗi xảy ra. Thử lại sau.",
@@ -119,6 +124,78 @@
     "courseNotInLicense": "Có khoá học không thuộc giấy phép.",
     "dueInPast": "Hạn nộp phải ở tương lai.",
     "targetUnavailable": "Bài hoặc đề này chưa xuất bản hoặc tổ chức không dùng được.",
-    "invalidAssignment": "Chỉ chọn một bài hoặc một đề thi."
+    "invalidAssignment": "Chỉ chọn một bài hoặc một đề thi.",
+    "httpsLink": "Buổi trực tuyến cần liên kết bắt đầu bằng https://.",
+    "offlineNoLink": "Buổi tại lớp không có liên kết.",
+    "invalidSession": "Thời gian buổi học không hợp lệ.",
+    "notAMember": "Chỉ điểm danh được học viên của lớp.",
+    "invalidAttendance": "Dữ liệu điểm danh không hợp lệ."
+  },
+  "attendanceStatus": {
+    "PRESENT": "Có mặt",
+    "ABSENT": "Vắng",
+    "LATE": "Đi trễ",
+    "EXCUSED": "Có phép"
+  },
+  "mode": {
+    "OFFLINE": "Tại lớp",
+    "ONLINE": "Trực tuyến"
+  },
+  "sessions": {
+    "title": "Buổi học và điểm danh",
+    "loading": "Đang tải…",
+    "loadFailed": "Không tải được dữ liệu.",
+    "empty": "Chưa có buổi học nào.",
+    "listCaption": "Các buổi học của lớp",
+    "createTitle": "Thêm buổi học",
+    "created": "Đã thêm buổi học.",
+    "mode": "Hình thức",
+    "startsAt": "Bắt đầu",
+    "endsAt": "Kết thúc",
+    "room": "Phòng học",
+    "meetingUrl": "Liên kết buổi học (https)",
+    "add": "Thêm buổi học",
+    "when": "{{date}}, {{from}}–{{to}}",
+    "roomLabel": "Phòng: {{room}}",
+    "join": "Vào buổi học",
+    "attendance": "Điểm danh",
+    "hideAttendance": "Ẩn điểm danh"
+  },
+  "sheet": {
+    "caption": "Điểm danh buổi học",
+    "member": "Học viên",
+    "status": "Trạng thái",
+    "note": "Ghi chú",
+    "noteOf": "Ghi chú cho {{name}}",
+    "statusOf": "Trạng thái của {{name}}",
+    "save": "Lưu điểm danh",
+    "saved": "Đã lưu điểm danh.",
+    "none": "Chọn trạng thái cho ít nhất một học viên.",
+    "empty": "Lớp chưa có học viên.",
+    "notMarked": "Chưa điểm danh"
+  },
+  "rate": {
+    "title": "Tỉ lệ chuyên cần",
+    "description": "Tính trên các buổi đã điểm danh: (có mặt + đi trễ) / (có mặt + đi trễ + vắng). Buổi có phép không tính.",
+    "caption": "Chuyên cần của từng học viên",
+    "member": "Học viên",
+    "present": "Có mặt",
+    "late": "Đi trễ",
+    "absent": "Vắng",
+    "excused": "Có phép",
+    "rate": "Tỉ lệ",
+    "none": "–"
+  },
+  "schedule": {
+    "title": "Lịch học",
+    "description": "Các buổi học của bạn trong tổ chức đang chọn trong 60 ngày tới, với tư cách học viên hoặc giáo viên.",
+    "loading": "Đang tải lịch…",
+    "loadFailed": "Không tải được lịch học.",
+    "empty": "Chưa có buổi học nào.",
+    "emptyHint": "Chọn đúng tổ chức ở ô Ngữ cảnh nếu bạn học ở trung tâm.",
+    "listCaption": "Các buổi học sắp tới",
+    "teacher": "Giáo viên",
+    "learner": "Học viên",
+    "attendance": "Điểm danh: {{status}}"
   }
 }

@@ -11,6 +11,7 @@ import { useOrgLicenses } from '../org/licenses/queries';
 import { pageState } from '../org/util';
 import { useMembers } from '../org/queries';
 import { classroomProblemMessage } from './problems';
+import { SessionsPanel } from './SessionsPanel';
 import {
   useAddClassMembers, useAssignClassCourses, useAssignmentReport, useClass, useClassAssignments, useClassMembers, useCreateAssignment, useRemoveClassMember,
   type AssignmentView,
@@ -70,6 +71,12 @@ function ClassDetail({ orgId, classId }: { orgId: string; classId: string }) {
           {t('assignments.title')}
         </h2>
         <Assignments orgId={orgId} classId={classId} />
+      </section>
+      <section aria-labelledby="sessions" className="flex flex-col gap-3">
+        <h2 id="sessions" className="font-serif text-xl font-semibold">
+          {t('sessions.title')}
+        </h2>
+        <SessionsPanel orgId={orgId} classId={classId} />
       </section>
     </div>
   );
