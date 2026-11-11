@@ -36,6 +36,7 @@ class ScoreTableServiceIT extends OrgIT {
     @BeforeEach
     void freshTables() {
         // the exam defaults are unique per exam and skill and the database is shared by the tests of the run: start each test without them
+        su.execute("truncate scores"); // P4.1: a score keeps the version it was converted with; the tables of other tests of the run may have been used
         su.execute("alter table score_table_versions disable trigger user");
         su.update("delete from score_table_versions where score_table_id in (select id from score_tables where function = 'TABLE')");
         su.execute("alter table score_table_versions enable trigger user");
