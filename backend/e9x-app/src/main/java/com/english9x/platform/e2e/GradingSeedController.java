@@ -86,4 +86,26 @@ class GradingSeedController {
         out.putIfAbsent("graded", false);
         return out;
     }
+
+    /** What AI grading wrote for an attempt: its state (DONE, AI_FAILED, TEACHER_QUEUE; none while it has not decided) and one row per evaluated response. */
+    @PostMapping("/ai")
+    Map<String, Object> ai(@RequestBody AttemptRef r) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("state", db.jdbc().queryForList("select state from ai_gradings where attempt_id = ?", String.class, r.attemptId()).stream().findFirst().orElse(null));
+        List<Map<String, Object>> rows = new ArrayList<>();
+        db.jdbc().query("select e.model, e.input_tokens, e.output_tokens, e.cost_vnd::float8 as cost, e.band::float8 as band, e.result::text as result, q.section_code "
+                + "from ai_evaluations e join attempt_questions q on q.attempt_id = e.attempt_id and q.question_id = e.question_id where e.attempt_id = ? order by q.section_code", rs -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("section", rs.getString("section_code"));
+            row.put("model", rs.getString("model"));
+            row.put("inputTokens", rs.getInt("input_tokens"));
+            row.put("outputTokens", rs.getInt("output_tokens"));
+            row.put("costVnd", rs.getDouble("cost"));
+            row.put("band", rs.getDouble("band"));
+            row.put("result", rs.getString("result"));
+            rows.add(row);
+        }, r.attemptId());
+        out.put("evaluations", rows);
+        return out;
+    }
 }

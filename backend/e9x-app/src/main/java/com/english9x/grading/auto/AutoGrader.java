@@ -9,9 +9,7 @@ import com.english9x.catalog.api.ScoreTables;
 import com.english9x.domain.scoring.AnswerKey;
 import com.english9x.domain.scoring.ItemResult;
 import com.english9x.domain.scoring.ObjectiveScorers;
-import com.english9x.grading.api.events.AttemptScored;
 import com.english9x.grading.auto.GraderStore.Attempt;
-import com.english9x.grading.auto.GraderStore.Board;
 import com.english9x.grading.auto.GraderStore.Item;
 import com.english9x.grading.auto.GraderStore.Row;
 import com.english9x.grading.db.GraderDatabase;
@@ -33,7 +31,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -84,18 +81,18 @@ class AutoGrader {
     private final QuestionTypes types;
     private final ScoreTables tables;
     private final TransactionTemplate primary;
-    private final ApplicationEventPublisher events;
+    private final ScoreAnnouncer announcer;
     private final Clock clock;
     private final Duration grace;
 
     AutoGrader(GraderDatabase grader, GraderStore store, QuestionTypes types, ScoreTables tables, PlatformTransactionManager transactions,
-            ApplicationEventPublisher events, Clock clock, @Value("${e9x.exam.late-sync-grace}") Duration grace) {
+            ScoreAnnouncer announcer, Clock clock, @Value("${e9x.exam.late-sync-grace}") Duration grace) {
         this.grader = grader;
         this.store = store;
         this.types = types;
         this.tables = tables;
         this.primary = new TransactionTemplate(transactions);
-        this.events = events;
+        this.announcer = announcer;
         this.clock = clock;
         this.grace = grace;
     }
@@ -130,7 +127,7 @@ class AutoGrader {
                 return true;
             });
         }
-        announce(a);
+        announcer.announce(a.userId(), a.orgId(), a.id());
         return wrote ? Outcome.GRADED : Outcome.ALREADY_GRADED;
     }
 
@@ -274,32 +271,5 @@ class AutoGrader {
             }
         }
         return false;
-    }
-
-    // ---- announcing -------------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Publishes {@code AttemptScored} once every skill of the attempt has a displayed score. The grading record is locked while it is published and
-     * marked, so concurrent runs queue and the second finds it announced; if the process dies in between, the mark is missing and the next run publishes
-     * again (consumers are idempotent, spec events.md).
-     */
-    private void announce(Attempt a) {
-        Set<String> required = new LinkedHashSet<>();
-        grader.read(a.userId(), a.orgId(), j -> {
-            store.sectionSkills(j, a.id()).values().stream().filter(s -> s != null).forEach(required::add);
-            return null;
-        });
-        grader.write(a.userId(), a.orgId(), j -> {
-            if (!store.lockUnannounced(j, a.id())) {
-                return null;
-            }
-            Board board = store.displayed(j, a.id());
-            if (required.isEmpty() || !board.scores().keySet().containsAll(required)) {
-                return null; // a skill still waits for its score (a table, the AI, a teacher)
-            }
-            primary.executeWithoutResult(status -> events.publishEvent(new AttemptScored(a.id(), a.userId(), new LinkedHashMap<>(board.scores()), board.official())));
-            store.markAnnounced(j, a.id(), clock.instant());
-            return null;
-        });
     }
 }

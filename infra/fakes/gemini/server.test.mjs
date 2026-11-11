@@ -67,3 +67,13 @@ test('requests are recorded and can be listed and cleared; unknown paths 404; he
     assert.equal((await fetch(`${base}/__health`)).status, 200);
   } finally { await close(); }
 });
+
+test('ok scenario answers with an example of the JSON Schema the app asked for', async () => {
+  const { base, close } = await start();
+  try {
+    const schema = { type: 'object', properties: { TA: { type: 'number' }, CC: { type: 'number', minimum: 0, maximum: 9 }, feedback: { type: 'string' } }, required: ['TA', 'CC'] };
+    const res = await post(`${base}/v1beta/models/m:generateContent`, { generationConfig: { responseJsonSchema: schema } });
+    const parsed = JSON.parse((await res.json()).candidates[0].content.parts[0].text);
+    assert.deepEqual(parsed, { TA: 6.5, CC: 4.5, feedback: 'Fake feedback from fake-gemini.' });
+  } finally { await close(); }
+});

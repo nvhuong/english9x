@@ -1,5 +1,6 @@
 // Fake Gemini API for dev/E2E. Zero dependencies.
-//   POST /v1beta/models/{model}:generateContent  -> response chosen by the current scenario
+//   POST /v1beta/models/{model}:generateContent  -> response chosen by the current scenario (scenario ok: an example of the JSON Schema the app asked for,
+//     generationConfig.responseJsonSchema; a fixed grading payload when none is given)
 //   POST /__scenario {"scenario":"ok"|"error500"|"badSchema"}   GET /__scenario
 //   GET /__requests (recorded calls)  DELETE /__requests    GET /__health
 import http from 'node:http';
@@ -25,6 +26,25 @@ function candidate(payload) {
     usageMetadata: { promptTokenCount: 120, candidatesTokenCount: 80, totalTokenCount: 200 },
     modelVersion: 'fake-gemini',
   };
+}
+
+// A valid example of a JSON Schema: what the app asked for in generationConfig.responseJsonSchema. Numbers are 6.5 (or the middle of minimum..maximum).
+export function sampleOf(schema) {
+  if (!schema || typeof schema !== 'object') return null;
+  if (schema.const !== undefined) return schema.const;
+  if (Array.isArray(schema.enum) && schema.enum.length) return schema.enum[0];
+  const type = Array.isArray(schema.type) ? schema.type[0] : schema.type;
+  if (type === 'object' || schema.properties) {
+    const out = {};
+    for (const [k, v] of Object.entries(schema.properties ?? {})) out[k] = sampleOf(v);
+    return out;
+  }
+  if (type === 'array') return [];
+  if (type === 'string') return 'Fake feedback from fake-gemini.';
+  if (type === 'boolean') return true;
+  if (type === 'integer') return Math.round(typeof schema.minimum === 'number' && typeof schema.maximum === 'number' ? (schema.minimum + schema.maximum) / 2 : 6);
+  if (type === 'number') return typeof schema.minimum === 'number' && typeof schema.maximum === 'number' ? (schema.minimum + schema.maximum) / 2 : 6.5;
+  return null;
 }
 
 async function readJson(req) {
@@ -68,7 +88,9 @@ export function createFakeGemini() {
       if (scenario === 'error500') {
         return send(res, 500, { error: { code: 500, message: 'Internal error (fake-gemini)', status: 'INTERNAL' } });
       }
-      return send(res, 200, candidate(scenario === 'badSchema' ? BAD_PAYLOAD : OK_PAYLOAD));
+      const asked = body?.generationConfig?.responseJsonSchema ?? body?.generationConfig?.responseSchema;
+      const ok = asked && asked.type === 'object' ? sampleOf(asked) : OK_PAYLOAD;
+      return send(res, 200, candidate(scenario === 'badSchema' ? BAD_PAYLOAD : ok));
     }
     return send(res, 404, { error: 'not found' });
   });

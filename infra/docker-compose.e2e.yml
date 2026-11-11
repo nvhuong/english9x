@@ -92,6 +92,8 @@ services:
       E9X_GOOGLE_ISSUER: http://localhost:${E9X_FAKE_OIDC_PORT:-8083}
       E9X_GEMINI_BASE_URL: http://fake-gemini:8080
       E9X_GEMINI_API_KEY: fake-key
+      # F37 watches AI grading give up after the retries: the 30s,2m,10m of production would take 12 minutes (relaxed binding of e9x.grading.ai.retry-delays)
+      E9X_GRADING_AI_RETRY_DELAYS: 2s,2s,2s
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: "1025"
       E9X_TELEGRAM_API_BASE: http://fake-telegram:8080

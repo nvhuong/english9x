@@ -91,6 +91,16 @@
       "id": "F19",
       "pending": "Done through the real stack (P3.1): the author builds a STRICT course on the screen (the server checks the six-character code; a taken code is 409), a review publishes it, and the REAL lesson gate answers ALLOWED / LOCKED / NOT_ENTITLED as the rule, the learner's progress (stated by the test through seed.course.gate) and the entitlement say, for STRICT, COMPLETION (score ignored) and FREE. Pending: the same through the learner's own screens, with progress written by real lesson completions and chapter tests (the lesson page and the learning module that owns progress are P3.2's).",
       "owner": "P3.2 (lesson page, chapter map, real progress)"
+    },
+    {
+      "id": "F34",
+      "pending": "'điểm theo tiêu chí, nhận xét, transcript hiển thị' on the learner's results page: the AI grading is covered through the real stack and the fake Gemini (the evaluations, tokens, cost and the Writing / Speaking scores are read through the seed API), but the results page that shows the criteria, the comments and the transcript does not exist yet.",
+      "owner": "P4.4 (results page)"
+    },
+    {
+      "id": "F37",
+      "pending": "'chuyển giáo viên': the spec covers Gemini failing on every call, the retries, AI_FAILED, no score for the learner and the SYS_ADMIN notification; the administrator moving the AI_FAILED attempt to the teachers' queue needs the queue and its screen.",
+      "owner": "P4.3 (teacher queue)"
     }
   ]
 }

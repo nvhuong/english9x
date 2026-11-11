@@ -251,6 +251,8 @@ class GradingSkillIT extends QuestionIT {
         UUID e9 = user("e9-author");
         grant(e9, null, "IELTS", "AUTHOR");
         Map<String, Object> eb = body(s);
+        // a type no other test of the shared database gives English9x a skill for (AiGradeJobIT keeps English9x's skills of IELTS_W_TASK2 and IELTS_S_PART1)
+        eb.put("questionTypeCode", "IELTS_S_PART3");
         eb.put("samples", JSON.createArrayNode());
         assertEquals(201, post("/api/cms/grading-skills", eb, e9, null).status());
     }
