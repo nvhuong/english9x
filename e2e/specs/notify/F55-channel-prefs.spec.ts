@@ -1,15 +1,12 @@
 // F55 — Tuỳ chọn kênh (spec §16.2): "Bật/tắt theo sự kiện × kênh có hiệu lực".
-//
-// !! PARTIAL for the same reason as F52 (the trigger is the seed API standing in for the CMS review screens, P2.9). The preference
-// !! screen, the stored preferences, the jobs and the channels (Mailpit, fake Telegram) are real.
+// Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
 import { reviewWorld } from './_world';
 
 test.describe('F55 channel preferences', () => {
-  test('F55 switching an event x channel off or on changes what is sent, per event and per channel', async ({ page, seed, auth, telegram, mailpit, uniqueEmail }) => {
-    const w = await reviewWorld(seed, uniqueEmail, 'f55');
+  test('F55 switching an event x channel off or on changes what is sent, per event and per channel', async ({ page, browser, seed, auth, telegram, mailpit, uniqueEmail }) => {
+    const w = await reviewWorld(seed, uniqueEmail, 'f55', browser);
     // both of the person's events: REVIEW_REQUESTED (as reviewer) and, for the same person, CONTENT_PUBLISHED (as author of a review)
-    await seed.member({ orgId: w.org.orgId, userId: w.reviewer.userId, roles: [{ role: 'AUTHOR', examCode: 'IELTS' }] });
     const chat = telegram.uniqueChatId();
     await auth.loginAs(page, w.reviewer);
     await page.goto('/notifications/preferences');
@@ -37,7 +34,7 @@ test.describe('F55 channel preferences', () => {
     // another event, for which Telegram is still on, arrives in the chat. The "no Telegram for the switched-off event" check below is only as
     // strong as the order of arrival: the switched-off event's mail was awaited above, and this later event's message is awaited here,
     // so a wrongly planned Telegram delivery of the earlier event (created in the same transaction as that mail's) would have been sent by now.
-    await seed.reviewEvent({ kind: 'approved', authorId: w.reviewer.userId, orgId: w.org.orgId });
+    await w.reviewerPublished();
     const messages = await telegram.waitForMessages(chat, { count: 2, timeoutMs: 40_000 });
     expect(messages).toHaveLength(2);
     expect(messages[1]!.text).toContain('Nội dung đã được xuất bản');
@@ -55,7 +52,7 @@ test.describe('F55 channel preferences', () => {
     // email off for the other event: the in-app notification still arrives, the mail does not
     await page.getByRole('checkbox', { name: /^Email: Nội dung đã được xuất bản/ }).click();
     await expect(page.getByRole('checkbox', { name: /^Email: Nội dung đã được xuất bản/ })).not.toBeChecked();
-    await seed.reviewEvent({ kind: 'approved', authorId: w.reviewer.userId, orgId: w.org.orgId });
+    await w.reviewerPublished();
     await telegram.waitForMessages(chat, { count: 4, timeoutMs: 40_000 });
     // Before counting the mails, wait for a mail known to come AFTER the one that must not be sent: a later 'requested' event (email on).
     // Its 'Có nội dung chờ duyệt' mail is the third one to this person; once it is there, a wrongly planned 'published' mail of the

@@ -113,8 +113,8 @@ for (const lang of ['vi', 'en'] as const) {
 
 for (const lang of ['vi', 'en'] as const) {
   for (const theme of THEMES) {
-    test(`F58 axe: signed-in notification screens in ${lang}, ${theme} mode`, async ({ page, auth, seed, uniqueEmail }) => {
-      const w = await reviewWorld(seed, uniqueEmail, 'f58n');
+    test(`F58 axe: signed-in notification screens in ${lang}, ${theme} mode`, async ({ page, browser, auth, seed, uniqueEmail }) => {
+      const w = await reviewWorld(seed, uniqueEmail, 'f58n', browser);
       await w.requested();
       await auth.loginAs(page, w.reviewer);
       await page.evaluate((v) => {

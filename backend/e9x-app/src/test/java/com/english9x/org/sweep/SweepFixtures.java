@@ -349,6 +349,14 @@ public final class SweepFixtures {
         // for A's people, A's author really submits A's own. The template is a catalogue item, the same for every tenant: the ORG_ADMIN without AUTHOR is refused.
         all.put("POST /api/cms/import/{jobId}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("jobId", importA), null, ForeignIdSweep.AUTHOR)));
         all.put("GET /api/cms/import/templates/{typeCode}.xlsx", ForeignIdSweep.Fixture.read(List.of(new ForeignIdSweep.Attempt(slot("typeCode", "IELTS_R_SHORT_ANSWER")))));
+        // P2.9: the review decisions. The sweep's callers are A's ORG_ADMIN, A's author and the administrator, none of them a REVIEWER of an exam: every id (B's review,
+        // B's bundle, A's own) is refused (404 or 403) and nothing changes; the 2xx of a real REVIEWER, the self-review refusal and the foreign-org refusal are
+        // measured by ReviewControllerIT and ReviewServiceIT.
+        String noReviewer = "decided by a REVIEWER of the exam, a role none of the sweep's callers holds; ReviewControllerIT measures the real decisions and the refusals";
+        all.put("POST /api/cms/reviews/{reviewId}/approve", new ForeignIdSweep.Fixture(null, List.of(), null, noReviewer));
+        all.put("POST /api/cms/reviews/{reviewId}/request-changes", new ForeignIdSweep.Fixture("{\"comment\":\"x\"}", List.of(), null, noReviewer));
+        all.put("POST /api/cms/reviews/bundles/{bundleId}/approve", new ForeignIdSweep.Fixture(null, List.of(), null, noReviewer));
+        all.put("POST /api/cms/reviews/bundles/{bundleId}/request-changes", new ForeignIdSweep.Fixture("{\"comment\":\"x\"}", List.of(), null, noReviewer));
         all.put("POST /api/cms/question-groups", ForeignIdSweep.Fixture.write(group, List.of(), none));
         all.put("PUT /api/cms/question-groups/{id}", ForeignIdSweep.Fixture.write(group, List.of(), new ForeignIdSweep.Control(slot("id", groupAForPut), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/question-groups/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", groupAForSubmit), null, ForeignIdSweep.AUTHOR)));

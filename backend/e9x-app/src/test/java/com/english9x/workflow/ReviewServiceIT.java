@@ -82,6 +82,7 @@ class ReviewServiceIT {
     static final UUID REVIEWER_A = UUID.randomUUID();     // REVIEWER IELTS in A
     static final UUID REVIEWER_A2 = UUID.randomUUID();    // REVIEWER IELTS in A
     static final UUID REVIEWER_A_TOEIC = UUID.randomUUID();
+    static final UUID MIX_A = UUID.randomUUID();          // REVIEWER IELTS + TOEIC, AUTHOR TOEIC in A (ledger 144)
     static final UUID DUAL_A = UUID.randomUUID();         // AUTHOR + REVIEWER IELTS in A
     static final UUID LEARNER_A = UUID.randomUUID();
     static final UUID AUTHOR_B = UUID.randomUUID();
@@ -171,11 +172,11 @@ class ReviewServiceIT {
         su = new JdbcTemplate(TestPostgres.superuser(DB));
         su.update("insert into exams(code,name) values ('IELTS','IELTS'),('TOEIC','TOEIC') on conflict do nothing");
         su.update("insert into organizations(id,name,type) values (?,'A','CENTER'),(?,'B','CENTER'),(?,'C','CENTER'),(?,'D','CENTER')", ORG_A, ORG_B, ORG_C, ORG_D);
-        for (UUID u : new UUID[] {AUTHOR_A, AUTHOR_A_BOTH, REVIEWER_A, REVIEWER_A2, REVIEWER_A_TOEIC, DUAL_A, LEARNER_A, AUTHOR_B,
+        for (UUID u : new UUID[] {AUTHOR_A, AUTHOR_A_BOTH, REVIEWER_A, REVIEWER_A2, REVIEWER_A_TOEIC, DUAL_A, MIX_A, LEARNER_A, AUTHOR_B,
                 REVIEWER_B, E9_AUTHOR, E9_REVIEWER, SYS_DUAL, AUTHOR_C, REVIEWER_C, AUTHOR_D, REVIEWER_D}) {
             su.update("insert into users(id,email) values (?,?)", u, u + "@x.test");
         }
-        for (UUID u : new UUID[] {AUTHOR_A, AUTHOR_A_BOTH, REVIEWER_A, REVIEWER_A2, REVIEWER_A_TOEIC, DUAL_A, LEARNER_A, E9_REVIEWER}) {
+        for (UUID u : new UUID[] {AUTHOR_A, AUTHOR_A_BOTH, REVIEWER_A, REVIEWER_A2, REVIEWER_A_TOEIC, DUAL_A, MIX_A, LEARNER_A, E9_REVIEWER}) {
             su.update("insert into org_memberships(org_id,user_id) values (?,?)", ORG_A, u);
         }
         for (UUID u : new UUID[] {AUTHOR_B, REVIEWER_B}) {
@@ -197,6 +198,9 @@ class ReviewServiceIT {
         grant(REVIEWER_A, ORG_A, "IELTS", "REVIEWER");
         grant(REVIEWER_A2, ORG_A, "IELTS", "REVIEWER");
         grant(REVIEWER_A_TOEIC, ORG_A, "TOEIC", "REVIEWER");
+        grant(MIX_A, ORG_A, "IELTS", "REVIEWER");
+        grant(MIX_A, ORG_A, "TOEIC", "REVIEWER");
+        grant(MIX_A, ORG_A, "TOEIC", "AUTHOR");
         grant(DUAL_A, ORG_A, "IELTS", "AUTHOR");
         grant(DUAL_A, ORG_A, "IELTS", "REVIEWER");
         grant(LEARNER_A, ORG_A, null, "LEARNER");
@@ -855,6 +859,23 @@ class ReviewServiceIT {
         recorder.workflowEvents().clear();
         assertThrows(SelfReviewException.class, () -> asDo(DUAL_A, ORG_A, () -> reviews.approveBundle(b4)));
         assertEquals(List.of(), recorder.workflowEvents());
+    }
+
+    /** Ledger 144: a bundle of two exams, the reviewer holds REVIEWER of both and wrote only the TOEIC member: the whole bundle is refused, whichever way. */
+    @Test
+    void aTwoExamBundleWithTheReviewersOwnMemberIsRefusedAsAWhole() {
+        UUID ielts = item(ORG_A, "IELTS", AUTHOR_A_BOTH, "DRAFT");
+        UUID toeic = item(ORG_A, "TOEIC", MIX_A, "DRAFT");
+        UUID bundle = as(AUTHOR_A_BOTH, ORG_A, () -> reviews.submit(new BundleRef(List.of(ref(ielts), ref(toeic)))));
+        recorder.workflowEvents().clear();
+        assertThrows(SelfReviewException.class, () -> asDo(MIX_A, ORG_A, () -> reviews.approveBundle(bundle)));
+        assertThrows(SelfReviewException.class, () -> asDo(MIX_A, ORG_A, () -> reviews.requestBundleChanges(bundle, "no")));
+        assertEquals("IN_REVIEW", status(ielts), "nothing of the IELTS member was published either");
+        assertEquals("IN_REVIEW", status(toeic));
+        assertEquals(List.of(), recorder.workflowEvents());
+        assertEquals(0, su.queryForObject("select count(*) from review_requests where bundle_id = ? and status <> 'IN_REVIEW'", Integer.class, bundle));
+        // a reviewer of both exams who wrote neither decides it
+        assertThrows(AccessDeniedException.class, () -> asDo(REVIEWER_A, ORG_A, () -> reviews.approveBundle(bundle)), "REVIEWER_A holds IELTS only");
     }
 
     @Test

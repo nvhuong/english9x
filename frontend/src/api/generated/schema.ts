@@ -552,7 +552,7 @@ export interface paths {
             cookie?: never;
         };
         /** State of an import, its errors by row and column, and the drafts it made */
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -784,6 +784,125 @@ export interface paths {
         get: operations["versions_3"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The open review queue the caller may see, oldest first: one line per bundle and per standalone review */
+        get: operations["queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/reviews/bundles/{bundleId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve every member of a bundle, all or none */
+        post: operations["approveBundle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/reviews/bundles/{bundleId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The reviews of a bundle the caller may see (the whole of an import, a course and its lessons) */
+        get: operations["members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/reviews/bundles/{bundleId}/request-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send every member of a bundle back with a comment, all or none */
+        post: operations["requestBundleChanges"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/reviews/{reviewId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One review with the version under review and the earlier published version to compare it with */
+        get: operations["get_6"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/reviews/{reviewId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve (publish) the version. 403 when the caller wrote or submitted it; 409 while a dependency is not published */
+        post: operations["approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/reviews/{reviewId}/request-changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the version back to its author with a comment (required) */
+        post: operations["requestChanges"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2346,6 +2465,74 @@ export interface components {
             newPassword: string;
             token: string;
         };
+        ReviewComment: {
+            comment?: string;
+        };
+        ReviewDetail: {
+            authorName?: string;
+            /** @description the caller wrote or submitted this version: the server refuses their decision */
+            ownVersion?: boolean;
+            /** @description the latest earlier published or archived version of the same item, to compare with */
+            previous?: components["schemas"]["ReviewSnapshot"];
+            review?: components["schemas"]["ReviewRecord"];
+            /** @description the version under review; absent when the caller may not read it */
+            version?: components["schemas"]["ReviewSnapshot"];
+        };
+        ReviewMember: {
+            authorName?: string;
+            ownVersion?: boolean;
+            review?: components["schemas"]["ReviewRecord"];
+        };
+        ReviewQueueLine: {
+            authorName?: string;
+            /** Format: uuid */
+            bundleId?: string;
+            examCode?: string;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            /** Format: uuid */
+            reviewId?: string;
+            /** Format: int32 */
+            size?: number;
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: uuid */
+            submittedBy?: string;
+            type?: string;
+        };
+        ReviewRecord: {
+            /** Format: uuid */
+            authorId?: string;
+            /** Format: uuid */
+            bundleId?: string;
+            comment?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            examCode?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            /** Format: uuid */
+            reviewerId?: string;
+            status?: string;
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: uuid */
+            submittedBy?: string;
+            type?: string;
+            /** Format: uuid */
+            versionId?: string;
+        };
+        ReviewSnapshot: {
+            /** @description the content fields of the version, without identity or bookkeeping */
+            content?: unknown;
+            status?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
         RoleSpec: {
             /** @description IELTS | TOEIC; required for AUTHOR, REVIEWER, TEACHER, absent for the others */
             examCode?: string;
@@ -3869,7 +4056,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -4442,6 +4629,227 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["QuestionVersion"][];
                 };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    queue: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewQueueLine"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    approveBundle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bundleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    members: {
+        parameters: {
+            query?: {
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                bundleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewMember"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    requestBundleChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bundleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewComment"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewDetail"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    requestChanges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reviewId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewComment"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Error (RFC 7807 problem details) */
             default: {

@@ -2194,6 +2194,161 @@
         "required" : [ "newPassword", "token" ],
         "type" : "object"
       },
+      "ReviewComment" : {
+        "properties" : {
+          "comment" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReviewDetail" : {
+        "properties" : {
+          "authorName" : {
+            "type" : "string"
+          },
+          "ownVersion" : {
+            "description" : "the caller wrote or submitted this version: the server refuses their decision",
+            "type" : "boolean"
+          },
+          "previous" : {
+            "$ref" : "#/components/schemas/ReviewSnapshot",
+            "description" : "the latest earlier published or archived version of the same item, to compare with"
+          },
+          "review" : {
+            "$ref" : "#/components/schemas/ReviewRecord"
+          },
+          "version" : {
+            "$ref" : "#/components/schemas/ReviewSnapshot",
+            "description" : "the version under review; absent when the caller may not read it"
+          }
+        },
+        "type" : "object"
+      },
+      "ReviewMember" : {
+        "properties" : {
+          "authorName" : {
+            "type" : "string"
+          },
+          "ownVersion" : {
+            "type" : "boolean"
+          },
+          "review" : {
+            "$ref" : "#/components/schemas/ReviewRecord"
+          }
+        },
+        "type" : "object"
+      },
+      "ReviewQueueLine" : {
+        "properties" : {
+          "authorName" : {
+            "type" : "string"
+          },
+          "bundleId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reviewId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "size" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "submittedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "submittedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReviewRecord" : {
+        "properties" : {
+          "authorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "bundleId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "comment" : {
+            "type" : "string"
+          },
+          "decidedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reviewerId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "submittedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "submittedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReviewSnapshot" : {
+        "properties" : {
+          "content" : {
+            "description" : "the content fields of the version, without identity or bookkeeping"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "RoleSpec" : {
         "properties" : {
           "examCode" : {
@@ -4223,7 +4378,7 @@
     },
     "/api/cms/import/{jobId}" : {
       "get" : {
-        "operationId" : "get_6",
+        "operationId" : "get_7",
         "parameters" : [ {
           "in" : "path",
           "name" : "jobId",
@@ -5003,6 +5158,298 @@
         },
         "summary" : "Every version of a question, oldest first, with the answer key (for comparing versions)",
         "tags" : [ "question-controller" ]
+      }
+    },
+    "/api/cms/reviews" : {
+      "get" : {
+        "operationId" : "queue",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "offset",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 50,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReviewQueueLine"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The open review queue the caller may see, oldest first: one line per bundle and per standalone review",
+        "tags" : [ "review-controller" ]
+      }
+    },
+    "/api/cms/reviews/bundles/{bundleId}/approve" : {
+      "post" : {
+        "operationId" : "approveBundle",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "bundleId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Approve every member of a bundle, all or none",
+        "tags" : [ "review-controller" ]
+      }
+    },
+    "/api/cms/reviews/bundles/{bundleId}/members" : {
+      "get" : {
+        "operationId" : "members",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "bundleId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "offset",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 50,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReviewMember"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The reviews of a bundle the caller may see (the whole of an import, a course and its lessons)",
+        "tags" : [ "review-controller" ]
+      }
+    },
+    "/api/cms/reviews/bundles/{bundleId}/request-changes" : {
+      "post" : {
+        "operationId" : "requestBundleChanges",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "bundleId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReviewComment"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Send every member of a bundle back with a comment, all or none",
+        "tags" : [ "review-controller" ]
+      }
+    },
+    "/api/cms/reviews/{reviewId}" : {
+      "get" : {
+        "operationId" : "get_6",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "reviewId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewDetail"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "One review with the version under review and the earlier published version to compare it with",
+        "tags" : [ "review-controller" ]
+      }
+    },
+    "/api/cms/reviews/{reviewId}/approve" : {
+      "post" : {
+        "operationId" : "approve",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "reviewId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Approve (publish) the version. 403 when the caller wrote or submitted it; 409 while a dependency is not published",
+        "tags" : [ "review-controller" ]
+      }
+    },
+    "/api/cms/reviews/{reviewId}/request-changes" : {
+      "post" : {
+        "operationId" : "requestChanges",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "reviewId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReviewComment"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Send the version back to its author with a comment (required)",
+        "tags" : [ "review-controller" ]
       }
     },
     "/api/cms/score-tables" : {

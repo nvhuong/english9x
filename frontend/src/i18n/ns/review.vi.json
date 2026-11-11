@@ -1,0 +1,78 @@
+{
+  "nav": "Duyệt nội dung",
+  "loading": "Đang tải…",
+  "retry": "Thử lại",
+  "unknownAuthor": "không rõ",
+  "types": {
+    "question": "Câu hỏi",
+    "question_group": "Nhóm câu hỏi",
+    "strategy_lesson": "Bài phương pháp",
+    "score_table": "Bảng quy đổi điểm",
+    "grading_skill": "Kỹ năng chấm",
+    "test": "Đề thi"
+  },
+  "status": { "IN_REVIEW": "Đang chờ duyệt", "CHANGES_REQUESTED": "Đã yêu cầu sửa", "PUBLISHED": "Đã xuất bản" },
+  "queue": {
+    "title": "Hàng chờ duyệt",
+    "description": "Các bản đang chờ duyệt trong ngữ cảnh này. Mở một dòng để xem nội dung, so với bản đã xuất bản trước đó, rồi duyệt hoặc yêu cầu sửa.",
+    "emptyTitle": "Không có gì chờ duyệt",
+    "empty": "Hiện chưa có bản nào đang chờ duyệt.",
+    "errorTitle": "Không tải được hàng chờ",
+    "error": "Đã có lỗi khi tải hàng chờ duyệt.",
+    "bundle": "Cả cụm {{count}} bản",
+    "bundleBadge": "Cụm",
+    "single": "Một bản",
+    "author": "Người soạn: {{name}}"
+  },
+  "detail": {
+    "back": "← Hàng chờ duyệt",
+    "backBundle": "← Cả cụm",
+    "notFoundTitle": "Không tìm thấy bản duyệt",
+    "notFound": "Bản duyệt này không tồn tại hoặc bạn không được xem.",
+    "version": "Phiên bản {{n}}",
+    "comparedWith": "So với phiên bản {{n}}",
+    "comment": "Nhận xét: {{text}}",
+    "contentTitle": "Nội dung và khác biệt",
+    "noContent": "Bạn không được xem nội dung của bản này."
+  },
+  "diff": {
+    "caption": "Từng trường của bản đang duyệt so với bản đã xuất bản trước",
+    "field": "Trường",
+    "before": "Bản trước",
+    "after": "Bản đang duyệt",
+    "onlyChanged": "Chỉ hiện trường thay đổi",
+    "noPrevious": "Chưa có bản trước: mọi trường đều là mới.",
+    "summary_one": "{{count}} trường thay đổi",
+    "summary_other": "{{count}} trường thay đổi",
+    "status": { "changed": "Đã đổi", "added": "Mới", "removed": "Đã bỏ" }
+  },
+  "bundle": {
+    "title": "Cả cụm {{count}} bản",
+    "hint": "Cụm được duyệt hoặc yêu cầu sửa cùng lúc: hoặc tất cả, hoặc không bản nào.",
+    "members": "Các bản trong cụm"
+  },
+  "decision": {
+    "label": "Quyết định",
+    "approve": "Duyệt",
+    "approveBundle": "Duyệt cả cụm",
+    "changes": "Yêu cầu sửa",
+    "changesBundle": "Yêu cầu sửa cả cụm",
+    "dialogTitle": "Yêu cầu sửa",
+    "dialogDescription": "Nhận xét sẽ được gửi tới người soạn.",
+    "comment": "Nhận xét",
+    "send": "Gửi yêu cầu sửa",
+    "cancel": "Huỷ",
+    "own": "Bạn đã soạn hoặc gửi bản này nên không thể duyệt hoặc yêu cầu sửa; hãy nhờ một người duyệt khác.",
+    "approved": "Đã duyệt và xuất bản.",
+    "sentBack": "Đã gửi yêu cầu sửa cho người soạn."
+  },
+  "errors": {
+    "own": "Bạn không thể duyệt bản do chính mình soạn hoặc gửi.",
+    "forbidden": "Bạn không có quyền duyệt nội dung này.",
+    "dependencies": "Chưa thể xuất bản: còn nội dung mà bản này cần chưa được xuất bản.",
+    "conflict": "Bản này đã được quyết định hoặc không còn ở trạng thái chờ duyệt.",
+    "notFound": "Không tìm thấy bản duyệt.",
+    "comment": "Cần nhập nhận xét.",
+    "generic": "Không thực hiện được. Vui lòng thử lại."
+  }
+}
