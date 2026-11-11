@@ -1,4 +1,5 @@
 export interface CatalogCourse {
+  id: string;
   code: string;
   examCode: string;
   title: string;

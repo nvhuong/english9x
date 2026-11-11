@@ -2307,6 +2307,8 @@ export interface components {
             code?: string;
             description?: string;
             examCode?: string;
+            /** Format: uuid */
+            id?: string;
             /** Format: int32 */
             lessons?: number;
             /** @description true when the course comes from the shared pool of an organisation */

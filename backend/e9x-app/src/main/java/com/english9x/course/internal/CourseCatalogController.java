@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 class CourseCatalogController {
 
     @Schema(name = "CatalogCourse")
-    record CourseDto(String code, String examCode, String title, String description, String authorDisplay, String unlockRule, int chapters, int lessons,
+    record CourseDto(UUID id, String code, String examCode, String title, String description, String authorDisplay, String unlockRule, int chapters, int lessons,
                      @Schema(description = "true when the course comes from the shared pool of an organisation") boolean shared) {}
 
     @Schema(name = "CatalogLesson")
@@ -48,14 +48,14 @@ class CourseCatalogController {
     @Operation(summary = "The public course catalog: PUBLISHED English9x courses and APPROVED shared ones; no sign-in needed")
     ResponseEntity<List<CourseDto>> list(@RequestParam(required = false) String exam) {
         List<CourseDto> out = jdbc.query("""
-                select c.code, c.exam_code, v.title, v.description, v.author_display, v.unlock_rule, c.owner_org_id is not null,
+                select c.id, c.code, c.exam_code, v.title, v.description, v.author_display, v.unlock_rule, c.owner_org_id is not null,
                        (select count(*) from course_chapters h where h.course_version_id = v.id),
                        (select count(*) from course_lessons l where l.course_version_id = v.id)
                   from courses c join course_versions v on v.course_id = c.id and v.status = 'PUBLISHED'
                  where (c.owner_org_id is null or c.shared_status = 'APPROVED') and (?::text is null or c.exam_code = ?)
                  order by v.title, c.code
-                """, (rs, n) -> new CourseDto(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6),
-                rs.getInt(8), rs.getInt(9), rs.getBoolean(7)), exam, exam);
+                """, (rs, n) -> new CourseDto(rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
+                rs.getString(6), rs.getString(7), rs.getInt(9), rs.getInt(10), rs.getBoolean(8)), exam, exam);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(out);
     }
 

@@ -1,15 +1,15 @@
 // F40 — Đơn VietQR (spec §16.2): "Đơn có QR đúng số tiền/nội dung; admin xác nhận → entitlement; từ chối → có lý do".
 //
-// The administrator sets the receiving account on the real screen; a learner places an order (real API: the plan and course pickers are P5.4) and opens
+// The administrator sets the receiving account on the real screen; a learner places an order on the checkout screen and opens
 // the real order page, which shows the QR, the account, the exact amount and the exact transfer note; the administrator confirms one order and rejects another
 // on the real queue screen. Confirmation opens access (entitlements from now), is recorded in the audit log, and tells the learner (in-app and by mail); a
 // rejection shows the reason (as text) to the learner. A second decision is refused.
 //
-// PENDING (see e2e/partial-features.json): the browser steps that PLACE the order (plan and course pickers, checkout page: P5.4), and decoding the QR
-// image on the page with jsQR (P5.4). The image is decoded by QrPayloadIT with ZXing; here the payload the order answers with is checked field by field
-// (amount, account, note, CRC) and the picture on the page is checked to be a 512 px PNG. The scan with three real bank apps is a manual pre-release step.
+// The learner places the order on the checkout screen (plan and course pickers) and the QR picture on the order page is decoded with jsQR; the payload is
+// also checked field by field (amount, account, note, CRC). The scan with three real bank apps is a manual pre-release step.
 import { test, expect } from '../../fixtures';
 import type { Page } from '@playwright/test';
+import jsQR from 'jsqr';
 
 const mainNav = (page: Page) => page.getByRole('navigation', { name: 'Điều hướng chính' });
 const areaNav = (page: Page) => page.getByRole('navigation', { name: 'Điều hướng khu vực' });
@@ -61,10 +61,18 @@ test.describe('F40 VietQR order', () => {
     await expect(page.getByText('Đã lưu tài khoản nhận tiền.')).toBeVisible();
     await expect(page.getByTestId('current-account')).toContainText(accountNo);
 
-    // 2) the learner orders and opens the order page: QR, account, exact amount, exact note
-    const placed = await org.api(l.token, 'POST', '/api/orders', { body: { planId: plan.body.id, courseIds: [course.courseId] } });
-    expect(placed.status).toBe(201);
-    const code: string = placed.body.orderCode;
+    // 2) the learner picks the plan and the course on the checkout screen, places the order and reads the QR on the order page
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
+    const learnerPage = await ctx.newPage();
+    await auth.loginAs(learnerPage, learner);
+    await learnerPage.goto('/checkout');
+    await learnerPage.getByRole('radio', { name: new RegExp(`Gói F40 ${suffix}`) }).check();
+    await learnerPage.getByRole('checkbox', { name: new RegExp(course.code) }).check();
+    await learnerPage.getByRole('button', { name: 'Đặt đơn và thanh toán' }).click();
+    await expect(learnerPage).toHaveURL(/\/orders\/[A-Z0-9]{6}$/);
+    const code = learnerPage.url().split('/').pop()!;
+    const placed = await org.api(l.token, 'GET', `/api/orders/${code}`);
+    expect(placed.status).toBe(200);
     expect(placed.body.transferNote).toBe(`E9X ${code} ${course.code}`);
     const payload: string = placed.body.qrPayload;
     const top = tlv(payload);
@@ -74,10 +82,6 @@ test.describe('F40 VietQR order', () => {
     expect(tlv(top['62'])['08']).toBe(placed.body.transferNote);
     expect(placed.body.qrPngUrl).toBe(`/api/orders/${code}/qr.png`);
 
-    const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
-    const learnerPage = await ctx.newPage();
-    await auth.loginAs(learnerPage, learner);
-    await learnerPage.goto(`/orders/${code}`);
     await expect(learnerPage.getByRole('heading', { level: 1, name: `Đơn ${code}` })).toBeVisible();
     await expect(learnerPage.getByTestId('order-status')).toHaveText('Chờ thanh toán');
     const qr = learnerPage.getByRole('img', { name: `Mã QR thanh toán đơn ${code}` });
@@ -86,6 +90,21 @@ test.describe('F40 VietQR order', () => {
     await expect(learnerPage.getByTestId('copy-value-note')).toHaveText(placed.body.transferNote);
     await expect(learnerPage.getByTestId('copy-value-amount')).toHaveText('499000');
     await expect(learnerPage.getByTestId('copy-value-account')).toHaveText(accountNo);
+    // decode the QR picture ON THE PAGE (pixels read in the browser, decoded with jsQR here): it carries exactly what the order says
+    const pixels = await qr.evaluate((img: HTMLImageElement) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const c2d = canvas.getContext('2d')!;
+      c2d.drawImage(img, 0, 0);
+      const d = c2d.getImageData(0, 0, canvas.width, canvas.height);
+      return { width: d.width, height: d.height, data: Array.from(d.data) };
+    });
+    const decoded = jsQR(Uint8ClampedArray.from(pixels.data), pixels.width, pixels.height);
+    expect(decoded, 'the QR on the page can be decoded').not.toBeNull();
+    expect(decoded!.data).toBe(payload);
+    expect(tlv(decoded!.data)['54']).toBe('499000');
+    expect(tlv(tlv(decoded!.data)['62'])['08']).toBe(`E9X ${code} ${course.code}`);
     // the image is served only to its owner
     const otherToken = (await org.apiLogin(await seed.verifiedLearner({ email: uniqueEmail('f40-other') }))).token;
     expect((await org.api(otherToken, 'GET', `/api/orders/${code}`)).status).toBe(404);
