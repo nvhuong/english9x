@@ -93,6 +93,16 @@ export const seed = {
         state: 'DONE' | 'AI_FAILED' | 'TEACHER_QUEUE' | null;
         evaluations: Array<{ section: string; model: string; inputTokens: number; outputTokens: number; costVnd: number; band: number; result: string }>;
       }>('grading/ai', { attemptId }),
+    /** The grading mode of one test (a TEST-scope policy row, like the administrator's screen writes): TEACHER or BOTH put the attempts of that test in the teachers' queue (P4.3). */
+    policy: (opts: { testVersionId: string; mode: 'AI' | 'TEACHER' | 'BOTH' }) => post<{ mode: string }>('grading/policy', opts),
+    /** The teachers' queue item of an attempt (null until the policy or the AI put it there) and the teacher reviews written for it (with the AI band and the deviation). */
+    queue: (attemptId: string) =>
+      post<{
+        item: { id: string; state: 'OPEN' | 'CLAIMED' | 'DONE'; reason: string; grading_org_id: string | null; claimed_by: string | null; version: number } | null;
+        reviews: Array<{ skill: string; teacherId: string; band: number; aiBand: number | null; deviation: number | null; comment: string }>;
+      }>('grading/queue', { attemptId }),
+    /** The deadline of the claim on the attempt's item passes; the real release_expired_claim job (every few seconds in the E2E stack) then returns the item to the queue. */
+    expireClaim: (attemptId: string) => post<{ expired: boolean }>('grading/queue/expire', { attemptId }),
   },
 
   /** Course fixtures (P3.1): the REAL lesson gate asked as a person, with the progress the test states (the learning module that owns the real progress is P3.2). */

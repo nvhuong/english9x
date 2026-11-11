@@ -16,6 +16,7 @@ public final class SweepFixtures {
     public final UUID userB = UUID.randomUUID();
     /** P3.3: user B's exam attempt (org B's): A's people must find neither it nor anything under it. */
     public final UUID attemptB = UUID.randomUUID();
+    public final UUID queueItemB = UUID.randomUUID();
     public final UUID classA = UUID.randomUUID();
     public final UUID classB = UUID.randomUUID();
     /** Member of org A without roles to speak of: the positive control of changing somebody's roles. */
@@ -127,6 +128,10 @@ public final class SweepFixtures {
         // P4.2: the AI grading record and evaluation of B's attempt
         su.update("insert into ai_gradings(attempt_id,user_id,owner_org_id,state) values (?,?,?,'DONE')", attemptB, userB, orgB);
         su.update("insert into ai_evaluations(attempt_id,question_id,user_id,owner_org_id,model,input_tokens,output_tokens,cost_vnd,band,result) values (?,?,?,?,'gemini',1,1,0,6,'{}'::jsonb)", attemptB, questionOfB, userB, orgB);
+        // P4.3: org B grades its own learners; B's attempt is in its teachers' queue and has a teacher's review (read through the queue routes only by B's teachers)
+        su.update("insert into org_grading_sides(org_id,side) values (?,'CENTER')", orgB);
+        su.update("insert into grading_queue_items(id,attempt_id,user_id,owner_org_id,grading_org_id,exam_code,reason) values (?,?,?,?,?,'IELTS','POLICY')", queueItemB, attemptB, userB, orgB, orgB);
+        su.update("insert into teacher_reviews(queue_item_id,attempt_id,user_id,owner_org_id,skill,teacher_id,criteria,comment,band) values (?,?,?,?,'WRITING',?,'{\"TA\":6}'::jsonb,'',6)", queueItemB, attemptB, userB, orgB, userB);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userB, orgB);
         // A's member is A's ORG_ADMIN, so the org-admin endpoints (/api/orgs/{id}/...) have a positive control
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userA, orgA);
@@ -478,6 +483,7 @@ public final class SweepFixtures {
         all.put("POST /api/cms/score-tables/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null, englishNine));
         examFixtures(all);
         learningFixtures(all);
+        gradingFixtures(all);
         return all;
     }
 
@@ -516,6 +522,21 @@ public final class SweepFixtures {
         all.put("GET /api/learning/chapter-tests/{id}", new ForeignIdSweep.Fixture(null, List.of(), null, why));
         all.put("POST /api/learning/chapter-tests/{id}/attempts", new ForeignIdSweep.Fixture("{\"answers\":[]}", List.of(), null, why));
         all.put("POST /api/learning/heartbeat", new ForeignIdSweep.Fixture("{\"courseId\":\"" + none + "\",\"lessonId\":\"" + none + "\"}", List.of(), null, why));
+    }
+
+    /**
+     * P4.3: the teachers' queue. An item is visible to the teachers of its side and, once held, to its holder only; the administrator of a side sees its own side. A's
+     * ORG_ADMIN is no teacher and org B's side is not A's, so every route answers 403/404 whatever id it is given; TeacherQueueIT measures the 2xx of each route and who sees what.
+     */
+    private void gradingFixtures(Map<String, ForeignIdSweep.Fixture> all) {
+        String why = "the queue routes need a teacher of the item's side (or the administrator of that side) and a claimed item: TeacherQueueIT.centerQueueOnlyVisibleToCenterTeachers and .claimedHiddenFromOthers measure the 2xx of each route and the refusals around them";
+        String review = "{\"skill\":\"WRITING\",\"criteria\":{\"TA\":6},\"comment\":\"x\"}";
+        all.put("POST /api/teacher/queue/{id}/claim", new ForeignIdSweep.Fixture(null, List.of(), null, why));
+        all.put("POST /api/teacher/queue/{id}/release", new ForeignIdSweep.Fixture(null, List.of(), null, why));
+        all.put("POST /api/teacher/queue/{id}/review", new ForeignIdSweep.Fixture(review, List.of(), null, why));
+        all.put("POST /api/admin/queue/{id}/reassign", new ForeignIdSweep.Fixture("{\"teacherId\":\"" + userB + "\"}", List.of(), null, why));
+        all.put("GET /api/teacher/queue/{id}/recordings/{questionId}", ForeignIdSweep.Fixture.read(List.of(
+                new ForeignIdSweep.Attempt(slots("id", queueItemB, "questionId", UUID.randomUUID())))));
     }
 
     /** The valid example of IELTS_R_SHORT_ANSWER (no file ids) as the body of a question. */

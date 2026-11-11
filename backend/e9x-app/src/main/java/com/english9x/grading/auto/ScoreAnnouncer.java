@@ -1,11 +1,13 @@
 package com.english9x.grading.auto;
 
 import com.english9x.grading.api.events.AttemptScored;
+import com.english9x.grading.auto.GraderStore.Announced;
 import com.english9x.grading.auto.GraderStore.Board;
 import com.english9x.grading.db.GraderDatabase;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,7 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Publishes {@code AttemptScored} once every skill of the attempt has a displayed score. Shared by every scorer (automatic, AI, teacher): whoever
+ * Publishes {@code AttemptScored} once every skill of the attempt has a displayed score, and once more when that board turns official (BOTH mode: the AI's preliminary scores first, the teachers' official ones later). Shared by every scorer (automatic, AI, teacher): whoever
  * writes the last missing score calls it. The grading record is locked while it is published and marked, so concurrent runs queue and the second finds
  * it announced; if the process dies in between, the mark is missing and the next call publishes again (consumers are idempotent, spec events.md).
  * Nothing happens before the automatic scoring wrote the grading record: its own announcement then sees the scores already written.
@@ -43,15 +45,20 @@ public class ScoreAnnouncer {
             return null;
         });
         grader.write(userId, orgId, j -> {
-            if (!store.lockUnannounced(j, attemptId)) {
-                return null;
+            Optional<Announced> done = store.lockAnnounced(j, attemptId);
+            if (done.isEmpty()) {
+                return null; // the automatic scoring has not written the grading record yet
             }
             Board board = store.displayed(j, attemptId);
             if (required.isEmpty() || !board.scores().keySet().containsAll(required)) {
                 return null; // a skill still waits for its score (a table, the AI, a teacher)
             }
+            // Two announcements at most: the first complete board (preliminary while the AI waits for the teacher, or official at once) and, once, the official one
+            if (board.official() ? done.get().official() : done.get().preliminary()) {
+                return null;
+            }
             primary.executeWithoutResult(status -> events.publishEvent(new AttemptScored(attemptId, userId, new LinkedHashMap<>(board.scores()), board.official())));
-            store.markAnnounced(j, attemptId, clock.instant());
+            store.markAnnounced(j, attemptId, clock.instant(), board.official());
             return null;
         });
     }

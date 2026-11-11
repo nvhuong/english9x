@@ -98,9 +98,9 @@
       "owner": "P4.4 (results page)"
     },
     {
-      "id": "F37",
-      "pending": "'chuyển giáo viên': the spec covers Gemini failing on every call, the retries, AI_FAILED, no score for the learner and the SYS_ADMIN notification; the administrator moving the AI_FAILED attempt to the teachers' queue needs the queue and its screen.",
-      "owner": "P4.3 (teacher queue)"
+      "id": "F36",
+      "pending": "'AI hiện ngay là sơ bộ' / 'điểm GV thay, là chính thức' as the LEARNER sees it: the spec covers the AI's PRELIMINARY scores and the SCORE_PRELIMINARY notice, the teacher's grading on the real screen, the OFFICIAL score replacing it, the stored AI-teacher deviation and the SCORE_OFFICIAL notice (the score rows are read through the seed API), but the results page that shows the 'sơ bộ' / 'chính thức' labels does not exist yet.",
+      "owner": "P4.4 (results page)"
     }
   ]
 }

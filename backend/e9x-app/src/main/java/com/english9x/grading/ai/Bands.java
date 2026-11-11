@@ -5,11 +5,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 /** The band of an answer: the mean of its criterion scores, to the nearest half (IELTS rule: .25 goes up to .5, .75 to the next whole band). */
-final class Bands {
+public final class Bands {
 
     private Bands() {}
 
-    static double of(JsonNode criteria, JsonNode answer) {
+    public static double of(JsonNode criteria, JsonNode answer) {
         double sum = 0;
         int n = 0;
         if (criteria != null && criteria.isArray()) {
@@ -24,7 +24,7 @@ final class Bands {
         return n == 0 ? 0 : nearestHalf(sum / n);
     }
 
-    static double nearestHalf(double v) {
+    public static double nearestHalf(double v) {
         return BigDecimal.valueOf(v * 2).setScale(0, RoundingMode.HALF_UP).doubleValue() / 2;
     }
 }
