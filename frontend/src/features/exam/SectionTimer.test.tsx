@@ -45,3 +45,22 @@ describe('SectionTimer', () => {
     expect(onWarn).toHaveBeenCalledWith('warn1');
   });
 });
+
+describe('SectionTimer re-rendering', () => {
+  it('does not jump back to the full time when the parent re-renders (default perfNow), and fires onExpire once', () => {
+    vi.setSystemTime(new Date('2026-11-10T09:30:00Z'));
+    const onExpire = vi.fn();
+    const props = { serverNow: '2026-11-10T09:30:00Z', endsAt: '2026-11-10T09:31:00Z' };
+    const { rerender } = render(<SectionTimer {...props} onExpire={onExpire} />);
+    // the real performance.now() (not injected) advances with the fake clock
+    act(() => void vi.advanceTimersByTime(30_000));
+    expect(screen.getByRole('timer')).toHaveTextContent('00:30');
+    rerender(<SectionTimer {...props} onExpire={() => onExpire()} />);
+    rerender(<SectionTimer {...props} onExpire={() => onExpire()} />);
+    expect(screen.getByRole('timer')).toHaveTextContent('00:30');
+    act(() => void vi.advanceTimersByTime(31_000));
+    rerender(<SectionTimer {...props} onExpire={() => onExpire()} />);
+    act(() => void vi.advanceTimersByTime(2_000));
+    expect(onExpire).toHaveBeenCalledTimes(1);
+  });
+});

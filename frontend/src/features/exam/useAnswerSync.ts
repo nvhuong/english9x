@@ -47,10 +47,15 @@ export function useAnswerSync(opts: { attemptId: string; clock: ServerClock; int
   const commit = useCallback(async (): Promise<boolean> => {
     const batch = [...dirty.current.entries()];
     dirty.current.clear();
+    let queued = 0;
     try {
-      for (const [questionId, d] of batch) await queue.enqueue({ attemptId, questionId, answer: d.value, answeredAt: d.answeredAt });
+      for (const [questionId, d] of batch) {
+        await queue.enqueue({ attemptId, questionId, answer: d.value, answeredAt: d.answeredAt });
+        queued++;
+      }
     } catch {
-      for (const [q, d] of batch) if (!dirty.current.has(q)) dirty.current.set(q, d);
+      // only what did not reach the queue goes back; what did is already waiting there
+      for (const [q, d] of batch.slice(queued)) if (!dirty.current.has(q)) dirty.current.set(q, d);
       setState('offline');
       return false;
     }
@@ -97,6 +102,7 @@ export function useAnswerSync(opts: { attemptId: string; clock: ServerClock; int
     window.addEventListener('pagehide', hide);
     return () => {
       clearInterval(id);
+      void commit(); // the section is being left (remount): what was typed last must not wait for the next visit
       window.removeEventListener('online', online);
       window.removeEventListener('pagehide', hide);
     };

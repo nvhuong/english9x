@@ -7,8 +7,11 @@ type Link = { state: 'loading' } | { state: 'ready'; url: string } | { state: 'g
 
 // One link per (attempt, file) for the life of the page: the server gives it out once, and a re-render (or a second mount) must not use it up.
 const links = new Map<string, Promise<Link>>();
+// Files whose playback has started in this page: a second mount (navigating away and back) must not start them again.
+const played = new Set<string>();
 export function resetAudioLinks() {
   links.clear();
+  played.clear();
 }
 function linkFor(attemptId: string, mediaId: string): Promise<Link> {
   const key = `${attemptId}/${mediaId}`;
@@ -51,6 +54,8 @@ export interface ListeningPlayerProps {
 export function ListeningPlayer({ attemptId, mediaId, onStart, onEnded }: ListeningPlayerProps) {
   const { t } = useTranslation('exam');
   const id = `${attemptId}/${mediaId}`;
+  // decided once, at mount: playback that starts now must not turn the player into this message on the next render
+  const [alreadyPlayed] = useState(() => played.has(id));
   const [loaded, setLoaded] = useState<{ id: string; link: Link } | null>(null);
   const link = useMemo<Link>(() => (loaded?.id === id ? loaded.link : { state: 'loading' }), [loaded, id]);
   useEffect(() => {
@@ -63,10 +68,18 @@ export function ListeningPlayer({ attemptId, mediaId, onStart, onEnded }: Listen
   useEffect(() => {
     lockMediaSession();
   }, [link]);
+  useEffect(() => {
+    lockMediaSession();
+  }, []);
 
+  if (alreadyPlayed) return <p role="status" className="rounded-md border border-edge bg-sunken p-3 text-ink">{t('audio.gone')}</p>;
   if (link.state === 'loading') return <p role="status" className="text-muted">{t('audio.loading')}</p>;
   if (link.state === 'gone') return <p role="status" className="rounded-md border border-edge bg-sunken p-3 text-ink">{t('audio.gone')}</p>;
   if (link.state === 'error') return <p role="alert" className="text-danger">{t('audio.error')}</p>;
   // key: a different file is a new player (its "already played" memory starts again)
-  return <AudioPlayer key={link.url} src={link.url} onStart={onStart} onEnded={onEnded} />;
+  return <AudioPlayer key={link.url} src={link.url} onStart={() => {
+      played.add(id);
+      lockMediaSession(); // some browsers register their handlers again when playback starts
+      onStart?.();
+    }} onEnded={onEnded} />;
 }

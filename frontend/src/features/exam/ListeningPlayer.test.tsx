@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExamHttpError, examApi } from './examApi';
 import { ListeningPlayer, resetAudioLinks } from './ListeningPlayer';
@@ -46,5 +46,18 @@ describe('ListeningPlayer', () => {
     const second = render(<ListeningPlayer attemptId="a1" mediaId="m3" />);
     await waitFor(() => expect(second.container.querySelector('audio')).not.toBeNull());
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ListeningPlayer navigation', () => {
+  it('does not start the recording again when the player is mounted a second time after it had started', async () => {
+    vi.spyOn(examApi, 'audio').mockResolvedValue({ url: 'https://files.test/c.mp3', expiresAt: '2026-11-10T10:00:00Z' });
+    const first = render(<ListeningPlayer attemptId="a1" mediaId="m9" />);
+    await waitFor(() => expect(first.container.querySelector('audio')).not.toBeNull());
+    fireEvent.play(first.container.querySelector('audio')!);
+    first.unmount();
+    const second = render(<ListeningPlayer attemptId="a1" mediaId="m9" />);
+    expect(await screen.findByText(/không phát lại/i)).toBeInTheDocument();
+    expect(second.container.querySelector('audio')).toBeNull();
   });
 });

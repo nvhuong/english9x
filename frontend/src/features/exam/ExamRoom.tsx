@@ -81,6 +81,8 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
   const [notice, setNotice] = useState<string | null>(null);
   const [warn, setWarn] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  // a speaking take is being prepared / recorded / uploaded: leaving the question would lose it
+  const [locked, setLocked] = useState(false);
   const small = useSmallScreen();
 
   const cur = flat[Math.min(index, flat.length - 1)];
@@ -89,11 +91,11 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
 
   const go = useCallback(
     (to: number) => {
-      if (to < 0 || to >= flat.length) return;
+      if (locked || to < 0 || to >= flat.length) return;
       void sync.flush();
       setIndex(to);
     },
-    [flat.length, sync],
+    [flat.length, sync, locked],
   );
   const toggleFlag = useCallback(() => {
     if (!cur) return;
@@ -111,6 +113,7 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
     const kind = kindOfQuestion(cur.q.typeCode, cur.q.content);
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;
+      if (confirm || locked || (e.target instanceof Element && e.target.closest('[role="dialog"]'))) return; // nothing changes behind the finish dialog or during a take
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         go(index + 1);
@@ -133,7 +136,7 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [cur, go, index, sync, toggleFlag]);
+  }, [cur, go, index, sync, toggleFlag, confirm, locked]);
 
   const finish = async () => {
     setBusy(true);
@@ -169,11 +172,15 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
   const speakSeconds = typeof cur.q.content.speakSeconds === 'number' ? cur.q.content.speakSeconds : 120;
   const prepareSeconds = typeof cur.q.content.prepareSeconds === 'number' ? cur.q.content.prepareSeconds : 0;
 
+  // One recording for the whole section: its player stays mounted (hidden on questions without it) so that moving between questions never restarts it
+  const audioIds = new Set(flat.map((f) => text(f.q.content.audioMediaId) || text(f.g.content.audioMediaId)).filter(Boolean));
+  const persistentAudio = audioIds.size === 1 ? [...audioIds][0] : null;
+
   const body = (
     <div className="flex flex-col gap-4">
       {text(cur.g.content.title) && <h2 className="font-serif text-xl font-bold text-ink">{text(cur.g.content.title)}</h2>}
       {text(cur.g.content.instructions) && <p className="text-muted">{text(cur.g.content.instructions)}</p>}
-      {audioId && <ListeningPlayer key={audioId} attemptId={view.attemptId} mediaId={audioId} />}
+      {audioId && !persistentAudio && <ListeningPlayer key={audioId} attemptId={view.attemptId} mediaId={audioId} />}
       {imageId && <ExamImage key={imageId} mediaId={imageId} />}
       {kind === 'SPEAKING_RESPONSE' && <QuestionInput kind={kind} content={cur.q.content} value={undefined} onChange={() => undefined} number={index + 1} />}
       {kind === 'SPEAKING_RESPONSE' ? (
@@ -182,6 +189,7 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
           speakSeconds={speakSeconds}
           prepareSeconds={prepareSeconds}
           upload={(blob) => examApi.recording(view.attemptId, cur.q.questionId, blob)}
+          onPhase={(p) => setLocked(p === 'preparing' || p === 'recording' || p === 'uploading')}
           onUploaded={() => setRecorded((r) => new Set(r).add(cur.q.questionId))}
         />
       ) : (
@@ -192,6 +200,11 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4">
+      {persistentAudio && (
+        <div hidden={audioId !== persistentAudio}>
+          <ListeningPlayer attemptId={view.attemptId} mediaId={persistentAudio} />
+        </div>
+      )}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-2xl font-bold text-ink">{view.title ?? view.examCode}</h1>
@@ -215,8 +228,8 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
         <section aria-label={t('question.region')} className="min-w-0 rounded-lg border border-line bg-surface p-5">
           {passage ? <ReadingSplitView passage={passage} title={undefined}>{body}</ReadingSplitView> : body}
           <div className="mt-6 flex flex-wrap items-center gap-2">
-            <Button variant="secondary" onClick={() => go(index - 1)} disabled={index === 0}>{t('nav.prev')}</Button>
-            <Button variant="secondary" onClick={() => go(index + 1)} disabled={index >= flat.length - 1}>{t('nav.next')}</Button>
+            <Button variant="secondary" onClick={() => go(index - 1)} disabled={locked || index === 0}>{t('nav.prev')}</Button>
+            <Button variant="secondary" onClick={() => go(index + 1)} disabled={locked || index >= flat.length - 1}>{t('nav.next')}</Button>
             <Button variant="ghost" aria-pressed={flags.has(cur.q.questionId)} onClick={toggleFlag}>
               {flags.has(cur.q.questionId) ? t('nav.unflag') : t('nav.flag')}
             </Button>
@@ -229,7 +242,7 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
             onSelect={(id) => go(flat.findIndex((f) => f.q.questionId === id))}
           />
           <p className="text-xs text-muted">{t('keys.help')}</p>
-          <Button variant={last ? 'accent' : 'primary'} onClick={() => setConfirm(true)}>{last ? t('finish.submit') : t('finish.section')}</Button>
+          <Button variant={last ? 'accent' : 'primary'} disabled={locked} onClick={() => setConfirm(true)}>{last ? t('finish.submit') : t('finish.section')}</Button>
         </aside>
       </div>
       <Dialog

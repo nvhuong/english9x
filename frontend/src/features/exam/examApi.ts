@@ -108,6 +108,13 @@ export const examApi = {
 };
 
 export const DEFAULT_AUTOSAVE_MS = 5000;
+/** A Spring-style duration text as the server writes it ("5s", "500ms", "1m") in ms; null when it is not one (a bare number is not guessed at). */
+export function parseDuration(v: unknown): number | null {
+  const m = typeof v === 'string' ? /^(\d+(?:\.\d+)?)(ms|s|m)$/.exec(v.trim()) : null;
+  if (!m) return null;
+  const ms = Math.round(Number(m[1]) * (m[2] === 'ms' ? 1 : m[2] === 'm' ? 60000 : 1000));
+  return ms > 0 ? ms : null;
+}
 let configured: Promise<number> | undefined;
 /** e9x.exam.autosave-interval from GET /api/config/public (the key `autosaveIntervalMs`/`examAutosaveInterval`); 5 s when the server does not say. */
 export function autosaveIntervalMs(): Promise<number> {
@@ -117,11 +124,8 @@ export function autosaveIntervalMs(): Promise<number> {
       if (!res.ok) return DEFAULT_AUTOSAVE_MS;
       const b = (await res.json()) as Record<string, unknown>;
       const v = b['e9x.exam.autosave-interval'] ?? b.examAutosaveInterval ?? b.autosaveInterval ?? (b.exam as Record<string, unknown> | undefined)?.autosaveInterval;
-      if (typeof v === 'number') return v >= 100 && v < 1000 ? v * 1000 : v; // seconds or ms
-      if (typeof v === 'string') {
-        const m = /^(\d+(?:\.\d+)?)(ms|s|m)?$/.exec(v.trim());
-        if (m) return Math.round(Number(m[1]) * (m[2] === 'ms' ? 1 : m[2] === 'm' ? 60000 : 1000));
-      }
+      const ms = parseDuration(v);
+      if (ms !== null) return ms;
     } catch {
       /* fall through */
     }

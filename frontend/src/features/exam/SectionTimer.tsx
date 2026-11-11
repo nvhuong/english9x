@@ -14,12 +14,14 @@ export interface SectionTimerProps {
   perfNow?: () => number;
 }
 
+const realPerf = () => performance.now();
+
 /**
  * The clock of a section. Remaining = endsAt - (serverNow + time elapsed since that answer), the elapsed time measured with performance.now()
  * (monotonic: changing the computer's clock or time zone does nothing). Recomputed when the tab becomes visible again; the 5 and 1 minute warnings
  * come from the design-system Timer.
  */
-export function SectionTimer({ endsAt, serverNow, onWarn, onExpire, onResync, perfNow = () => performance.now() }: SectionTimerProps) {
+export function SectionTimer({ endsAt, serverNow, onWarn, onExpire, onResync, perfNow = realPerf }: SectionTimerProps) {
   const [version, setVersion] = useState(0);
   // anchored when the pair (serverNow, performance.now()) arrives, and only then
   const anchor = useMemo(() => ({ server: Date.parse(serverNow), perf: perfNow() }), [serverNow, perfNow]);

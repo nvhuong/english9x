@@ -24,10 +24,12 @@ export interface SpeakingRecorderProps {
   retryDelaysMs?: number[];
   deps?: RecorderDeps;
   onUploaded?: () => void;
+  /** The phase changed (the caller keeps the candidate on the question while a take is under way). */
+  onPhase?: (phase: RecorderPhase) => void;
 }
 
 /** Speaking answer: mic check, preparation countdown, recording of exactly `speakSeconds` at most, upload with automatic retries and a manual one. */
-export function SpeakingRecorder({ upload, prepareSeconds = 0, speakSeconds, retryDelaysMs = [1000, 3000, 6000], deps = defaultRecorderDeps, onUploaded }: SpeakingRecorderProps) {
+export function SpeakingRecorder({ upload, prepareSeconds = 0, speakSeconds, retryDelaysMs = [1000, 3000, 6000], deps = defaultRecorderDeps, onUploaded, onPhase }: SpeakingRecorderProps) {
   const [phase, setPhase] = useState<RecorderPhase>('mic-check');
   const [level, setLevel] = useState(0);
   const [left, setLeft] = useState(0);
@@ -37,6 +39,14 @@ export function SpeakingRecorder({ upload, prepareSeconds = 0, speakSeconds, ret
   const blob = useRef<Blob | null>(null);
   const timers = useRef<{ stop?: ReturnType<typeof setTimeout>; tick?: ReturnType<typeof setInterval>; level?: number; ctx?: AudioContext }>({});
   const live = useRef(true);
+  const phaseCb = useRef(onPhase);
+  useEffect(() => {
+    phaseCb.current = onPhase;
+  });
+  useEffect(() => {
+    phaseCb.current?.(phase);
+  }, [phase]);
+  useEffect(() => () => phaseCb.current?.('done'), []);
 
   const clearTimers = useCallback(() => {
     clearTimeout(timers.current.stop);
@@ -146,9 +156,14 @@ export function SpeakingRecorder({ upload, prepareSeconds = 0, speakSeconds, ret
     r.onstop = () => {
       clearTimers();
       release();
-      const b = new Blob(chunks.current, { type: 'audio/webm' });
+      const b = new Blob(chunks.current, { type: r.mimeType || chunks.current[0]?.type || 'audio/webm' });
       blob.current = b;
       if (live.current) void doUpload(b);
+    };
+    r.onerror = () => {
+      clearTimers();
+      release();
+      if (live.current) setPhase('error');
     };
     r.start();
     setPhase('recording');
