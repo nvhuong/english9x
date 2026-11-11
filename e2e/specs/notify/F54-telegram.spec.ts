@@ -1,13 +1,11 @@
 // F54 — Telegram (spec §16.2): "Liên kết bot bằng token → fake-telegram nhận tin đúng sự kiện; token dùng lại bị từ chối".
-//
-// !! PARTIAL for the same reason as F52. Real: the link screen, the one-time token, the webhook with its secret, the jobs, the fake Bot
-// !! API. The spec plays Telegram (it posts the /start update to the webhook with the secret). The event trigger is the seed API.
+// Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
 import { reviewWorld } from './_world';
 
 test.describe('F54 Telegram notifications', () => {
-  test('F54 link with a one-time token, get the event in the chat, a reused token is refused', async ({ page, seed, auth, telegram, uniqueEmail }) => {
-    const w = await reviewWorld(seed, uniqueEmail, 'f54');
+  test('F54 link with a one-time token, get the event in the chat, a reused token is refused', async ({ page, browser, seed, auth, telegram, uniqueEmail }) => {
+    const w = await reviewWorld(seed, uniqueEmail, 'f54', browser);
     await auth.loginAs(page, w.reviewer);
     await page.goto('/notifications/preferences');
     await expect(page.getByText('Chưa kết nối Telegram')).toBeVisible();
@@ -39,7 +37,7 @@ test.describe('F54 Telegram notifications', () => {
     await w.requested();
     const messages = await telegram.waitForMessages(chat, { count: 2, timeoutMs: 40_000 });
     expect(messages[1]!.text).toContain('<b>Có nội dung chờ duyệt</b>');
-    expect(messages[1]!.text).toContain('Một nội dung (e2e_item) của kỳ thi IELTS đang chờ bạn duyệt.');
+    expect(messages[1]!.text).toContain('Một nội dung (question) của kỳ thi IELTS đang chờ bạn duyệt.');
     expect(messages[1]!.text).toContain('href="https://localhost/notifications"');
 
     // the token is single-use: replayed from another chat it links nothing and answers like any bad token

@@ -1,15 +1,11 @@
 // F52 — Thông báo trong app (spec §16.2): "Sự kiện tạo thông báo, đánh dấu đã đọc".
-//
-// !! PARTIAL. The notification pipeline is real end to end: the workflow's own events (ReviewRequested / ReviewApproved) are published
-// !! through Spring Modulith's event registry, the listeners find the recipients in the database, the notification is stored, and the
-// !! person sees it in the real UI. What stands in is the TRIGGER: the CMS review screens (P2.9) do not exist, so the seed API publishes
-// !! the event the review service would. The other spec §13 events have no source module yet. See e2e/partial-features.json.
+// Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
 import { reviewWorld } from './_world';
 
 test.describe('F52 in-app notifications', () => {
   test('F52 an event creates a notification, the bell counts it, it can be marked read, it is the same in every context and private', async ({ page, browser, seed, auth, org, uniqueEmail }) => {
-    const w = await reviewWorld(seed, uniqueEmail, 'f52');
+    const w = await reviewWorld(seed, uniqueEmail, 'f52', browser);
     await w.requested();
 
     await auth.loginAs(page, w.reviewer);
@@ -25,7 +21,7 @@ test.describe('F52 in-app notifications', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Trung tâm thông báo' })).toBeVisible();
     const item = page.getByRole('listitem').filter({ hasText: 'Có nội dung chờ duyệt' });
     await expect(item).toHaveCount(1);
-    await expect(item).toContainText('Một nội dung (e2e_item) của kỳ thi IELTS đang chờ bạn duyệt.');
+    await expect(item).toContainText('Một nội dung (question) của kỳ thi IELTS đang chờ bạn duyệt.');
     await expect(item).toContainText('Chưa đọc');
     await expect(page.getByRole('status').filter({ hasText: '1 chưa đọc' })).toBeVisible();
 

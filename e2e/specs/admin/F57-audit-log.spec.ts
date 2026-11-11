@@ -1,13 +1,13 @@
 // F57 — Nhật ký (spec §16.2): "Xác nhận đơn, thu hồi suất, duyệt nội dung đều có trong audit log".
 // What exists today is driven through the real screens and the real services: creating an organisation, changing a member's roles,
 // inviting and revoking, accepting an invitation (all through the admin screens and the invitation page), and approving content
-// (a real ReviewService run on a stand-in version, seed.reviewFlow, until the CMS review screens of P2.9 exist). The SYS_ADMIN then
+// (a real question submitted over the API and approved on the real CMS review screen). The SYS_ADMIN then
 // reads all of it on the audit-log screen, filters it, and nobody else can open it.
 // Order confirmation (billing, P5.2) and seat revocation (billing seats, P5.3) are covered: a real order is placed and confirmed by the SYS_ADMIN,
 // a real licence's seat is assigned and taken back by the organisation's ORG_ADMIN, and both records are read on the screen.
-// PENDING (see e2e/partial-features.json): content approval goes through the CMS review screen (P2.9) instead of seed.reviewFlow.
 import { test, expect } from '../../fixtures';
 import type { Page } from '@playwright/test';
+import { decideOnScreen, submitQuestion } from '../../fixtures/review';
 
 const mainNav = (page: Page) => page.getByRole('navigation', { name: 'Điều hướng chính' });
 const areaNav = (page: Page) => page.getByRole('navigation', { name: 'Điều hướng khu vực' });
@@ -81,8 +81,9 @@ test.describe('F57 audit log', () => {
     await org.acceptInvitation(person, link, invitee);
     await ctx.close();
 
-    // 6) approving content: the real review workflow, author and reviewer being two people
-    const flow = await seed.reviewFlow({ authorId: author.userId, reviewerId: reviewer.userId, outcome: 'approved' });
+    // 6) approving content on the REAL review screen: the author submits a real question, the reviewer (another person) approves it on /cms/reviews/:id
+    const flow = await submitQuestion(author, null, `Nhật ký F57 ${suffix}?`);
+    await decideOnScreen(browser, reviewer, { reviewId: flow.reviewId, outcome: 'approved' });
 
     // 7) confirming an order: a learner orders over the real API, the SYS_ADMIN confirms it (one transaction: order, entitlements, audit record)
     const buyer = await seed.verifiedLearner({ email: uniqueEmail('f57-buyer'), displayName: 'Người Mua Gói F57' });
@@ -207,7 +208,7 @@ test.describe('F57 audit log', () => {
     const learner = await seed.verifiedLearner({ email: uniqueEmail('f57-learner') });
     await seed.member({ orgId: center.orgId, userId: orgAdmin.userId, roles: [{ role: 'ORG_ADMIN' }] });
     await seed.staffGrant({ userId: author.userId, role: 'AUTHOR', examCode: 'IELTS' });
-    await seed.reviewFlow({ authorId: author.userId, outcome: 'submitted' }); // there is something in the log to be refused
+    await submitQuestion(author, null, `Nhật ký F57 chờ ${Date.now().toString(36)}?`); // there is something in the log to be refused
 
     for (const who of [orgAdmin, author, learner]) {
       const { token } = await org.apiLogin(who);

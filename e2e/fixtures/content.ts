@@ -60,7 +60,7 @@ export interface StaffedDeps {
  * puts them in a new CENTER (context = that organisation, `orgName` is what the switcher shows); otherwise they are English9x's own staff (the personal
  * context, nothing to switch). Everyone is unique to the call, so parallel tests do not see each other's questions.
  */
-export async function staffed(exams: string[], label: string, deps: StaffedDeps, opts: { inOrganisation?: boolean } = {}): Promise<Staffed & { orgName: string | null; authorLogin: { email: string; password: string } }> {
+export async function staffed(exams: string[], label: string, deps: StaffedDeps, opts: { inOrganisation?: boolean } = {}): Promise<Staffed & { orgName: string | null; authorLogin: { email: string; password: string }; reviewerLogin: { email: string; password: string } }> {
   const inOrg = opts.inOrganisation ?? false;
   const org = inOrg ? await seed.organization({ type: 'CENTER' }) : null;
   const author = await seed.verifiedLearner({ email: deps.uniqueEmail(`${label}-author`) });
@@ -80,7 +80,7 @@ export async function staffed(exams: string[], label: string, deps: StaffedDeps,
     };
   }
   const first = mediaByExam[exams[0]!]!;
-  return { orgId, orgName: org?.name ?? null, authorLogin: author, author: { userId: a.userId, token: a.token }, reviewer: { userId: r.userId, token: r.token }, ...first, mediaByExam };
+  return { orgId, orgName: org?.name ?? null, authorLogin: author, reviewerLogin: reviewer, author: { userId: a.userId, token: a.token }, reviewer: { userId: r.userId, token: r.token }, ...first, mediaByExam };
 }
 
 export async function createQuestion(s: Staffed, typeCode: string, example: QuestionExample = withMedia(exampleOf(typeCode), s.mediaByExam[examOfType(typeCode)] ?? s)) {

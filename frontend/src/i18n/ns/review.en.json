@@ -1,0 +1,78 @@
+{
+  "nav": "Content review",
+  "loading": "Loading…",
+  "retry": "Try again",
+  "unknownAuthor": "unknown",
+  "types": {
+    "question": "Question",
+    "question_group": "Question group",
+    "strategy_lesson": "Strategy lesson",
+    "score_table": "Score table",
+    "grading_skill": "Grading skill",
+    "test": "Test"
+  },
+  "status": { "IN_REVIEW": "In review", "CHANGES_REQUESTED": "Changes requested", "PUBLISHED": "Published" },
+  "queue": {
+    "title": "Review queue",
+    "description": "The versions waiting for review in this context. Open a line to read the content against the earlier published version, then approve or request changes.",
+    "emptyTitle": "Nothing waits for review",
+    "empty": "No version is waiting for review right now.",
+    "errorTitle": "The queue did not load",
+    "error": "Something went wrong while loading the review queue.",
+    "bundle": "A bundle of {{count}} versions",
+    "bundleBadge": "Bundle",
+    "single": "Single",
+    "author": "Author: {{name}}"
+  },
+  "detail": {
+    "back": "← Review queue",
+    "backBundle": "← Whole bundle",
+    "notFoundTitle": "Review not found",
+    "notFound": "This review does not exist or you may not see it.",
+    "version": "Version {{n}}",
+    "comparedWith": "Compared with version {{n}}",
+    "comment": "Comment: {{text}}",
+    "contentTitle": "Content and differences",
+    "noContent": "You may not read the content of this version."
+  },
+  "diff": {
+    "caption": "Each field of the version under review against the earlier published version",
+    "field": "Field",
+    "before": "Earlier version",
+    "after": "Under review",
+    "onlyChanged": "Show changed fields only",
+    "noPrevious": "No earlier version: every field is new.",
+    "summary_one": "{{count}} field changed",
+    "summary_other": "{{count}} fields changed",
+    "status": { "changed": "Changed", "added": "New", "removed": "Removed" }
+  },
+  "bundle": {
+    "title": "A bundle of {{count}} versions",
+    "hint": "A bundle is approved or sent back as one: all of it or none.",
+    "members": "Versions in the bundle"
+  },
+  "decision": {
+    "label": "Decision",
+    "approve": "Approve",
+    "approveBundle": "Approve whole bundle",
+    "changes": "Request changes",
+    "changesBundle": "Request changes for the whole bundle",
+    "dialogTitle": "Request changes",
+    "dialogDescription": "The comment is sent to the author.",
+    "comment": "Comment",
+    "send": "Send request",
+    "cancel": "Cancel",
+    "own": "You wrote or submitted this version, so you cannot approve it or send it back; ask another reviewer.",
+    "approved": "Approved and published.",
+    "sentBack": "Sent back to the author."
+  },
+  "errors": {
+    "own": "You cannot approve a version you wrote or submitted.",
+    "forbidden": "You may not review this content.",
+    "dependencies": "It cannot be published yet: something it needs is not published.",
+    "conflict": "This version was already decided or is no longer waiting for review.",
+    "notFound": "Review not found.",
+    "comment": "A comment is required.",
+    "generic": "That did not work. Please try again."
+  }
+}
