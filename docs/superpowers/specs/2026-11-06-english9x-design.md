@@ -362,6 +362,8 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.org.invitation-hourly-limit` | `50` | Số lời mời (email) mỗi người được gửi trong một giờ; chặn việc dùng biểu mẫu mời để gửi thư rác | Cấu hình |
 | `e9x.org.join.ip-rate-limit` | `30/15m` | Số lần thử mã tham gia không thành công mỗi địa chỉ IP (mã 8 ký tự ít entropy; lớp học chung một IP nên rộng hơn); thành công thì hoàn lại lượt | Cấu hình |
 | `e9x.org.join.user-rate-limit` | `10/15m` | Số lần thử mã tham gia không thành công mỗi tài khoản | Cấu hình |
+| `e9x.classroom.due-soon` | `24h` | Báo học viên chưa nộp trước hạn giao bài bao lâu (`ASSIGNMENT_DUE_SOON`, P6.2) | Cấu hình |
+| `e9x.classroom.job-interval` | `1h` | Chu kỳ việc nền `assignment_due_soon` (P6.2) | Cấu hình |
 | `e9x.audit.default-page-size` | `50` | Số bản ghi mỗi trang của màn hình nhật ký khi yêu cầu không nói; từ 1 đến `e9x.audit.max-page-size` | Cấu hình |
 | `e9x.audit.max-page-size` | `100` | Số bản ghi tối đa một yêu cầu đọc nhật ký được xin (xin nhiều hơn thì trả đúng số này); từ 1 đến 1000 | Cấu hình |
 | `e9x.audit.max-detail-bytes` | `4096` | Dung lượng JSON tối đa của phần chi tiết một bản ghi nhật ký (cận của CSDL: 16384); chi tiết quá cỡ làm hành động thất bại thay vì bị cắt | Cấu hình |

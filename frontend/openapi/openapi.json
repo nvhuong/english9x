@@ -16,6 +16,31 @@
         "required" : [ "status" ],
         "type" : "object"
       },
+      "AddClassMembersRequest" : {
+        "properties" : {
+          "userIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "maxItems" : 200,
+            "minItems" : 0,
+            "type" : "array"
+          }
+        },
+        "required" : [ "userIds" ],
+        "type" : "object"
+      },
+      "AddClassMembersResponse" : {
+        "properties" : {
+          "added" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "added" ],
+        "type" : "object"
+      },
       "AdminOrderView" : {
         "properties" : {
           "amountVnd" : {
@@ -151,6 +176,44 @@
         },
         "type" : "object"
       },
+      "AssignClassCoursesRequest" : {
+        "properties" : {
+          "courseIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "maxItems" : 50,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "licenseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "courseIds", "licenseId" ],
+        "type" : "object"
+      },
+      "AssignClassCoursesResponse" : {
+        "properties" : {
+          "alreadyHolding" : {
+            "description" : "members who already held a seat of this licence (left as they were)",
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "assigned" : {
+            "description" : "members who were given a seat now",
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "alreadyHolding", "assigned" ],
+        "type" : "object"
+      },
       "AssignSeatRequest" : {
         "properties" : {
           "courseIds" : {
@@ -170,6 +233,96 @@
           }
         },
         "required" : [ "courseIds", "userId" ],
+        "type" : "object"
+      },
+      "AssignmentReport" : {
+        "properties" : {
+          "assignmentId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "rows" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AssignmentReportRow"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "assignmentId", "rows" ],
+        "type" : "object"
+      },
+      "AssignmentReportRow" : {
+        "properties" : {
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "description" : "only the ORG_ADMIN reads addresses",
+            "type" : "string"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/AssignmentStatus"
+          },
+          "submittedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "status", "userId" ],
+        "type" : "object"
+      },
+      "AssignmentStatus" : {
+        "description" : "SUBMITTED in time, LATE (handed in after dueAt), MISSING (not handed in, dueAt has passed), PENDING (not yet, not yet due)",
+        "enum" : [ "PENDING", "SUBMITTED", "LATE", "MISSING" ],
+        "type" : "string"
+      },
+      "AssignmentView" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "dueAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "late" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "missing" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "submitted" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "testVersionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "createdAt", "dueAt", "id", "late", "missing", "submitted", "total" ],
         "type" : "object"
       },
       "AttemptRequest" : {
@@ -524,6 +677,57 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "ClassMemberView" : {
+        "properties" : {
+          "addedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "description" : "only the ORG_ADMIN reads addresses",
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "addedAt", "userId" ],
+        "type" : "object"
+      },
+      "ClassView" : {
+        "properties" : {
+          "canManage" : {
+            "description" : "the caller is the ORG_ADMIN or the teacher of this class",
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "CLASS", "GROUP" ],
+            "type" : "string"
+          },
+          "memberCount" : {
+            "description" : "only for those who manage the class",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "teacherId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "canManage", "id", "kind", "name" ],
         "type" : "object"
       },
       "CmsCourseChapter" : {
@@ -1132,6 +1336,41 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "CreateAssignmentRequest" : {
+        "description" : "exactly one of lessonId (a lesson, chapter test or mock test of a course) and testVersionId (an exam)",
+        "properties" : {
+          "dueAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "testVersionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "dueAt" ],
+        "type" : "object"
+      },
+      "CreateClassRequest" : {
+        "properties" : {
+          "name" : {
+            "maxLength" : 100,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "teacherId" : {
+            "description" : "required for a centre's class, not allowed for an enterprise's group",
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
         "type" : "object"
       },
       "CreateJoinCodeRequest" : {
@@ -2392,6 +2631,49 @@
           }
         },
         "required" : [ "members" ],
+        "type" : "object"
+      },
+      "MyAssignment" : {
+        "properties" : {
+          "classId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "className" : {
+            "type" : "string"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "dueAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/AssignmentStatus"
+          },
+          "submittedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "testVersionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "classId", "className", "dueAt", "id", "status" ],
         "type" : "object"
       },
       "NotificationEventPrefs" : {
@@ -4129,7 +4411,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_15",
+        "operationId" : "list_16",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -4346,7 +4628,7 @@
     },
     "/api/admin/orders" : {
       "get" : {
-        "operationId" : "list_14",
+        "operationId" : "list_15",
         "parameters" : [ {
           "in" : "query",
           "name" : "status",
@@ -4511,7 +4793,7 @@
         "tags" : [ "license-controller" ]
       },
       "post" : {
-        "operationId" : "create_10",
+        "operationId" : "create_12",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4580,7 +4862,7 @@
     },
     "/api/admin/organizations" : {
       "get" : {
-        "operationId" : "list_10",
+        "operationId" : "list_11",
         "responses" : {
           "200" : {
             "content" : {
@@ -4609,7 +4891,7 @@
         "tags" : [ "org-controller" ]
       },
       "post" : {
-        "operationId" : "create_9",
+        "operationId" : "create_11",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4740,7 +5022,7 @@
         "tags" : [ "plan-controller" ]
       },
       "post" : {
-        "operationId" : "create_8",
+        "operationId" : "create_10",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5319,7 +5601,7 @@
     },
     "/api/catalog/courses" : {
       "get" : {
-        "operationId" : "list_13",
+        "operationId" : "list_14",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -5427,7 +5709,7 @@
     },
     "/api/cms/courses" : {
       "get" : {
-        "operationId" : "list_9",
+        "operationId" : "list_10",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -5479,7 +5761,7 @@
       },
       "post" : {
         "description" : "422 with errors[] by JSON path (examCode, code, title, unlockRule, chapters[i]...); 409 course-code-taken.",
-        "operationId" : "create_7",
+        "operationId" : "create_9",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5691,7 +5973,7 @@
     },
     "/api/cms/grading-skills" : {
       "get" : {
-        "operationId" : "list_8",
+        "operationId" : "list_9",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -5743,7 +6025,7 @@
       },
       "post" : {
         "description" : "422 with errors[] (JSON paths such as resultSchema.properties.task_response, criteria[1].step) when the content does not match its form; 409 grading-skill-exists (with skillId) when the owner has a skill for the type.",
-        "operationId" : "create_6",
+        "operationId" : "create_8",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5995,7 +6277,7 @@
     },
     "/api/cms/import" : {
       "get" : {
-        "operationId" : "list_7",
+        "operationId" : "list_8",
         "responses" : {
           "200" : {
             "content" : {
@@ -6110,7 +6392,7 @@
     },
     "/api/cms/import/{jobId}" : {
       "get" : {
-        "operationId" : "get_9",
+        "operationId" : "get_10",
         "parameters" : [ {
           "in" : "path",
           "name" : "jobId",
@@ -6148,7 +6430,7 @@
     },
     "/api/cms/import/{jobId}/report.xlsx" : {
       "get" : {
-        "operationId" : "report",
+        "operationId" : "report_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "jobId",
@@ -6300,7 +6582,7 @@
     },
     "/api/cms/question-groups" : {
       "get" : {
-        "operationId" : "list_6",
+        "operationId" : "list_7",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -6360,7 +6642,7 @@
       },
       "post" : {
         "description" : "422 with errors[] by JSON path, as for a question.",
-        "operationId" : "create_5",
+        "operationId" : "create_7",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6609,7 +6891,7 @@
     },
     "/api/cms/questions" : {
       "get" : {
-        "operationId" : "list_5",
+        "operationId" : "list_6",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -6684,7 +6966,7 @@
       },
       "post" : {
         "description" : "422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.",
-        "operationId" : "create_4",
+        "operationId" : "create_6",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6976,7 +7258,7 @@
     },
     "/api/cms/reviews/bundles/{bundleId}/members" : {
       "get" : {
-        "operationId" : "members",
+        "operationId" : "members_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "bundleId",
@@ -7076,7 +7358,7 @@
     },
     "/api/cms/reviews/{reviewId}" : {
       "get" : {
-        "operationId" : "get_8",
+        "operationId" : "get_9",
         "parameters" : [ {
           "in" : "path",
           "name" : "reviewId",
@@ -7186,7 +7468,7 @@
     },
     "/api/cms/score-tables" : {
       "get" : {
-        "operationId" : "list_4",
+        "operationId" : "list_5",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -7238,7 +7520,7 @@
       },
       "post" : {
         "description" : "422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). 409 test-scope-unavailable for scope TEST; 409 score-table-exists (with tableId) when the exam skill already has a table.",
-        "operationId" : "create_3",
+        "operationId" : "create_5",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7448,7 +7730,7 @@
     },
     "/api/cms/strategy-lessons" : {
       "get" : {
-        "operationId" : "list_3",
+        "operationId" : "list_4",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -7500,7 +7782,7 @@
       },
       "post" : {
         "description" : "422 with errors[] (JSON paths such as blocks[2].url) when a block does not match its type, a video address is not YouTube/Vimeo, a file or embedded question is not usable, or no question type is given.",
-        "operationId" : "create_2",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7710,7 +7992,7 @@
     },
     "/api/cms/tests" : {
       "get" : {
-        "operationId" : "list_2",
+        "operationId" : "list_3",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -7770,7 +8052,7 @@
       },
       "post" : {
         "description" : "422 with errors[] by JSON path (examCode, variant, title).",
-        "operationId" : "create_1",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7809,7 +8091,7 @@
     },
     "/api/cms/tests/{id}" : {
       "get" : {
-        "operationId" : "get_7",
+        "operationId" : "get_8",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8052,7 +8334,7 @@
     },
     "/api/exam/attempts/{id}" : {
       "get" : {
-        "operationId" : "get_6",
+        "operationId" : "get_7",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8742,6 +9024,38 @@
         "tags" : [ "learning-controller" ]
       }
     },
+    "/api/me/assignments" : {
+      "get" : {
+        "operationId" : "mine_2",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MyAssignment"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "My assignments in the organisation of the current context, with their status",
+        "tags" : [ "assignment-controller" ]
+      }
+    },
     "/api/me/context" : {
       "get" : {
         "operationId" : "me",
@@ -8860,7 +9174,7 @@
     },
     "/api/me/notifications" : {
       "get" : {
-        "operationId" : "list_12",
+        "operationId" : "list_13",
         "parameters" : [ {
           "in" : "query",
           "name" : "limit",
@@ -9127,7 +9441,7 @@
         "tags" : [ "order-controller" ]
       },
       "post" : {
-        "operationId" : "create",
+        "operationId" : "create_2",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -9234,6 +9548,490 @@
           }
         },
         "tags" : [ "qr-image-controller" ]
+      }
+    },
+    "/api/orgs/{id}/assignments/{aid}" : {
+      "get" : {
+        "operationId" : "report",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "aid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AssignmentReport"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Who handed in (SUBMITTED / LATE), who did not (MISSING after the due date, PENDING before)",
+        "tags" : [ "assignment-controller" ]
+      }
+    },
+    "/api/orgs/{id}/classes" : {
+      "get" : {
+        "operationId" : "list_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ClassView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "class-controller" ]
+      },
+      "post" : {
+        "operationId" : "create",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateClassRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClassView"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create a class (a centre: teacher required) or a group (an enterprise: no teacher); ORG_ADMIN",
+        "tags" : [ "class-controller" ]
+      }
+    },
+    "/api/orgs/{id}/classes/{cid}" : {
+      "get" : {
+        "operationId" : "get_6",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClassView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "class-controller" ]
+      }
+    },
+    "/api/orgs/{id}/classes/{cid}/assignments" : {
+      "get" : {
+        "operationId" : "ofClass",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AssignmentView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "assignment-controller" ]
+      },
+      "post" : {
+        "operationId" : "create_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateAssignmentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AssignmentView"
+                }
+              }
+            },
+            "description" : "Created"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Give the class a lesson / chapter test (lessonId) or an exam (testVersionId) due at dueAt; ORG_ADMIN or the class's teacher",
+        "tags" : [ "assignment-controller" ]
+      }
+    },
+    "/api/orgs/{id}/classes/{cid}/courses" : {
+      "post" : {
+        "operationId" : "assignCourses",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssignClassCoursesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AssignClassCoursesResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Give the whole class the courses: one seat of the licence per member (the P5.3 seat path); ORG_ADMIN",
+        "tags" : [ "class-controller" ]
+      }
+    },
+    "/api/orgs/{id}/classes/{cid}/members" : {
+      "get" : {
+        "operationId" : "members",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ClassMemberView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The roster; ORG_ADMIN or the class's teacher",
+        "tags" : [ "class-controller" ]
+      },
+      "post" : {
+        "operationId" : "addMembers",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddClassMembersRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AddClassMembersResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Add members of the organisation to the class; ORG_ADMIN or the class's teacher",
+        "tags" : [ "class-controller" ]
+      }
+    },
+    "/api/orgs/{id}/classes/{cid}/members/{userId}" : {
+      "delete" : {
+        "operationId" : "removeMember",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "class-controller" ]
       }
     },
     "/api/orgs/{id}/invitations" : {
@@ -9900,7 +10698,7 @@
     },
     "/api/teacher/queue" : {
       "get" : {
-        "operationId" : "list_11",
+        "operationId" : "list_12",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",

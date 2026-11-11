@@ -7,7 +7,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_15"];
+        get: operations["list_16"];
         put?: never;
         post?: never;
         delete?: never;
@@ -71,7 +71,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_14"];
+        get: operations["list_15"];
         put?: never;
         post?: never;
         delete?: never;
@@ -121,7 +121,7 @@ export interface paths {
         };
         get: operations["listAll"];
         put?: never;
-        post: operations["create_10"];
+        post: operations["create_12"];
         delete?: never;
         options?: never;
         head?: never;
@@ -151,9 +151,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
-        post: operations["create_9"];
+        post: operations["create_11"];
         delete?: never;
         options?: never;
         head?: never;
@@ -185,7 +185,7 @@ export interface paths {
         };
         get: operations["all"];
         put?: never;
-        post: operations["create_8"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -440,7 +440,7 @@ export interface paths {
             cookie?: never;
         };
         /** The public course catalog: PUBLISHED English9x courses and APPROVED shared ones; no sign-in needed */
-        get: operations["list_13"];
+        get: operations["list_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -490,13 +490,13 @@ export interface paths {
             cookie?: never;
         };
         /** List courses (the latest version of each) the caller may read */
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         /**
          * Create a course (version 1, a draft)
          * @description 422 with errors[] by JSON path (examCode, code, title, unlockRule, chapters[i]...); 409 course-code-taken.
          */
-        post: operations["create_7"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -569,13 +569,13 @@ export interface paths {
             cookie?: never;
         };
         /** List grading skills (the latest version of each) the caller may read, newest change first */
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         /**
          * Create the grading skill of a question type (version 1, a draft)
          * @description 422 with errors[] (JSON paths such as resultSchema.properties.task_response, criteria[1].step) when the content does not match its form; 409 grading-skill-exists (with skillId) when the owner has a skill for the type.
          */
-        post: operations["create_6"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -662,7 +662,7 @@ export interface paths {
             cookie?: never;
         };
         /** My recent imports, newest first */
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
         /** Start importing a filled-in template (all rows or none) */
         post: operations["start_1"];
@@ -697,7 +697,7 @@ export interface paths {
             cookie?: never;
         };
         /** State of an import, its errors by row and column, and the drafts it made */
-        get: operations["get_9"];
+        get: operations["get_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -714,7 +714,7 @@ export interface paths {
             cookie?: never;
         };
         /** The workbook with the failed cells marked red */
-        get: operations["report"];
+        get: operations["report_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -781,13 +781,13 @@ export interface paths {
             cookie?: never;
         };
         /** List groups (the latest version of each) the caller may read */
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         /**
          * Create a question group (version 1, a draft) with its members
          * @description 422 with errors[] by JSON path, as for a question.
          */
-        post: operations["create_5"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -870,13 +870,13 @@ export interface paths {
             cookie?: never;
         };
         /** List questions (the latest version of each) the caller may read, newest change first */
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         /**
          * Create a question (version 1, a draft) of a question type
          * @description 422 with errors[] when content or answerKey do not match the schemas of the type; each error's field is a JSON path such as content.options[2].key.
          */
-        post: operations["create_4"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -977,7 +977,7 @@ export interface paths {
             cookie?: never;
         };
         /** The reviews of a bundle the caller may see (the whole of an import, a course and its lessons) */
-        get: operations["members"];
+        get: operations["members_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1011,7 +1011,7 @@ export interface paths {
             cookie?: never;
         };
         /** One review with the version under review and the earlier published version to compare it with */
-        get: operations["get_8"];
+        get: operations["get_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1062,13 +1062,13 @@ export interface paths {
             cookie?: never;
         };
         /** List score tables (the latest version of each) the caller may read, newest change first */
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         /**
          * Create the conversion table of an exam skill (version 1, a draft)
          * @description 422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). 409 test-scope-unavailable for scope TEST; 409 score-table-exists (with tableId) when the exam skill already has a table.
          */
-        post: operations["create_3"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1135,13 +1135,13 @@ export interface paths {
             cookie?: never;
         };
         /** List lessons (the latest version of each) the caller may read, newest change first */
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         /**
          * Create a strategy lesson (version 1, a draft)
          * @description 422 with errors[] (JSON paths such as blocks[2].url) when a block does not match its type, a video address is not YouTube/Vimeo, a file or embedded question is not usable, or no question type is given.
          */
-        post: operations["create_2"];
+        post: operations["create_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1208,13 +1208,13 @@ export interface paths {
             cookie?: never;
         };
         /** List tests (the latest version of each) the caller may read */
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         /**
          * Create a test (version 1, an empty draft)
          * @description 422 with errors[] by JSON path (examCode, variant, title).
          */
-        post: operations["create_1"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1229,7 +1229,7 @@ export interface paths {
             cookie?: never;
         };
         /** One test: its latest version, or the numbered one, with the check against the exam */
-        get: operations["get_7"];
+        get: operations["get_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1339,7 +1339,7 @@ export interface paths {
             cookie?: never;
         };
         /** The attempt as it stands now (current section and what is saved in it) */
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1629,6 +1629,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My assignments in the organisation of the current context, with their status */
+        get: operations["mine_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/context": {
         parameters: {
             query?: never;
@@ -1684,7 +1701,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1798,7 +1815,7 @@ export interface paths {
         };
         get: operations["mine"];
         put?: never;
-        post: operations["create"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1832,6 +1849,124 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/assignments/{aid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who handed in (SUBMITTED / LATE), who did not (MISSING after the due date, PENDING before) */
+        get: operations["report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_2"];
+        put?: never;
+        /** Create a class (a centre: teacher required) or a group (an enterprise: no teacher); ORG_ADMIN */
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/classes/{cid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_6"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/classes/{cid}/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ofClass"];
+        put?: never;
+        /** Give the class a lesson / chapter test (lessonId) or an exam (testVersionId) due at dueAt; ORG_ADMIN or the class's teacher */
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/classes/{cid}/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Give the whole class the courses: one seat of the licence per member (the P5.3 seat path); ORG_ADMIN */
+        post: operations["assignCourses"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/classes/{cid}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The roster; ORG_ADMIN or the class's teacher */
+        get: operations["members"];
+        put?: never;
+        /** Add members of the organisation to the class; ORG_ADMIN or the class's teacher */
+        post: operations["addMembers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/classes/{cid}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeMember"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2055,7 +2190,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2173,6 +2308,13 @@ export interface components {
             /** @example accepted */
             status: string;
         };
+        AddClassMembersRequest: {
+            userIds: string[];
+        };
+        AddClassMembersResponse: {
+            /** Format: int32 */
+            added: number;
+        };
         AdminOrderView: {
             /** Format: int64 */
             amountVnd: number;
@@ -2228,6 +2370,20 @@ export interface components {
             /** Format: uuid */
             questionVersionId?: string;
         };
+        AssignClassCoursesRequest: {
+            courseIds: string[];
+            /** Format: uuid */
+            licenseId: string;
+        };
+        AssignClassCoursesResponse: {
+            /** @description members who already held a seat of this licence (left as they were) */
+            alreadyHolding: string[];
+            /**
+             * Format: int32
+             * @description members who were given a seat now
+             */
+            assigned: number;
+        };
         AssignSeatRequest: {
             /** @description A subset of the licence's courses */
             courseIds: string[];
@@ -2236,6 +2392,47 @@ export interface components {
              * @description A member of the organisation
              */
             userId: string;
+        };
+        AssignmentReport: {
+            /** Format: uuid */
+            assignmentId: string;
+            rows: components["schemas"]["AssignmentReportRow"][];
+        };
+        AssignmentReportRow: {
+            displayName?: string;
+            /** @description only the ORG_ADMIN reads addresses */
+            email?: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: uuid */
+            userId: string;
+        };
+        /**
+         * @description SUBMITTED in time, LATE (handed in after dueAt), MISSING (not handed in, dueAt has passed), PENDING (not yet, not yet due)
+         * @enum {string}
+         */
+        AssignmentStatus: "PENDING" | "SUBMITTED" | "LATE" | "MISSING";
+        AssignmentView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            dueAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            late: number;
+            /** Format: uuid */
+            lessonId?: string;
+            /** Format: int32 */
+            missing: number;
+            /** Format: int32 */
+            submitted: number;
+            /** Format: uuid */
+            testVersionId?: string;
+            title?: string;
+            /** Format: int32 */
+            total: number;
         };
         AttemptRequest: {
             answers?: components["schemas"]["Answered"][];
@@ -2383,6 +2580,31 @@ export interface components {
             /** Format: double */
             passThreshold?: number;
             title?: string;
+        };
+        ClassMemberView: {
+            /** Format: date-time */
+            addedAt: string;
+            displayName?: string;
+            /** @description only the ORG_ADMIN reads addresses */
+            email?: string;
+            /** Format: uuid */
+            userId: string;
+        };
+        ClassView: {
+            /** @description the caller is the ORG_ADMIN or the teacher of this class */
+            canManage: boolean;
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "CLASS" | "GROUP";
+            /**
+             * Format: int32
+             * @description only for those who manage the class
+             */
+            memberCount?: number;
+            name: string;
+            /** Format: uuid */
+            teacherId?: string;
         };
         CmsCourseChapter: {
             /** Format: uuid */
@@ -2652,6 +2874,23 @@ export interface components {
         ConfirmOrderRequest: {
             /** @description The bank's transaction reference, if the administrator has it (at most 100 characters) */
             bankRef?: string;
+        };
+        /** @description exactly one of lessonId (a lesson, chapter test or mock test of a course) and testVersionId (an exam) */
+        CreateAssignmentRequest: {
+            /** Format: date-time */
+            dueAt: string;
+            /** Format: uuid */
+            lessonId?: string;
+            /** Format: uuid */
+            testVersionId?: string;
+        };
+        CreateClassRequest: {
+            name: string;
+            /**
+             * Format: uuid
+             * @description required for a centre's class, not allowed for an enterprise's group
+             */
+            teacherId?: string;
         };
         CreateJoinCodeRequest: {
             /**
@@ -3188,6 +3427,25 @@ export interface components {
         };
         MembersView: {
             members: components["schemas"]["MemberView"][];
+        };
+        MyAssignment: {
+            /** Format: uuid */
+            classId: string;
+            className: string;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: date-time */
+            dueAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            lessonId?: string;
+            status: components["schemas"]["AssignmentStatus"];
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: uuid */
+            testVersionId?: string;
+            title?: string;
         };
         NotificationEventPrefs: {
             audience?: string;
@@ -3941,7 +4199,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_15: {
+    list_16: {
         parameters: {
             query?: {
                 action?: string;
@@ -4099,7 +4357,7 @@ export interface operations {
             };
         };
     };
-    list_14: {
+    list_15: {
         parameters: {
             query?: {
                 status?: string;
@@ -4230,7 +4488,7 @@ export interface operations {
             };
         };
     };
-    create_10: {
+    create_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -4292,7 +4550,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -4321,7 +4579,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -4445,7 +4703,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -4958,7 +5216,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_14: {
         parameters: {
             query?: {
                 exam?: string;
@@ -5049,7 +5307,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: {
                 exam?: string;
@@ -5082,7 +5340,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -5245,7 +5503,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 exam?: string;
@@ -5278,7 +5536,7 @@ export interface operations {
             };
         };
     };
-    create_6: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -5474,7 +5732,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -5570,7 +5828,7 @@ export interface operations {
             };
         };
     };
-    get_9: {
+    get_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -5601,7 +5859,7 @@ export interface operations {
             };
         };
     };
-    report: {
+    report_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5728,7 +5986,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: {
                 exam?: string;
@@ -5762,7 +6020,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -5956,7 +6214,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 exam?: string;
@@ -5992,7 +6250,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6216,7 +6474,7 @@ export interface operations {
             };
         };
     };
-    members: {
+    members_1: {
         parameters: {
             query?: {
                 offset?: number;
@@ -6283,7 +6541,7 @@ export interface operations {
             };
         };
     };
-    get_8: {
+    get_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -6376,7 +6634,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 exam?: string;
@@ -6409,7 +6667,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -6572,7 +6830,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: {
                 exam?: string;
@@ -6605,7 +6863,7 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    create_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -6768,7 +7026,7 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    list_3: {
         parameters: {
             query?: {
                 exam?: string;
@@ -6802,7 +7060,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -6835,7 +7093,7 @@ export interface operations {
             };
         };
     };
-    get_7: {
+    get_8: {
         parameters: {
             query?: {
                 version?: number;
@@ -7027,7 +7285,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -7548,6 +7806,35 @@ export interface operations {
             };
         };
     };
+    mine_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MyAssignment"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     me: {
         parameters: {
             query?: never;
@@ -7666,7 +7953,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: {
                 limit?: number;
@@ -7928,7 +8215,7 @@ export interface operations {
             };
         };
     };
-    create: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -8011,6 +8298,339 @@ export interface operations {
                 content: {
                     "*/*": string;
                 };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                aid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssignmentReport"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClassView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateClassRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClassView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClassView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    ofClass: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssignmentView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAssignmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssignmentView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    assignCourses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignClassCoursesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AssignClassCoursesResponse"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    members: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClassMemberView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    addMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddClassMembersRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AddClassMembersResponse"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Error (RFC 7807 problem details) */
             default: {
@@ -8537,7 +9157,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 exam?: string;
