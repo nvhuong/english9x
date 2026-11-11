@@ -207,6 +207,33 @@
         "required" : [ "googleEnabled" ],
         "type" : "object"
       },
+      "BulkInviteRequest" : {
+        "properties" : {
+          "emails" : {
+            "items" : {
+              "format" : "email",
+              "maxLength" : 254,
+              "minLength" : 0,
+              "type" : "string"
+            },
+            "maxItems" : 100,
+            "minItems" : 0,
+            "type" : "array"
+          }
+        },
+        "required" : [ "emails" ],
+        "type" : "object"
+      },
+      "BulkInviteResponse" : {
+        "properties" : {
+          "invited" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "invited" ],
+        "type" : "object"
+      },
       "CatalogChapter" : {
         "properties" : {
           "lessons" : {
@@ -911,6 +938,27 @@
         },
         "type" : "object"
       },
+      "CreateJoinCodeRequest" : {
+        "properties" : {
+          "classId" : {
+            "description" : "a class of the organisation the joiner is put into",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "maxUses" : {
+            "format" : "int32",
+            "maximum" : 100000,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "expiresAt", "maxUses" ],
+        "type" : "object"
+      },
       "CreateOrderRequest" : {
         "properties" : {
           "courseIds" : {
@@ -1573,6 +1621,20 @@
         },
         "type" : "object"
       },
+      "ImportResult" : {
+        "properties" : {
+          "invited" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rows" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "invited", "rows" ],
+        "type" : "object"
+      },
       "ImportUploadForm" : {
         "properties" : {
           "file" : {
@@ -1694,6 +1756,71 @@
           }
         },
         "required" : [ "email", "roles" ],
+        "type" : "object"
+      },
+      "JoinCodeCreated" : {
+        "description" : "The only time the code is ever shown: only its SHA-256 digest is stored",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "joinCode" : {
+            "$ref" : "#/components/schemas/JoinCodeView"
+          }
+        },
+        "required" : [ "code", "joinCode" ],
+        "type" : "object"
+      },
+      "JoinCodeStatus" : {
+        "enum" : [ "ACTIVE", "REVOKED", "EXPIRED", "EXHAUSTED" ],
+        "type" : "string"
+      },
+      "JoinCodeView" : {
+        "properties" : {
+          "classId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "maxUses" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/JoinCodeStatus"
+          },
+          "usedCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "createdAt", "expiresAt", "id", "maxUses", "status", "usedCount" ],
+        "type" : "object"
+      },
+      "JoinResponse" : {
+        "properties" : {
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "status" : {
+            "description" : "joined | already-member",
+            "example" : "joined",
+            "type" : "string"
+          }
+        },
+        "required" : [ "orgId", "status" ],
         "type" : "object"
       },
       "JsonNode" : { },
@@ -1838,6 +1965,16 @@
           "sizeBytes" : {
             "format" : "int64",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "MemberImportForm" : {
+        "properties" : {
+          "file" : {
+            "description" : "the .xlsx with the columns email, name, class",
+            "format" : "binary",
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -7574,6 +7711,43 @@
         "tags" : [ "invitation-controller" ]
       }
     },
+    "/api/join/{code}" : {
+      "post" : {
+        "operationId" : "join",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "code",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JoinResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Join an organisation with a code (410 when not valid, 429 when guessing too fast)",
+        "tags" : [ "member-controller" ]
+      }
+    },
     "/api/me/context" : {
       "get" : {
         "operationId" : "me",
@@ -8108,7 +8282,7 @@
         "tags" : [ "invitation-controller" ]
       },
       "post" : {
-        "operationId" : "invite",
+        "operationId" : "invite_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8189,6 +8363,263 @@
           }
         },
         "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/orgs/{id}/join-codes" : {
+      "get" : {
+        "operationId" : "codes",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/JoinCodeView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "member-controller" ]
+      },
+      "post" : {
+        "operationId" : "createCode",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateJoinCodeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JoinCodeCreated"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Create a join code; the code is in this answer only",
+        "tags" : [ "member-controller" ]
+      }
+    },
+    "/api/orgs/{id}/join-codes/{codeId}" : {
+      "delete" : {
+        "operationId" : "revokeCode",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "codeId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "member-controller" ]
+      }
+    },
+    "/api/orgs/{id}/members/import" : {
+      "post" : {
+        "operationId" : "importMembers",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MemberImportForm"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImportResult"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Invite the learners of an Excel file (all rows or none; errors by row)",
+        "tags" : [ "member-controller" ]
+      }
+    },
+    "/api/orgs/{id}/members/invite" : {
+      "post" : {
+        "operationId" : "invite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkInviteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkInviteResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "member-controller" ]
+      }
+    },
+    "/api/orgs/{id}/members/{userId}" : {
+      "delete" : {
+        "operationId" : "remove",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Leave the organisation (own id) or remove a member (ORG_ADMIN): the seat is taken back, the history stays",
+        "tags" : [ "member-controller" ]
       }
     },
     "/api/orgs/{id}/role-grants" : {

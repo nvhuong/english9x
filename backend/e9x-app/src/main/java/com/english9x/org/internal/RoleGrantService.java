@@ -58,6 +58,11 @@ class RoleGrantService {
         if (!repo.stillManagesCurrentContext()) {
             throw new AccessDeniedException("demoted while waiting");
         }
+        // Re-asked under the lock, after the caller's own authority (a caller who lost it cannot see memberships and gets 403, not 404):
+        // a removal (org.members) may have taken the membership while this waited (ledger 125).
+        if (!repo.isMember(orgId, req.userId())) {
+            throw OrgProblems.notFound();
+        }
         repo.setRoles(orgId, req.userId(), wanted);
         // Recorded only when something changed. The organisation is in the detail because a SYS_ADMIN acts from the English9x context, where the
         // record's own context is none.

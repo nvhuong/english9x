@@ -4,6 +4,8 @@ import { NotFoundPage } from '../../../app/pages/NotFoundPage';
 import { useContextStore } from '../../../app/stores/context';
 import { InvitationList } from '../InvitationList';
 import { InviteForm } from '../InviteForm';
+import { BulkInvitePanel } from '../members/BulkInvitePanel';
+import { JoinCodesPanel } from '../members/JoinCodesPanel';
 import { MembersPanel } from '../MembersPanel';
 import { useOrgStore } from '../orgContext';
 
@@ -42,6 +44,23 @@ export default function OrgMembersPage() {
           <p className="max-w-prose text-muted">{t('invite.description')}</p>
           <InviteForm scope={known.type} orgId={orgId} />
           <InvitationList orgId={orgId} />
+        </section>
+      )}
+      {known && (
+        <section aria-labelledby="bulk" className="flex flex-col gap-3">
+          <h2 id="bulk" className="font-serif text-xl font-semibold">
+            {t('bulk.title')}
+          </h2>
+          <BulkInvitePanel orgId={orgId} />
+        </section>
+      )}
+      {known && (
+        <section aria-labelledby="join-codes" className="flex flex-col gap-3">
+          <h2 id="join-codes" className="font-serif text-xl font-semibold">
+            {t('joinCodes.title')}
+          </h2>
+          <p className="max-w-prose text-muted">{t('joinCodes.description')}</p>
+          <JoinCodesPanel orgId={orgId} />
         </section>
       )}
     </div>

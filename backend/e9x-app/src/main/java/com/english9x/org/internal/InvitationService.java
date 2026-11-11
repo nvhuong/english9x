@@ -42,7 +42,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * </ul>
  */
 @Service
-class InvitationService {
+public class InvitationService {
 
     private final OrgRepository repo;
     private final OrgAccess access;
@@ -67,6 +67,16 @@ class InvitationService {
     /** @param orgId null = an English9x (internal) invitation, SYS_ADMIN only */
     @Transactional
     public InvitationView invite(UUID orgId, InviteRequest req) {
+        return invite(orgId, req, null);
+    }
+
+    /** For org.members (bulk invite / import): one LEARNER invitation, optionally into a class of the organisation. Its own transaction per call. */
+    @Transactional
+    public UUID inviteLearner(UUID orgId, String email, UUID classId) {
+        return invite(orgId, new InviteRequest(email, List.of(new RoleSpec(com.english9x.org.api.Role.LEARNER, null))), classId).id();
+    }
+
+    private InvitationView invite(UUID orgId, InviteRequest req, UUID classId) {
         OrgView org = null;
         Optional<OrgType> type = Optional.empty();
         if (orgId == null) {
@@ -88,7 +98,7 @@ class InvitationService {
         int superseded = repo.retirePending(orgId, email, now);
         String token = InviteTokens.newToken();
         Instant expires = now.plus(props.invitationTtl());
-        UUID id = repo.insertInvitation(orgId, email, roles, InviteTokens.hash(token), inviter, expires);
+        UUID id = repo.insertInvitation(orgId, email, roles, InviteTokens.hash(token), inviter, expires, classId);
         // No address here: it is personal data of someone who may never register, and the log cannot erase it. The log names the invitation
         // (target) and the audit screen reads the address from the invitation while it exists. Never the token or its digest either.
         Map<String, Object> detail = new LinkedHashMap<>();

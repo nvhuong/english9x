@@ -31,12 +31,10 @@ END $$;
 SELECT set_config('app.user_id','00000001-0000-0000-0000-000000000001',false);
 DO $$ BEGIN ASSERT (SELECT count(*) FROM users) = 1, 'u1 personal context sees only self'; END $$;
 
--- u1 in org A: self and the other member of A, never B's member or a stranger
-SELECT set_config('app.org_id','a1a1a1a1-0000-0000-0000-00000000000a',false);
+-- u1 (a plain member) in org A: only themself. Ruled in P6.1: another member's e-mail is for the ORG_ADMIN only (see 51_org_members.sql)
 DO $$ BEGIN
-  ASSERT (SELECT count(*) FROM users) = 2, 'org A context sees the 2 members';
-  ASSERT EXISTS (SELECT 1 FROM users WHERE email = 'u2@x.test'), 'sees the org mate';
-  ASSERT NOT EXISTS (SELECT 1 FROM users WHERE email IN ('u3@x.test','u4@x.test','staff@x.test')), 'must not see org B member / strangers';
+  ASSERT (SELECT count(*) FROM users) = 1, 'a plain member sees only self, even in the org context';
+  ASSERT NOT EXISTS (SELECT 1 FROM users WHERE email IN ('u2@x.test','u3@x.test','u4@x.test','staff@x.test')), 'must not see org mates, org B member, strangers';
 END $$;
 
 -- UPDATE: self yes; another user (even a visible org mate) no; protected columns never

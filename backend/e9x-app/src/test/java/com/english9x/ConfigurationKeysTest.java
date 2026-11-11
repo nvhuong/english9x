@@ -67,6 +67,8 @@ class ConfigurationKeysTest {
             {"e9x.content.strategy.video-hosts", "youtube.com,www.youtube.com,m.youtube.com,youtu.be,vimeo.com,www.vimeo.com,player.vimeo.com"},
             {"e9x.org.invitation-ttl", "7d"},
             {"e9x.org.invitation-hourly-limit", "50"},
+            {"e9x.org.join.ip-rate-limit", "30/15m"},
+            {"e9x.org.join.user-rate-limit", "10/15m"},
             {"e9x.workflow.max-bundle-size", "2000"},
             {"e9x.audit.default-page-size", "50"},
             {"e9x.audit.max-page-size", "100"},

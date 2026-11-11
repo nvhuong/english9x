@@ -6,6 +6,7 @@ import { NotFoundPage } from '../../app/pages/NotFoundPage';
 import { FormAlert } from '../auth/components';
 import { orgProblemMessage } from './problems';
 import { useMembers, useSetRoles, type MemberView } from './queries';
+import { RemoveMemberButton } from './members/RemoveMemberButton';
 import { RolePicker } from './RolePicker';
 import { roleLabel, rolesToKeys, type Scope } from './roles';
 import { pageState } from './util';
@@ -66,7 +67,8 @@ export function MembersPanel({ orgId, type }: { orgId: string; type: 'CENTER' | 
               <TableCell>
                 <Button size="sm" variant="secondary" aria-label={t('members.editOf', { name: m.displayName ?? m.email })} onClick={() => setEditing(m)}>
                   {t('members.edit')}
-                </Button>
+                </Button>{' '}
+                <RemoveMemberButton orgId={orgId} userId={m.userId} name={m.displayName ?? m.email} />
               </TableCell>
             </TableRow>
           ))}

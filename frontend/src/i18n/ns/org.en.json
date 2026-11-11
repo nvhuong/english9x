@@ -127,5 +127,61 @@
     "noToken": "The invitation is not valid: the link has no code.",
     "mismatch": "This invitation was sent to a different email address. Sign out, then sign in with the address in the invitation.",
     "unverified": "Verify your email first (see the verification mail sent when you registered), then come back to this link."
+  },
+  "bulk": {
+    "title": "Invite many learners",
+    "listTitle": "Invite a list of addresses",
+    "listLabel": "Email addresses (one per line, or separated by commas)",
+    "send": "Send invitations",
+    "fileTitle": "Import from Excel",
+    "fileLabel": "Excel file (.xlsx)",
+    "fileHint": "The first row names the columns: email, name, class. All rows are checked first; if any row is wrong nobody is invited.",
+    "upload": "Import",
+    "invited": "{{count}} invitations sent.",
+    "hasErrors": "The file has errors. Nobody was invited; fix these rows and upload it again.",
+    "errorsLabel": "Rows to fix",
+    "rowError": "Row {{row}}, {{field}}: {{code}}"
+  },
+  "joinCodes": {
+    "title": "Join codes",
+    "description": "Give learners a code to join this organization at /join. The code is shown once, when you create it.",
+    "expiresAt": "Valid until",
+    "maxUses": "Number of uses",
+    "create": "Create code",
+    "shownOnce": "Copy this code now, it will not be shown again:",
+    "loading": "Loading codes…",
+    "empty": "No codes yet.",
+    "caption": "Join codes",
+    "status": "Status",
+    "uses": "Uses",
+    "usesOf": "{{used}} of {{max}}",
+    "expires": "Expires",
+    "revoke": "Revoke",
+    "statuses": {
+      "ACTIVE": "Active",
+      "REVOKED": "Revoked",
+      "EXPIRED": "Expired",
+      "EXHAUSTED": "Used up"
+    }
+  },
+  "join": {
+    "title": "Join an organization",
+    "description": "Enter the code your organization gave you.",
+    "visitor": "Sign in or create an account, then come back to this page to enter your code.",
+    "code": "Code",
+    "submit": "Join",
+    "doneTitle": "You have joined",
+    "alreadyTitle": "You already belong to it",
+    "doneBody": "The organization now appears in your account.",
+    "invalid": "This code is not valid, has expired, was revoked or has been used up.",
+    "tooMany": "Too many attempts. Wait a few minutes and try again.",
+    "unverified": "Verify your email address first, then come back to this page."
+  },
+  "remove": {
+    "button": "Remove",
+    "of": "Remove {{name}}",
+    "title": "Remove {{name}}?",
+    "body": "Their seat is taken back and they leave the organization. What they have done stays visible to the organization.",
+    "confirm": "Remove"
   }
 }

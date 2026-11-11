@@ -64,6 +64,10 @@ public final class SweepFixtures {
     public final UUID invitationB = UUID.randomUUID();
     public final UUID staffInvitation = UUID.randomUUID();
     public final UUID notificationA = UUID.randomUUID();
+    /** P6.1: join codes of A and of B (B's plain code is in the seed: a join code is a bearer secret), and a plain member of A to remove. */
+    public final UUID joinCodeA = UUID.randomUUID();
+    public final UUID joinCodeB = UUID.randomUUID();
+    public final UUID removableA = UUID.randomUUID();
     public final String courseCodeB = "B00001";
     /** P5.1: a plan on sale, a published English9x course, and an order of A's member and one of B's member (the order code is a text key of the walk). */
     public final UUID planId = UUID.randomUUID();
@@ -119,7 +123,13 @@ public final class SweepFixtures {
         su.update(invitation, UUID.randomUUID(), orgA, "a@x.test", tokenForA, userA);
         su.update("insert into invitations(id,org_id,email,grants,token_hash,invited_by,expires_at) values (?,null,'staff@x.test','[{\"role\":\"REVIEWER\",\"exam\":\"IELTS\"}]',sha256('sweep-staff'::bytea),?,now()+interval '1 day')",
                 staffInvitation, admin);
-        su.update("insert into join_codes(org_id,code_hash,created_by,expires_at) values (?,sha256('sweep-code-b'::bytea),?,now()+interval '1 day')", orgB, userB);
+        su.update("insert into join_codes(id,org_id,code_hash,created_by,expires_at,max_uses,class_id) values (?,?,sha256('SWEEPB22'::bytea),?,now()+interval '1 day',5,?)", joinCodeB, orgB, userB, classB);
+        su.update("insert into join_codes(id,org_id,code_hash,created_by,expires_at,max_uses,class_id) values (?,?,sha256('SWEEPA22'::bytea),?,now()+interval '1 day',5,?)", joinCodeA, orgA, userA, classA);
+        // P6.1: class membership of org B's member (the table is tenant data: the sweep walks it), and a member of A the remove route may really remove
+        su.update("insert into class_members(class_id,org_id,user_id) values (?,?,?)", classB, orgB, userB);
+        su.update("insert into users(id,email,email_verified_at,consent_at) values (?,'removable-a@x.test',now(),now())", removableA);
+        su.update("insert into org_memberships(org_id,user_id) values (?,?)", orgA, removableA);
+        su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'LEARNER')", removableA, orgA);
         // P1.6: org B's review bundle and review (org A's ORG_ADMIN, the sweep's caller, must find neither; no review endpoint exists yet, P2.9 adds it and the sweep then covers it)
         UUID bundleB = UUID.randomUUID();
         su.update("insert into review_bundles(id,owner_org_id,submitted_by,member_count) values (?,?,?,1)", bundleB, orgB, userB);
@@ -291,6 +301,8 @@ public final class SweepFixtures {
             Map.entry("POST /api/me/telegram/link", OWN),
             Map.entry("DELETE /api/me/telegram", OWN),
             Map.entry("POST /api/cms/import", "P2.7: takes no id of a tenant: the owner is the bound context, the type a query parameter, the files the body; refused 403 for anybody who is no AUTHOR of the exam in that context (ImportJobIT.onlyAnAuthorOfTheExamImportsAndOnlyItsTypes). The job it queues acts as the uploader under the same policies"),
+            Map.entry("POST /api/orgs/{id}/members/import", "P6.1: a multipart xlsx the sweep cannot build; the organisation is checked first like every /api/orgs/{id} route (MemberImportIT.reportsRowErrors: another organisation's admin gets 404, a learner 403)"),
+            Map.entry("POST /api/join/{code}", "P6.1: the code is a bearer secret and joining with a valid one is the point (JoinCodeIT); guessing is limited per address and account (JoinCodeRateLimitIT)"),
             Map.entry("POST /api/orders", OWN + " (the plan and the courses are shared catalogue rows, not a tenant's; OrderServiceIT covers who may order what)"));
     // (POST /api/cms/media is not exempt: it has a typed fixture below, with a multipart body)
 
@@ -336,6 +348,21 @@ public final class SweepFixtures {
                         new ForeignIdSweep.Attempt(slot("token", tokenB)),
                         new ForeignIdSweep.Attempt(slot("token", "no-such-token-no-such-token-no-such-token-000"))),
                         ForeignIdSweep.Control.of(slot("token", tokenForA), null))));
+        // P6.1: bulk invite, join codes, removal. The class of a code is A's own (a foreign class in A's organisation is a 400 in JoinCodeIT, not a refusal of the route).
+        String inviteMany = "{\"emails\":[\"sweep-bulk@x.test\"]}";
+        all.put("POST /api/orgs/{id}/members/invite", ForeignIdSweep.Fixture.write(inviteMany, List.of(), ForeignIdSweep.Control.of(slot("id", orgA), inviteMany)));
+        String codeBody = "{\"classId\":\"" + classA + "\",\"expiresAt\":\"" + java.time.Instant.now().plus(java.time.Duration.ofDays(30)) + "\",\"maxUses\":3}";
+        all.put("POST /api/orgs/{id}/join-codes", ForeignIdSweep.Fixture.write(codeBody, List.of(), ForeignIdSweep.Control.of(slot("id", orgA), codeBody)));
+        all.put("DELETE /api/orgs/{id}/join-codes/{codeId}", ForeignIdSweep.Fixture.write(null, List.of(
+                new ForeignIdSweep.Attempt(slots("id", orgB, "codeId", joinCodeB)),
+                new ForeignIdSweep.Attempt(slots("id", orgA, "codeId", joinCodeB)),
+                new ForeignIdSweep.Attempt(slots("id", orgB, "codeId", joinCodeA))),
+                ForeignIdSweep.Control.of(slots("id", orgA, "codeId", joinCodeA), null)));
+        all.put("DELETE /api/orgs/{id}/members/{userId}", ForeignIdSweep.Fixture.write(null, List.of(
+                new ForeignIdSweep.Attempt(slots("id", orgB, "userId", userB)),
+                new ForeignIdSweep.Attempt(slots("id", orgA, "userId", userB)),
+                new ForeignIdSweep.Attempt(slots("id", orgB, "userId", removableA))),
+                ForeignIdSweep.Control.of(slots("id", orgA, "userId", removableA), null)));
         // P2.2: the upload takes no id of a tenant (the owner is the bound context, the exam a query parameter). The sweep's caller is an ORG_ADMIN with no
         // AUTHOR role: refused; the author of org A in org A's context really uploads. "MULTIPART:" is turned into a multipart request by the IT.
         all.put("POST /api/cms/media", ForeignIdSweep.Fixture.write(MULTIPART_PNG, List.of(), new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.AUTHOR)));

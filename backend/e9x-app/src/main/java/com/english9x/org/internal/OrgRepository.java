@@ -179,7 +179,7 @@ class OrgRepository {
                 ts(now), orgId, email, ts(now));
     }
 
-    UUID insertInvitation(UUID orgId, String email, List<RoleSpec> roles, byte[] tokenHash, UUID invitedBy, Instant expires) {
+    UUID insertInvitation(UUID orgId, String email, List<RoleSpec> roles, byte[] tokenHash, UUID invitedBy, Instant expires, UUID classId) {
         List<Map<String, Object>> grants = new ArrayList<>();
         for (RoleSpec r : roles) {
             Map<String, Object> g = new LinkedHashMap<>();
@@ -194,8 +194,8 @@ class OrgRepository {
             throw new IllegalStateException(e);
         }
         return jdbc.queryForObject(
-                "insert into invitations(org_id, email, grants, token_hash, invited_by, expires_at) values (?, lower(?), ?::jsonb, ?, ?, ?) returning id",
-                UUID.class, orgId, email, json, tokenHash, invitedBy, ts(expires));
+                "insert into invitations(org_id, email, grants, token_hash, invited_by, expires_at, class_id) values (?, lower(?), ?::jsonb, ?, ?, ?, ?) returning id",
+                UUID.class, orgId, email, json, tokenHash, invitedBy, ts(expires), classId);
     }
 
     /** Newest first, at most 100. {@code orgId} null = the English9x (internal) invitations. */
