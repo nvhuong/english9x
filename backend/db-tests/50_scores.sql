@@ -169,6 +169,10 @@ BEGIN
   ASSERT public.t_attempt('INSERT INTO attempt_questions(attempt_id,question_id,user_id,question_version_id,section_code) VALUES (''f5300000-0000-0000-0000-000000000001'',''f5100000-0000-0000-0000-000000000001'',''f5000000-0000-0000-0000-000000000001'',''f5200000-0000-0000-0000-000000000001'',''P5'')') = 'err:42501', 'no question is added to a submitted attempt';
   ASSERT public.t_attempt('UPDATE responses SET answered_at = now() - interval ''2 days'' WHERE attempt_id = ''f5300000-0000-0000-0000-000000000001''') = 'err:42501', 'no answer is back-dated out of its window';
   ASSERT public.t_attempt('INSERT INTO attempt_questions(attempt_id,question_id,user_id,question_version_id,section_code) VALUES (''f5300000-0000-0000-0000-000000000003'',''f5100000-0000-0000-0000-000000000001'',''f5000000-0000-0000-0000-000000000001'',''f5200000-0000-0000-0000-000000000001'',''P5'')') = 'rows:1', 'but the attempt in progress takes its questions';
+  -- V202611130006: the section timers freeze with the attempt (the answer window is read from them)
+  ASSERT public.t_attempt('UPDATE attempt_sections SET ends_at = now() + interval ''1 hour'' WHERE attempt_id = ''f5300000-0000-0000-0000-000000000001''') = 'err:42501', 'no section timer of a submitted attempt is stretched';
+  ASSERT public.t_attempt('DELETE FROM attempt_sections WHERE attempt_id = ''f5300000-0000-0000-0000-000000000001''') = 'err:42501', 'nor a section removed';
+  ASSERT public.t_attempt('UPDATE attempt_sections SET starts_at = now() WHERE attempt_id = ''f5300000-0000-0000-0000-000000000003''') = 'rows:1', 'but the attempt in progress runs its sections';
   -- narrowing exam_attempts_select did not take the request role's own reads away
   ASSERT (SELECT count(*) FROM exam_attempts) >= 2, 'the request role still reads its attempts';
 END $$;

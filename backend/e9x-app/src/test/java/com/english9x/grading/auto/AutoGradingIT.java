@@ -385,6 +385,22 @@ class AutoGradingIT extends ExamIT {
     }
 
     @Test
+    void wideningTheSectionTimerAfterSubmitDoesNotLetALateAnswerIn() throws Exception {
+        Sat s = satToeic(); // Listening right, Reading wrong
+        // the learner's raw SQL after submitting: stretch the window of the Reading section, then write the right answer inside the stretched window
+        asLearner(s.learner(), "update attempt_sections set ends_at = now() + interval '1 hour' where attempt_id = '" + s.attempt() + "' and section_code = 'P5'", true);
+        UUID reading = su.queryForObject("select question_id from attempt_questions where attempt_id = ? and section_code = 'P5'", UUID.class, s.attempt());
+        asLearner(s.learner(), "update responses set answer = '\"D\"', answered_at = now() where attempt_id = '" + s.attempt() + "' and question_id = '" + reading + "'", true);
+        asLearner(s.learner(), "insert into attempt_sections(attempt_id,position,user_id,section_code,skill,duration_sec,starts_at) values ('" + s.attempt() + "',9,'" + s.learner()
+                + "','P9','READING',600,now())", true);
+        asLearner(s.learner(), "delete from attempt_sections where attempt_id = '" + s.attempt() + "'", true);
+        Job job = awaitJob(s.attempt());
+        clock.set(s.submittedAt().plus(GRACE).plusSeconds(1));
+        assertTrue(gradeJob.handle(job).isSuccess());
+        assertScore(scoresOf(s.attempt()).get("READING"), 0, 1, 5, TOEIC_R); // the honest score
+    }
+
+    @Test
     void theDatabaseFreezesTheQuestionsAndTheAnswerWindowOfASubmittedAttempt() throws Exception {
         Fx fx = ielts("AC");
         UUID learner = user("ielts-guard");
