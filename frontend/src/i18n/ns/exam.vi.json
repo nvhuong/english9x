@@ -1,0 +1,87 @@
+{
+  "loading": "Đang tải bài thi...",
+  "empty": "Phần này chưa có câu hỏi.",
+  "audio": {
+    "loading": "Đang chuẩn bị bản ghi âm...",
+    "gone": "Bản ghi âm này đã được phát một lần và không phát lại. Hãy tiếp tục làm bài.",
+    "error": "Không tải được bản ghi âm."
+  },
+  "writing": {
+    "yourAnswer": "Bài viết của bạn",
+    "words": "{{count}} từ",
+    "minWords": "tối thiểu {{count}} từ",
+    "short": "còn thiếu {{count}} từ"
+  },
+  "save": {
+    "saved": "Đã lưu",
+    "saving": "Đang lưu...",
+    "offline": "Mất kết nối: {{count}} câu trả lời đang chờ gửi",
+    "rejected": "Một số câu trả lời không được nhận (đã hết giờ phần thi)"
+  },
+  "reading": {
+    "passage": "Bài đọc"
+  },
+  "image": {
+    "alt": "Hình của câu hỏi",
+    "unavailable": "Hình chưa tải được."
+  },
+  "q": {
+    "gap": "Chỗ trống {{n}}",
+    "chooseN": "Chọn {{n}} đáp án.",
+    "matchFor": "Ghép cho mục {{n}}",
+    "pick": "Chọn...",
+    "label": "Nhãn {{n}}",
+    "moveUp": "Đưa mục {{n}} lên",
+    "moveDown": "Đưa mục {{n}} xuống"
+  },
+  "section": {
+    "of": "Phần {{n}}/{{total}}"
+  },
+  "warn": {
+    "five": "Còn 5 phút.",
+    "one": "Còn 1 phút."
+  },
+  "small": {
+    "recommend": "Màn hình nhỏ khó làm bài Reading và Writing. Nên dùng máy tính hoặc máy tính bảng.",
+    "dismiss": "Đã hiểu"
+  },
+  "question": {
+    "region": "Câu hỏi"
+  },
+  "nav": {
+    "prev": "Câu trước",
+    "next": "Câu sau",
+    "flag": "Đánh dấu (F)",
+    "unflag": "Bỏ đánh dấu (F)"
+  },
+  "keys": {
+    "help": "Phím tắt: A/B/C/D chọn đáp án, ← → đổi câu, F đánh dấu."
+  },
+  "finish": {
+    "section": "Kết thúc phần này",
+    "submit": "Nộp bài",
+    "sectionTitle": "Kết thúc phần này?",
+    "submitTitle": "Nộp bài thi?",
+    "sectionHelp": "Bạn sẽ không quay lại phần này được.",
+    "submitHelp": "Sau khi nộp bạn không sửa được bài.",
+    "cancel": "Quay lại",
+    "confirm": "Xác nhận",
+    "unsaved": "Còn câu trả lời chưa gửi được. Hãy kiểm tra kết nối rồi thử lại.",
+    "failed": "Không thực hiện được. Thử lại."
+  },
+  "start": {
+    "starting": "Đang vào phòng thi...",
+    "notEntitled": "Bạn chưa có quyền làm đề này",
+    "notEntitledHelp": "Cần gói học còn hiệu lực.",
+    "notFound": "Không tìm thấy bài thi",
+    "failed": "Không vào được phòng thi"
+  },
+  "result": {
+    "title": "Đã nộp bài",
+    "interruptedTitle": "Bài thi bị ngắt",
+    "submitted": "Bài của bạn đã được nộp.",
+    "interrupted": "Bạn đã vào lại bài quá số lần cho phép, nên bài được nộp ở trạng thái bị ngắt.",
+    "scoreLater": "Điểm sẽ có sau khi chấm xong.",
+    "home": "Về trang chủ"
+  }
+}
