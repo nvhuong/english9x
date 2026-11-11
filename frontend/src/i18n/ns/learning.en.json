@@ -1,0 +1,61 @@
+{
+  "nav": {
+    "learn": "My learning"
+  },
+  "loading": "Loading…",
+  "back": "Back to my courses",
+  "errors": {
+    "generic": "Something went wrong. Try again.",
+    "notEntitled": "You need a plan for this course.",
+    "locked": "Finish the earlier lessons first.",
+    "notFound": "This page does not exist or is not open to you."
+  },
+  "mine": {
+    "title": "My courses",
+    "empty": "You have no active plan yet.",
+    "browse": "Browse courses"
+  },
+  "map": {
+    "rule": {
+      "STRICT": "Pass each chapter test to move on.",
+      "COMPLETION": "Finish each lesson to move on.",
+      "FREE": "Open any lesson in any order."
+    },
+    "streak_one": "{{count}} day streak",
+    "streak_other": "{{count}} day streak",
+    "today": "Today: {{minutes}} min",
+    "chapterN": "Chapter {{n}}: {{title}}",
+    "kind": {
+      "LESSON": "Lesson",
+      "CHAPTER_TEST": "Chapter test",
+      "MOCK_TEST": "Mock test"
+    },
+    "locked": "Locked",
+    "done": "Done",
+    "best": "Best {{score}}"
+  },
+  "practice": {
+    "none": "Practice: {{total}} question(s) in this lesson",
+    "score": "Practice: {{correct}} of {{answered}} correct ({{total}} in this lesson)"
+  },
+  "lesson": {
+    "complete": "Mark as finished",
+    "completed": "Lesson finished",
+    "toMap": "Course map"
+  },
+  "test": {
+    "questionN": "Question {{n}}",
+    "yourAnswer": "Your answer",
+    "submit": "Submit answers",
+    "rules": "Pass mark {{threshold}}%.",
+    "attempts": "Attempts: {{used}} of {{max}}.",
+    "unlimited": "Unlimited attempts.",
+    "exhausted": "You have used all the attempts of this test.",
+    "passed": "Passed",
+    "notPassed": "Not passed yet (pass mark {{threshold}}%)",
+    "score": "Score {{score}}% ({{raw}} of {{max}})",
+    "best": "Best score {{score}}%",
+    "attemptsLeft_one": "{{count}} attempt left",
+    "attemptsLeft_other": "{{count}} attempts left"
+  }
+}

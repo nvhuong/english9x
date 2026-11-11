@@ -91,6 +91,18 @@
         "required" : [ "createdAt", "id", "name", "type" ],
         "type" : "object"
       },
+      "Answered" : {
+        "properties" : {
+          "answer" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "questionVersionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AssignSeatRequest" : {
         "properties" : {
           "courseIds" : {
@@ -110,6 +122,17 @@
           }
         },
         "required" : [ "courseIds", "userId" ],
+        "type" : "object"
+      },
+      "AttemptRequest" : {
+        "properties" : {
+          "answers" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Answered"
+            },
+            "type" : "array"
+          }
+        },
         "type" : "object"
       },
       "AuditEntry" : {
@@ -296,6 +319,127 @@
           },
           "kind" : {
             "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ChapterMapView" : {
+        "properties" : {
+          "chapters" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MapChapter"
+            },
+            "type" : "array"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "streakDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "todayMinutes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "unlockRule" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ChapterTestGroup" : {
+        "properties" : {
+          "content" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "questions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LearningQuestion"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "ChapterTestResult" : {
+        "properties" : {
+          "attemptNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "attemptsLeft" : {
+            "description" : "null = unlimited",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "attemptsUsed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "bestScore" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "passed" : {
+            "type" : "boolean"
+          },
+          "raw" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "rawMax" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "score" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "ChapterTestView" : {
+        "properties" : {
+          "attemptsUsed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "bestScore" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "canRetake" : {
+            "type" : "boolean"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "groups" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ChapterTestGroup"
+            },
+            "type" : "array"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "maxAttempts" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "passThreshold" : {
+            "format" : "double",
+            "type" : "number"
           },
           "title" : {
             "type" : "string"
@@ -1552,6 +1696,36 @@
         },
         "type" : "object"
       },
+      "HeartbeatRequest" : {
+        "properties" : {
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "timeZone" : {
+            "description" : "IANA zone of the browser; the days of the streak are cut in it",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "HeartbeatResult" : {
+        "properties" : {
+          "streakDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "todaySeconds" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "ImportDetail" : {
         "properties" : {
           "errors" : {
@@ -1697,6 +1871,70 @@
         "type" : "object"
       },
       "JsonNode" : { },
+      "LearningLesson" : {
+        "properties" : {
+          "blocks" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "completed" : {
+            "type" : "boolean"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "questionTypeCodes" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "questions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LearningQuestion"
+            },
+            "type" : "array"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LearningQuestion" : {
+        "properties" : {
+          "content" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "points" : {
+            "type" : "number"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LessonCompletion" : {
+        "properties" : {
+          "completed" : {
+            "type" : "boolean"
+          },
+          "streakDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "LicenseCourse" : {
         "properties" : {
           "code" : {
@@ -1728,6 +1966,49 @@
           }
         },
         "required" : [ "email", "password" ],
+        "type" : "object"
+      },
+      "MapChapter" : {
+        "properties" : {
+          "lessons" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MapLesson"
+            },
+            "type" : "array"
+          },
+          "passThreshold" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "MapLesson" : {
+        "properties" : {
+          "bestScore" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "completed" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "locked" : {
+            "type" : "boolean"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "Me" : {
@@ -2335,6 +2616,36 @@
       "Pong" : {
         "properties" : {
           "status" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PracticeRequest" : {
+        "properties" : {
+          "answer" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "questionVersionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PracticeResult" : {
+        "properties" : {
+          "correct" : {
+            "type" : "boolean"
+          },
+          "correctAnswer" : {
+            "type" : "string"
+          },
+          "earned" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "explanation" : {
             "type" : "string"
           }
         },
@@ -7572,6 +7883,311 @@
           }
         },
         "tags" : [ "invitation-controller" ]
+      }
+    },
+    "/api/learning/chapter-tests/{id}" : {
+      "get" : {
+        "operationId" : "chapterTest",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChapterTestView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "A chapter test (the lesson id of its place in the course): its questions without answers, the attempts used and the best score",
+        "tags" : [ "learning-controller" ]
+      }
+    },
+    "/api/learning/chapter-tests/{id}/attempts" : {
+      "post" : {
+        "description" : "409 when the attempts the course allows are used up.",
+        "operationId" : "attempt",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "X-Time-Zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AttemptRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChapterTestResult"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Sit the chapter test: submit the answers, get the score; the best score is kept",
+        "tags" : [ "learning-controller" ]
+      }
+    },
+    "/api/learning/courses/{courseId}/map" : {
+      "get" : {
+        "operationId" : "map",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "courseId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChapterMapView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The chapter map of a course: every lesson with its state (done, best score, locked) and the streak. 403 without a plan.",
+        "tags" : [ "learning-controller" ]
+      }
+    },
+    "/api/learning/heartbeat" : {
+      "post" : {
+        "description" : "The server counts the gaps between signals that are at most e9x.learning.idle-timeout; days are cut in the learner's own time zone.",
+        "operationId" : "heartbeat",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/HeartbeatRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/HeartbeatResult"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The learner is studying now (every e9x.learning.heartbeat-interval, only while the page is visible and used)",
+        "tags" : [ "learning-controller" ]
+      }
+    },
+    "/api/learning/lessons/{id}" : {
+      "get" : {
+        "description" : "403 without a plan, 409 while the lesson is locked by the unlock rule, 404 for a lesson that is not one.",
+        "operationId" : "lesson",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LearningLesson"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "A strategy lesson as the learner reads it (blocks and the questions embedded in it, without answers)",
+        "tags" : [ "learning-controller" ]
+      }
+    },
+    "/api/learning/lessons/{id}/complete" : {
+      "post" : {
+        "operationId" : "complete",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "header",
+          "name" : "X-Time-Zone",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LessonCompletion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Mark the lesson finished (counts for the unlock rule and the day's streak)",
+        "tags" : [ "learning-controller" ]
+      }
+    },
+    "/api/learning/lessons/{id}/practice" : {
+      "post" : {
+        "description" : "The one place a learner is shown an answer: the explanation and the correct answer of a practice question just answered, in a lesson they may open. 404 for any other question.",
+        "operationId" : "practice",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PracticeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PracticeResult"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Answer a question embedded in the lesson and see the result at once",
+        "tags" : [ "learning-controller" ]
       }
     },
     "/api/me/context" : {

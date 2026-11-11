@@ -105,7 +105,7 @@ class CourseReads implements CourseOutline, CourseVersions, LessonGate {
             return LessonAccess.ALLOWED;
         }
         Map<String, LessonStatus> done = progressOverride != null ? progressOverride
-                : progress.stream().findFirst().map(p -> p.progress(userId, row.version())).orElse(Map.of());
+                : progress.orderedStream().findFirst().map(p -> p.progress(userId, row.version())).orElse(Map.of());
         return UnlockPolicy.isUnlocked(rule, lessonsInOrder(row.version()), done, lessonId.toString()) ? LessonAccess.ALLOWED : LessonAccess.LOCKED;
     }
 }
