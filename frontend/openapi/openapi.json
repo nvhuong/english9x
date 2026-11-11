@@ -337,6 +337,10 @@
           "examCode" : {
             "type" : "string"
           },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "lessons" : {
             "format" : "int32",
             "type" : "integer"
