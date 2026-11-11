@@ -188,12 +188,33 @@ class AutoGradingIT extends ExamIT {
         su.update("insert into tests(id,owner_org_id,exam_code,variant,created_by) values (?,null,'IELTS',?,?)", testId, variant, author);
         su.update("insert into test_versions(id,test_id,owner_org_id,exam_code,variant,version_no,status,title,created_by) values (?,?,null,'IELTS',?,1,'PUBLISHED','IELTS fixture',?)",
                 version, testId, variant, author);
-        return new Fx(testId, version,
+        Fx fx = new Fx(testId, version,
                 question("IELTS_L_SENTENCE_COMPLETION", "{\"slots\":[[\"Smith\"],[\"0123 456\",\"0123456\"]],\"maxWords\":2}", author),
                 question("IELTS_L_MULTIPLE_CHOICE", "{\"slots\":[[\"A\",\"C\"]]}", author),
                 question("IELTS_R_IDENTIFYING_INFORMATION", "{\"slots\":[[\"TRUE\"]]}", author),
                 question("IELTS_W_TASK2", "{\"slots\":[[\"x\"]]}", author),
                 question("IELTS_S_PART1", "{\"slots\":[[\"x\"]]}", author));
+        // the structure of the test: one PUBLISHED group per section (the child tables of a published version are frozen by guards: the fixture lifts them)
+        for (String t : new String[] {"test_parts", "test_part_groups", "question_group_items"}) {
+            su.execute("alter table " + t + " disable trigger user");
+        }
+        String[] sections = {"LISTENING", "READING", "WRITING", "SPEAKING"};
+        Q[][] members = {{fx.l1(), fx.l2()}, {fx.r()}, {fx.w()}, {fx.s()}};
+        for (int i = 0; i < sections.length; i++) {
+            UUID group = UUID.randomUUID();
+            UUID groupVersion = UUID.randomUUID();
+            su.update("insert into question_groups(id,owner_org_id,exam_code,created_by) values (?,null,'IELTS',?)", group, author);
+            su.update("insert into question_group_versions(id,group_id,owner_org_id,exam_code,version_no,status,content,created_by) values (?,?,null,'IELTS',1,'PUBLISHED','{}'::jsonb,?)", groupVersion, group, author);
+            for (int m = 0; m < members[i].length; m++) {
+                su.update("insert into question_group_items(group_version_id,position,question_version_id,owner_org_id,exam_code) values (?,?,?,null,'IELTS')", groupVersion, m + 1, members[i][m].version());
+            }
+            su.update("insert into test_parts(test_version_id,position,section_code,duration_sec,owner_org_id,exam_code) values (?,?,?,600,null,'IELTS')", version, i + 1, sections[i]);
+            su.update("insert into test_part_groups(test_version_id,part_position,position,group_version_id,owner_org_id,exam_code) values (?,?,1,?,null,'IELTS')", version, i + 1, groupVersion);
+        }
+        for (String t : new String[] {"test_parts", "test_part_groups", "question_group_items"}) {
+            su.execute("alter table " + t + " enable trigger user");
+        }
+        return fx;
     }
 
     /** Listening: 0 right = 0, 1 = 4.0, 2 = 5.0, 3 = 6.0. Reading of the variant: 0 = 0, 1 = 3.5 (AC) or 4.5 (GT). */
@@ -327,6 +348,63 @@ class AutoGradingIT extends ExamIT {
         if (rows.values().stream().anyMatch(r -> r.get("scaled") == null)) {
             assertEquals(0, scored.of(attempt).size(), "a skill with no converted score is not announced");
         }
+    }
+
+    // ---- membership comes from the test, not from what the learner can write ----------------------------------------------------------------
+
+    @Test
+    void extraQuestionsAddedAfterSubmitAreNotScored() {
+        Sat s = satToeic(); // Listening right, Reading wrong: LISTENING 495, READING 5
+        Fx fx = ielts("AC"); // a PUBLISHED question the learner knows the answer of, and that is not in their test
+        // what a learner with raw SQL does after submitting (done here as the superuser: the DB guard that refuses it is asserted below)
+        su.update("insert into attempt_questions(attempt_id,question_id,user_id,question_version_id,section_code) values (?,?,?,?,'P5')", s.attempt(), fx.r().question(), s.learner(), fx.r().version());
+        su.update("insert into responses(attempt_id,question_id,user_id,answer,answered_at,saved_at) values (?,?,?,'\"t\"',now(),now())", s.attempt(), fx.r().question(), s.learner());
+        Job job = awaitJob(s.attempt());
+        clock.set(s.submittedAt().plus(GRACE).plusSeconds(1));
+        assertTrue(gradeJob.handle(job).isSuccess());
+        Map<String, Map<String, Object>> rows = scoresOf(s.attempt());
+        assertScore(rows.get("READING"), 0, 1, 5, TOEIC_R); // the same as without the extra row: raw 0 of 1
+        assertScore(rows.get("LISTENING"), 1, 1, 495, TOEIC_L);
+    }
+
+    private void asLearner(UUID learner, String sql, boolean expectRefused) throws Exception {
+        try (java.sql.Connection c = com.english9x.support.TestPostgres.app(DB).getConnection()) {
+            c.setAutoCommit(false);
+            try (java.sql.Statement st = c.createStatement()) {
+                st.execute("select set_config('app.user_id','" + learner + "',true), set_config('app.org_id','',true), set_config('app.e9x_staff','',true), set_config('app.org_admin','',true)");
+                try {
+                    st.executeUpdate(sql);
+                    c.commit();
+                    assertFalse(expectRefused, "the database must refuse: " + sql);
+                } catch (java.sql.SQLException e) {
+                    assertTrue(expectRefused, "the database must accept: " + sql + " " + e.getMessage());
+                    assertEquals("42501", e.getSQLState());
+                }
+            }
+        }
+    }
+
+    @Test
+    void theDatabaseFreezesTheQuestionsAndTheAnswerWindowOfASubmittedAttempt() throws Exception {
+        Fx fx = ielts("AC");
+        UUID learner = user("ielts-guard");
+        // submitted an hour ago: its last answer window closed long ago, and no grace reaches that far
+        UUID old = submittedIelts(fx, learner, Instant.now().minus(Duration.ofHours(1)), true);
+        Q extra = ielts("GT").r(); // a published question that is not in the attempt's test
+        asLearner(learner, "insert into attempt_questions(attempt_id,question_id,user_id,question_version_id,section_code) values ('" + old + "','" + extra.question() + "','" + learner + "','"
+                + extra.version() + "','SPEAKING')", true);
+        String late = "insert into responses(attempt_id,question_id,user_id,answer,answered_at,saved_at) values ('" + old + "','" + fx.s().question() + "','" + learner + "','\"x\"',now() - interval '61 minutes',now())";
+        asLearner(learner, late, true);
+        asLearner(learner, "update responses set answer = '\"changed\"' where attempt_id = '" + old + "'", true);
+        // submitted a minute ago: an answer written inside the section's window may still be synced during the grace
+        UUID fresh = submittedIelts(fx, learner, Instant.now().minus(Duration.ofMinutes(1)), true);
+        asLearner(learner, "insert into responses(attempt_id,question_id,user_id,answer,answered_at,saved_at) values ('" + fresh + "','" + fx.s().question() + "','" + learner
+                + "','\"x\"',now() - interval '120 seconds',now())", false);
+        // but not one claimed to be written after the window closed
+        UUID another = submittedIelts(fx, user("ielts-guard2"), Instant.now().minus(Duration.ofMinutes(1)), true);
+        asLearner(su.queryForObject("select user_id from exam_attempts where id = ?", UUID.class, another),
+                "insert into responses(attempt_id,question_id,user_id,answer,answered_at,saved_at) values ('" + another + "','" + fx.s().question() + "','"
+                        + su.queryForObject("select user_id from exam_attempts where id = ?", UUID.class, another) + "','\"x\"',now(),now())", true);
     }
 
     // ---- the event and the job are hints --------------------------------------------------------------------------------------------------

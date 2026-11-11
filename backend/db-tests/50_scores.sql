@@ -165,6 +165,10 @@ BEGIN
   ASSERT public.t_attempt('INSERT INTO scores(attempt_id,user_id,owner_org_id,skill,kind,source,raw,raw_max,scaled) VALUES (''f5300000-0000-0000-0000-000000000001'',''f5000000-0000-0000-0000-000000000001'',''f5aaaaaa-0000-0000-0000-00000000000a'',''SPEAKING'',''OFFICIAL'',''AUTO'',1,1,9)') = 'err:42501', 'a request cannot write a score';
   ASSERT public.t_attempt('UPDATE scores SET scaled = 495') = 'err:42501', 'nor raise one';
   ASSERT public.t_attempt('INSERT INTO attempt_gradings(attempt_id,user_id,owner_org_id,interrupted) VALUES (''f5300000-0000-0000-0000-000000000003'',''f5000000-0000-0000-0000-000000000001'',''f5aaaaaa-0000-0000-0000-00000000000a'',false)') = 'err:42501', 'nor a grading record';
+  -- V202611130005: the questions of a submitted attempt are fixed, and an answer must lie in its section's window
+  ASSERT public.t_attempt('INSERT INTO attempt_questions(attempt_id,question_id,user_id,question_version_id,section_code) VALUES (''f5300000-0000-0000-0000-000000000001'',''f5100000-0000-0000-0000-000000000001'',''f5000000-0000-0000-0000-000000000001'',''f5200000-0000-0000-0000-000000000001'',''P5'')') = 'err:42501', 'no question is added to a submitted attempt';
+  ASSERT public.t_attempt('UPDATE responses SET answered_at = now() - interval ''2 days'' WHERE attempt_id = ''f5300000-0000-0000-0000-000000000001''') = 'err:42501', 'no answer is back-dated out of its window';
+  ASSERT public.t_attempt('INSERT INTO attempt_questions(attempt_id,question_id,user_id,question_version_id,section_code) VALUES (''f5300000-0000-0000-0000-000000000003'',''f5100000-0000-0000-0000-000000000001'',''f5000000-0000-0000-0000-000000000001'',''f5200000-0000-0000-0000-000000000001'',''P5'')') = 'rows:1', 'but the attempt in progress takes its questions';
   -- narrowing exam_attempts_select did not take the request role's own reads away
   ASSERT (SELECT count(*) FROM exam_attempts) >= 2, 'the request role still reads its attempts';
 END $$;

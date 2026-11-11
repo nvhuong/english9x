@@ -65,24 +65,38 @@ class GraderStore {
         return out;
     }
 
-    /** Every question of the attempt. A question whose version the grader cannot read is a data error, never a free point. */
-    List<Item> items(JdbcTemplate j, UUID attemptId) {
+    /**
+     * Every question of the attempt's TEST, with the answer the learner gave (null = none). Membership is the test version's own structure (immutable once
+     * published): test part, group of the part, question versions of the group. Rows the learner can write ({@code attempt_questions}, {@code responses}) only
+     * supply the answer, and only for exactly the question version the test holds in that section: a question the test does not hold is never scored, whatever
+     * rows say. A question whose version the grader cannot read is a data error, never a free point.
+     */
+    List<Item> items(JdbcTemplate j, UUID attemptId, UUID testVersionId) {
         return j.query("""
-                select aq.question_id, aq.section_code, aq.question_version_id, v.type_code, v.answer_key::text as k, v.points, r.answer::text as a
-                  from attempt_questions aq
-                  left join question_versions v on v.id = aq.question_version_id
-                  left join responses r on r.attempt_id = aq.attempt_id and r.question_id = aq.question_id
-                 where aq.attempt_id = ?
-                 order by aq.section_code, aq.question_id
+                select m.section_code, m.question_version_id, v.type_code, v.answer_key::text as k, v.points,
+                       (select r.answer::text from attempt_questions aq
+                          join responses r on r.attempt_id = aq.attempt_id and r.question_id = aq.question_id
+                         where aq.attempt_id = ? and aq.question_version_id = m.question_version_id and aq.section_code = m.section_code
+                         order by r.answered_at desc, aq.question_id limit 1) as a,
+                       (select aq.question_id from attempt_questions aq
+                         where aq.attempt_id = ? and aq.question_version_id = m.question_version_id and aq.section_code = m.section_code
+                         order by aq.question_id limit 1) as question_id
+                  from (select distinct tp.section_code, i.question_version_id
+                          from test_parts tp
+                          join test_part_groups g on g.test_version_id = tp.test_version_id and g.part_position = tp.position
+                          join question_group_items i on i.group_version_id = g.group_version_id
+                         where tp.test_version_id = ?) m
+                  left join question_versions v on v.id = m.question_version_id
+                 order by m.section_code, m.question_version_id
                 """, (rs, n) -> {
             UUID versionId = rs.getObject("question_version_id", UUID.class);
             if (rs.getString("type_code") == null) {
-                throw new IllegalStateException("question version " + versionId + " of an attempt cannot be read by the grader");
+                throw new IllegalStateException("question version " + versionId + " of the test of attempt " + attemptId + " cannot be read by the grader");
             }
             BigDecimal points = rs.getBigDecimal("points");
             return new Item(rs.getObject("question_id", UUID.class), rs.getString("section_code"), versionId, rs.getString("type_code"),
                     tree(rs.getString("k")), points.doubleValue(), tree(rs.getString("a")));
-        }, attemptId);
+        }, attemptId, attemptId, testVersionId);
     }
 
     private JsonNode tree(String text) {

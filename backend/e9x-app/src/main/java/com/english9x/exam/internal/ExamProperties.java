@@ -22,7 +22,7 @@ record ExamProperties(
         @DefaultValue("64KB") DataSize maxAnswerSize) {
 
     ExamProperties {
-        if (defaultMaxResumes < 0 || defaultMaxResumes > 20 || lateSyncGrace.isNegative() || recordingUploadTolerance.isNegative()
+        if (defaultMaxResumes < 0 || defaultMaxResumes > 20 || lateSyncGrace.isNegative() || lateSyncGrace.compareTo(Duration.ofMinutes(15)) > 0 || recordingUploadTolerance.isNegative()
                 || maxAnswerSize.toBytes() < 1 || maxRecordingSize.toBytes() < 1) {
             throw new IllegalStateException("e9x.exam: invalid values");
         }

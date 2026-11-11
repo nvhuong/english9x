@@ -144,7 +144,7 @@ class AutoGrader {
         String[] variant = new String[1];
         grader.read(a.userId(), a.orgId(), j -> {
             skillOfSection.putAll(store.sectionSkills(j, a.id()));
-            items.addAll(store.items(j, a.id()));
+            items.addAll(store.items(j, a.id(), a.testVersionId()));
             variant[0] = store.variant(j, a.testVersionId());
             return null;
         });
@@ -154,7 +154,7 @@ class AutoGrader {
         for (Item item : items) {
             String skill = skillOfSection.get(item.sectionCode());
             if (skill == null) {
-                throw new IllegalStateException("section " + item.sectionCode() + " of attempt " + a.id() + " has no skill");
+                continue; // a section of the test this attempt did not hold (it was never sat): nothing to score
             }
             QuestionTypeDef type = types.get(item.typeCode());
             if (!type.kind().autoScored()) {
