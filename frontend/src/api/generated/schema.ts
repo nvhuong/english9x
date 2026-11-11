@@ -505,7 +505,7 @@ export interface paths {
          * Submit the open draft for review
          * @description The review approves it only when every lesson and test it names is PUBLISHED.
          */
-        post: operations["submit_7"];
+        post: operations["submit_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -665,7 +665,7 @@ export interface paths {
             cookie?: never;
         };
         /** State of an import, its errors by row and column, and the drafts it made */
-        get: operations["get_7"];
+        get: operations["get_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -979,7 +979,7 @@ export interface paths {
             cookie?: never;
         };
         /** One review with the version under review and the earlier published version to compare it with */
-        get: operations["get_6"];
+        get: operations["get_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1197,7 +1197,7 @@ export interface paths {
             cookie?: never;
         };
         /** One test: its latest version, or the numbered one, with the check against the exam */
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1291,7 +1291,7 @@ export interface paths {
             cookie?: never;
         };
         /** The attempt as it stands now (current section and what is saved in it) */
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4453,7 +4453,7 @@ export interface operations {
             };
         };
     };
-    submit_7: {
+    submit_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -4840,7 +4840,7 @@ export interface operations {
             };
         };
     };
-    get_7: {
+    get_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -5553,7 +5553,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -6105,7 +6105,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: {
                 version?: number;
@@ -6268,7 +6268,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: never;
             header?: never;

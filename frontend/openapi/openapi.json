@@ -4814,7 +4814,7 @@
     "/api/cms/courses/{id}/submit" : {
       "post" : {
         "description" : "The review approves it only when every lesson and test it names is PUBLISHED.",
-        "operationId" : "submit_7",
+        "operationId" : "submit_8",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -5312,7 +5312,7 @@
     },
     "/api/cms/import/{jobId}" : {
       "get" : {
-        "operationId" : "get_7",
+        "operationId" : "get_9",
         "parameters" : [ {
           "in" : "path",
           "name" : "jobId",
@@ -6278,7 +6278,7 @@
     },
     "/api/cms/reviews/{reviewId}" : {
       "get" : {
-        "operationId" : "get_6",
+        "operationId" : "get_8",
         "parameters" : [ {
           "in" : "path",
           "name" : "reviewId",
@@ -7011,7 +7011,7 @@
     },
     "/api/cms/tests/{id}" : {
       "get" : {
-        "operationId" : "get_6",
+        "operationId" : "get_7",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -7226,7 +7226,7 @@
     },
     "/api/exam/attempts/{id}" : {
       "get" : {
-        "operationId" : "get_5",
+        "operationId" : "get_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
