@@ -129,6 +129,9 @@ e9x:
     expiry-reminder: 7d
     job-interval: 1h                 # period of expire_orders, expire_entitlements and plan_expiry_reminder (a tick = one time bucket of this length)
     expired-notice-window: 14d       # expire_entitlements tells the learners whose plan ended this recently; an older end is never announced
+  classroom:
+    due-soon: 24h                   # ASSIGNMENT_DUE_SOON goes out this long before an assignment's due date (job assignment_due_soon)
+    job-interval: 1h                # period of assignment_due_soon
   content:
     import:
       max-rows: 2000

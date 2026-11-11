@@ -1,0 +1,124 @@
+{
+  "nav": {
+    "classes": "Lớp học",
+    "assignments": "Bài được giao"
+  },
+  "retry": "Thử lại",
+  "kind": {
+    "CLASS": "Lớp",
+    "GROUP": "Nhóm"
+  },
+  "status": {
+    "PENDING": "Chưa đến hạn",
+    "SUBMITTED": "Đã nộp",
+    "LATE": "Nộp trễ",
+    "MISSING": "Chưa nộp"
+  },
+  "classes": {
+    "title": "Lớp học",
+    "titleGroups": "Nhóm",
+    "description": "Lớp của trung tâm: giáo viên phụ trách, học viên, khoá học và bài được giao.",
+    "descriptionGroups": "Nhóm của doanh nghiệp: học viên, khoá học và bài được giao (nhóm không có giáo viên).",
+    "loading": "Đang tải danh sách…",
+    "loadFailed": "Không tải được danh sách.",
+    "empty": "Chưa có lớp nào.",
+    "emptyGroups": "Chưa có nhóm nào.",
+    "emptyHint": "Quản trị tổ chức tạo lớp ở trên.",
+    "caption": "Các lớp",
+    "captionGroups": "Các nhóm",
+    "name": "Tên",
+    "kind": "Loại",
+    "memberCount": "Số học viên"
+  },
+  "create": {
+    "title": "Tạo lớp",
+    "titleGroup": "Tạo nhóm",
+    "name": "Tên",
+    "teacher": "Giáo viên phụ trách",
+    "submit": "Tạo lớp",
+    "submitGroup": "Tạo nhóm",
+    "created": "Đã tạo {{name}}."
+  },
+  "detail": {
+    "back": "← Danh sách lớp"
+  },
+  "roster": {
+    "title": "Học viên",
+    "loading": "Đang tải học viên…",
+    "loadFailed": "Không tải được danh sách học viên.",
+    "empty": "Chưa có học viên nào trong lớp.",
+    "caption": "Học viên của lớp",
+    "member": "Học viên",
+    "actions": "Thao tác",
+    "remove": "Xoá {{name}} khỏi lớp",
+    "removeShort": "Xoá",
+    "addTitle": "Thêm học viên",
+    "pick": "Thành viên của tổ chức",
+    "add": "Thêm vào lớp"
+  },
+  "courses": {
+    "title": "Khoá học cho cả lớp",
+    "description": "Mỗi học viên của lớp nhận một suất của giấy phép với các khoá đã chọn. Ai đã có suất của giấy phép này thì giữ nguyên.",
+    "license": "Giấy phép",
+    "licenseOption": "Giấy phép {{seats}} suất (đã dùng {{used}})",
+    "pick": "Khoá học",
+    "give": "Gán khoá cho cả lớp",
+    "done": "Đã gán suất cho {{assigned}} học viên; {{holding}} học viên đã có suất từ trước."
+  },
+  "assignments": {
+    "title": "Bài được giao",
+    "loading": "Đang tải…",
+    "loadFailed": "Không tải được dữ liệu.",
+    "empty": "Chưa giao bài nào.",
+    "listCaption": "Các bài đã giao",
+    "giveTitle": "Giao bài",
+    "given": "Đã giao bài.",
+    "kind": "Loại bài",
+    "exam": "Đề thi",
+    "lesson": "Bài học",
+    "lessonOrChapterTest": "Bài học / kiểm tra chương",
+    "testVersionId": "Mã phiên bản đề thi",
+    "lessonId": "Mã bài học",
+    "dueAt": "Hạn nộp",
+    "give": "Giao bài",
+    "due": "Hạn nộp: {{date}}",
+    "counts": "{{total}} học viên: đã nộp {{submitted}}, trễ {{late}}, chưa nộp {{missing}}",
+    "show": "Xem chi tiết",
+    "hide": "Ẩn chi tiết",
+    "status": "Trạng thái",
+    "submittedAt": "Nộp lúc",
+    "reportCaption": "Tình hình nộp bài: {{title}}"
+  },
+  "mine": {
+    "title": "Bài được giao",
+    "description": "Những bài giáo viên giao cho bạn trong tổ chức đang chọn, kèm hạn nộp.",
+    "loading": "Đang tải…",
+    "loadFailed": "Không tải được bài được giao.",
+    "empty": "Chưa có bài nào được giao.",
+    "emptyHint": "Chọn đúng tổ chức ở ô Ngữ cảnh nếu bạn học ở trung tâm hay doanh nghiệp.",
+    "listCaption": "Bài được giao cho tôi",
+    "classAndDue": "{{class}} · hạn {{date}}"
+  },
+  "validation": {
+    "name": "Vui lòng nhập tên.",
+    "teacher": "Chọn giáo viên phụ trách.",
+    "member": "Chọn một thành viên.",
+    "courses": "Chọn giấy phép và ít nhất một khoá học.",
+    "assignment": "Nhập mã bài và hạn nộp."
+  },
+  "problem": {
+    "generic": "Có lỗi xảy ra. Thử lại sau.",
+    "network": "Không kết nối được. Kiểm tra mạng rồi thử lại.",
+    "forbidden": "Bạn không có quyền làm việc này.",
+    "teacherRequired": "Lớp của trung tâm cần một giáo viên phụ trách.",
+    "notATeacher": "Người này chưa có vai trò giáo viên trong tổ chức.",
+    "groupNoTeacher": "Nhóm của doanh nghiệp không có giáo viên.",
+    "notOrgMember": "Chỉ thành viên của tổ chức mới vào được lớp.",
+    "noSeat": "Đã hết suất. Hãy thu hồi suất hoặc mua thêm.",
+    "licenseNotActive": "Giấy phép này chưa hiệu lực hoặc đã hết hạn.",
+    "courseNotInLicense": "Có khoá học không thuộc giấy phép.",
+    "dueInPast": "Hạn nộp phải ở tương lai.",
+    "targetUnavailable": "Bài hoặc đề này chưa xuất bản hoặc tổ chức không dùng được.",
+    "invalidAssignment": "Chỉ chọn một bài hoặc một đề thi."
+  }
+}

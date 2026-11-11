@@ -69,6 +69,13 @@ public final class SweepFixtures {
     public final UUID joinCodeA = UUID.randomUUID();
     public final UUID joinCodeB = UUID.randomUUID();
     public final UUID removableA = UUID.randomUUID();
+    /** P6.2: a teacher of A, a learner in A's class (the positive control of the roster routes), a published English9x test to give, and an assignment of each organisation. */
+    public final UUID teacherA = UUID.randomUUID();
+    public final UUID classMemberA = UUID.randomUUID();
+    public final UUID classMemberForCourses = UUID.randomUUID();
+    public final UUID publishedTestVersion = UUID.randomUUID();
+    public final UUID assignmentA = UUID.randomUUID();
+    public final UUID assignmentB = UUID.randomUUID();
     public final String courseCodeB = "B00001";
     /** P5.1: a plan on sale, a published English9x course, and an order of A's member and one of B's member (the order code is a text key of the walk). */
     public final UUID planId = UUID.randomUUID();
@@ -145,6 +152,18 @@ public final class SweepFixtures {
         su.update("insert into join_codes(id,org_id,code_hash,created_by,expires_at,max_uses,class_id) values (?,?,sha256('SWEEPA22'::bytea),?,now()+interval '1 day',5,?)", joinCodeA, orgA, userA, classA);
         // P6.1: class membership of org B's member (the table is tenant data: the sweep walks it), and a member of A the remove route may really remove
         su.update("insert into class_members(class_id,org_id,user_id) values (?,?,?)", classB, orgB, userB);
+        // P6.2: A's teacher and two learners in A's class; a published English9x test; an assignment of A's class and one of B's, and B's learner's submission of it
+        su.update("insert into users(id,email,email_verified_at,consent_at) values (?,'teacher-a@x.test',now(),now()),(?,'classmember-a@x.test',now(),now()),(?,'classmember2-a@x.test',now(),now())",
+                teacherA, classMemberA, classMemberForCourses);
+        su.update("insert into org_memberships(org_id,user_id) values (?,?),(?,?),(?,?)", orgA, teacherA, orgA, classMemberA, orgA, classMemberForCourses);
+        su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,'IELTS','TEACHER')", teacherA, orgA);
+        su.update("insert into class_members(class_id,org_id,user_id) values (?,?,?),(?,?,?)", classA, orgA, classMemberA, classA, orgA, classMemberForCourses);
+        UUID publishedTest = UUID.randomUUID();
+        su.update("insert into tests(id,owner_org_id,exam_code,created_by) values (?,null,'IELTS',?)", publishedTest, admin);
+        su.update("insert into test_versions(id,test_id,owner_org_id,exam_code,version_no,status,title,created_by) values (?,?,null,'IELTS',1,'PUBLISHED','Published mock',?)", publishedTestVersion, publishedTest, admin);
+        su.update("insert into assignments(id,class_id,org_id,test_version_id,due_at,created_by) values (?,?,?,?,now()+interval '2 days',?),(?,?,?,?,now()+interval '2 days',?)",
+                assignmentA, classA, orgA, publishedTestVersion, userA, assignmentB, classB, orgB, publishedTestVersion, userB);
+        su.update("insert into assignment_submissions(assignment_id,org_id,user_id,status,submitted_at) values (?,?,?,'SUBMITTED',now())", assignmentB, orgB, userB);
         su.update("insert into users(id,email,email_verified_at,consent_at) values (?,'removable-a@x.test',now(),now())", removableA);
         su.update("insert into org_memberships(org_id,user_id) values (?,?)", orgA, removableA);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'LEARNER')", removableA, orgA);
@@ -381,6 +400,32 @@ public final class SweepFixtures {
                 new ForeignIdSweep.Attempt(slots("id", orgA, "userId", userB)),
                 new ForeignIdSweep.Attempt(slots("id", orgB, "userId", removableA))),
                 ForeignIdSweep.Control.of(slots("id", orgA, "userId", removableA), null)));
+        // P6.2: classes and assignments. The class and the organisation are both walked (each foreign, and mixed with the caller's own); the control is A's own class.
+        String classBody = "{\"name\":\"Sweep class\",\"teacherId\":\"" + teacherA + "\"}";
+        all.put("POST /api/orgs/{id}/classes", ForeignIdSweep.Fixture.write(classBody, List.of(), ForeignIdSweep.Control.of(slot("id", orgA), classBody)));
+        String membersBody = "{\"userIds\":[\"" + memberA + "\"]}";
+        List<ForeignIdSweep.Attempt> classTrio = List.of(
+                new ForeignIdSweep.Attempt(slots("id", orgB, "cid", classB)),
+                new ForeignIdSweep.Attempt(slots("id", orgA, "cid", classB)),
+                new ForeignIdSweep.Attempt(slots("id", orgB, "cid", classA)));
+        all.put("GET /api/orgs/{id}/classes/{cid}", ForeignIdSweep.Fixture.read(classTrio));
+        all.put("GET /api/orgs/{id}/classes/{cid}/members", ForeignIdSweep.Fixture.read(classTrio));
+        all.put("GET /api/orgs/{id}/classes/{cid}/assignments", ForeignIdSweep.Fixture.read(classTrio));
+        all.put("GET /api/orgs/{id}/assignments/{aid}", ForeignIdSweep.Fixture.read(List.of(
+                new ForeignIdSweep.Attempt(slots("id", orgB, "aid", assignmentB)),
+                new ForeignIdSweep.Attempt(slots("id", orgA, "aid", assignmentB)),
+                new ForeignIdSweep.Attempt(slots("id", orgB, "aid", assignmentA)))));
+        all.put("POST /api/orgs/{id}/classes/{cid}/members", ForeignIdSweep.Fixture.write(membersBody, classTrio, ForeignIdSweep.Control.of(slots("id", orgA, "cid", classA), membersBody)));
+        all.put("DELETE /api/orgs/{id}/classes/{cid}/members/{userId}", ForeignIdSweep.Fixture.write(null, List.of(
+                new ForeignIdSweep.Attempt(Map.of("id", orgB.toString(), "cid", classB.toString(), "userId", userB.toString())),
+                new ForeignIdSweep.Attempt(Map.of("id", orgA.toString(), "cid", classB.toString(), "userId", userB.toString())),
+                new ForeignIdSweep.Attempt(Map.of("id", orgB.toString(), "cid", classA.toString(), "userId", classMemberA.toString())),
+                new ForeignIdSweep.Attempt(Map.of("id", orgA.toString(), "cid", classA.toString(), "userId", userB.toString()))),
+                ForeignIdSweep.Control.of(Map.of("id", orgA.toString(), "cid", classA.toString(), "userId", classMemberA.toString()), null)));
+        String coursesBody = "{\"courseIds\":[\"" + publishedCourse + "\"],\"licenseId\":\"" + licenseA + "\"}";
+        all.put("POST /api/orgs/{id}/classes/{cid}/courses", ForeignIdSweep.Fixture.write(coursesBody, classTrio, ForeignIdSweep.Control.of(slots("id", orgA, "cid", classA), coursesBody)));
+        String assignmentBody = "{\"testVersionId\":\"" + publishedTestVersion + "\",\"dueAt\":\"" + java.time.Instant.now().plus(java.time.Duration.ofDays(5)) + "\"}";
+        all.put("POST /api/orgs/{id}/classes/{cid}/assignments", ForeignIdSweep.Fixture.write(assignmentBody, classTrio, ForeignIdSweep.Control.of(slots("id", orgA, "cid", classA), assignmentBody)));
         // P2.2: the upload takes no id of a tenant (the owner is the bound context, the exam a query parameter). The sweep's caller is an ORG_ADMIN with no
         // AUTHOR role: refused; the author of org A in org A's context really uploads. "MULTIPART:" is turned into a multipart request by the IT.
         all.put("POST /api/cms/media", ForeignIdSweep.Fixture.write(MULTIPART_PNG, List.of(), new ForeignIdSweep.Control(Map.of(), null, ForeignIdSweep.AUTHOR)));

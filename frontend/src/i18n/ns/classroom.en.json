@@ -1,0 +1,124 @@
+{
+  "nav": {
+    "classes": "Classes",
+    "assignments": "Assignments"
+  },
+  "retry": "Try again",
+  "kind": {
+    "CLASS": "Class",
+    "GROUP": "Group"
+  },
+  "status": {
+    "PENDING": "Not due yet",
+    "SUBMITTED": "Handed in",
+    "LATE": "Late",
+    "MISSING": "Missing"
+  },
+  "classes": {
+    "title": "Classes",
+    "titleGroups": "Groups",
+    "description": "A centre's classes: teacher, learners, courses and assignments.",
+    "descriptionGroups": "A company's groups: learners, courses and assignments (a group has no teacher).",
+    "loading": "Loading the list…",
+    "loadFailed": "The list could not be loaded.",
+    "empty": "There are no classes yet.",
+    "emptyGroups": "There are no groups yet.",
+    "emptyHint": "The organisation admin creates them above.",
+    "caption": "Classes",
+    "captionGroups": "Groups",
+    "name": "Name",
+    "kind": "Kind",
+    "memberCount": "Learners"
+  },
+  "create": {
+    "title": "Create a class",
+    "titleGroup": "Create a group",
+    "name": "Name",
+    "teacher": "Teacher in charge",
+    "submit": "Create class",
+    "submitGroup": "Create group",
+    "created": "{{name}} was created."
+  },
+  "detail": {
+    "back": "← All classes"
+  },
+  "roster": {
+    "title": "Learners",
+    "loading": "Loading learners…",
+    "loadFailed": "The learners could not be loaded.",
+    "empty": "Nobody is in this class yet.",
+    "caption": "Learners of the class",
+    "member": "Learner",
+    "actions": "Actions",
+    "remove": "Remove {{name}} from the class",
+    "removeShort": "Remove",
+    "addTitle": "Add a learner",
+    "pick": "Member of the organisation",
+    "add": "Add to the class"
+  },
+  "courses": {
+    "title": "Courses for the whole class",
+    "description": "Each learner of the class gets one seat of the licence with the chosen courses. Anybody who already holds a seat of this licence is left as they are.",
+    "license": "Licence",
+    "licenseOption": "Licence of {{seats}} seats ({{used}} used)",
+    "pick": "Courses",
+    "give": "Give the class these courses",
+    "done": "Seats given to {{assigned}} learners; {{holding}} already held one."
+  },
+  "assignments": {
+    "title": "Assignments",
+    "loading": "Loading…",
+    "loadFailed": "The data could not be loaded.",
+    "empty": "Nothing has been assigned yet.",
+    "listCaption": "Assignments given",
+    "giveTitle": "Give an assignment",
+    "given": "The assignment was given.",
+    "kind": "Kind",
+    "exam": "Exam",
+    "lesson": "Lesson",
+    "lessonOrChapterTest": "Lesson / chapter test",
+    "testVersionId": "Test version id",
+    "lessonId": "Lesson id",
+    "dueAt": "Due",
+    "give": "Give assignment",
+    "due": "Due {{date}}",
+    "counts": "{{total}} learners: {{submitted}} handed in, {{late}} late, {{missing}} missing",
+    "show": "Show details",
+    "hide": "Hide details",
+    "status": "Status",
+    "submittedAt": "Handed in",
+    "reportCaption": "Who handed in: {{title}}"
+  },
+  "mine": {
+    "title": "My assignments",
+    "description": "What your teacher gave you in the organisation you have selected, with the due date.",
+    "loading": "Loading…",
+    "loadFailed": "Your assignments could not be loaded.",
+    "empty": "Nothing has been assigned to you.",
+    "emptyHint": "Pick your centre or company in the Context box if you learn there.",
+    "listCaption": "Assignments for me",
+    "classAndDue": "{{class}} · due {{date}}"
+  },
+  "validation": {
+    "name": "Please enter a name.",
+    "teacher": "Choose the teacher in charge.",
+    "member": "Choose a member.",
+    "courses": "Choose a licence and at least one course.",
+    "assignment": "Enter the id and the due date."
+  },
+  "problem": {
+    "generic": "Something went wrong. Try again later.",
+    "network": "Could not connect. Check your network and try again.",
+    "forbidden": "You may not do this.",
+    "teacherRequired": "A centre's class needs a teacher in charge.",
+    "notATeacher": "This person does not hold the TEACHER role in the organisation.",
+    "groupNoTeacher": "A company's group has no teacher.",
+    "notOrgMember": "Only members of the organisation can join a class.",
+    "noSeat": "No seat left. Take one back or buy more.",
+    "licenseNotActive": "This licence is not active or has ended.",
+    "courseNotInLicense": "A course is not in the licence.",
+    "dueInPast": "The due date must be in the future.",
+    "targetUnavailable": "That lesson or test is not published or not available to the organisation.",
+    "invalidAssignment": "Choose either a lesson or an exam."
+  }
+}
