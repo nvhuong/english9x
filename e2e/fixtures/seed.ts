@@ -87,6 +87,12 @@ export const seed = {
         interrupted?: boolean;
         announced?: boolean;
       }>('grading/scores', { attemptId }),
+    /** What the AI grading wrote (P4.2): `state` is null until it decided; one evaluation per graded response. */
+    ai: (attemptId: string) =>
+      post<{
+        state: 'DONE' | 'AI_FAILED' | 'TEACHER_QUEUE' | null;
+        evaluations: Array<{ section: string; model: string; inputTokens: number; outputTokens: number; costVnd: number; band: number; result: string }>;
+      }>('grading/ai', { attemptId }),
   },
 
   /** Course fixtures (P3.1): the REAL lesson gate asked as a person, with the progress the test states (the learning module that owns the real progress is P3.2). */

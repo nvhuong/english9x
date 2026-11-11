@@ -110,6 +110,9 @@ public final class SweepFixtures {
         // P4.1: the score of B's attempt (read only for the learner; nothing in the API lists scores yet)
         su.update("insert into scores(attempt_id,user_id,owner_org_id,skill,kind,source,raw,raw_max) values (?,?,?,'LISTENING','OFFICIAL','AUTO',1,1)", attemptB, userB, orgB);
         su.update("insert into attempt_gradings(attempt_id,user_id,owner_org_id,interrupted) values (?,?,?,false)", attemptB, userB, orgB);
+        // P4.2: the AI grading record and evaluation of B's attempt
+        su.update("insert into ai_gradings(attempt_id,user_id,owner_org_id,state) values (?,?,?,'DONE')", attemptB, userB, orgB);
+        su.update("insert into ai_evaluations(attempt_id,question_id,user_id,owner_org_id,model,input_tokens,output_tokens,cost_vnd,band,result) values (?,?,?,?,'gemini',1,1,0,6,'{}'::jsonb)", attemptB, questionOfB, userB, orgB);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userB, orgB);
         // A's member is A's ORG_ADMIN, so the org-admin endpoints (/api/orgs/{id}/...) have a positive control
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userA, orgA);
