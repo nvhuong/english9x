@@ -1,0 +1,87 @@
+{
+  "loading": "Loading the exam...",
+  "empty": "This section has no questions.",
+  "audio": {
+    "loading": "Preparing the recording...",
+    "gone": "This recording has been played once and is not offered again. Carry on with the test.",
+    "error": "The recording could not be loaded."
+  },
+  "writing": {
+    "yourAnswer": "Your answer",
+    "words": "{{count}} words",
+    "minWords": "at least {{count}} words",
+    "short": "{{count}} more needed"
+  },
+  "save": {
+    "saved": "Saved",
+    "saving": "Saving...",
+    "offline": "Offline: {{count}} answers waiting to be sent",
+    "rejected": "Some answers were not accepted (the section had ended)"
+  },
+  "reading": {
+    "passage": "Reading passage"
+  },
+  "image": {
+    "alt": "Picture for the question",
+    "unavailable": "The picture could not be loaded."
+  },
+  "q": {
+    "gap": "Gap {{n}}",
+    "chooseN": "Choose {{n}} answers.",
+    "matchFor": "Match for item {{n}}",
+    "pick": "Choose...",
+    "label": "Label {{n}}",
+    "moveUp": "Move item {{n}} up",
+    "moveDown": "Move item {{n}} down"
+  },
+  "section": {
+    "of": "Section {{n}} of {{total}}"
+  },
+  "warn": {
+    "five": "5 minutes left.",
+    "one": "1 minute left."
+  },
+  "small": {
+    "recommend": "A small screen makes Reading and Writing hard. A computer or tablet is recommended.",
+    "dismiss": "Got it"
+  },
+  "question": {
+    "region": "Question"
+  },
+  "nav": {
+    "prev": "Previous",
+    "next": "Next",
+    "flag": "Flag (F)",
+    "unflag": "Remove flag (F)"
+  },
+  "keys": {
+    "help": "Shortcuts: A/B/C/D choose, left/right arrows change question, F flags."
+  },
+  "finish": {
+    "section": "Finish this section",
+    "submit": "Submit",
+    "sectionTitle": "Finish this section?",
+    "submitTitle": "Submit the test?",
+    "sectionHelp": "You cannot come back to this section.",
+    "submitHelp": "After submitting you cannot change your answers.",
+    "cancel": "Go back",
+    "confirm": "Confirm",
+    "unsaved": "Some answers could not be sent yet. Check your connection and try again.",
+    "failed": "It did not work. Try again."
+  },
+  "start": {
+    "starting": "Entering the exam room...",
+    "notEntitled": "You cannot sit this test",
+    "notEntitledHelp": "An active plan is needed.",
+    "notFound": "Test not found",
+    "failed": "Could not enter the exam room"
+  },
+  "result": {
+    "title": "Submitted",
+    "interruptedTitle": "Test interrupted",
+    "submitted": "Your test has been submitted.",
+    "interrupted": "You re-entered the test more often than allowed, so it was submitted as interrupted.",
+    "scoreLater": "Your score will be available once marking is done.",
+    "home": "Home"
+  }
+}

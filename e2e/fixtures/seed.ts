@@ -95,12 +95,14 @@ export const seed = {
       post<{ access: 'ALLOWED' | 'NOT_ENTITLED' | 'LOCKED' }>('course/gate', opts),
   },
 
-  /** A published TOEIC L&R test (200 questions). Needs content + exam modules. */
-  publishedToeicTest: (): Promise<SeededTest> => notImplemented('seed.publishedToeicTest', 'P2.6 (test assembly) and P3.3 (exam backend)'),
+  /**
+   * A published TOEIC L&R test (200 questions, parts P1-P7), made through the real CMS and review (P3.4). `parts[].questions[].answer` is the right answer
+   * of each question, in the form the exam room sends it.
+   */
+  publishedToeicTest: async (): Promise<SeededTest & import('./exam').SeededExam> => (await import('./exam')).publishedToeicTest(),
 
-  /** A published IELTS test of the given variant. Needs content + exam modules. */
-  publishedIeltsTest: (_opts: { variant: 'AC' | 'GT' }): Promise<SeededTest> =>
-    notImplemented('seed.publishedIeltsTest', 'P2.6 (test assembly) and P3.3 (exam backend)'),
+  /** A published IELTS test of the given variant (Listening with audio, Reading with a passage, Writing, Speaking), same path as above. */
+  publishedIeltsTest: async (opts: { variant: 'AC' | 'GT' }): Promise<SeededTest & import('./exam').SeededExam> => (await import('./exam')).publishedIeltsTest(opts),
 
   /**
    * An organisation, created as the table owner (no SYS_ADMIN session needed to set the scene). To test the real creation
