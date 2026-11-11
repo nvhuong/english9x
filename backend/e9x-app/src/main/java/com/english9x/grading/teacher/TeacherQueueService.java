@@ -232,7 +232,10 @@ class TeacherQueueService {
             DisplayedScore shown = OfficialScore.select(GradingMode.TEACHER, aiBand.map(b -> new ScoreRecord("AI", b.doubleValue(), now)),
                     Optional.of(new ScoreRecord("TEACHER", band.doubleValue(), now))).orElseThrow();
             store.insertReview(j, id, a.id(), a.userId(), a.orgId(), skill, me, criteria, comment, band, aiBand.orElse(null));
-            store.insertScore(j, a.id(), a.userId(), a.orgId(), skill, shown.kind().name(), band);
+            if (!store.insertScore(j, a.id(), a.userId(), a.orgId(), skill, shown.kind().name(), band)) {
+                // the AI committed an OFFICIAL score after the check above: the review is rolled back with this transaction
+                throw TeacherProblems.conflict("already-official", "Already graded", "This skill already has an official score.");
+            }
             reviewed.add(skill);
             List<String> remaining = new ArrayList<>();
             for (String s : bySkill.keySet()) {

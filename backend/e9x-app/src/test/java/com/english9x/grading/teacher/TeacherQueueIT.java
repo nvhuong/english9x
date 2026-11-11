@@ -69,6 +69,8 @@ class TeacherQueueIT extends ExamIT {
     @Autowired GradingQueueService queue;
     @Autowired ScoreAnnouncer announcer;
     @Autowired JobQueue jobs;
+    @Autowired GradingStore gradingStore;
+    @Autowired com.english9x.grading.db.GraderDatabase graderDb;
     @Autowired PlatformTransactionManager tm;
 
     private static final Duration GRACE = Duration.ofMinutes(2);
@@ -505,6 +507,17 @@ class TeacherQueueIT extends ExamIT {
         assertEquals(200, review(item, teacher, "WRITING", Map.of("TA", 7.0, "CC", 7.0), "ok").status());
         assertEquals(409, review(item, teacher, "WRITING", Map.of("TA", 7.0, "CC", 7.0), "twice").status(), "a skill is graded once");
         assertEquals("CLAIMED", su.queryForObject("select state from grading_queue_items where id = ?", String.class, item), "still held: the Speaking is not graded");
+    }
+
+    @Test
+    void anOfficialScoreCommittedMeanwhileMakesTheTeacherInsertAConflictNotAnError() {
+        Fx fx = test();
+        UUID learner = user("gq-r-learner");
+        UUID attempt = submitted(fx, learner, null, clock.instant(), "An essay.");
+        su.update("insert into scores(attempt_id,user_id,owner_org_id,skill,kind,source,raw,raw_max,scaled) values (?,?,null,'WRITING','OFFICIAL','AI',6,null,6)", attempt, learner);
+        Boolean written = graderDb.write(learner, null, j -> gradingStore.insertScore(j, attempt, learner, null, "WRITING", "OFFICIAL", new BigDecimal("7.0")));
+        assertFalse(written, "0 rows: the service turns it into 409 already-official");
+        assertEquals(1, su.queryForObject("select count(*) from scores where attempt_id = ? and skill = 'WRITING' and kind = 'OFFICIAL'", Integer.class, attempt));
     }
 
     private Res review(UUID item, UUID teacher, String skill, Map<String, Double> criteria, String comment) {

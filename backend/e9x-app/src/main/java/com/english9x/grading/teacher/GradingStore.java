@@ -66,8 +66,10 @@ class GradingStore {
     }
 
     /** The teacher's score is OFFICIAL and replaces the AI's whatever the mode ({@code domain.grading.OfficialScore}). */
-    void insertScore(JdbcTemplate j, UUID attemptId, UUID userId, UUID orgId, String skill, String kind, BigDecimal band) {
-        j.update("insert into scores(attempt_id, user_id, owner_org_id, skill, kind, source, raw, raw_max, scaled) values (?,?,?,?,?, 'TEACHER', ?, null, ?)", attemptId, userId, orgId, skill, kind, band, band);
+    /** @return false when the skill already has a score of that kind (the AI committed an OFFICIAL one meanwhile): nothing was written */
+    boolean insertScore(JdbcTemplate j, UUID attemptId, UUID userId, UUID orgId, String skill, String kind, BigDecimal band) {
+        return j.update("insert into scores(attempt_id, user_id, owner_org_id, skill, kind, source, raw, raw_max, scaled) values (?,?,?,?,?, 'TEACHER', ?, null, ?) on conflict (attempt_id, skill, kind) do nothing",
+                attemptId, userId, orgId, skill, kind, band, band) == 1;
     }
 
     int reviewedSkills(JdbcTemplate j, UUID attemptId) {
