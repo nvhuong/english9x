@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { ApiProblemError } from '../../api/problem';
 import { Button, EmptyState } from '../../design';
-import { useChapterTest, useSubmitAttempt } from './queries';
+import { useApi } from '../../api/useApi';
+import { sendHeartbeat, useChapterTest, useHeartbeatIntervalMs, useSubmitAttempt } from './queries';
+import { useStudyHeartbeat } from './useStudyHeartbeat';
 import type { AttemptResultData, ChapterTestData, LearningQuestion } from './types';
 
 function Question({ q, n, value, onChange }: { q: LearningQuestion; n: number; value: string; onChange: (v: string) => void }) {
@@ -110,6 +112,10 @@ export default function ChapterTestPage() {
   const { lessonId = '' } = useParams();
   const test = useChapterTest(lessonId);
   const submit = useSubmitAttempt(lessonId);
+  const api = useApi();
+  const intervalMs = useHeartbeatIntervalMs();
+  const courseId = test.data?.courseId;
+  useStudyHeartbeat({ enabled: Boolean(courseId), intervalMs, send: () => sendHeartbeat(api, courseId!, lessonId) });
   if (test.isPending) return <p role="status" className="text-muted">{t('loading')}</p>;
   if (test.isError || !test.data) {
     const status = test.error instanceof ApiProblemError ? test.error.status : 0;

@@ -89,4 +89,24 @@ class ChapterTestIT extends LearningIT {
     private UUID versionOf(Course c) {
         return su.queryForObject("select course_version_id from course_lessons where id = ?", UUID.class, c.test());
     }
+
+    @Test
+    void itemNotScoredByMachineIsLeftOutNotRefused() {
+        Course c = course("FREE", null);
+        UUID learner = learner(c);
+        UUID photo = UUID.fromString(get("/api/learning/chapter-tests/" + c.test(), learner, c.staff().org()).body().findValues("questions").get(0).get(0).path("versionId").asText());
+        // one item of the test becomes a Writing item: a person marks it, the machine cannot
+        su.execute((java.sql.Connection con) -> {
+            try (java.sql.Statement st = con.createStatement()) {
+                st.execute("set session_replication_role = replica");
+                st.executeUpdate("update question_versions set type_code = 'IELTS_W_TASK2' where id = '" + photo + "' and type_code = 'TOEIC_P1_PHOTO'");
+                st.execute("set session_replication_role = origin");
+            }
+            return null;
+        });
+        Res r = sit(c, learner, true);
+        assertEquals(200, r.status(), r.raw());
+        assertEquals(1.0, r.body().path("rawMax").asDouble(), "only the machine-scored item counts");
+        assertEquals(1.0, r.body().path("score").asDouble());
+    }
 }

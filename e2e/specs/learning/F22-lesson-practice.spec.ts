@@ -74,11 +74,14 @@ test.describe('F22 lesson and practice', () => {
     await expect(page.getByText('Đang khoá')).toHaveCount(1); // only chapter 2 waits for the chapter test
     await expect(page.getByRole('link', { name: `Chapter test ${mark}` })).toBeVisible();
 
-    // the study clock: two signals inside the idle timeout are credited, the first one alone is not
+    // the study clock: the first signal of a day credits nothing (there is no gap yet); the idle-gap rule itself is HeartbeatIT.idleGapNotCredited
     const token = (await org.apiLogin(learner)).token;
-    const beat = () => api(token, 'POST', '/api/learning/heartbeat', { body: { courseId: course.body.courseId, lessonId, timeZone: 'Asia/Ho_Chi_Minh' } });
-    const first = await beat();
+    const first = await api(token, 'POST', '/api/learning/heartbeat', { body: { courseId: course.body.courseId, lessonId, timeZone: 'Asia/Ho_Chi_Minh' } });
     expect(first.status, first.text).toBe(200);
-    expect(first.body.todaySeconds).toBeGreaterThanOrEqual(0);
+    expect(first.body.todaySeconds).toBe(0);
+    expect(first.body.streakDays).toBeGreaterThanOrEqual(1); // the completed lesson already counted for the day
+    // the public config the page paces itself by
+    const cfg = await api(token, 'GET', '/api/config/public');
+    expect(cfg.body.learningHeartbeatIntervalSeconds).toBe(30);
   });
 });

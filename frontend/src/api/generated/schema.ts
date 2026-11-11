@@ -1263,6 +1263,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/config/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publicConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/exam/attempts": {
         parameters: {
             query?: never;
@@ -3076,6 +3092,12 @@ export interface components {
              * @description Zero-based index of the offending list element, null when not row-specific
              */
             row?: number;
+        };
+        PublicConfig: {
+            /** Format: int64 */
+            examAutosaveIntervalSeconds?: number;
+            /** Format: int64 */
+            learningHeartbeatIntervalSeconds?: number;
         };
         QuestionExamView: {
             content?: components["schemas"]["JsonNode"];
@@ -6478,6 +6500,35 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CmsTestVersion"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    publicConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicConfig"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.time.DateTimeException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -229,6 +230,9 @@ class LearningService {
         double rawMax = 0;
         Map<String, JsonNode> stored = new LinkedHashMap<>();
         for (Key k : keys) {
+            if (!InteractionKind.valueOf(k.kind()).autoScored()) {
+                continue; // a chapter test is a quick machine-scored check: a writing or speaking item is left out of the score
+            }
             ItemResult r = score(k, given.get(k.questionVersionId()));
             raw += r.earned();
             rawMax += r.max();
@@ -261,7 +265,11 @@ class LearningService {
         }
         ZoneId zone = zone(user, req.timeZone(), now);
         LocalDate today = now.atZone(zone).toLocalDate();
-        repo.heartbeat(user, now, today, l.courseId(), l.id());
+        Instant last = repo.lastHeartbeat(user);
+        // signals closer than half the interval add nothing the clock does not already count: they are not stored (the table cannot grow by hammering)
+        if (last == null || Duration.between(last, now).abs().compareTo(props.heartbeatInterval().dividedBy(2)) >= 0) {
+            repo.heartbeat(user, now, today, l.courseId(), l.id());
+        }
         int seconds = (int) StudyTime.credited(repo.heartbeats(user, today), props.idleTimeout()).toSeconds();
         repo.setSeconds(user, today, seconds, now);
         return new HeartbeatResult(seconds, refreshStreak(user, today, now));

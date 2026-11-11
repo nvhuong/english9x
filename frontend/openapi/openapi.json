@@ -2704,6 +2704,19 @@
           }
         }
       },
+      "PublicConfig" : {
+        "properties" : {
+          "examAutosaveIntervalSeconds" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "learningHeartbeatIntervalSeconds" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "QuestionExamView" : {
         "properties" : {
           "content" : {
@@ -7493,6 +7506,34 @@
         },
         "summary" : "Every version of a test, oldest first",
         "tags" : [ "test-controller" ]
+      }
+    },
+    "/api/config/public" : {
+      "get" : {
+        "operationId" : "publicConfig",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicConfig"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "platform-controller" ]
       }
     },
     "/api/exam/attempts" : {

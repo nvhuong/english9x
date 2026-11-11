@@ -8,7 +8,7 @@ import { Button, EmptyState } from '../../design';
 import type { Block } from '../cms/lesson-editor/types';
 import { PracticeScore, usePractice } from './PracticeBlock';
 import { StrategyLessonView, type EmbeddedQuestionData, type StoredFileKind } from './StrategyLessonView';
-import { sendHeartbeat, useCompleteLesson, useLesson } from './queries';
+import { sendHeartbeat, useCompleteLesson, useHeartbeatIntervalMs, useLesson } from './queries';
 import { useStudyHeartbeat } from './useStudyHeartbeat';
 
 function mediaIds(blocks: Block[]): { kind: StoredFileKind; id: string }[] {
@@ -40,7 +40,8 @@ export default function LessonPage() {
     })),
   });
   const courseId = lesson.data?.courseId;
-  useStudyHeartbeat({ enabled: Boolean(courseId), send: () => sendHeartbeat(api, courseId!, lessonId) });
+  const intervalMs = useHeartbeatIntervalMs();
+  useStudyHeartbeat({ enabled: Boolean(courseId), intervalMs, send: () => sendHeartbeat(api, courseId!, lessonId) });
 
   if (lesson.isPending) return <p role="status" className="text-muted">{t('loading')}</p>;
   if (lesson.isError || !lesson.data) {

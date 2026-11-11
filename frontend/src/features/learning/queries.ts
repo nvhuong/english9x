@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../../api/useApi';
-import { ctxKey, useContextStore } from '../../app/stores/context';
+import { ctxKey, publicKey, useContextStore } from '../../app/stores/context';
 import type { AttemptResultData, ChapterMapData, ChapterTestData, LessonData, PracticeResultData } from './types';
 
 /** The person's time zone as the browser knows it: the server cuts the days of the study streak in it. */
@@ -81,3 +81,18 @@ export function practiceRequest(api: ReturnType<typeof useApi>, lessonId: string
 export async function sendHeartbeat(api: ReturnType<typeof useApi>, courseId: string, lessonId: string) {
   await api.POST('/api/learning/heartbeat', { body: { courseId, lessonId, timeZone: browserTimeZone() } });
 }
+
+/** e9x.learning.heartbeat-interval as the server says it (GET /api/config/public); the 30 s default until it answers, and when it cannot. */
+export function useHeartbeatIntervalMs(): number {
+  const api = useApi();
+  const config = useQuery({
+    queryKey: publicKey('config', 'public'),
+    staleTime: 10 * 60_000,
+    retry: false,
+    queryFn: async () => (await api.GET('/api/config/public')).data,
+  });
+  const seconds = config.data?.learningHeartbeatIntervalSeconds;
+  return seconds && seconds > 0 ? seconds * 1000 : HEARTBEAT_FALLBACK_MS;
+}
+
+const HEARTBEAT_FALLBACK_MS = 30_000;

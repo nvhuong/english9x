@@ -91,4 +91,36 @@ class HeartbeatIT extends LearningIT {
         Res r = post("/api/learning/lessons/" + c.lesson() + "/complete", null, learner, c.staff().org());
         assertEquals(1, r.body().path("streakDays").asInt(), "a completed lesson is enough for the day");
     }
+
+    @Test
+    void dailyTotalNeverShrinks() {
+        Course c = course("FREE", null);
+        UUID learner = learner(c);
+        Instant t = evening();
+        for (long s : new long[] {0, 30, 60}) {
+            clock.set(t.plusSeconds(s));
+            beat(c, learner, null);
+        }
+        assertEquals(60, su.queryForObject("select seconds from study_time_daily where user_id = ?", Integer.class, learner));
+        // a request that read the list before the others committed would compute less: the stored total must keep the larger value
+        su.update("delete from study_heartbeats where user_id = ? and at > ?", learner, java.sql.Timestamp.from(t));
+        clock.set(t.plus(Duration.ofMinutes(5))); // alone after an idle gap this credits nothing
+        beat(c, learner, null);
+        assertEquals(60, su.queryForObject("select seconds from study_time_daily where user_id = ?", Integer.class, learner), "the lower figure does not overwrite the higher");
+    }
+
+    @Test
+    void rapidBeatsDoNotInflateRows() {
+        Course c = course("FREE", null);
+        UUID learner = learner(c);
+        Instant t = evening();
+        for (long ms : new long[] {0, 100, 200, 5_000, 9_000}) { // all within half of the 30 s interval of the first
+            clock.set(t.plusMillis(ms));
+            assertEquals(200, beat(c, learner, null).status());
+        }
+        assertEquals(1, su.queryForObject("select count(*) from study_heartbeats where user_id = ?", Integer.class, learner));
+        clock.set(t.plusSeconds(30));
+        beat(c, learner, null);
+        assertEquals(2, su.queryForObject("select count(*) from study_heartbeats where user_id = ?", Integer.class, learner));
+    }
 }

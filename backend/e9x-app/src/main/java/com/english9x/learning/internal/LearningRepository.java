@@ -130,12 +130,17 @@ class LearningRepository {
         jdbc.update("insert into study_heartbeats(user_id, at, day, course_id, lesson_id) values (?,?,?,?,?) on conflict do nothing", user, Timestamp.from(at), day, course, lesson);
     }
 
+    /** The latest signal of the person (any day), or null. */
+    Instant lastHeartbeat(UUID user) {
+        return jdbc.query("select max(at) from study_heartbeats where user_id = ?", rs -> rs.next() && rs.getTimestamp(1) != null ? rs.getTimestamp(1).toInstant() : null, user);
+    }
+
     List<Instant> heartbeats(UUID user, LocalDate day) {
         return jdbc.query("select at from study_heartbeats where user_id = ? and day = ? order by at", (rs, n) -> rs.getTimestamp(1).toInstant(), user, day);
     }
 
     void setSeconds(UUID user, LocalDate day, int seconds, Instant now) {
-        jdbc.update("insert into study_time_daily(user_id, day, seconds) values (?,?,?) on conflict (user_id, day) do update set seconds = excluded.seconds, updated_at = ?",
+        jdbc.update("insert into study_time_daily(user_id, day, seconds) values (?,?,?) on conflict (user_id, day) do update set seconds = greatest(study_time_daily.seconds, excluded.seconds), updated_at = ?",
                 user, day, seconds, Timestamp.from(now));
     }
 
