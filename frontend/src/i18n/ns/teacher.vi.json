@@ -1,0 +1,43 @@
+{
+  "nav": "Chấm bài",
+  "loading": "Đang tải…",
+  "retry": "Thử lại",
+  "skills": { "WRITING": "Writing", "SPEAKING": "Speaking" },
+  "queue": {
+    "title": "Hàng chờ chấm bài",
+    "description": "Các bài Writing/Speaking đang chờ giáo viên. Bài bạn nhận sẽ ẩn với giáo viên khác; quá hạn nhận, bài tự trở lại hàng chờ.",
+    "exam": "Kỳ thi",
+    "examHint": "Để trống để xem mọi kỳ thi bạn được giao, hoặc nhập mã (ví dụ IELTS).",
+    "emptyTitle": "Chưa có bài nào chờ chấm",
+    "empty": "Khi học viên nộp bài cần giáo viên chấm, bài sẽ xuất hiện ở đây.",
+    "errorTitle": "Không tải được hàng chờ",
+    "error": "Đã có lỗi khi tải hàng chờ chấm bài. Hãy thử lại.",
+    "submitted": "Vào hàng chờ lúc {{at}}",
+    "due": "hạn chấm {{at}}",
+    "open": "Chờ nhận",
+    "mine": "Bài của bạn",
+    "claim": "Nhận bài",
+    "grade": "Chấm bài",
+    "release": "Trả lại hàng chờ",
+    "taken": "Bài này đã có giáo viên khác nhận. Danh sách đã được cập nhật."
+  },
+  "grading": {
+    "back": "Về hàng chờ",
+    "title": "Chấm bài",
+    "description": "Đọc bài làm hoặc nghe bản ghi âm, tham khảo kết quả AI nếu có, rồi chấm theo từng tiêu chí. Điểm của giáo viên là điểm chính thức.",
+    "errorTitle": "Không mở được bài",
+    "error": "Không tải được bài này. Hãy quay lại hàng chờ và thử lại.",
+    "notYours": "Bạn chưa nhận bài này, hoặc bài đã được trả về hàng chờ. Hãy nhận bài trước khi chấm.",
+    "aiBand": "AI: {{band}}",
+    "graded": "Đã chấm: {{band}}",
+    "yourReview": "Nhận xét của bạn",
+    "criteria": "Điểm theo tiêu chí",
+    "comment": "Nhận xét cho học viên",
+    "submit": "Lưu điểm kỹ năng này",
+    "saved": "Đã lưu. Còn kỹ năng khác cần chấm.",
+    "allDone": "Đã chấm xong. Học viên sẽ nhận điểm chính thức.",
+    "noAnswer": "Học viên không nộp câu trả lời.",
+    "recording": "Bản ghi âm của học viên",
+    "ai": "Kết quả AI (band {{band}})"
+  }
+}

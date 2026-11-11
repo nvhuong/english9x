@@ -1,0 +1,43 @@
+{
+  "nav": "Grading",
+  "loading": "Loading…",
+  "retry": "Try again",
+  "skills": { "WRITING": "Writing", "SPEAKING": "Speaking" },
+  "queue": {
+    "title": "Grading queue",
+    "description": "Writing and Speaking submissions waiting for a teacher. A submission you claim is hidden from the other teachers; past the claim deadline it returns to the queue.",
+    "exam": "Exam",
+    "examHint": "Leave empty to see every exam you are assigned, or enter a code (for example IELTS).",
+    "emptyTitle": "Nothing is waiting to be graded",
+    "empty": "When a learner submits work that needs a teacher, it appears here.",
+    "errorTitle": "The queue could not be loaded",
+    "error": "Something went wrong loading the grading queue. Try again.",
+    "submitted": "Queued at {{at}}",
+    "due": "due {{at}}",
+    "open": "Open",
+    "mine": "Yours",
+    "claim": "Claim",
+    "grade": "Grade",
+    "release": "Return to queue",
+    "taken": "Another teacher has claimed this submission. The list was refreshed."
+  },
+  "grading": {
+    "back": "Back to the queue",
+    "title": "Grade a submission",
+    "description": "Read the answer or listen to the recording, look at the AI's result if there is one, then score each criterion. The teacher's score is the official one.",
+    "errorTitle": "The submission could not be opened",
+    "error": "This submission could not be loaded. Go back to the queue and try again.",
+    "notYours": "You have not claimed this submission, or it was returned to the queue. Claim it before grading.",
+    "aiBand": "AI: {{band}}",
+    "graded": "Graded: {{band}}",
+    "yourReview": "Your review",
+    "criteria": "Score per criterion",
+    "comment": "Comment for the learner",
+    "submit": "Save this skill",
+    "saved": "Saved. Another skill still needs grading.",
+    "allDone": "All graded. The learner gets the official score.",
+    "noAnswer": "The learner gave no answer.",
+    "recording": "The learner's recording",
+    "ai": "AI result (band {{band}})"
+  }
+}

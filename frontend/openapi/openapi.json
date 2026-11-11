@@ -91,6 +91,54 @@
         "required" : [ "createdAt", "id", "name", "type" ],
         "type" : "object"
       },
+      "AdminQueueItemView" : {
+        "properties" : {
+          "claimDueAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "claimedBy" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "claimedByName" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "side" : {
+            "type" : "string"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AiView" : {
+        "properties" : {
+          "band" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "result" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          }
+        },
+        "type" : "object"
+      },
       "Answered" : {
         "properties" : {
           "answer" : {
@@ -1185,6 +1233,54 @@
           }
         },
         "required" : [ "name", "type" ],
+        "type" : "object"
+      },
+      "CriterionView" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "max" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "min" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "step" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "Detail" : {
+        "properties" : {
+          "claimDueAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "skills" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SkillView"
+            },
+            "type" : "array"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "EmailRequest" : {
@@ -3172,6 +3268,41 @@
         },
         "type" : "object"
       },
+      "QueueItemView" : {
+        "properties" : {
+          "claimDueAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "mine" : {
+            "type" : "boolean"
+          },
+          "state" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReassignRequest" : {
+        "properties" : {
+          "teacherId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "RefreshRequest" : {
         "properties" : {
           "refreshToken" : {
@@ -3384,6 +3515,45 @@
         },
         "type" : "object"
       },
+      "ReviewRequest" : {
+        "properties" : {
+          "comment" : {
+            "type" : "string"
+          },
+          "criteria" : {
+            "additionalProperties" : {
+              "format" : "double",
+              "type" : "number"
+            },
+            "type" : "object"
+          },
+          "skill" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ReviewResult" : {
+        "properties" : {
+          "band" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "done" : {
+            "type" : "boolean"
+          },
+          "remaining" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "skill" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ReviewSnapshot" : {
         "properties" : {
           "content" : {
@@ -3399,6 +3569,25 @@
           "versionNo" : {
             "format" : "int32",
             "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ReviewView" : {
+        "properties" : {
+          "band" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "comment" : {
+            "type" : "string"
+          },
+          "criteria" : {
+            "additionalProperties" : {
+              "format" : "double",
+              "type" : "number"
+            },
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -3647,6 +3836,33 @@
         "required" : [ "roles", "userId" ],
         "type" : "object"
       },
+      "SkillView" : {
+        "properties" : {
+          "aiBand" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "criteria" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CriterionView"
+            },
+            "type" : "array"
+          },
+          "review" : {
+            "$ref" : "#/components/schemas/ReviewView"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "tasks" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TaskView"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "Started" : {
         "properties" : {
           "jobId" : {
@@ -3817,6 +4033,30 @@
         },
         "type" : "object"
       },
+      "TaskView" : {
+        "properties" : {
+          "ai" : {
+            "$ref" : "#/components/schemas/AiView"
+          },
+          "hasRecording" : {
+            "type" : "boolean"
+          },
+          "prompt" : {
+            "type" : "string"
+          },
+          "questionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          },
+          "typeCode" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "TelegramLink" : {
         "properties" : {
           "deepLink" : {
@@ -3885,7 +4125,7 @@
   "paths" : {
     "/api/admin/audit-log" : {
       "get" : {
-        "operationId" : "list_14",
+        "operationId" : "list_15",
         "parameters" : [ {
           "in" : "query",
           "name" : "action",
@@ -4102,7 +4342,7 @@
     },
     "/api/admin/orders" : {
       "get" : {
-        "operationId" : "list_13",
+        "operationId" : "list_14",
         "parameters" : [ {
           "in" : "query",
           "name" : "status",
@@ -4579,6 +4819,99 @@
         "tags" : [ "plan-controller" ]
       }
     },
+    "/api/admin/queue" : {
+      "get" : {
+        "operationId" : "adminList",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "state",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminQueueItemView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "teacher-queue-controller" ]
+      }
+    },
+    "/api/admin/queue/{id}/reassign" : {
+      "post" : {
+        "operationId" : "reassign",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReassignRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminQueueItemView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "teacher-queue-controller" ]
+      }
+    },
     "/api/auth/config" : {
       "get" : {
         "operationId" : "config",
@@ -4982,7 +5315,7 @@
     },
     "/api/catalog/courses" : {
       "get" : {
-        "operationId" : "list_12",
+        "operationId" : "list_13",
         "parameters" : [ {
           "in" : "query",
           "name" : "exam",
@@ -5022,7 +5355,7 @@
     },
     "/api/catalog/courses/{code}" : {
       "get" : {
-        "operationId" : "detail",
+        "operationId" : "detail_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "code",
@@ -8523,7 +8856,7 @@
     },
     "/api/me/notifications" : {
       "get" : {
-        "operationId" : "list_11",
+        "operationId" : "list_12",
         "parameters" : [ {
           "in" : "query",
           "name" : "limit",
@@ -9559,6 +9892,249 @@
           }
         },
         "tags" : [ "platform-controller" ]
+      }
+    },
+    "/api/teacher/queue" : {
+      "get" : {
+        "operationId" : "list_11",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/QueueItemView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "teacher-queue-controller" ]
+      }
+    },
+    "/api/teacher/queue/{id}" : {
+      "get" : {
+        "operationId" : "detail",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Detail"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "teacher-queue-controller" ]
+      }
+    },
+    "/api/teacher/queue/{id}/claim" : {
+      "post" : {
+        "operationId" : "claim",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueueItemView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "teacher-queue-controller" ]
+      }
+    },
+    "/api/teacher/queue/{id}/recordings/{questionId}" : {
+      "get" : {
+        "operationId" : "recording_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "questionId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "teacher-queue-controller" ]
+      }
+    },
+    "/api/teacher/queue/{id}/release" : {
+      "post" : {
+        "operationId" : "release",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueueItemView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "teacher-queue-controller" ]
+      }
+    },
+    "/api/teacher/queue/{id}/review" : {
+      "post" : {
+        "operationId" : "review",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewResult"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "teacher-queue-controller" ]
       }
     },
     "/api/telegram/webhook" : {

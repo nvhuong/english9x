@@ -43,5 +43,16 @@ test.describe('F37 Gemini failure', () => {
       return r.body.items.find((n: any) => n.type === 'AI_GRADING_FAILED' && n.data?.attemptId === attemptId);
     }, { timeoutMs: 30_000 });
     expect(inbox.read).toBe(false);
+
+    // chuyển giáo viên: the attempt the AI could not grade is in the teachers' queue, and the administrator hands it to a teacher of IELTS
+    const queued = await poll('the item in the teachers\' queue', async () => (await seed.grading.queue(attemptId)).item, { timeoutMs: 30_000 });
+    expect(queued).toMatchObject({ state: 'OPEN', reason: 'AI_FAILED', grading_org_id: null });
+    const teacher = await seed.verifiedLearner({ email: uniqueEmail('f37-teacher') });
+    await seed.staffGrant({ userId: teacher.userId, role: 'TEACHER', examCode: 'IELTS' });
+    const handed = await api(adminToken, 'POST', `/api/admin/queue/${queued.id}/reassign`, { body: { teacherId: teacher.userId } });
+    expect(handed.status, handed.text).toBe(200);
+    expect(handed.body).toMatchObject({ state: 'CLAIMED', claimedBy: teacher.userId });
+    const mine = await api((await org.apiLogin(teacher)).token, 'GET', '/api/teacher/queue');
+    expect(mine.body.find((i: any) => i.id === queued.id)).toMatchObject({ state: 'CLAIMED', mine: true });
   });
 });

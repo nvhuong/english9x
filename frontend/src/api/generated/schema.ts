@@ -7,7 +7,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_14"];
+        get: operations["list_15"];
         put?: never;
         post?: never;
         delete?: never;
@@ -71,7 +71,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_13"];
+        get: operations["list_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -202,6 +202,38 @@ export interface paths {
         get?: never;
         put: operations["update_6"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/queue/{id}/reassign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reassign"];
         delete?: never;
         options?: never;
         head?: never;
@@ -408,7 +440,7 @@ export interface paths {
             cookie?: never;
         };
         /** The public course catalog: PUBLISHED English9x courses and APPROVED shared ones; no sign-in needed */
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -425,7 +457,7 @@ export interface paths {
             cookie?: never;
         };
         /** One course of the catalog by its code: description, chapters and lesson titles, author; never lesson content */
-        get: operations["detail"];
+        get: operations["detail_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1652,7 +1684,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2016,6 +2048,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teacher/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_11"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teacher/queue/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teacher/queue/{id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["claim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teacher/queue/{id}/recordings/{questionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["recording_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teacher/queue/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["release"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teacher/queue/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["review"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/telegram/webhook": {
         parameters: {
             query?: never;
@@ -2074,6 +2202,26 @@ export interface components {
             id: string;
             name: string;
             type: components["schemas"]["OrgType"];
+        };
+        AdminQueueItemView: {
+            /** Format: date-time */
+            claimDueAt?: string;
+            /** Format: uuid */
+            claimedBy?: string;
+            claimedByName?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            examCode?: string;
+            /** Format: uuid */
+            id?: string;
+            reason?: string;
+            side?: string;
+            state?: string;
+        };
+        AiView: {
+            /** Format: double */
+            band?: number;
+            result?: components["schemas"]["JsonNode"];
         };
         Answered: {
             answer?: components["schemas"]["JsonNode"];
@@ -2551,6 +2699,25 @@ export interface components {
         CreateOrganizationRequest: {
             name: string;
             type: components["schemas"]["OrgType"];
+        };
+        CriterionView: {
+            code?: string;
+            /** Format: double */
+            max?: number;
+            /** Format: double */
+            min?: number;
+            name?: string;
+            /** Format: double */
+            step?: number;
+        };
+        Detail: {
+            /** Format: date-time */
+            claimDueAt?: string;
+            examCode?: string;
+            /** Format: uuid */
+            id?: string;
+            skills?: components["schemas"]["SkillView"][];
+            state?: string;
         };
         EmailRequest: {
             /** Format: email */
@@ -3407,6 +3574,21 @@ export interface components {
             /** Format: int32 */
             versionNo?: number;
         };
+        QueueItemView: {
+            /** Format: date-time */
+            claimDueAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            examCode?: string;
+            /** Format: uuid */
+            id?: string;
+            mine?: boolean;
+            state?: string;
+        };
+        ReassignRequest: {
+            /** Format: uuid */
+            teacherId?: string;
+        };
         RefreshRequest: {
             refreshToken: string;
         };
@@ -3490,6 +3672,20 @@ export interface components {
             /** Format: uuid */
             versionId?: string;
         };
+        ReviewRequest: {
+            comment?: string;
+            criteria?: {
+                [key: string]: number;
+            };
+            skill?: string;
+        };
+        ReviewResult: {
+            /** Format: double */
+            band?: number;
+            done?: boolean;
+            remaining?: string[];
+            skill?: string;
+        };
         ReviewSnapshot: {
             /** @description the content fields of the version, without identity or bookkeeping */
             content?: unknown;
@@ -3498,6 +3694,14 @@ export interface components {
             versionId?: string;
             /** Format: int32 */
             versionNo?: number;
+        };
+        ReviewView: {
+            /** Format: double */
+            band?: number;
+            comment?: string;
+            criteria?: {
+                [key: string]: number;
+            };
         };
         RoleSpec: {
             /** @description IELTS | TOEIC; required for AUTHOR, REVIEWER, TEACHER, absent for the others */
@@ -3609,6 +3813,14 @@ export interface components {
             /** Format: uuid */
             userId: string;
         };
+        SkillView: {
+            /** Format: double */
+            aiBand?: number;
+            criteria?: components["schemas"]["CriterionView"][];
+            review?: components["schemas"]["ReviewView"];
+            skill?: string;
+            tasks?: components["schemas"]["TaskView"][];
+        };
         Started: {
             /** Format: uuid */
             jobId?: string;
@@ -3685,6 +3897,15 @@ export interface components {
             /** Format: uuid */
             reviewId?: string;
         };
+        TaskView: {
+            ai?: components["schemas"]["AiView"];
+            hasRecording?: boolean;
+            prompt?: string;
+            /** Format: uuid */
+            questionId?: string;
+            text?: string;
+            typeCode?: string;
+        };
         TelegramLink: {
             deepLink?: string;
             /** Format: date-time */
@@ -3718,7 +3939,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_14: {
+    list_15: {
         parameters: {
             query?: {
                 action?: string;
@@ -3876,7 +4097,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_14: {
         parameters: {
             query?: {
                 status?: string;
@@ -4290,6 +4511,73 @@ export interface operations {
             };
         };
     };
+    adminList: {
+        parameters: {
+            query?: {
+                exam?: string;
+                state?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminQueueItemView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reassign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReassignRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AdminQueueItemView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     config: {
         parameters: {
             query?: never;
@@ -4668,7 +4956,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: {
                 exam?: string;
@@ -4699,7 +4987,7 @@ export interface operations {
             };
         };
     };
-    detail: {
+    detail_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -7376,7 +7664,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 limit?: number;
@@ -8234,6 +8522,197 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Pong"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_11: {
+        parameters: {
+            query?: {
+                exam?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QueueItemView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Detail"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QueueItemView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    recording_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                questionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    release: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["QueueItemView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewResult"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
