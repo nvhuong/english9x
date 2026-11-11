@@ -14,6 +14,8 @@ public final class SweepFixtures {
     public final UUID orgB = UUID.randomUUID();
     public final UUID userA = UUID.randomUUID();
     public final UUID userB = UUID.randomUUID();
+    /** P3.3: user B's exam attempt (org B's): A's people must find neither it nor anything under it. */
+    public final UUID attemptB = UUID.randomUUID();
     public final UUID classA = UUID.randomUUID();
     public final UUID classB = UUID.randomUUID();
     /** Member of org A without roles to speak of: the positive control of changing somebody's roles. */
@@ -90,7 +92,14 @@ public final class SweepFixtures {
         su.update("insert into classes(id,owner_org_id,name) values (?,?,'class A'),(?,?,'class B')", classA, orgA, classB, orgB);
         su.update("insert into exams(code,name) values ('IELTS','IELTS') on conflict do nothing");
         su.update("insert into courses(owner_org_id,exam_code,code,title,status) values (?,'IELTS',?,'B draft','DRAFT')", orgB, courseCodeB);
-        su.update("insert into exam_attempts(user_id,owner_org_id,test_version_id,status) values (?,?,gen_random_uuid(),'IN_PROGRESS')", userB, orgB);
+        su.update("insert into exam_attempts(id,user_id,owner_org_id,test_version_id,status) values (?,?,?,gen_random_uuid(),'IN_PROGRESS')", attemptB, userB, orgB);
+        // P3.3: what hangs on B's attempt (the exam room's tables are the learner's own, user_id)
+        UUID questionOfB = UUID.randomUUID();
+        su.update("insert into attempt_sections(attempt_id,position,user_id,section_code,skill,duration_sec,starts_at) values (?,0,?,'P1','LISTENING',600,now())", attemptB, userB);
+        su.update("insert into attempt_questions(attempt_id,question_id,user_id,question_version_id,section_code) values (?,?,?,gen_random_uuid(),'P1')", attemptB, questionOfB, userB);
+        su.update("insert into responses(attempt_id,question_id,user_id,answer,answered_at,saved_at) values (?,?,?,'\"B\"',now(),now())", attemptB, questionOfB, userB);
+        su.update("insert into audio_plays(attempt_id,media_id,user_id,played_at) values (?,gen_random_uuid(),?,now())", attemptB, userB);
+        su.update("insert into speaking_recordings(attempt_id,question_id,user_id,storage_path,mime_type,size_bytes,uploaded_at) values (?,?,?,'staging/recordings/x.webm','audio/webm',10,now())", attemptB, questionOfB, userB);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userB, orgB);
         // A's member is A's ORG_ADMIN, so the org-admin endpoints (/api/orgs/{id}/...) have a positive control
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userA, orgA);
@@ -382,7 +391,28 @@ public final class SweepFixtures {
         all.put("POST /api/cms/score-tables", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
         all.put("PUT /api/cms/score-tables/{id}", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
         all.put("POST /api/cms/score-tables/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null, englishNine));
+        examFixtures(all);
         return all;
+    }
+
+    /**
+     * P3.3: the exam room. An attempt is its learner's own: B's attempt (and anything named under it) is a 404 for A's people. A's ORG_ADMIN holds no plan,
+     * so even a start of a test that does not exist cannot succeed; ExamAttemptIT measures the 2xx of every route and the refusals around them.
+     */
+    private void examFixtures(Map<String, ForeignIdSweep.Fixture> all) {
+        String why = "the exam room needs a published test, a plan and a running attempt of the caller: ExamAttemptIT, AudioOnceIT and ExamDtoIT measure the 2xx of each route";
+        String foreignQuestion = UUID.randomUUID().toString();
+        all.put("POST /api/exam/attempts", new ForeignIdSweep.Fixture("{\"testVersionId\":\"" + UUID.randomUUID() + "\"}", List.of(), null, why));
+        all.put("POST /api/exam/attempts/{id}/resume", new ForeignIdSweep.Fixture(null, List.of(), null, why));
+        all.put("POST /api/exam/attempts/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null, why));
+        all.put("PUT /api/exam/attempts/{id}/responses/{questionId}", new ForeignIdSweep.Fixture("{\"answer\":\"A\",\"answeredAt\":\"2026-11-11T00:00:00Z\"}",
+                List.of(new ForeignIdSweep.Attempt(slots("id", attemptB, "questionId", foreignQuestion))), null, why));
+        all.put("POST /api/exam/attempts/{id}/sections/{sectionId}/finish", new ForeignIdSweep.Fixture(null,
+                List.of(new ForeignIdSweep.Attempt(slots("id", attemptB, "sectionId", "P1"))), null, why));
+        all.put("POST /api/exam/attempts/{id}/recordings/{questionId}", new ForeignIdSweep.Fixture(MULTIPART_PNG,
+                List.of(new ForeignIdSweep.Attempt(slots("id", attemptB, "questionId", foreignQuestion))), null, why));
+        all.put("GET /api/exam/attempts/{id}/audio/{mediaId}", ForeignIdSweep.Fixture.read(List.of(
+                new ForeignIdSweep.Attempt(slots("id", attemptB, "mediaId", mediaB)), new ForeignIdSweep.Attempt(slots("id", attemptB, "mediaId", mediaA)))));
     }
 
     /** The valid example of IELTS_R_SHORT_ANSWER (no file ids) as the body of a question. */

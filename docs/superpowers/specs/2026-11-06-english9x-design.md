@@ -334,6 +334,9 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.exam.default-max-resumes` | `2` | N lần quay lại mặc định khi đề không đặt riêng | Quản trị |
 | `e9x.exam.autosave-interval` | `5s` | Chu kỳ tự lưu đáp án | Cấu hình |
 | `e9x.exam.late-sync-grace` | `2m` | Thời gian tối đa sau khi hết giờ phần thi để đồng bộ đáp án đã ghi offline trước giờ kết thúc | Cấu hình |
+| `e9x.exam.recording-upload-tolerance` | `10s` | Dung sai tải bản ghi âm Speaking sau khi hết cửa sổ part | Cấu hình |
+| `e9x.exam.max-recording-size` | `25MB` | Kích thước tối đa một bản ghi âm Speaking | Cấu hình |
+| `e9x.exam.max-answer-size` | `64KB` | Kích thước tối đa một đáp án (JSON) | Cấu hình |
 | `e9x.billing.order-expiry` | `7d` | Đơn chờ quá hạn thì `EXPIRED` | Quản trị |
 | `e9x.billing.transfer-note-max-length` | `50` | Độ dài tối đa nội dung chuyển khoản | Cấu hình |
 | `e9x.billing.expiry-reminder` | `7d` | Báo trước khi gói hết hạn | Quản trị |

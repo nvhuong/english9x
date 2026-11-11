@@ -697,6 +697,79 @@
         },
         "type" : "object"
       },
+      "ExamAttempt" : {
+        "properties" : {
+          "attemptId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "currentSection" : {
+            "$ref" : "#/components/schemas/ExamSectionContent",
+            "description" : "the section being sat, with its content; null once submitted. Later sections are not sent before their turn"
+          },
+          "endsAt" : {
+            "description" : "end of the current section",
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "maxResumes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "result" : {
+            "$ref" : "#/components/schemas/ExamResult",
+            "description" : "set once submitted"
+          },
+          "resumeCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "saved" : {
+            "description" : "what is saved for the current section's questions",
+            "items" : {
+              "$ref" : "#/components/schemas/ExamSavedResponse"
+            },
+            "type" : "array"
+          },
+          "sections" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ExamSectionSummary"
+            },
+            "type" : "array"
+          },
+          "serverNow" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "status" : {
+            "description" : "IN_PROGRESS or SUBMITTED",
+            "type" : "string"
+          },
+          "testVersionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExamAudioLink" : {
+        "properties" : {
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ExamInfo" : {
         "properties" : {
           "code" : {
@@ -726,6 +799,58 @@
         },
         "type" : "object"
       },
+      "ExamResult" : {
+        "properties" : {
+          "attemptId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "interrupted" : {
+            "type" : "boolean"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "submittedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExamSaveRequest" : {
+        "properties" : {
+          "answer" : {
+            "$ref" : "#/components/schemas/JsonNode",
+            "description" : "what the learner chose or wrote: any JSON value; its form is the question type's"
+          },
+          "answeredAt" : {
+            "description" : "when the learner wrote it, on the server's clock as the client estimates it (offline answers: when it was written)",
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExamSavedResponse" : {
+        "properties" : {
+          "questionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "savedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "value" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          }
+        },
+        "type" : "object"
+      },
       "ExamSection" : {
         "properties" : {
           "code" : {
@@ -740,6 +865,68 @@
             "type" : "integer"
           },
           "skill" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExamSectionContent" : {
+        "properties" : {
+          "durationSec" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "endsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "groups" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Group"
+            },
+            "type" : "array"
+          },
+          "sectionId" : {
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExamSectionSummary" : {
+        "properties" : {
+          "durationSec" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "position" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sectionId" : {
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "state" : {
+            "description" : "DONE, CURRENT or PENDING",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ExamStartRequest" : {
+        "properties" : {
+          "testVersionId" : {
+            "description" : "a PUBLISHED test version",
+            "format" : "uuid",
             "type" : "string"
           }
         },
@@ -982,6 +1169,28 @@
           }
         },
         "required" : [ "role" ],
+        "type" : "object"
+      },
+      "Group" : {
+        "properties" : {
+          "content" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "groupId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "questions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/QuestionExamView"
+            },
+            "type" : "array"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
         "type" : "object"
       },
       "ImportDetail" : {
@@ -1824,6 +2033,31 @@
             "type" : "integer"
           }
         }
+      },
+      "QuestionExamView" : {
+        "properties" : {
+          "content" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "points" : {
+            "type" : "number"
+          },
+          "questionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
       },
       "QuestionGroupPage" : {
         "properties" : {
@@ -4184,7 +4418,7 @@
     },
     "/api/cms/grading-skills/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_6",
+        "operationId" : "submit_7",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -4293,7 +4527,7 @@
         "tags" : [ "import-controller" ]
       },
       "post" : {
-        "operationId" : "start",
+        "operationId" : "start_1",
         "parameters" : [ {
           "description" : "the question type of every row; the caller must be an AUTHOR of its exam in the current context",
           "in" : "query",
@@ -4455,7 +4689,7 @@
     },
     "/api/cms/import/{jobId}/submit" : {
       "post" : {
-        "operationId" : "submit_5",
+        "operationId" : "submit_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "jobId",
@@ -4759,7 +4993,7 @@
     },
     "/api/cms/question-groups/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_4",
+        "operationId" : "submit_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -5083,7 +5317,7 @@
     },
     "/api/cms/questions/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_3",
+        "operationId" : "submit_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -5637,7 +5871,7 @@
     },
     "/api/cms/score-tables/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_2",
+        "operationId" : "submit_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -5899,7 +6133,7 @@
     },
     "/api/cms/strategy-lessons/{id}/submit" : {
       "post" : {
-        "operationId" : "submit_1",
+        "operationId" : "submit_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -6077,7 +6311,7 @@
     },
     "/api/cms/tests/{id}" : {
       "get" : {
-        "operationId" : "get_5",
+        "operationId" : "get_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -6173,7 +6407,7 @@
     "/api/cms/tests/{id}/submit" : {
       "post" : {
         "description" : "422 test-skill-missing while a skill of the exam has no question. The review approves it only when every group is PUBLISHED.",
-        "operationId" : "submit",
+        "operationId" : "submit_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -6248,6 +6482,360 @@
         },
         "summary" : "Every version of a test, oldest first",
         "tags" : [ "test-controller" ]
+      }
+    },
+    "/api/exam/attempts" : {
+      "post" : {
+        "description" : "201 with the attempt (section list and the content of the first section). 409 with the attempt that is already IN_PROGRESS for this test. 403 without an entitlement.",
+        "operationId" : "start",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ExamStartRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamAttempt"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Start an attempt on a test version",
+        "tags" : [ "exam-controller" ]
+      }
+    },
+    "/api/exam/attempts/{id}" : {
+      "get" : {
+        "operationId" : "get_5",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamAttempt"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The attempt as it stands now (current section and what is saved in it)",
+        "tags" : [ "exam-controller" ]
+      }
+    },
+    "/api/exam/attempts/{id}/audio/{mediaId}" : {
+      "get" : {
+        "description" : "410 when it was already given out.",
+        "operationId" : "audio",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "mediaId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamAudioLink"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "A one-time link to a recording of the current section",
+        "tags" : [ "exam-controller" ]
+      }
+    },
+    "/api/exam/attempts/{id}/recordings/{questionId}" : {
+      "post" : {
+        "description" : "Only while the Speaking part runs, plus e9x.exam.recording-upload-tolerance. A new upload replaces the earlier one.",
+        "operationId" : "recording",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "questionId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Upload the recording of a Speaking question (WebM/Opus, part \"file\")",
+        "tags" : [ "exam-controller" ]
+      }
+    },
+    "/api/exam/attempts/{id}/responses/{questionId}" : {
+      "put" : {
+        "description" : "204. 409 when the answer was written after its section ended, or synced later than e9x.exam.late-sync-grace after it ended. The newer answeredAt wins.",
+        "operationId" : "save",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "questionId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ExamSaveRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Save the answer to a question",
+        "tags" : [ "exam-controller" ]
+      }
+    },
+    "/api/exam/attempts/{id}/resume" : {
+      "post" : {
+        "description" : "200 with the attempt. 409 with the submitted attempt when the time ran out meanwhile or the limit of resumes was passed (then it is submitted as interrupted).",
+        "operationId" : "resume",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamAttempt"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Come back to an attempt (counts as a resume)",
+        "tags" : [ "exam-controller" ]
+      }
+    },
+    "/api/exam/attempts/{id}/sections/{sectionId}/finish" : {
+      "post" : {
+        "operationId" : "finish",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "sectionId",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamAttempt"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Finish the current section early (the last one submits the attempt)",
+        "tags" : [ "exam-controller" ]
+      }
+    },
+    "/api/exam/attempts/{id}/submit" : {
+      "post" : {
+        "description" : "Idempotent: a second call answers 200 with the same result.",
+        "operationId" : "submit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamResult"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Submit the attempt",
+        "tags" : [ "exam-controller" ]
       }
     },
     "/api/invitations/{token}/accept" : {

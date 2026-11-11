@@ -485,7 +485,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review */
-        post: operations["submit_6"];
+        post: operations["submit_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -520,7 +520,7 @@ export interface paths {
         get: operations["list_7"];
         put?: never;
         /** Start importing a filled-in template (all rows or none) */
-        post: operations["start"];
+        post: operations["start_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -588,7 +588,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit every draft of a successful import for review, as one bundle */
-        post: operations["submit_5"];
+        post: operations["submit_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -677,7 +677,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review; it is approved only when every member question is PUBLISHED */
-        post: operations["submit_4"];
+        post: operations["submit_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -766,7 +766,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review (the workflow records the author, audits and notifies the reviewers) */
-        post: operations["submit_3"];
+        post: operations["submit_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -958,7 +958,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review */
-        post: operations["submit_2"];
+        post: operations["submit_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1031,7 +1031,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Submit the open draft for review (refused at approval while an embedded question is not published) */
-        post: operations["submit_1"];
+        post: operations["submit_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1084,7 +1084,7 @@ export interface paths {
             cookie?: never;
         };
         /** One test: its latest version, or the numbered one, with the check against the exam */
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1126,7 +1126,7 @@ export interface paths {
          * Submit the open draft for review
          * @description 422 test-skill-missing while a skill of the exam has no question. The review approves it only when every group is PUBLISHED.
          */
-        post: operations["submit"];
+        post: operations["submit_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1144,6 +1144,160 @@ export interface paths {
         get: operations["versions"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exam/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start an attempt on a test version
+         * @description 201 with the attempt (section list and the content of the first section). 409 with the attempt that is already IN_PROGRESS for this test. 403 without an entitlement.
+         */
+        post: operations["start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exam/attempts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The attempt as it stands now (current section and what is saved in it) */
+        get: operations["get_5"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exam/attempts/{id}/audio/{mediaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A one-time link to a recording of the current section
+         * @description 410 when it was already given out.
+         */
+        get: operations["audio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exam/attempts/{id}/recordings/{questionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload the recording of a Speaking question (WebM/Opus, part "file")
+         * @description Only while the Speaking part runs, plus e9x.exam.recording-upload-tolerance. A new upload replaces the earlier one.
+         */
+        post: operations["recording"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exam/attempts/{id}/responses/{questionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save the answer to a question
+         * @description 204. 409 when the answer was written after its section ended, or synced later than e9x.exam.late-sync-grace after it ended. The newer answeredAt wins.
+         */
+        put: operations["save"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exam/attempts/{id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Come back to an attempt (counts as a resume)
+         * @description 200 with the attempt. 409 with the submitted attempt when the time ran out meanwhile or the limit of resumes was passed (then it is submitted as interrupted).
+         */
+        post: operations["resume"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exam/attempts/{id}/sections/{sectionId}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish the current section early (the last one submits the attempt) */
+        post: operations["finish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exam/attempts/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit the attempt
+         * @description Idempotent: a second call answers 200 with the same result.
+         */
+        post: operations["submit"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1831,12 +1985,70 @@ export interface components {
             /** Format: int32 */
             row?: number;
         };
+        ExamAttempt: {
+            /** Format: uuid */
+            attemptId?: string;
+            /** @description the section being sat, with its content; null once submitted. Later sections are not sent before their turn */
+            currentSection?: components["schemas"]["ExamSectionContent"];
+            /**
+             * Format: date-time
+             * @description end of the current section
+             */
+            endsAt?: string;
+            examCode?: string;
+            /** Format: int32 */
+            maxResumes?: number;
+            /** @description set once submitted */
+            result?: components["schemas"]["ExamResult"];
+            /** Format: int32 */
+            resumeCount?: number;
+            /** @description what is saved for the current section's questions */
+            saved?: components["schemas"]["ExamSavedResponse"][];
+            sections?: components["schemas"]["ExamSectionSummary"][];
+            /** Format: date-time */
+            serverNow?: string;
+            /** @description IN_PROGRESS or SUBMITTED */
+            status?: string;
+            /** Format: uuid */
+            testVersionId?: string;
+            title?: string;
+        };
+        ExamAudioLink: {
+            /** Format: date-time */
+            expiresAt?: string;
+            url?: string;
+        };
         ExamInfo: {
             code?: string;
             name?: string;
             scoreSkills?: string[];
             sections?: components["schemas"]["ExamSection"][];
             variants?: string[];
+        };
+        ExamResult: {
+            /** Format: uuid */
+            attemptId?: string;
+            interrupted?: boolean;
+            reason?: string;
+            status?: string;
+            /** Format: date-time */
+            submittedAt?: string;
+        };
+        ExamSaveRequest: {
+            /** @description what the learner chose or wrote: any JSON value; its form is the question type's */
+            answer?: components["schemas"]["JsonNode"];
+            /**
+             * Format: date-time
+             * @description when the learner wrote it, on the server's clock as the client estimates it (offline answers: when it was written)
+             */
+            answeredAt?: string;
+        };
+        ExamSavedResponse: {
+            /** Format: uuid */
+            questionId?: string;
+            /** Format: date-time */
+            savedAt?: string;
+            value?: components["schemas"]["JsonNode"];
         };
         ExamSection: {
             code?: string;
@@ -1845,6 +2057,34 @@ export interface components {
             /** Format: int32 */
             position?: number;
             skill?: string;
+        };
+        ExamSectionContent: {
+            /** Format: int32 */
+            durationSec?: number;
+            /** Format: date-time */
+            endsAt?: string;
+            groups?: components["schemas"]["Group"][];
+            sectionId?: string;
+            skill?: string;
+            /** Format: date-time */
+            startsAt?: string;
+        };
+        ExamSectionSummary: {
+            /** Format: int32 */
+            durationSec?: number;
+            /** Format: int32 */
+            position?: number;
+            sectionId?: string;
+            skill?: string;
+            /** @description DONE, CURRENT or PENDING */
+            state?: string;
+        };
+        ExamStartRequest: {
+            /**
+             * Format: uuid
+             * @description a PUBLISHED test version
+             */
+            testVersionId?: string;
         };
         GradingCriterion: {
             code?: string;
@@ -1954,6 +2194,14 @@ export interface components {
             orgId?: string;
             /** @enum {string} */
             role: "LEARNER" | "AUTHOR" | "REVIEWER" | "TEACHER" | "ORG_ADMIN" | "SYS_ADMIN";
+        };
+        Group: {
+            content?: components["schemas"]["JsonNode"];
+            /** Format: uuid */
+            groupId?: string;
+            questions?: components["schemas"]["QuestionExamView"][];
+            /** Format: uuid */
+            versionId?: string;
         };
         ImportDetail: {
             errors?: components["schemas"]["ErrorView"][];
@@ -2304,6 +2552,16 @@ export interface components {
              * @description Zero-based index of the offending list element, null when not row-specific
              */
             row?: number;
+        };
+        QuestionExamView: {
+            content?: components["schemas"]["JsonNode"];
+            examCode?: string;
+            points?: number;
+            /** Format: uuid */
+            questionId?: string;
+            typeCode?: string;
+            /** Format: uuid */
+            versionId?: string;
         };
         QuestionGroupPage: {
             items?: components["schemas"]["QuestionGroupSummary"][];
@@ -3898,7 +4156,7 @@ export interface operations {
             };
         };
     };
-    submit_6: {
+    submit_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -3989,7 +4247,7 @@ export interface operations {
             };
         };
     };
-    start: {
+    start_1: {
         parameters: {
             query: {
                 /** @description the question type of every row; the caller must be an AUTHOR of its exam in the current context */
@@ -4118,7 +4376,7 @@ export interface operations {
             };
         };
     };
-    submit_5: {
+    submit_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -4349,7 +4607,7 @@ export interface operations {
             };
         };
     };
-    submit_4: {
+    submit_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4579,7 +4837,7 @@ export interface operations {
             };
         };
     };
-    submit_3: {
+    submit_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4996,7 +5254,7 @@ export interface operations {
             };
         };
     };
-    submit_2: {
+    submit_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -5192,7 +5450,7 @@ export interface operations {
             };
         };
     };
-    submit_1: {
+    submit_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -5321,7 +5579,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: {
                 version?: number;
@@ -5389,7 +5647,7 @@ export interface operations {
             };
         };
     };
-    submit: {
+    submit_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5438,6 +5696,267 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["CmsTestVersion"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExamStartRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExamAttempt"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExamAttempt"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    audio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                mediaId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExamAudioLink"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    recording: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                questionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                questionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExamSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    resume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExamAttempt"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    finish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                sectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExamAttempt"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ExamResult"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

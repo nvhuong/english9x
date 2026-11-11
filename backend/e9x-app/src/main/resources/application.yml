@@ -111,6 +111,9 @@ e9x:
     default-max-resumes: 2
     autosave-interval: 5s
     late-sync-grace: 2m
+    recording-upload-tolerance: 10s
+    max-recording-size: 25MB
+    max-answer-size: 64KB
   billing:
     order-expiry: 7d
     transfer-note-max-length: 50
