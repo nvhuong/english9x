@@ -62,6 +62,18 @@ class JdbcJobQueue implements JobQueue {
             throw new IllegalTransactionStateException("JobQueue.enqueue needs a transaction on the application's primary "
                     + "database connection: a job must exist only if the caller commits (a worker-role transaction does not count)");
         }
+        // A bound holder is not proof of a transaction (a holder bound without one runs every statement in autocommit, i.e. the job would exist
+        // although the caller later rolls back): the connection itself must be inside a transaction.
+        if (TransactionSynchronizationManager.getResource(jdbc.getDataSource()) instanceof org.springframework.jdbc.datasource.ConnectionHolder holder
+                && holder.getConnectionHandle() != null) {
+            try {
+                if (holder.getConnection().getAutoCommit()) {
+                    throw new IllegalTransactionStateException("JobQueue.enqueue: the primary connection is in autocommit, not in a transaction");
+                }
+            } catch (java.sql.SQLException e) {
+                throw new IllegalTransactionStateException("JobQueue.enqueue: cannot tell whether the primary connection is in a transaction");
+            }
+        }
     }
 
     private String json(JsonNode payload) {

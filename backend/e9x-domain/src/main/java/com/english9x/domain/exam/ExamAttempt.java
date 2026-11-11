@@ -37,6 +37,64 @@ public final class ExamAttempt {
         return new ExamAttempt(id, List.copyOf(sections), maxResumes, now);
     }
 
+    /** Rebuilds an attempt from what was persisted (sections' real windows, counters, outcome). Null start/end entries mean "not yet". */
+    public static ExamAttempt restore(String id, List<SectionPlan> sections, int maxResumes, int sectionIndex, List<Instant> starts,
+                                      List<Instant> ends, int resumeCount, boolean interrupted, AttemptStatus status,
+                                      SubmitReason reason, Instant submittedAt) {
+        if (id == null || sections == null || sections.isEmpty() || starts.size() != sections.size() || ends.size() != sections.size()
+                || sectionIndex < 0 || sectionIndex >= sections.size() || starts.get(0) == null || status == null
+                || (status == AttemptStatus.SUBMITTED && (reason == null || submittedAt == null))) {
+            throw new IllegalArgumentException("invalid persisted exam attempt");
+        }
+        ExamAttempt a = new ExamAttempt(id, List.copyOf(sections), maxResumes, starts.get(0));
+        for (int i = 0; i < sections.size(); i++) {
+            a.sectionStarts[i] = starts.get(i);
+            a.sectionEnds[i] = ends.get(i);
+        }
+        a.sectionIndex = sectionIndex;
+        a.resumeCount = resumeCount;
+        a.interrupted = interrupted;
+        a.status = status;
+        a.submitReason = reason;
+        a.submittedAt = submittedAt;
+        return a;
+    }
+
+    public int maxResumes() {
+        return maxResumes;
+    }
+
+    public int sectionIndex() {
+        return sectionIndex;
+    }
+
+    public int sectionCount() {
+        return sections.size();
+    }
+
+    public SectionPlan section(int i) {
+        return sections.get(i);
+    }
+
+    /** When section i began (null if not reached). */
+    public Instant sectionStartedAt(int i) {
+        return sectionStarts[i];
+    }
+
+    /** When section i ended (timed out or finished); null while open or not reached. */
+    public Instant sectionEndedAt(int i) {
+        return sectionEnds[i];
+    }
+
+    /** The latest moment the attempt can still be running: end of the current section plus every later section in full. */
+    public Instant deadline() {
+        Instant d = sectionStarts[sectionIndex].plus(sections.get(sectionIndex).duration());
+        for (int i = sectionIndex + 1; i < sections.size(); i++) {
+            d = d.plus(sections.get(i).duration());
+        }
+        return d;
+    }
+
     public String id() {
         return id;
     }
