@@ -127,5 +127,61 @@
     "noToken": "Lời mời không hợp lệ: liên kết thiếu mã.",
     "mismatch": "Lời mời này gửi cho một địa chỉ email khác. Hãy đăng xuất rồi đăng nhập bằng đúng địa chỉ trong thư mời.",
     "unverified": "Hãy xác thực email của bạn (xem thư xác thực đã gửi khi đăng ký) rồi quay lại liên kết này."
+  },
+  "bulk": {
+    "title": "Mời nhiều học viên",
+    "listTitle": "Mời theo danh sách email",
+    "listLabel": "Địa chỉ email (mỗi dòng một địa chỉ, hoặc cách nhau bằng dấu phẩy)",
+    "send": "Gửi lời mời",
+    "fileTitle": "Nhập từ Excel",
+    "fileLabel": "Tệp Excel (.xlsx)",
+    "fileHint": "Dòng đầu ghi tên cột: email, name, class. Mọi dòng được kiểm tra trước; chỉ cần một dòng sai là không ai được mời.",
+    "upload": "Nhập",
+    "invited": "Đã gửi {{count}} lời mời.",
+    "hasErrors": "Tệp có lỗi. Chưa ai được mời; hãy sửa các dòng sau rồi tải lại.",
+    "errorsLabel": "Các dòng cần sửa",
+    "rowError": "Dòng {{row}}, {{field}}: {{code}}"
+  },
+  "joinCodes": {
+    "title": "Mã tham gia",
+    "description": "Đưa học viên một mã để họ vào tổ chức tại /join. Mã chỉ hiện một lần, lúc bạn tạo.",
+    "expiresAt": "Có hiệu lực đến",
+    "maxUses": "Số lượt dùng",
+    "create": "Tạo mã",
+    "shownOnce": "Hãy chép mã này ngay, sẽ không hiện lại:",
+    "loading": "Đang tải mã…",
+    "empty": "Chưa có mã nào.",
+    "caption": "Mã tham gia",
+    "status": "Trạng thái",
+    "uses": "Lượt dùng",
+    "usesOf": "{{used}} trên {{max}}",
+    "expires": "Hết hạn",
+    "revoke": "Thu hồi",
+    "statuses": {
+      "ACTIVE": "Đang dùng được",
+      "REVOKED": "Đã thu hồi",
+      "EXPIRED": "Hết hạn",
+      "EXHAUSTED": "Hết lượt"
+    }
+  },
+  "join": {
+    "title": "Tham gia một tổ chức",
+    "description": "Nhập mã mà tổ chức đã đưa cho bạn.",
+    "visitor": "Hãy đăng nhập hoặc tạo tài khoản, rồi quay lại trang này để nhập mã.",
+    "code": "Mã",
+    "submit": "Tham gia",
+    "doneTitle": "Bạn đã tham gia",
+    "alreadyTitle": "Bạn đã thuộc tổ chức này",
+    "doneBody": "Tổ chức đã xuất hiện trong tài khoản của bạn.",
+    "invalid": "Mã không đúng, đã hết hạn, bị thu hồi hoặc đã hết lượt.",
+    "tooMany": "Thử quá nhiều lần. Hãy đợi vài phút rồi thử lại.",
+    "unverified": "Hãy xác minh địa chỉ email trước, rồi quay lại trang này."
+  },
+  "remove": {
+    "button": "Xoá",
+    "of": "Xoá {{name}}",
+    "title": "Xoá {{name}}?",
+    "body": "Suất học của họ được thu hồi và họ rời tổ chức. Những gì họ đã làm vẫn còn cho tổ chức xem.",
+    "confirm": "Xoá"
   }
 }

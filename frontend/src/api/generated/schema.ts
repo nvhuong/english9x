@@ -1433,6 +1433,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/join/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Join an organisation with a code (410 when not valid, 429 when guessing too fast) */
+        post: operations["join"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/context": {
         parameters: {
             query?: never;
@@ -1650,7 +1667,7 @@ export interface paths {
         };
         get: operations["list_1"];
         put?: never;
-        post: operations["invite"];
+        post: operations["invite_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1668,6 +1685,89 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["revoke_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/join-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["codes"];
+        put?: never;
+        /** Create a join code; the code is in this answer only */
+        post: operations["createCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/join-codes/{codeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revokeCode"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/members/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invite the learners of an Excel file (all rows or none; errors by row) */
+        post: operations["importMembers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/members/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Leave the organisation (own id) or remove a member (ORG_ADMIN): the seat is taken back, the history stays */
+        delete: operations["remove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1885,6 +1985,13 @@ export interface components {
         AuthConfig: {
             /** @description false when Google sign-in is not configured: hide the button */
             googleEnabled: boolean;
+        };
+        BulkInviteRequest: {
+            emails: string[];
+        };
+        BulkInviteResponse: {
+            /** Format: int32 */
+            invited: number;
         };
         CatalogChapter: {
             lessons?: components["schemas"]["CatalogLesson"][];
@@ -2189,6 +2296,17 @@ export interface components {
             /** @description The bank's transaction reference, if the administrator has it (at most 100 characters) */
             bankRef?: string;
         };
+        CreateJoinCodeRequest: {
+            /**
+             * Format: uuid
+             * @description a class of the organisation the joiner is put into
+             */
+            classId?: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: int32 */
+            maxUses: number;
+        };
         CreateOrderRequest: {
             /** @description Published English9x courses, at most the plan's maxCourses */
             courseIds: string[];
@@ -2476,6 +2594,12 @@ export interface components {
             job?: components["schemas"]["ImportView"];
             versionIds?: string[];
         };
+        ImportResult: {
+            /** Format: int32 */
+            invited: number;
+            /** Format: int32 */
+            rows: number;
+        };
         ImportUploadForm: {
             /**
              * Format: binary
@@ -2528,6 +2652,37 @@ export interface components {
             /** Format: email */
             email: string;
             roles: components["schemas"]["RoleSpec"][];
+        };
+        /** @description The only time the code is ever shown: only its SHA-256 digest is stored */
+        JoinCodeCreated: {
+            code: string;
+            joinCode: components["schemas"]["JoinCodeView"];
+        };
+        /** @enum {string} */
+        JoinCodeStatus: "ACTIVE" | "REVOKED" | "EXPIRED" | "EXHAUSTED";
+        JoinCodeView: {
+            /** Format: uuid */
+            classId?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            maxUses: number;
+            status: components["schemas"]["JoinCodeStatus"];
+            /** Format: int32 */
+            usedCount: number;
+        };
+        JoinResponse: {
+            /** Format: uuid */
+            orgId: string;
+            /**
+             * @description joined | already-member
+             * @example joined
+             */
+            status: string;
         };
         JsonNode: unknown;
         LicenseCourse: {
@@ -2587,6 +2742,13 @@ export interface components {
             originalFilename?: string;
             /** Format: int64 */
             sizeBytes?: number;
+        };
+        MemberImportForm: {
+            /**
+             * Format: binary
+             * @description the .xlsx with the columns email, name, class
+             */
+            file?: string;
         };
         MemberView: {
             displayName?: string;
@@ -6527,6 +6689,37 @@ export interface operations {
             };
         };
     };
+    join: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JoinResponse"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     me: {
         parameters: {
             query?: never;
@@ -7033,7 +7226,7 @@ export interface operations {
             };
         };
     };
-    invite: {
+    invite_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -7075,6 +7268,202 @@ export interface operations {
             path: {
                 id: string;
                 invitationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    codes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JoinCodeView"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateJoinCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JoinCodeCreated"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    revokeCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                codeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    importMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["MemberImportForm"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkInviteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BulkInviteResponse"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                userId: string;
             };
             cookie?: never;
         };

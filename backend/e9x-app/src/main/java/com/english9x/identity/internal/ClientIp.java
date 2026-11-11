@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  * Caddy (the trusted proxy in the Compose stack) replaces a client-sent X-Forwarded-For with the real peer address.
  */
 @Component
-class ClientIp {
+class ClientIp implements com.english9x.identity.api.ClientAddress {
 
     private final List<Cidr> trusted;
 
@@ -29,7 +29,8 @@ class ClientIp {
         this.trusted = List.copyOf(list);
     }
 
-    String of(HttpServletRequest request) {
+    @Override
+    public String of(HttpServletRequest request) {
         String peer = request.getRemoteAddr();
         if (!isTrusted(peer)) {
             return peer;

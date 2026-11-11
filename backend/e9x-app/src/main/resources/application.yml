@@ -192,6 +192,9 @@ e9x:
   org:
     invitation-ttl: 7d             # how long an invitation link stays valid (assumption)
     invitation-hourly-limit: 50    # invitations (mails) one person may send per hour (assumption)
+    join:
+      ip-rate-limit: 30/15m        # join-code attempts that did not join, per client address (assumption)
+      user-rate-limit: 10/15m      # ... per signed-in account (assumption)
   audit:
     default-page-size: 50          # rows per page of the audit-log screen when the request does not say (assumption)
     max-page-size: 100             # the most rows one request may ask for; more is answered with this many (assumption)
