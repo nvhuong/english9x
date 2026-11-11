@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useApi } from '../../api/useApi';
 import type { components } from '../../api/generated/client';
 import { useAuthStore } from '../../app/stores/auth';
-import { ctxKey, useContextStore } from '../../app/stores/context';
+import { ctxKey, publicKey, useContextStore } from '../../app/stores/context';
 
 export type OrderView = components['schemas']['OrderView'];
 export type AdminOrderView = components['schemas']['AdminOrderView'];
@@ -98,5 +98,52 @@ export function useSavePaymentAccount() {
   return useMutation({
     mutationFn: async (v: { bankBin: string; accountNo: string; accountName: string }) => (await api.PUT('/api/admin/payment-account', { body: v })).data,
     onSuccess: () => qc.invalidateQueries({ queryKey: ctxKey(ctx, 'billing', 'payment-account') }),
+  });
+}
+
+export type PlanView = components['schemas']['PlanView'];
+export type EntitlementView = components['schemas']['EntitlementView'];
+export type OrderCreated = components['schemas']['OrderCreated'];
+
+/** The plans on sale (a learner sees active ones only). The same for everybody. */
+export function usePlans() {
+  const api = useApi();
+  return useQuery({
+    queryKey: publicKey('billing', 'plans'),
+    retry: false,
+    queryFn: async () => ((await api.GET('/api/plans')).data ?? []) as PlanView[],
+  });
+}
+
+/** Places an order of a plan with the chosen courses; the answer carries the order code, to open /orders/:code. */
+export function useCreateOrder() {
+  const api = useApi();
+  const qc = useQueryClient();
+  const ctx = useContextStore((s) => s.orgId);
+  return useMutation({
+    mutationFn: async (body: { planId: string; courseIds: string[] }) => (await api.POST('/api/orders', { body })).data as OrderCreated,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ctxKey(ctx, 'billing', 'my-orders') }),
+  });
+}
+
+/** The person's own orders, newest first as the server answers. */
+export function useMyOrders() {
+  const api = useApi();
+  const ctx = useContextStore((s) => s.orgId);
+  return useQuery({
+    queryKey: ctxKey(ctx, 'billing', 'my-orders'),
+    retry: false,
+    queryFn: async () => ((await api.GET('/api/orders')).data ?? []) as OrderView[],
+  });
+}
+
+/** What the person may study: paid plans and seats; a past one is read only. */
+export function useMyEntitlements() {
+  const api = useApi();
+  const ctx = useContextStore((s) => s.orgId);
+  return useQuery({
+    queryKey: ctxKey(ctx, 'billing', 'my-entitlements'),
+    retry: false,
+    queryFn: async () => ((await api.GET('/api/me/entitlements')).data ?? []) as EntitlementView[],
   });
 }

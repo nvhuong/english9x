@@ -3,7 +3,9 @@
     "orders": "Orders",
     "paymentAccount": "Receiving account",
     "licenses": "Seat licences",
-    "orgLicenses": "Sell seat licences"
+    "orgLicenses": "Sell seat licences",
+    "checkout": "Buy a plan",
+    "myOrders": "My orders"
   },
   "order": {
     "title": "Order {{code}}",
@@ -184,5 +186,36 @@
       "loadFailed": "The list could not be loaded.",
       "empty": "No licence yet."
     }
+  },
+  "checkout": {
+    "title": "Buy a plan",
+    "description": "Choose a plan, pick courses within its limit, then pay by bank transfer with the QR code.",
+    "loading": "Loading…",
+    "loadFailed": "The plans or the course list could not be loaded. Try again later.",
+    "noPlans": "No plan is on sale right now.",
+    "planLegend": "Choose a plan",
+    "planDetail": "{{months}} months · up to {{max}} courses · {{price}} đ",
+    "courseLegend": "Choose courses",
+    "courseCount": "{{count}} of {{max}} courses chosen",
+    "submit": "Place order and pay",
+    "unverified": "Verify your email before buying a plan.",
+    "signIn": "Sign in to buy a plan.",
+    "invalid": "Invalid choice: check the plan's course limit.",
+    "failed": "The order could not be placed. Try again later."
+  },
+  "mine": {
+    "title": "My orders",
+    "description": "The orders you placed and the access you hold.",
+    "buy": "Buy a new plan",
+    "loading": "Loading orders…",
+    "loadFailed": "The orders could not be loaded.",
+    "empty": "You have no orders yet",
+    "emptyHint": "Choose a plan to start learning.",
+    "listCaption": "My orders",
+    "placed": "Placed {{date}} · {{months}}-month plan · {{amount}} đ",
+    "access": "Access",
+    "until": "until {{date}}",
+    "active": "Open",
+    "readOnly": "Expired, read only"
   }
 }

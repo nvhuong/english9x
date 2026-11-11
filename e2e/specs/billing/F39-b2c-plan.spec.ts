@@ -1,9 +1,15 @@
 // F39 — Gói B2C (spec §16.2): "Mua gói, chọn khoá ≤ tối đa".
 //
-// !! PARTIAL (see e2e/partial-features.json). P5.1 is the backend: plans, the order with its locked price, the course limit, the verified-email rule, the
-// !! order code and the transfer note, the audit trail and the expiry job, all driven here through the REAL API of the running stack (no UI exists yet: the plan
-// !! and checkout screens are P5.4, the QR and the admin confirmation are P5.2). The browser steps and the QR/confirm half of the scenario are pending.
+// The scenario runs on the real screens too (checkout with the plan and course pickers, the person's orders page) beside the real-API checks.
+import AxeBuilder from '@axe-core/playwright';
 import { test, expect } from '../../fixtures';
+import type { Page } from '@playwright/test';
+
+async function axeClean(page: Page) {
+  const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+  expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+}
+
 
 test.describe('F39 B2C plan', () => {
   test('F39 an administrator sells a plan, a verified learner orders within the course limit at a locked price, an unverified one cannot, and an unpaid order expires', async ({ seed, org, uniqueEmail }) => {
@@ -65,5 +71,51 @@ test.describe('F39 B2C plan', () => {
     expect(log.body.items[0].actorKind).toBe('SYSTEM');
     const placed = await org.api(a.token, 'GET', `/api/admin/audit-log?action=order.create&targetType=order&actor=${learner.userId}`);
     expect(placed.body.items.length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('F39 on the checkout screen the course picker stops at the plan limit, an unverified learner is refused, and a verified one places the order and sees it in "Đơn của tôi"', async ({ page, browser, seed, auth, org, uniqueEmail }) => {
+    const suffix = Date.now().toString(36);
+    const admin = await seed.sysAdmin({ email: uniqueEmail('f39b-admin') });
+    const learner = await seed.verifiedLearner({ email: uniqueEmail('f39b-learner') });
+    const unverified = await seed.verifiedLearner({ email: uniqueEmail('f39b-unverified'), verified: false });
+    const a = await org.apiLogin(admin);
+    const c1 = await seed.billing.course();
+    const c2 = await seed.billing.course();
+    const name = `Gói F39 UI ${suffix}`;
+    expect((await org.api(a.token, 'POST', '/api/admin/plans', { body: { name, priceVnd: 499000, months: 3, maxCourses: 1, active: true } })).status).toBe(201);
+
+    // the picker allows one course (the plan's limit) and frees the other when it is un-ticked
+    await auth.loginAs(page, learner);
+    await page.goto('/checkout');
+    await page.getByRole('radio', { name: new RegExp(name) }).check();
+    await page.getByRole('checkbox', { name: new RegExp(c1.code) }).check();
+    await axeClean(page);
+    await expect(page.getByRole('checkbox', { name: new RegExp(c2.code) })).toBeDisabled();
+    await expect(page.getByTestId('course-count')).toHaveText('Đã chọn 1/1 khoá');
+    await page.getByRole('checkbox', { name: new RegExp(c1.code) }).uncheck();
+    await expect(page.getByRole('checkbox', { name: new RegExp(c2.code) })).toBeEnabled();
+    await page.getByRole('checkbox', { name: new RegExp(c1.code) }).check();
+    await page.getByRole('button', { name: 'Đặt đơn và thanh toán' }).click();
+    await expect(page).toHaveURL(/\/orders\/[A-Z0-9]{6}$/);
+    const code = page.url().split('/').pop()!;
+    await expect(page.getByTestId('order-status')).toHaveText('Chờ thanh toán');
+    await expect(page.getByTestId('copy-value-note')).toHaveText(`E9X ${code} ${c1.code}`);
+
+    // the order is in the person's orders
+    await page.goto('/orders');
+    await expect(page.getByTestId('my-order').filter({ hasText: code })).toContainText('Chờ thanh toán');
+    await axeClean(page);
+
+    // an unverified email is refused at the checkout screen (the endpoint answers email-not-verified)
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
+    const other = await ctx.newPage();
+    await auth.loginAs(other, unverified);
+    await other.goto('/checkout');
+    await other.getByRole('radio', { name: new RegExp(name) }).check();
+    await other.getByRole('checkbox', { name: new RegExp(c1.code) }).check();
+    await other.getByRole('button', { name: 'Đặt đơn và thanh toán' }).click();
+    await expect(other.getByText('Hãy xác thực email trước khi mua gói.')).toBeVisible();
+    await expect(other).toHaveURL(/\/checkout$/);
+    await ctx.close();
   });
 });

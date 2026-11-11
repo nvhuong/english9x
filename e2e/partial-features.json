@@ -43,11 +43,6 @@
       "owner": "P3.4 (exam room: the attempt keeps its version)"
     },
     {
-      "id": "F39",
-      "pending": "Driven through the real API of the running stack (plans, order within the course limit, locked price, verified-email rule, order code and transfer note, expiry job with a SYSTEM audit record); the QR, the payment account and the administrator's confirmation are covered by F40 (P5.2). Pending: the browser steps that choose a plan and courses on the checkout page.",
-      "owner": "P5.4 (plan and checkout screens)"
-    },
-    {
       "id": "F41",
       "pending": "The gate (billing.api.Entitlements) and the PLAN_EXPIRING / PLAN_EXPIRED notices are asserted through the seed API and the learner's own API. Pending: 'cannot open a lesson / can still read old results' on the real screens, which call the gate: lesson page and exam room do not exist yet.",
       "owner": "P3.1 (lesson gate), P3.3 (exam: canContinueAttempt), P4.4 (results page)"
@@ -76,11 +71,6 @@
       "id": "F58",
       "pending": "The 8 main screens of the design mockups are not built yet: 01 course catalogue, 02 chapter map, 03 lesson, 04 exam room Reading, 05 exam room Speaking, 06 result, 07 CMS review queue, 08 admin QR orders. They move from PENDING_MAIN_SCREENS to SCREENS in the spec as they appear (see its header and the P1.12 note in the foundation plan).",
       "owner": "P3.1 (01, 02), P3.2 (03), P3.4 (04, 05), P4.4 (06), P2.9 (07), P5.4 (08)"
-    },
-    {
-      "id": "F40",
-      "pending": "Done through the real stack (P5.2): the SYS_ADMIN sets the receiving account on the screen, the order page shows the QR (a 512 px PNG), the account, the exact amount and note, the SYS_ADMIN confirms one order and rejects another on the queue screen, access opens from the confirmation, the learner is told in the app and by mail, the audit log holds the decisions without an account number or the reason's text, a second decision is 409. Pending: the browser steps that PLACE the order (plan/course pickers, checkout page) and decoding the QR on the page with jsQR. The scan with three real bank apps is a manual pre-release step of the owner.",
-      "owner": "P5.4 (checkout screens, jsQR decode)"
     },
     {
       "id": "F10",

@@ -3,7 +3,9 @@
     "orders": "Đơn hàng",
     "paymentAccount": "Tài khoản nhận tiền",
     "licenses": "Giấy phép suất",
-    "orgLicenses": "Bán giấy phép suất"
+    "orgLicenses": "Bán giấy phép suất",
+    "checkout": "Mua gói",
+    "myOrders": "Đơn của tôi"
   },
   "order": {
     "title": "Đơn {{code}}",
@@ -184,5 +186,36 @@
       "loadFailed": "Không tải được danh sách.",
       "empty": "Chưa có giấy phép nào."
     }
+  },
+  "checkout": {
+    "title": "Mua gói học",
+    "description": "Chọn gói, chọn các khoá học trong giới hạn của gói, rồi chuyển khoản theo mã QR.",
+    "loading": "Đang tải…",
+    "loadFailed": "Không tải được gói hoặc danh sách khoá học. Thử lại sau.",
+    "noPlans": "Hiện chưa có gói nào đang bán.",
+    "planLegend": "Chọn gói",
+    "planDetail": "{{months}} tháng · tối đa {{max}} khoá · {{price}} đ",
+    "courseLegend": "Chọn khoá học",
+    "courseCount": "Đã chọn {{count}}/{{max}} khoá",
+    "submit": "Đặt đơn và thanh toán",
+    "unverified": "Hãy xác thực email trước khi mua gói.",
+    "signIn": "Hãy đăng nhập để mua gói.",
+    "invalid": "Lựa chọn không hợp lệ: kiểm tra số khoá tối đa của gói.",
+    "failed": "Không đặt được đơn. Thử lại sau."
+  },
+  "mine": {
+    "title": "Đơn của tôi",
+    "description": "Các đơn bạn đã đặt và quyền học bạn đang có.",
+    "buy": "Mua gói mới",
+    "loading": "Đang tải đơn…",
+    "loadFailed": "Không tải được danh sách đơn.",
+    "empty": "Bạn chưa có đơn nào",
+    "emptyHint": "Chọn một gói để bắt đầu học.",
+    "listCaption": "Danh sách đơn của tôi",
+    "placed": "Đặt ngày {{date}} · gói {{months}} tháng · {{amount}} đ",
+    "access": "Quyền học",
+    "until": "đến {{date}}",
+    "active": "Đang học được",
+    "readOnly": "Hết hạn, chỉ đọc"
   }
 }
