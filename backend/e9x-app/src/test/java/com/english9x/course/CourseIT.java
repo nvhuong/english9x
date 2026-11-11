@@ -25,16 +25,23 @@ public abstract class CourseIT extends TestIT {
 
     /** What the learning module will tell the gate: set per lesson id by the test. */
     public static final class Progress implements ProgressSource {
-        static final Map<String, LessonStatus> DONE = new ConcurrentHashMap<>();
+        public static final Map<String, LessonStatus> DONE = new ConcurrentHashMap<>();
+        /** Set by the learning tests (P3.2): the REAL source, which then answers instead of {@link #DONE}. */
+        public static volatile ProgressSource delegate;
 
         @Override
         public Map<String, LessonStatus> progress(UUID userId, UUID courseVersionId) {
+            ProgressSource real = delegate;
+            if (real != null) {
+                return real.progress(userId, courseVersionId);
+            }
             return Map.copyOf(DONE);
         }
 
         @TestConfiguration
         public static class Config {
             @Bean
+            @org.springframework.core.annotation.Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE)
             ProgressSource testProgress() {
                 return new Progress();
             }

@@ -1,0 +1,61 @@
+{
+  "nav": {
+    "learn": "Học của tôi"
+  },
+  "loading": "Đang tải…",
+  "back": "Về các khoá học của tôi",
+  "errors": {
+    "generic": "Có lỗi xảy ra. Hãy thử lại.",
+    "notEntitled": "Bạn cần có gói học cho khoá này.",
+    "locked": "Hãy hoàn thành các bài trước.",
+    "notFound": "Trang này không tồn tại hoặc bạn không mở được."
+  },
+  "mine": {
+    "title": "Khoá học của tôi",
+    "empty": "Bạn chưa có gói học nào đang dùng.",
+    "browse": "Xem các khoá học"
+  },
+  "map": {
+    "rule": {
+      "STRICT": "Đạt bài kiểm tra chương để học tiếp.",
+      "COMPLETION": "Học xong từng bài để học tiếp.",
+      "FREE": "Mở bài nào cũng được, theo thứ tự tuỳ ý."
+    },
+    "streak_one": "Chuỗi {{count}} ngày",
+    "streak_other": "Chuỗi {{count}} ngày",
+    "today": "Hôm nay: {{minutes}} phút",
+    "chapterN": "Chương {{n}}: {{title}}",
+    "kind": {
+      "LESSON": "Bài học",
+      "CHAPTER_TEST": "Kiểm tra chương",
+      "MOCK_TEST": "Thi thử"
+    },
+    "locked": "Đang khoá",
+    "done": "Đã xong",
+    "best": "Cao nhất {{score}}"
+  },
+  "practice": {
+    "none": "Luyện tập: {{total}} câu trong bài này",
+    "score": "Luyện tập: đúng {{correct}}/{{answered}} câu đã làm ({{total}} câu trong bài)"
+  },
+  "lesson": {
+    "complete": "Đánh dấu đã học xong",
+    "completed": "Đã học xong bài này",
+    "toMap": "Bản đồ khoá học"
+  },
+  "test": {
+    "questionN": "Câu {{n}}",
+    "yourAnswer": "Câu trả lời của bạn",
+    "submit": "Nộp bài",
+    "rules": "Điểm đạt {{threshold}}%.",
+    "attempts": "Lượt làm: {{used}}/{{max}}.",
+    "unlimited": "Không giới hạn số lần làm.",
+    "exhausted": "Bạn đã dùng hết số lần làm bài kiểm tra này.",
+    "passed": "Đạt",
+    "notPassed": "Chưa đạt (điểm đạt {{threshold}}%)",
+    "score": "Điểm {{score}}% ({{raw}}/{{max}})",
+    "best": "Điểm cao nhất {{score}}%",
+    "attemptsLeft_other": "Còn {{count}} lượt",
+    "attemptsLeft_one": "Còn {{count}} lượt"
+  }
+}

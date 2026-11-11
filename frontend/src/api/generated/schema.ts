@@ -1263,6 +1263,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/config/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publicConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/exam/attempts": {
         parameters: {
             query?: never;
@@ -1444,6 +1460,137 @@ export interface paths {
         put?: never;
         /** Join an organisation with a code (410 when not valid, 429 when guessing too fast) */
         post: operations["join"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/learning/chapter-tests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A chapter test (the lesson id of its place in the course): its questions without answers, the attempts used and the best score */
+        get: operations["chapterTest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/learning/chapter-tests/{id}/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sit the chapter test: submit the answers, get the score; the best score is kept
+         * @description 409 when the attempts the course allows are used up.
+         */
+        post: operations["attempt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/learning/courses/{courseId}/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The chapter map of a course: every lesson with its state (done, best score, locked) and the streak. 403 without a plan. */
+        get: operations["map"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/learning/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The learner is studying now (every e9x.learning.heartbeat-interval, only while the page is visible and used)
+         * @description The server counts the gaps between signals that are at most e9x.learning.idle-timeout; days are cut in the learner's own time zone.
+         */
+        post: operations["heartbeat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/learning/lessons/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A strategy lesson as the learner reads it (blocks and the questions embedded in it, without answers)
+         * @description 403 without a plan, 409 while the lesson is locked by the unlock rule, 404 for a lesson that is not one.
+         */
+        get: operations["lesson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/learning/lessons/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark the lesson finished (counts for the unlock rule and the day's streak) */
+        post: operations["complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/learning/lessons/{id}/practice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Answer a question embedded in the lesson and see the result at once
+         * @description The one place a learner is shown an answer: the explanation and the correct answer of a practice question just answered, in a lesson they may open. 404 for any other question.
+         */
+        post: operations["practice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1928,6 +2075,11 @@ export interface components {
             name: string;
             type: components["schemas"]["OrgType"];
         };
+        Answered: {
+            answer?: components["schemas"]["JsonNode"];
+            /** Format: uuid */
+            questionVersionId?: string;
+        };
         AssignSeatRequest: {
             /** @description A subset of the licence's courses */
             courseIds: string[];
@@ -1936,6 +2088,9 @@ export interface components {
              * @description A member of the organisation
              */
             userId: string;
+        };
+        AttemptRequest: {
+            answers?: components["schemas"]["Answered"][];
         };
         AuditEntry: {
             action: string;
@@ -2025,6 +2180,58 @@ export interface components {
             /** Format: uuid */
             id?: string;
             kind?: string;
+            title?: string;
+        };
+        ChapterMapView: {
+            chapters?: components["schemas"]["MapChapter"][];
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: int32 */
+            streakDays?: number;
+            title?: string;
+            /** Format: int32 */
+            todayMinutes?: number;
+            unlockRule?: string;
+        };
+        ChapterTestGroup: {
+            content?: components["schemas"]["JsonNode"];
+            questions?: components["schemas"]["LearningQuestion"][];
+        };
+        ChapterTestResult: {
+            /** Format: int32 */
+            attemptNo?: number;
+            /**
+             * Format: int32
+             * @description null = unlimited
+             */
+            attemptsLeft?: number;
+            /** Format: int32 */
+            attemptsUsed?: number;
+            /** Format: double */
+            bestScore?: number;
+            passed?: boolean;
+            /** Format: double */
+            raw?: number;
+            /** Format: double */
+            rawMax?: number;
+            /** Format: double */
+            score?: number;
+        };
+        ChapterTestView: {
+            /** Format: int32 */
+            attemptsUsed?: number;
+            /** Format: double */
+            bestScore?: number;
+            canRetake?: boolean;
+            /** Format: uuid */
+            courseId?: string;
+            groups?: components["schemas"]["ChapterTestGroup"][];
+            /** Format: uuid */
+            lessonId?: string;
+            /** Format: int32 */
+            maxAttempts?: number;
+            /** Format: double */
+            passThreshold?: number;
             title?: string;
         };
         CmsCourseChapter: {
@@ -2589,6 +2796,20 @@ export interface components {
             /** Format: uuid */
             versionId?: string;
         };
+        HeartbeatRequest: {
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: uuid */
+            lessonId?: string;
+            /** @description IANA zone of the browser; the days of the streak are cut in it */
+            timeZone?: string;
+        };
+        HeartbeatResult: {
+            /** Format: int32 */
+            streakDays?: number;
+            /** Format: int32 */
+            todaySeconds?: number;
+        };
         ImportDetail: {
             errors?: components["schemas"]["ErrorView"][];
             job?: components["schemas"]["ImportView"];
@@ -2685,6 +2906,29 @@ export interface components {
             status: string;
         };
         JsonNode: unknown;
+        LearningLesson: {
+            blocks?: components["schemas"]["JsonNode"];
+            completed?: boolean;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: uuid */
+            lessonId?: string;
+            questionTypeCodes?: string[];
+            questions?: components["schemas"]["LearningQuestion"][];
+            title?: string;
+        };
+        LearningQuestion: {
+            content?: components["schemas"]["JsonNode"];
+            points?: number;
+            typeCode?: string;
+            /** Format: uuid */
+            versionId?: string;
+        };
+        LessonCompletion: {
+            completed?: boolean;
+            /** Format: int32 */
+            streakDays?: number;
+        };
         LicenseCourse: {
             code: string;
             /** Format: uuid */
@@ -2695,6 +2939,22 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        MapChapter: {
+            lessons?: components["schemas"]["MapLesson"][];
+            /** Format: double */
+            passThreshold?: number;
+            title?: string;
+        };
+        MapLesson: {
+            /** Format: double */
+            bestScore?: number;
+            completed?: boolean;
+            /** Format: uuid */
+            id?: string;
+            kind?: string;
+            locked?: boolean;
+            title?: string;
         };
         Me: {
             displayName?: string;
@@ -2953,6 +3213,18 @@ export interface components {
         Pong: {
             status?: string;
         };
+        PracticeRequest: {
+            answer?: components["schemas"]["JsonNode"];
+            /** Format: uuid */
+            questionVersionId?: string;
+        };
+        PracticeResult: {
+            correct?: boolean;
+            correctAnswer?: string;
+            /** Format: double */
+            earned?: number;
+            explanation?: string;
+        };
         /** @description RFC 7807 problem details; errors[] lists invalid fields/rows, empty otherwise */
         Problem: {
             /** @description Explanation for this occurrence; never contains internals */
@@ -2982,6 +3254,12 @@ export interface components {
              * @description Zero-based index of the offending list element, null when not row-specific
              */
             row?: number;
+        };
+        PublicConfig: {
+            /** Format: int64 */
+            examAutosaveIntervalSeconds?: number;
+            /** Format: int64 */
+            learningHeartbeatIntervalSeconds?: number;
         };
         QuestionExamView: {
             content?: components["schemas"]["JsonNode"];
@@ -6397,6 +6675,35 @@ export interface operations {
             };
         };
     };
+    publicConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicConfig"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     start: {
         parameters: {
             query?: never;
@@ -6707,6 +7014,237 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["JoinResponse"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    chapterTest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChapterTestView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    attempt: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Time-Zone"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChapterTestResult"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    map: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ChapterMapView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    heartbeat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HeartbeatRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["HeartbeatResult"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    lesson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LearningLesson"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    complete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Time-Zone"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LessonCompletion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    practice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PracticeResult"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

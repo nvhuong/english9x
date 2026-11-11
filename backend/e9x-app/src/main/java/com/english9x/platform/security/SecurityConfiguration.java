@@ -51,7 +51,7 @@ class SecurityConfiguration {
         // Telegram's updates: no token exists on that side; the call is accepted only with the secret header (notification module)
         "/api/telegram/webhook"
     };
-    static final String[] PUBLIC_GET = {"/api/platform/ping", "/api/auth/config", "/v3/api-docs", "/v3/api-docs/**",
+    static final String[] PUBLIC_GET = {"/api/platform/ping", "/api/auth/config", "/api/config/public", "/v3/api-docs", "/v3/api-docs/**",
         // the public course catalog (P3.1, F20): outlines only, row-level security decides what a guest or a person sees
         "/api/catalog/courses", "/api/catalog/courses/*"};
 

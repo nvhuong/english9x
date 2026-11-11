@@ -111,6 +111,16 @@ public final class SweepFixtures {
         su.update("insert into responses(attempt_id,question_id,user_id,answer,answered_at,saved_at) values (?,?,?,'\"B\"',now(),now())", attemptB, questionOfB, userB);
         su.update("insert into audio_plays(attempt_id,media_id,user_id,played_at) values (?,gen_random_uuid(),?,now())", attemptB, userB);
         su.update("insert into speaking_recordings(attempt_id,question_id,user_id,storage_path,mime_type,size_bytes,uploaded_at) values (?,?,?,'staging/recordings/x.webm','audio/webm',10,now())", attemptB, questionOfB, userB);
+        // P3.2: B's learner's progress, practice, chapter-test attempt and study time (read only through the learner's own routes; nothing lists another person's)
+        UUID learningCourse = UUID.randomUUID();
+        su.update("insert into courses(id,owner_org_id,exam_code,code,title,status) values (?,null,'IELTS','SWLRN1','Learning','PUBLISHED')", learningCourse);
+        su.update("insert into lesson_progress(user_id,course_id,ref_id,kind,completed,best_score) values (?,?,gen_random_uuid(),'CHAPTER_TEST',true,0.8)", userB, learningCourse);
+        su.update("insert into practice_attempts(user_id,course_id,lesson_ref_id,question_version_id,type_code,answer,correct,earned,points,answered_at) "
+                + "values (?,?,gen_random_uuid(),gen_random_uuid(),'IELTS_R_SHORT_ANSWER','\"x\"',true,1,1,now())", userB, learningCourse);
+        su.update("insert into chapter_test_attempts(user_id,course_id,ref_id,attempt_no,raw,raw_max,score,passed,answers,submitted_at) values (?,?,gen_random_uuid(),1,1,1,1,true,'{}',now())", userB, learningCourse);
+        su.update("insert into study_heartbeats(user_id,at,day,course_id,lesson_id) values (?,now(),current_date,?,gen_random_uuid())", userB, learningCourse);
+        su.update("insert into study_time_daily(user_id,day,seconds) values (?,current_date,60)", userB);
+        su.update("insert into study_streaks(user_id,current_days,longest_days) values (?,1,1)", userB);
         // P4.1: the score of B's attempt (read only for the learner; nothing in the API lists scores yet)
         su.update("insert into scores(attempt_id,user_id,owner_org_id,skill,kind,source,raw,raw_max) values (?,?,?,'LISTENING','OFFICIAL','AUTO',1,1)", attemptB, userB, orgB);
         su.update("insert into attempt_gradings(attempt_id,user_id,owner_org_id,interrupted) values (?,?,?,false)", attemptB, userB, orgB);
@@ -464,6 +474,7 @@ public final class SweepFixtures {
         all.put("PUT /api/cms/score-tables/{id}", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
         all.put("POST /api/cms/score-tables/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null, englishNine));
         examFixtures(all);
+        learningFixtures(all);
         return all;
     }
 
@@ -485,6 +496,23 @@ public final class SweepFixtures {
                 List.of(new ForeignIdSweep.Attempt(slots("id", attemptB, "questionId", foreignQuestion))), null, why));
         all.put("GET /api/exam/attempts/{id}/audio/{mediaId}", ForeignIdSweep.Fixture.read(List.of(
                 new ForeignIdSweep.Attempt(slots("id", attemptB, "mediaId", mediaB)), new ForeignIdSweep.Attempt(slots("id", attemptB, "mediaId", mediaA)))));
+    }
+
+    /**
+     * P3.2: learning. A lesson is read through the lesson gate (entitlement + unlock rule, then row-level security on the course), and progress, practice and study
+     * time are the caller's own rows. A's ORG_ADMIN holds no plan, so every route answers 403/404 whatever id it is given; PracticeIT, ChapterTestIT and HeartbeatIT
+     * measure the 2xx of each route and the isolation between two learners.
+     */
+    private void learningFixtures(Map<String, ForeignIdSweep.Fixture> all) {
+        String why = "the learner's routes need a published course and a plan of the caller: PracticeIT, ChapterTestIT and HeartbeatIT measure the 2xx of each route";
+        UUID none = UUID.randomUUID();
+        all.put("GET /api/learning/courses/{courseId}/map", new ForeignIdSweep.Fixture(null, List.of(), null, why));
+        all.put("GET /api/learning/lessons/{id}", new ForeignIdSweep.Fixture(null, List.of(), null, why));
+        all.put("POST /api/learning/lessons/{id}/practice", new ForeignIdSweep.Fixture("{\"questionVersionId\":\"" + none + "\",\"answer\":\"A\"}", List.of(), null, why));
+        all.put("POST /api/learning/lessons/{id}/complete", new ForeignIdSweep.Fixture(null, List.of(), null, why));
+        all.put("GET /api/learning/chapter-tests/{id}", new ForeignIdSweep.Fixture(null, List.of(), null, why));
+        all.put("POST /api/learning/chapter-tests/{id}/attempts", new ForeignIdSweep.Fixture("{\"answers\":[]}", List.of(), null, why));
+        all.put("POST /api/learning/heartbeat", new ForeignIdSweep.Fixture("{\"courseId\":\"" + none + "\",\"lessonId\":\"" + none + "\"}", List.of(), null, why));
     }
 
     /** The valid example of IELTS_R_SHORT_ANSWER (no file ids) as the body of a question. */
