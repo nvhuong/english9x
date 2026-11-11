@@ -19,6 +19,7 @@ services:
       E9X_FLYWAY_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}
       E9X_DB_PASSWORD: ${E9X_DB_PASSWORD:-e9x_app_dev_password}
       E9X_WORKER_DB_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
+      E9X_GRADER_DB_PASSWORD: ${E9X_GRADER_DB_PASSWORD:-e9x_grader_dev_password}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-e9x_minio_dev_password}
       E9X_MINIO_SECRET_KEY: ${E9X_MINIO_SECRET_KEY:-e9x_media_dev_secret}
     volumes:
@@ -37,6 +38,7 @@ services:
       E9X_OWNER_PASSWORD: ${E9X_FLYWAY_PASSWORD:-e9x_owner_dev_password}
       E9X_APP_PASSWORD: ${E9X_DB_PASSWORD:-e9x_app_dev_password}
       E9X_WORKER_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
+      E9X_GRADER_PASSWORD: ${E9X_GRADER_DB_PASSWORD:-e9x_grader_dev_password}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres/init/01-roles.sh:/docker-entrypoint-initdb.d/01-roles.sh:ro
@@ -107,6 +109,9 @@ services:
       # app.worker.enabled (default true): this instance also runs background jobs, over its own pool as this login
       E9X_WORKER_DB_USER: e9x_worker_login
       E9X_WORKER_DB_PASSWORD: ${E9X_WORKER_DB_PASSWORD:-e9x_worker_dev_password}
+      # grading pool (P4.1): answer keys are read, scores written, as this login (member of e9x_grader), never as the request login
+      E9X_GRADER_DB_USER: e9x_grader_login
+      E9X_GRADER_DB_PASSWORD: ${E9X_GRADER_DB_PASSWORD:-e9x_grader_dev_password}
       E9X_GEMINI_API_KEY: ${E9X_GEMINI_API_KEY:-}
       # Media (P2.2). The app talks to MinIO inside the Compose network with a key limited to the one bucket (not the root credentials), and signs links for
       # the public address, which Caddy serves under /<bucket>/ (infra/Caddyfile). The links are signed for E9X_PUBLIC_BASE_URL (https://$E9X_DOMAIN).

@@ -49,14 +49,14 @@ if "${clean_env[@]}" docker compose -p "$RUN" -f infra/docker-compose.yml -f inf
 
 echo "== preflight"
 preflight() { docker run --rm --label "$LABEL" -v "$ROOT/infra/preflight.sh:/preflight.sh:ro" --entrypoint /bin/sh "$@" "$PG_IMAGE" /preflight.sh 2>&1; }
-DEV=(-e POSTGRES_PASSWORD=e9x_dev_password -e E9X_FLYWAY_PASSWORD=e9x_owner_dev_password -e E9X_DB_PASSWORD=e9x_app_dev_password -e E9X_WORKER_DB_PASSWORD=e9x_worker_dev_password -e MINIO_ROOT_PASSWORD=e9x_minio_dev_password -e E9X_MINIO_SECRET_KEY=e9x_media_dev_secret)
-GOOD=(-e POSTGRES_PASSWORD=a -e E9X_FLYWAY_PASSWORD=b -e E9X_DB_PASSWORD=c -e E9X_WORKER_DB_PASSWORD=d -e MINIO_ROOT_PASSWORD=e -e E9X_MINIO_SECRET_KEY=f -e E9X_SMTP_HOST=smtp.example.com)
+DEV=(-e POSTGRES_PASSWORD=e9x_dev_password -e E9X_FLYWAY_PASSWORD=e9x_owner_dev_password -e E9X_DB_PASSWORD=e9x_app_dev_password -e E9X_WORKER_DB_PASSWORD=e9x_worker_dev_password -e E9X_GRADER_DB_PASSWORD=e9x_grader_dev_password -e MINIO_ROOT_PASSWORD=e9x_minio_dev_password -e E9X_MINIO_SECRET_KEY=e9x_media_dev_secret)
+GOOD=(-e POSTGRES_PASSWORD=a -e E9X_FLYWAY_PASSWORD=b -e E9X_DB_PASSWORD=c -e E9X_WORKER_DB_PASSWORD=d -e E9X_GRADER_DB_PASSWORD=g -e MINIO_ROOT_PASSWORD=e -e E9X_MINIO_SECRET_KEY=f -e E9X_SMTP_HOST=smtp.example.com)
 if preflight -e E9X_DOMAIN=localhost "${DEV[@]}" -e E9X_SMTP_HOST=mail.invalid >/dev/null; then ok "localhost may use the development defaults"; else ko "localhost refused"; fi
 if out="$(preflight -e E9X_DOMAIN=app.example.com "${DEV[@]}" -e E9X_SMTP_HOST=smtp.example.com)"; then ko "a public domain with dev passwords must be refused"; else
-  missing=""; for n in POSTGRES_PASSWORD E9X_FLYWAY_PASSWORD E9X_DB_PASSWORD E9X_WORKER_DB_PASSWORD MINIO_ROOT_PASSWORD E9X_MINIO_SECRET_KEY; do case "$out" in *"$n"*) ;; *) missing="$missing $n";; esac; done
+  missing=""; for n in POSTGRES_PASSWORD E9X_FLYWAY_PASSWORD E9X_DB_PASSWORD E9X_WORKER_DB_PASSWORD E9X_GRADER_DB_PASSWORD MINIO_ROOT_PASSWORD E9X_MINIO_SECRET_KEY; do case "$out" in *"$n"*) ;; *) missing="$missing $n";; esac; done
   case "$out" in *e9x_dev_password*) ko "the message must not print a value";; *) if [ -z "$missing" ]; then ok "a public domain refuses every development default, by name, printing no value"; else ko "not named:$missing"; fi;; esac
 fi
-for one in POSTGRES_PASSWORD=e9x_dev_password E9X_FLYWAY_PASSWORD=e9x_owner_dev_password E9X_DB_PASSWORD=e9x_app_dev_password E9X_WORKER_DB_PASSWORD=e9x_worker_dev_password MINIO_ROOT_PASSWORD=e9x_minio_dev_password E9X_MINIO_SECRET_KEY=e9x_media_dev_secret; do
+for one in POSTGRES_PASSWORD=e9x_dev_password E9X_FLYWAY_PASSWORD=e9x_owner_dev_password E9X_DB_PASSWORD=e9x_app_dev_password E9X_WORKER_DB_PASSWORD=e9x_worker_dev_password E9X_GRADER_DB_PASSWORD=e9x_grader_dev_password MINIO_ROOT_PASSWORD=e9x_minio_dev_password E9X_MINIO_SECRET_KEY=e9x_media_dev_secret; do
   if preflight -e E9X_DOMAIN=app.example.com "${GOOD[@]}" -e "$one" >/dev/null; then ko "one default alone must be refused: ${one%%=*}"; fi
 done
 ok "any one default alone is enough to refuse"

@@ -118,6 +118,13 @@ class ConfigurationKeysTest {
     }
 
     @Test
+    void graderLoginHasNoDefaultPassword() throws Exception {
+        PropertySource<?> p = load();
+        assertEquals("${E9X_GRADER_DB_PASSWORD}", String.valueOf(p.getProperty("e9x.grading.datasource.password")), "no default password for the grader login");
+        assertEquals("${E9X_GRADER_DB_USER:e9x_grader_login}", String.valueOf(p.getProperty("e9x.grading.datasource.username")));
+    }
+
+    @Test
     void workerFlagExists() throws Exception {
         assertEquals("true", String.valueOf(load().getProperty("app.worker.enabled")));
     }

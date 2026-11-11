@@ -31,6 +31,7 @@ class BackupRestoreIT {
     static final String OWNER_PW = "owner-restore-test";
     static final String APP_PW = "app-restore-test";
     static final String WORKER_PW = "worker-restore-test";
+    static final String GRADER_PW = "grader-restore-test";
     static final UUID USER = UUID.randomUUID();
 
     @TempDir
@@ -46,6 +47,7 @@ class BackupRestoreIT {
                 .withEnv("E9X_OWNER_PASSWORD", OWNER_PW)
                 .withEnv("E9X_APP_PASSWORD", APP_PW)
                 .withEnv("E9X_WORKER_PASSWORD", WORKER_PW)
+                .withEnv("E9X_GRADER_PASSWORD", GRADER_PW)
                 .withCopyFileToContainer(MountableFile.forHostPath(infra.resolve("postgres/init/01-roles.sh"), 0755), "/docker-entrypoint-initdb.d/01-roles.sh")
                 .withCopyFileToContainer(MountableFile.forHostPath(infra.resolve("backup/backup.sh"), 0755), "/usr/local/bin/backup.sh")
                 .withCopyFileToContainer(MountableFile.forHostPath(infra.resolve("backup/restore.sh"), 0755), "/usr/local/bin/restore.sh");
@@ -125,7 +127,8 @@ class BackupRestoreIT {
                     "--server.port=0", "--spring.main.banner-mode=off",
                     "--spring.datasource.url=" + target.getJdbcUrl(), "--spring.datasource.username=e9x_app_login", "--spring.datasource.password=" + APP_PW,
                     "--spring.flyway.url=" + target.getJdbcUrl(), "--spring.flyway.user=e9x_owner", "--spring.flyway.password=" + OWNER_PW,
-                    "--e9x.jobs.worker-datasource.url=" + target.getJdbcUrl(), "--e9x.jobs.worker-datasource.username=e9x_worker_login", "--e9x.jobs.worker-datasource.password=" + WORKER_PW)) {
+                    "--e9x.jobs.worker-datasource.url=" + target.getJdbcUrl(), "--e9x.jobs.worker-datasource.username=e9x_worker_login", "--e9x.jobs.worker-datasource.password=" + WORKER_PW,
+                    "--e9x.grading.datasource.url=" + target.getJdbcUrl(), "--e9x.grading.datasource.username=e9x_grader_login", "--e9x.grading.datasource.password=" + GRADER_PW)) {
                 assertTrue(app.isRunning());
                 JdbcTemplate login = new JdbcTemplate(new DriverManagerDataSource(target.getJdbcUrl(), "e9x_app_login", APP_PW));
                 assertEquals(0, login.queryForObject("select count(*) from users", Integer.class), "row level security holds for the app's login: no context, no row");
