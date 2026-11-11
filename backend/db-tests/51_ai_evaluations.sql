@@ -139,6 +139,10 @@ SELECT set_config('app.user_id','f6000000-0000-0000-0000-000000000001',false), s
 DO $$
 BEGIN
   ASSERT (SELECT count(*) FROM ai_evaluations) = 1 AND (SELECT count(*) FROM ai_gradings) = 1, 'the learner reads their own AI records';
+  ASSERT (SELECT band FROM ai_evaluations) IS NOT NULL, 'the learner reads band and result';
+  ASSERT public.t_ai('SELECT cost_vnd FROM ai_evaluations') = 'err:42501', 'but not the internal cost';
+  ASSERT public.t_ai('SELECT input_tokens FROM ai_evaluations') = 'err:42501' AND public.t_ai('SELECT output_tokens FROM ai_evaluations') = 'err:42501', 'nor the token counts';
+  ASSERT public.t_ai('SELECT * FROM ai_evaluations') = 'err:42501', 'select * is refused too';
   ASSERT public.t_ai('INSERT INTO ai_gradings(attempt_id,user_id,state) VALUES (gen_random_uuid(),''f6000000-0000-0000-0000-000000000001'',''DONE'')') = 'err:42501', 'and writes none';
 END $$;
 SELECT set_config('app.user_id','f6000000-0000-0000-0000-000000000002',false), set_config('app.org_id','',false);

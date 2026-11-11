@@ -316,14 +316,34 @@ class AiGradeJobIT extends ExamIT {
             su.update("update grading_skill_versions set status = 'ARCHIVED' where status = 'PUBLISHED' and exam_code = 'IELTS' and grading_skill_id in "
                     + "(select id from grading_skills where question_type_code = 'IELTS_W_TASK2')");
             JobResult r = handler.handle(forged(attempt, learner, null));
-            assertFalse(r.isSuccess());
-            assertTrue(r.error().contains("no published grading skill"), r.error());
+            assertTrue(r.isSuccess(), "a PERMANENT failure is not retried: the job ends here, in AI_FAILED");
+            assertEquals("AI_FAILED", state(attempt));
+            assertTrue(su.queryForObject("select error from ai_gradings where attempt_id = ?", String.class, attempt).contains("no published grading skill"));
             assertEquals(0, gemini.calls.get());
         } finally {
             su.update("update grading_skill_versions set status = 'PUBLISHED' where status = 'ARCHIVED' and exam_code = 'IELTS' and grading_skill_id in "
                     + "(select id from grading_skills where question_type_code = 'IELTS_W_TASK2')");
             su.execute("alter table grading_skill_versions enable trigger user");
         }
+    }
+
+    @Test
+    void lateSuccessBeforeGivingUpSendsNoFalseAlert() {
+        publishedSkill("IELTS_W_TASK2");
+        Fx fx = test();
+        UUID learner = user("ai-learner-r");
+        UUID admin = user("ai-admin-r");
+        su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,null,null,'SYS_ADMIN')", admin);
+        Instant at = Instant.now();
+        clock.set(at.plus(GRACE).plusSeconds(1));
+        UUID attempt = submitted(fx, learner, null, at, "An essay.");
+        Job job = forged(attempt, learner, null);
+        assertTrue(handler.handle(job).isSuccess());
+        assertEquals("DONE", state(attempt));
+        // onExhausted read "no state", then the late run wrote DONE before markFailed: record() is that second half
+        handler.record(job, service.find(attempt, learner, null).orElseThrow(), "lease expired");
+        assertEquals("DONE", state(attempt));
+        assertEquals(0, notifications(admin, "AI_GRADING_FAILED", attempt), "markFailed was a no-op: nobody is told of a failure that did not happen");
     }
 
     @Test

@@ -140,6 +140,7 @@ class AiStore {
                 a.id(), a.userId(), a.orgId()) == 1;
     }
 
+    /** Counted under the bound organisation's RLS: the limit is effectively per user per organisation (acceptable for an emergency switch). */
     /** Attempts of the person that the AI took (or tried) since {@code since}, in this context. */
     int aiAttemptsSince(JdbcTemplate j, UUID userId, Instant since) {
         Integer n = j.queryForObject("select count(*) from ai_gradings where user_id = ? and state <> 'TEACHER_QUEUE' and created_at >= ?", Integer.class, userId, Timestamp.from(since));

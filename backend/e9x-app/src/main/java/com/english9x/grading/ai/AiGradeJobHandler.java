@@ -65,6 +65,13 @@ class AiGradeJobHandler implements JobExecutor {
                 case GRACE_NOT_OVER -> JobResult.failure("the late-sync grace of the attempt is not over");
                 case NOT_AI, TEACHER_QUEUE, DONE, ALREADY_DONE -> JobResult.success();
             };
+        } catch (AiGradingException e) {
+            if (e.kind() == AiGradingException.Kind.PERMANENT) {
+                // trying again will not help (no skill, a refusal, no key): straight to AI_FAILED, no retry schedule burnt
+                giveUp(job, describe(e));
+                return JobResult.success();
+            }
+            return JobResult.failure(describe(e));
         } catch (Exception e) {
             return JobResult.failure(describe(e));
         }
@@ -72,6 +79,10 @@ class AiGradeJobHandler implements JobExecutor {
 
     @Override
     public void onExhausted(Job job, String reason) {
+        giveUp(job, reason);
+    }
+
+    private void giveUp(Job job, String reason) {
         UUID attemptId = id(job, "attemptId");
         UUID userId = id(job, "userId");
         if (attemptId == null || userId == null) {
@@ -90,7 +101,16 @@ class AiGradeJobHandler implements JobExecutor {
             LOG.info("ai_grade {}: attempt {} is already {}; nothing to give up", job.id(), a.id(), state.get());
             return; // the last run was late but finished, or the teachers have it
         }
-        grader.write(a.userId(), a.orgId(), j -> store.markFailed(j, a, reason));
+        record(job, a, reason);
+    }
+
+    /** Writes AI_FAILED and alerts the administrators, only if this call really wrote it (the state is read before, so a late success may have won the race). */
+    void record(Job job, Attempt a, String reason) {
+        boolean recorded = Boolean.TRUE.equals(grader.write(a.userId(), a.orgId(), j -> store.markFailed(j, a, reason)));
+        if (!recorded) {
+            LOG.info("ai_grade {}: attempt {} got a state while giving up (a late run finished); no alert", job.id(), a.id());
+            return; // never a false alert: markFailed is a no-op when DONE / TEACHER_QUEUE was written between the read and the write
+        }
         LOG.error("ai_grade {} for attempt {} gave up: {}", job.id(), a.id(), reason);
         for (UUID admin : jdbc.queryForList("select r_user_id from notification_sys_admins()", UUID.class)) {
             notifications.notify(EventType.AI_GRADING_FAILED, admin, Map.of("attemptId", a.id().toString()), "ai-grading-failed:" + a.id());

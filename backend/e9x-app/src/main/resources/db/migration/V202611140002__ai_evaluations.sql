@@ -74,7 +74,9 @@ BEGIN
   RAISE EXCEPTION 'an AI evaluation is never changed or deleted' USING ERRCODE = '42501';
 END $$;
 CREATE TRIGGER ai_evaluations_immutable BEFORE UPDATE OR DELETE ON ai_evaluations FOR EACH ROW EXECUTE FUNCTION ai_evaluations_immutable();
-GRANT SELECT ON ai_evaluations TO e9x_app, e9x_grader;
+GRANT SELECT ON ai_evaluations TO e9x_grader;
+-- the learner role sees what the model judged, never the internal cost or token counts (a results page cannot leak them by accident)
+GRANT SELECT (id, attempt_id, question_id, user_id, owner_org_id, skill_version_id, model, band, result, created_at) ON ai_evaluations TO e9x_app;
 GRANT INSERT (attempt_id, question_id, user_id, owner_org_id, skill_version_id, model, input_tokens, output_tokens, cost_vnd, band, result) ON ai_evaluations TO e9x_grader;
 
 -- the recording of a Speaking question, for the grader: only while the attempt (SUBMITTED, of the person and organisation in the session) is visible
