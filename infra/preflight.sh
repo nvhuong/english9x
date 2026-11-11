@@ -15,6 +15,7 @@ bad=""
 [ "${E9X_FLYWAY_PASSWORD:-}" = "e9x_owner_dev_password" ] && bad="$bad E9X_FLYWAY_PASSWORD"
 [ "${E9X_DB_PASSWORD:-}" = "e9x_app_dev_password" ] && bad="$bad E9X_DB_PASSWORD"
 [ "${E9X_WORKER_DB_PASSWORD:-}" = "e9x_worker_dev_password" ] && bad="$bad E9X_WORKER_DB_PASSWORD"
+[ "${E9X_GRADER_DB_PASSWORD:-}" = "e9x_grader_dev_password" ] && bad="$bad E9X_GRADER_DB_PASSWORD"
 [ "${MINIO_ROOT_PASSWORD:-}" = "e9x_minio_dev_password" ] && bad="$bad MINIO_ROOT_PASSWORD"
 [ "${E9X_MINIO_SECRET_KEY:-}" = "e9x_media_dev_secret" ] && bad="$bad E9X_MINIO_SECRET_KEY"
 if [ -n "$bad" ]; then

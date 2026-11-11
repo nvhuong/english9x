@@ -30,7 +30,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
  */
 @Import(ExamIT.Config.class)
 @TestPropertySource(properties = "app.worker.enabled=false")
-abstract class ExamIT extends TestIT {
+public abstract class ExamIT extends TestIT {
 
     @TestConfiguration
     static class Config {

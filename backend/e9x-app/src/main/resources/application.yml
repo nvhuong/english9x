@@ -100,6 +100,13 @@ e9x:
       maximum-pool-size: 4
 
   grading:
+    # The grader's own small pool, as e9x_grader_login (member of e9x_grader: reads answer keys, writes scores). Not the primary DataSource, never
+    # reachable from HTTP. The password has no default: the application refuses to start without it.
+    datasource:
+      url: ${E9X_GRADER_DB_URL:${E9X_DB_URL:jdbc:postgresql://localhost:5432/e9x}}
+      username: ${E9X_GRADER_DB_USER:e9x_grader_login}
+      password: ${E9X_GRADER_DB_PASSWORD}
+      maximum-pool-size: 4
     ai:
       per-user-daily-limit: 0        # 0 = unlimited (project-owner decision)
       retry-delays: 30s,2m,10m

@@ -107,6 +107,9 @@ public final class SweepFixtures {
         su.update("insert into responses(attempt_id,question_id,user_id,answer,answered_at,saved_at) values (?,?,?,'\"B\"',now(),now())", attemptB, questionOfB, userB);
         su.update("insert into audio_plays(attempt_id,media_id,user_id,played_at) values (?,gen_random_uuid(),?,now())", attemptB, userB);
         su.update("insert into speaking_recordings(attempt_id,question_id,user_id,storage_path,mime_type,size_bytes,uploaded_at) values (?,?,?,'staging/recordings/x.webm','audio/webm',10,now())", attemptB, questionOfB, userB);
+        // P4.1: the score of B's attempt (read only for the learner; nothing in the API lists scores yet)
+        su.update("insert into scores(attempt_id,user_id,owner_org_id,skill,kind,source,raw,raw_max) values (?,?,?,'LISTENING','OFFICIAL','AUTO',1,1)", attemptB, userB, orgB);
+        su.update("insert into attempt_gradings(attempt_id,user_id,owner_org_id,interrupted) values (?,?,?,false)", attemptB, userB, orgB);
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userB, orgB);
         // A's member is A's ORG_ADMIN, so the org-admin endpoints (/api/orgs/{id}/...) have a positive control
         su.update("insert into role_grants(user_id,org_id,exam_code,role) values (?,?,null,'ORG_ADMIN')", userA, orgA);

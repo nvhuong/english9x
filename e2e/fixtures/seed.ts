@@ -73,6 +73,22 @@ export const seed = {
     gate: (opts: { userId: string; courseId: string; attemptStartedDaysAgo?: number }) => post<{ activeFor: boolean; canContinueAttempt?: boolean }>('billing/gate', opts),
   },
 
+  /**
+   * Automatic scoring (P4.1). Scoring converts only with a PUBLISHED score table and P2.1 seeds none, so a spec publishes one for its own test first
+   * (`scaled[raw]` = the score for `raw` right answers; a TEST-scope table, so no other spec's table collides). `scores` reads what scoring wrote
+   * until the results page (P4.4) shows it.
+   */
+  grading: {
+    scoreTable: (opts: { testVersionId: string; skill: string; scaled: number[] }) => post<{ scoreTableId: string; versionId: string }>('grading/score-table', opts),
+    scores: (attemptId: string) =>
+      post<{
+        scores: Array<{ skill: string; kind: string; source: string; raw: number | null; rawMax: number | null; scaled: number | null; scoreTableVersionId: string | null }>;
+        graded: boolean;
+        interrupted?: boolean;
+        announced?: boolean;
+      }>('grading/scores', { attemptId }),
+  },
+
   /** Course fixtures (P3.1): the REAL lesson gate asked as a person, with the progress the test states (the learning module that owns the real progress is P3.2). */
   course: {
     gate: (opts: { userId: string; orgId: string | null; lessonId: string; completed?: Array<{ lessonId: string; score?: number | null }> }) =>

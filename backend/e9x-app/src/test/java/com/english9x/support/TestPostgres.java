@@ -26,6 +26,8 @@ public final class TestPostgres {
     public static final String APP_PASSWORD = "app-test-only";
     public static final String WORKER_LOGIN = "e9x_worker_login";
     public static final String WORKER_PASSWORD = "worker-test-only";
+    public static final String GRADER_LOGIN = "e9x_grader_login";
+    public static final String GRADER_PASSWORD = "grader-test-only";
 
     private static final PostgreSQLContainer<?> CONTAINER = start();
 
@@ -38,6 +40,7 @@ public final class TestPostgres {
                 .withEnv("E9X_OWNER_PASSWORD", OWNER_PASSWORD)
                 .withEnv("E9X_APP_PASSWORD", APP_PASSWORD)
                 .withEnv("E9X_WORKER_PASSWORD", WORKER_PASSWORD)
+                .withEnv("E9X_GRADER_PASSWORD", GRADER_PASSWORD)
                 // Spring caches many application contexts (each holds a pool) for the whole test JVM
                 .withCommand("postgres", "-c", "max_connections=500")
                 .withCopyFileToContainer(
@@ -90,13 +93,17 @@ public final class TestPostgres {
         return new DriverManagerDataSource(jdbcUrl(database), WORKER_LOGIN, WORKER_PASSWORD);
     }
 
+    public static DataSource grader(String database) {
+        return new DriverManagerDataSource(jdbcUrl(database), GRADER_LOGIN, GRADER_PASSWORD);
+    }
+
     public static DataSource app(String database) {
         return new DriverManagerDataSource(jdbcUrl(database), APP_LOGIN, APP_PASSWORD);
     }
 
     /**
      * Points the application at the database: runtime = e9x_app_login, Flyway = e9x_owner, background jobs =
-     * e9x_worker_login.
+     * e9x_worker_login, scoring = e9x_grader_login.
      */
     public static void connect(DynamicPropertyRegistry registry, String database) {
         registry.add("spring.datasource.url", () -> jdbcUrl(database));
@@ -107,6 +114,9 @@ public final class TestPostgres {
         registry.add("e9x.jobs.worker-datasource.url", () -> jdbcUrl(database));
         registry.add("e9x.jobs.worker-datasource.username", () -> WORKER_LOGIN);
         registry.add("e9x.jobs.worker-datasource.password", () -> WORKER_PASSWORD);
+        registry.add("e9x.grading.datasource.url", () -> jdbcUrl(database));
+        registry.add("e9x.grading.datasource.username", () -> GRADER_LOGIN);
+        registry.add("e9x.grading.datasource.password", () -> GRADER_PASSWORD);
         // The ticks of periodic jobs are queued by the tests that exercise them (RecurringJobScheduler#tick), never by a scheduler thread in the background
         registry.add("e9x.jobs.recurring.enabled", () -> "false");
         TestAuth.configure(registry);

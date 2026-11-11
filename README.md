@@ -46,7 +46,7 @@ Run the Playwright suite against the real stack with one command (clean database
 Videos and traces land in `e2e/test-results`, the HTML report in `e2e/playwright-report`. It is not part of `verify.sh` (too slow); CI runs it as the non-blocking job `e2e`.
 
 The default credentials in `infra/docker-compose.yml` are for localhost only: with `E9X_DOMAIN` set to anything else, the service `preflight` refuses to start the stack while any of them is in use, and names which. In production set
-`POSTGRES_PASSWORD`, `E9X_FLYWAY_PASSWORD` (role `e9x_owner`, migrations), `E9X_DB_PASSWORD` (role `e9x_app_login`, the app), `E9X_WORKER_DB_PASSWORD` (role `e9x_worker_login`, background jobs), `MINIO_ROOT_PASSWORD`, `E9X_MINIO_SECRET_KEY` (the application's own key to the media bucket), `E9X_DOMAIN` (public host name), `E9X_GEMINI_API_KEY` in the environment
+`POSTGRES_PASSWORD`, `E9X_FLYWAY_PASSWORD` (role `e9x_owner`, migrations), `E9X_DB_PASSWORD` (role `e9x_app_login`, the app), `E9X_WORKER_DB_PASSWORD` (role `e9x_worker_login`, background jobs), `E9X_GRADER_DB_PASSWORD` (role `e9x_grader_login`, automatic scoring), `MINIO_ROOT_PASSWORD`, `E9X_MINIO_SECRET_KEY` (the application's own key to the media bucket), `E9X_DOMAIN` (public host name), `E9X_GEMINI_API_KEY` in the environment
 or the git-ignored `infra/.env`. Application settings (spec §15.1) are keys in `backend/e9x-app/src/main/resources/application.yml`
 and can be overridden by environment variables.
 
@@ -81,7 +81,7 @@ Row-Level Security and the definer functions protect against a wrong query and a
 ## Database roles (Row-Level Security)
 Flyway migrates as `e9x_owner` (owns every table); the app runs as `e9x_app_login`, which inherits `e9x_app`, owns nothing and
 cannot bypass RLS (startup fails otherwise). `infra/postgres/init/01-roles.sh` creates both roles on the first start of an empty
-volume (it is idempotent: on an existing volume run it by hand with `E9X_OWNER_PASSWORD` / `E9X_APP_PASSWORD` / `E9X_WORKER_PASSWORD` to rotate).
+volume (it is idempotent: on an existing volume run it by hand with `E9X_OWNER_PASSWORD` / `E9X_APP_PASSWORD` / `E9X_WORKER_PASSWORD` / `E9X_GRADER_PASSWORD` to rotate).
 `application.yml` has no default for `E9X_DB_PASSWORD` / `E9X_FLYWAY_PASSWORD`; the app refuses to start without them.
 Identity (P1.4) adds settings that also have **no default and stop the app from starting when missing**: `E9X_JWT_SECRET` (access-token signing key, at least 32 bytes: `openssl rand -hex 32`), `E9X_PUBLIC_BASE_URL` (the compose file derives it from `E9X_DOMAIN`; emailed links and the Google redirect URI are built from it, never from a request) and `E9X_SMTP_HOST` (+ `E9X_SMTP_PORT`, `E9X_SMTP_USER`, `E9X_SMTP_PASSWORD`, `E9X_MAIL_FROM`; real SMTP usually also needs `SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true` and `..._STARTTLS_ENABLE=true`). Access tokens carry `credentials_version`, compared with the database on every authenticated request, so a password reset or a Google link ends them at once. Google sign-in is optional: set `E9X_GOOGLE_CLIENT_ID` and `E9X_GOOGLE_CLIENT_SECRET` (redirect URI `https://<domain>/api/auth/oauth2/callback/google`); without them the button is hidden and the route answers 404.
 `E9X_AUTH_TRUSTED_PROXIES` lists the CIDRs of the reverse proxy whose `X-Forwarded-For` the login rate limit believes (the compose file trusts the private Docker ranges, where only Caddy can reach the app); empty means the header is ignored.
@@ -89,6 +89,11 @@ Background jobs (`platform.jobs`, spec §5.3) run over a separate small pool as 
 grants on the `jobs` table only; the pool is not a `DataSource` bean and is unreachable from HTTP). `E9X_WORKER_DB_PASSWORD` has no default
 in `application.yml`; an instance with `app.worker.enabled=true` refuses to start without it (`false` = no polling, no worker pool).
 On an existing database volume run `01-roles.sh` by hand once with `E9X_WORKER_PASSWORD` set before upgrading to this version.
+Automatic scoring (`grading.auto`, P4.1) reads answer keys and writes scores over a third small pool as `e9x_grader_login` (member of `e9x_grader`,
+no BYPASSRLS, not a member of `e9x_app` or `e9x_worker`; the pool is not a `DataSource` bean). `E9X_GRADER_DB_PASSWORD` (+ `E9X_GRADER_DB_USER`, `E9X_GRADER_DB_URL`)
+has no default in `application.yml`: the app refuses to start without it. **An existing development volume must run `01-roles.sh` by hand once**, with
+`E9X_OWNER_PASSWORD`, `E9X_APP_PASSWORD`, `E9X_WORKER_PASSWORD` and the new `E9X_GRADER_PASSWORD` set, to create the login (the script is idempotent):
+`docker compose exec -e E9X_OWNER_PASSWORD=... -e E9X_APP_PASSWORD=... -e E9X_WORKER_PASSWORD=... -e E9X_GRADER_PASSWORD=... postgres bash /docker-entrypoint-initdb.d/01-roles.sh`.
 Every transaction sets `app.user_id` / `app.org_id` / `app.e9x_staff` / `app.org_admin` with `set_config(..., true)` from the bound
 `CurrentContextHolder` (`org.api`); with no context RLS returns no rows. `/v3/api-docs` is off unless `E9X_OPENAPI_ENABLED=true`.
 

@@ -35,7 +35,9 @@ BEGIN
   ASSERT 'search_path=pg_catalog, public, pg_temp' = ANY (f.proconfig), 'pinned search path, pg_temp last';
   ASSERT has_function_privilege('e9x_app', f.oid, 'EXECUTE'), 'e9x_app evaluates the policies';
   ASSERT NOT EXISTS (SELECT 1 FROM aclexplode((SELECT proacl FROM pg_proc WHERE oid = f.oid)) a WHERE a.grantee = 0), 'not PUBLIC';
-  ASSERT NOT has_function_privilege('e9x_grader', f.oid, 'EXECUTE'), 'the grader reads none of these tables';
+  -- P4.1 (V202611130004) grants the grader EXECUTE so that a policy of PUBLIC scope that names the helper can be evaluated for it; it still has no grant
+  -- on any of the three tables (below), so it reads none of them. db-test 50 asserts the grant.
+  ASSERT has_function_privilege('e9x_grader', f.oid, 'EXECUTE'), 'the grader evaluates the policies of the tables it reads';
   ASSERT NOT has_function_privilege('e9x_worker', f.oid, 'EXECUTE'), 'the worker reads none of these tables';
   ASSERT NOT has_table_privilege('e9x_grader', 'role_grants', 'SELECT') AND NOT has_table_privilege('e9x_worker', 'role_grants', 'SELECT');
   ASSERT NOT has_table_privilege('e9x_grader', 'org_memberships', 'SELECT') AND NOT has_table_privilege('e9x_worker', 'org_memberships', 'SELECT');
