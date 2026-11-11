@@ -116,13 +116,17 @@ export function parseDuration(v: unknown): number | null {
   return ms > 0 ? ms : null;
 }
 let configured: Promise<number> | undefined;
-/** e9x.exam.autosave-interval from GET /api/config/public (the key `autosaveIntervalMs`/`examAutosaveInterval`); 5 s when the server does not say. */
+/** e9x.exam.autosave-interval from GET /api/config/public (`examAutosaveIntervalSeconds`, an integer of seconds); 5 s when the server does not say. */
 export function autosaveIntervalMs(): Promise<number> {
   configured ??= (async () => {
     try {
       const res = await fetch('/api/config/public');
       if (!res.ok) return DEFAULT_AUTOSAVE_MS;
       const b = (await res.json()) as Record<string, unknown>;
+      // the endpoint returns the interval as an integer number of seconds
+      const secs = b.examAutosaveIntervalSeconds;
+      if (typeof secs === 'number' && secs > 0) return Math.round(secs * 1000);
+      // tolerate a Spring-style duration string ("5s") too, in case the shape ever changes
       const v = b['e9x.exam.autosave-interval'] ?? b.examAutosaveInterval ?? b.autosaveInterval ?? (b.exam as Record<string, unknown> | undefined)?.autosaveInterval;
       const ms = parseDuration(v);
       if (ms !== null) return ms;
