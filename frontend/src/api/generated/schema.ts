@@ -7,7 +7,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -71,7 +71,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -121,7 +121,7 @@ export interface paths {
         };
         get: operations["listAll"];
         put?: never;
-        post: operations["create_9"];
+        post: operations["create_10"];
         delete?: never;
         options?: never;
         head?: never;
@@ -151,9 +151,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
-        post: operations["create_8"];
+        post: operations["create_9"];
         delete?: never;
         options?: never;
         head?: never;
@@ -185,7 +185,7 @@ export interface paths {
         };
         get: operations["all"];
         put?: never;
-        post: operations["create_7"];
+        post: operations["create_8"];
         delete?: never;
         options?: never;
         head?: never;
@@ -200,7 +200,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_5"];
+        put: operations["update_6"];
         post?: never;
         delete?: never;
         options?: never;
@@ -400,6 +400,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The public course catalog: PUBLISHED English9x courses and APPROVED shared ones; no sign-in needed */
+        get: operations["list_12"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog/courses/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One course of the catalog by its code: description, chapters and lesson titles, author; never lesson content */
+        get: operations["detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/catalog/exams": {
         parameters: {
             query?: never;
@@ -408,6 +442,85 @@ export interface paths {
             cookie?: never;
         };
         get: operations["exams"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List courses (the latest version of each) the caller may read */
+        get: operations["list_9"];
+        put?: never;
+        /**
+         * Create a course (version 1, a draft)
+         * @description 422 with errors[] by JSON path (examCode, code, title, unlockRule, chapters[i]...); 409 course-code-taken.
+         */
+        post: operations["create_7"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/courses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One course: its latest version, or the numbered one */
+        get: operations["get_5"];
+        /**
+         * Save a course: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)
+         * @description 422 with errors[] by JSON path.
+         */
+        put: operations["update_5"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/courses/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit the open draft for review
+         * @description The review approves it only when every lesson and test it names is PUBLISHED.
+         */
+        post: operations["submit_7"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/courses/{id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every version of a course, oldest first */
+        get: operations["versions_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -552,7 +665,7 @@ export interface paths {
             cookie?: never;
         };
         /** State of an import, its errors by row and column, and the drafts it made */
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -965,7 +1078,7 @@ export interface paths {
             cookie?: never;
         };
         /** One test: its latest version, or the numbered one, with the check against the exam */
-        get: operations["get_5"];
+        get: operations["get_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1102,7 +1215,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1499,6 +1612,161 @@ export interface components {
         AuthConfig: {
             /** @description false when Google sign-in is not configured: hide the button */
             googleEnabled: boolean;
+        };
+        CatalogChapter: {
+            lessons?: components["schemas"]["CatalogLesson"][];
+            title?: string;
+        };
+        CatalogCourse: {
+            authorDisplay?: string;
+            /** Format: int32 */
+            chapters?: number;
+            code?: string;
+            description?: string;
+            examCode?: string;
+            /** Format: int32 */
+            lessons?: number;
+            /** @description true when the course comes from the shared pool of an organisation */
+            shared?: boolean;
+            title?: string;
+            unlockRule?: string;
+        };
+        CatalogCourseOutline: {
+            authorDisplay?: string;
+            chapters?: components["schemas"]["CatalogChapter"][];
+            code?: string;
+            description?: string;
+            examCode?: string;
+            shared?: boolean;
+            title?: string;
+            unlockRule?: string;
+        };
+        CatalogLesson: {
+            /** Format: uuid */
+            id?: string;
+            kind?: string;
+            title?: string;
+        };
+        CmsCourseChapter: {
+            /** Format: uuid */
+            id?: string;
+            lessons?: components["schemas"]["CmsCourseLesson"][];
+            /** Format: double */
+            passThreshold?: number;
+            /** Format: int32 */
+            position?: number;
+            title?: string;
+        };
+        CmsCourseChapterRequest: {
+            lessons?: components["schemas"]["CmsCourseLessonRequest"][];
+            /**
+             * Format: double
+             * @description score in [0, 1] a chapter test must reach under STRICT; default 0.7
+             */
+            passThreshold?: number;
+            title?: string;
+        };
+        CmsCourseLesson: {
+            /** Format: uuid */
+            id?: string;
+            kind?: string;
+            /** Format: int32 */
+            maxAttempts?: number;
+            /** Format: uuid */
+            refId?: string;
+            title?: string;
+        };
+        CmsCourseLessonRequest: {
+            /** @description LESSON (a strategy lesson version), CHAPTER_TEST or MOCK_TEST (a test version) */
+            kind?: string;
+            /**
+             * Format: int32
+             * @description how many attempts a learner has at a test; null = unlimited
+             */
+            maxAttempts?: number;
+            /**
+             * Format: uuid
+             * @description the version of the strategy lesson or test
+             */
+            refId?: string;
+        };
+        CmsCoursePage: {
+            items?: components["schemas"]["CmsCourseSummary"][];
+            /** Format: int32 */
+            limit?: number;
+            /** Format: int32 */
+            offset?: number;
+        };
+        CmsCourseRequest: {
+            /** @description the author as the catalog shows them */
+            authorDisplay?: string;
+            chapters?: components["schemas"]["CmsCourseChapterRequest"][];
+            /**
+             * @description exactly 6 characters, capital letters and digits; fixed for the life of the course (on update: omit or repeat)
+             * @example AB12CD
+             */
+            code?: string;
+            description?: string;
+            /**
+             * @description the exam; fixed for the life of the course (on update: omit or repeat)
+             * @example IELTS
+             */
+            examCode?: string;
+            title?: string;
+            /** @description STRICT, COMPLETION or FREE */
+            unlockRule?: string;
+        };
+        CmsCourseSubmitted: {
+            /** Format: uuid */
+            reviewId?: string;
+        };
+        CmsCourseSummary: {
+            /** Format: int32 */
+            chapters?: number;
+            code?: string;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            examCode?: string;
+            /** Format: int32 */
+            lessons?: number;
+            sharedStatus?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            title?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
+        CmsCourseVersion: {
+            authorDisplay?: string;
+            chapters?: components["schemas"]["CmsCourseChapter"][];
+            code?: string;
+            /** Format: uuid */
+            courseId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            createdBy?: string;
+            description?: string;
+            examCode?: string;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            sharedStatus?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            title?: string;
+            unlockRule?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
         };
         CmsTestCreateRequest: {
             /**
@@ -2565,7 +2833,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_12: {
+    list_14: {
         parameters: {
             query?: {
                 action?: string;
@@ -2723,7 +2991,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_13: {
         parameters: {
             query?: {
                 status?: string;
@@ -2854,7 +3122,7 @@ export interface operations {
             };
         };
     };
-    create_9: {
+    create_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -2916,7 +3184,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -2945,7 +3213,7 @@ export interface operations {
             };
         };
     };
-    create_8: {
+    create_9: {
         parameters: {
             query?: never;
             header?: never;
@@ -3069,7 +3337,7 @@ export interface operations {
             };
         };
     };
-    create_7: {
+    create_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -3102,7 +3370,7 @@ export interface operations {
             };
         };
     };
-    update_5: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -3515,6 +3783,68 @@ export interface operations {
             };
         };
     };
+    list_12: {
+        parameters: {
+            query?: {
+                exam?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CatalogCourse"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CatalogCourseOutline"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     exams: {
         parameters: {
             query?: never;
@@ -3531,6 +3861,202 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ExamInfo"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    list_9: {
+        parameters: {
+            query?: {
+                exam?: string;
+                status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsCoursePage"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    create_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CmsCourseRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsCourseVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get_5: {
+        parameters: {
+            query?: {
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsCourseVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    update_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CmsCourseRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsCourseVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    submit_7: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsCourseSubmitted"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    versions_6: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsCourseVersion"][];
                 };
             };
             /** @description Error (RFC 7807 problem details) */
@@ -3869,7 +4395,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -4913,7 +5439,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: {
                 version?: number;
@@ -5192,7 +5718,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 limit?: number;

@@ -46,6 +46,13 @@ public final class SweepFixtures {
     public final UUID lessonB = UUID.randomUUID();
     public final UUID lessonVersionB = UUID.randomUUID();
     public final UUID lessonAForPut = UUID.randomUUID();
+    /** The version of {@link #lessonAForPut}: a version A's courses may list. */
+    public final UUID lessonVersionA = UUID.randomUUID();
+    /** P3.1: A's author's own draft courses (PUT, submit) and a PUBLISHED one of A's (the positive control of the public detail route); B has a draft and a published one. */
+    public final UUID courseAForPut = UUID.randomUUID();
+    public final UUID courseAForSubmit = UUID.randomUUID();
+    public final String courseCodeA = "A00001";
+    public final String courseCodeBPublished = "B00002";
     public final UUID lessonAForSubmit = UUID.randomUUID();
     /** P2.5: A's author's own draft grading skills (one per route that changes a skill): the positive controls of PUT and submit. */
     public final UUID skillAForPut = UUID.randomUUID();
@@ -188,7 +195,7 @@ public final class SweepFixtures {
         su.update("update strategy_lesson_versions set status = 'IN_REVIEW' where id = ?", lessonVersionB);
         su.update("update strategy_lesson_versions set status = 'PUBLISHED' where id = ?", lessonVersionB);
         for (UUID own : List.of(lessonAForPut, lessonAForSubmit)) {
-            UUID version = UUID.randomUUID();
+            UUID version = own.equals(lessonAForPut) ? lessonVersionA : UUID.randomUUID();
             su.update(lesson, own, orgA, authorA);
             su.update(lessonVersion, version, own, orgA, authorA);
             su.update(lessonType, version, orgA);
@@ -202,6 +209,31 @@ public final class SweepFixtures {
         su.update(skillVersion, UUID.randomUUID(), skillAForSubmit, orgA, authorA);
         for (UUID course : su.queryForList("select id from courses where owner_org_id = ?", UUID.class, orgB)) {
             com.english9x.support.SeatFixtures.seatEntitlement(su, orgB, userB, course, java.time.Instant.now().minus(java.time.Duration.ofDays(1)), java.time.Instant.now().plus(java.time.Duration.ofDays(1)));
+        }
+        // P3.1: courses. B's published course (a lesson of B's in a chapter), A's own published one (the positive control of the public detail route, a code of the caller's own
+        // tenant) and two draft courses of A's author, one per route that changes a course. B's draft header (courseCodeB) has no version at all.
+        String courseHeader = "insert into courses(id,owner_org_id,exam_code,code,title,status,created_by) values (?,?,'IELTS',?,'Sweep course','DRAFT',?)";
+        String courseVersion = "insert into course_versions(id,course_id,owner_org_id,exam_code,version_no,title,unlock_rule,created_by,status) values (?,?,?,'IELTS',1,'Sweep course','FREE',?,?)";
+        UUID courseB = UUID.randomUUID();
+        su.update(courseHeader, courseB, orgB, courseCodeBPublished, userB);
+        UUID courseVersionB = UUID.randomUUID();
+        su.update(courseVersion, courseVersionB, courseB, orgB, userB, "DRAFT");
+        su.update("insert into course_chapters(course_version_id,position,title,owner_org_id,exam_code) values (?,1,'Chapter B',?,'IELTS')", courseVersionB, orgB);
+        su.update("insert into course_lessons(course_version_id,chapter_position,position,kind,ref_id,title,owner_org_id,exam_code) values (?,1,1,'LESSON',?,'Lesson B',?,'IELTS')",
+                courseVersionB, lessonVersionB, orgB);
+        su.update("update course_versions set status = 'IN_REVIEW' where id = ?", courseVersionB);
+        su.update("update course_versions set status = 'PUBLISHED' where id = ?", courseVersionB);
+        UUID courseA = UUID.randomUUID();
+        su.update(courseHeader, courseA, orgA, courseCodeA, authorA);
+        UUID courseVersionA = UUID.randomUUID();
+        su.update(courseVersion, courseVersionA, courseA, orgA, authorA, "DRAFT");
+        su.update("update course_versions set status = 'IN_REVIEW' where id = ?", courseVersionA);
+        su.update("update course_versions set status = 'PUBLISHED' where id = ?", courseVersionA);
+        String[] ownCodes = {"A00002", "A00003"};
+        UUID[] ownCourses = {courseAForPut, courseAForSubmit};
+        for (int i = 0; i < 2; i++) {
+            su.update(courseHeader, ownCourses[i], orgA, ownCodes[i], authorA);
+            su.update(courseVersion, UUID.randomUUID(), ownCourses[i], orgA, authorA, "DRAFT");
         }
         // P5.1: plans are a price list shared by everybody; orders belong to a person (B's member has one, with an item; A's member has one too, the positive control)
         su.update("insert into plans(id,name,price_vnd,months,max_courses) values (?,'Sweep plan',100000,1,2)", planId);
@@ -367,6 +399,16 @@ public final class SweepFixtures {
         all.put("POST /api/cms/grading-skills/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", skillAForSubmit), null, ForeignIdSweep.AUTHOR)));
         all.put("POST /api/cms/grading-skills/{id}/dry-run", new ForeignIdSweep.Fixture("{\"response\":\"x\"}", List.of(), null,
                 "answers 501 whoever asks until the AI grader exists (P4.2); GradingSkillIT.dryRunWaitsForTheAiGrader measures who is refused before that"));
+        // P3.1: courses, like tests: A's ORG_ADMIN (no AUTHOR grant) is refused on every route and every foreign id; A's author really builds A's draft courses. The public
+        // detail is private BY CODE (a string slot, F08): B's draft, B's published course and a code nobody has are all 404; the control is A's own published course.
+        String courseBody = "{\"examCode\":\"IELTS\",\"code\":\"SWC001\",\"title\":\"Sweep course\",\"unlockRule\":\"FREE\",\"chapters\":[{\"title\":\"C1\",\"lessons\":[{\"kind\":\"LESSON\",\"refId\":\"" + lessonVersionA + "\"}]}]}";
+        String courseUpdate = "{\"title\":\"Sweep course\",\"unlockRule\":\"FREE\",\"chapters\":[{\"title\":\"C1\",\"lessons\":[{\"kind\":\"LESSON\",\"refId\":\"" + lessonVersionA + "\"}]}]}";
+        all.put("POST /api/cms/courses", ForeignIdSweep.Fixture.write(courseBody, List.of(), none));
+        all.put("PUT /api/cms/courses/{id}", ForeignIdSweep.Fixture.write(courseUpdate, List.of(), new ForeignIdSweep.Control(slot("id", courseAForPut), null, ForeignIdSweep.AUTHOR)));
+        all.put("POST /api/cms/courses/{id}/submit", ForeignIdSweep.Fixture.write(null, List.of(), new ForeignIdSweep.Control(slot("id", courseAForSubmit), null, ForeignIdSweep.AUTHOR)));
+        all.put("GET /api/catalog/courses/{code}", new ForeignIdSweep.Fixture(null, List.of(
+                new ForeignIdSweep.Attempt(slot("code", courseCodeB)), new ForeignIdSweep.Attempt(slot("code", courseCodeBPublished)),
+                new ForeignIdSweep.Attempt(slot("code", "NOSUCH"))), ForeignIdSweep.Control.of(slot("code", courseCodeA), null), null));
         // P2.5: the conversion table of an exam is English9x's (owner NULL, scope EXAM): the sweep's callers are all in organisation contexts and are refused (403)
         // whatever the id, so there is no 2xx control to give; ScoreTableServiceIT measures the English9x staff's own writes and every refusal.
         String englishNine = "an exam default belongs to English9x: a caller in an organisation's context is always refused; ScoreTableServiceIT.onlyTheStaffOfTheExamWriteAndRead measures it";

@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "catalog": "Khoá học"
+  },
+  "loading": "Đang tải…",
+  "rule": {
+    "STRICT": "Nghiêm ngặt: học xong từng bài và đạt từng bài kiểm tra chương mới sang tiếp",
+    "COMPLETION": "Học xong từng bài là sang tiếp",
+    "FREE": "Mọi bài đều mở"
+  },
+  "kind": {
+    "LESSON": "Bài học",
+    "CHAPTER_TEST": "Kiểm tra chương",
+    "MOCK_TEST": "Thi thử"
+  },
+  "list": {
+    "title": "Khoá học",
+    "description": "Xem các khoá học. Bạn thấy mỗi khoá dạy gì mà không cần đăng nhập; bài học mở sau khi bạn đặt mua.",
+    "exam": "Kỳ thi",
+    "all": "Tất cả",
+    "emptyTitle": "Chưa có khoá học",
+    "empty": "Chưa có khoá học nào cho kỳ thi này.",
+    "caption": "Các khoá học đang bán",
+    "counts": "{{chapters}} chương, {{lessons}} bài",
+    "by": "Tác giả {{author}}"
+  },
+  "outline": {
+    "heading": "Bên trong có gì",
+    "chapterN": "Chương {{n}}: {{title}}",
+    "back": "Tất cả khoá học",
+    "notFoundTitle": "Không tìm thấy khoá học",
+    "notFound": "Không có khoá học này đang bán."
+  },
+  "errors": {
+    "generic": "Có lỗi xảy ra. Hãy thử lại."
+  }
+}

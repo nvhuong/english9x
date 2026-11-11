@@ -15,10 +15,12 @@ SELECT set_config('app.org_id','aaaaaaaa-0000-0000-0000-000000000001',false);
 DO $$
 DECLARE n int;
 BEGIN
-  UPDATE courses SET title='hacked' WHERE owner_org_id='bbbbbbbb-0000-0000-0000-000000000002'; GET DIAGNOSTICS n = ROW_COUNT;
+  UPDATE courses SET shared_status='PENDING' WHERE owner_org_id='bbbbbbbb-0000-0000-0000-000000000002'; GET DIAGNOSTICS n = ROW_COUNT;
   ASSERT n = 0, 'A must not update B courses';
-  DELETE FROM courses WHERE owner_org_id='bbbbbbbb-0000-0000-0000-000000000002'; GET DIAGNOSTICS n = ROW_COUNT;
-  ASSERT n = 0, 'A must not delete B courses';
+  BEGIN
+    DELETE FROM courses WHERE owner_org_id='bbbbbbbb-0000-0000-0000-000000000002';
+    RAISE EXCEPTION 'nobody deletes a course through the application role';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   UPDATE classes SET name='hacked' WHERE name='class-B'; GET DIAGNOSTICS n = ROW_COUNT;
   ASSERT n = 0, 'A must not update B class';
   DELETE FROM classes WHERE name='class-B'; GET DIAGNOSTICS n = ROW_COUNT;
@@ -27,7 +29,7 @@ END $$;
 RESET ROLE;
 DO $$
 BEGIN
-  ASSERT (SELECT count(*) FROM courses WHERE title='hacked') = 0, 'no B course changed';
+  ASSERT (SELECT count(*) FROM courses WHERE shared_status <> 'NONE') = 0, 'no B course changed';
   ASSERT (SELECT count(*) FROM courses) = 2, 'no B course deleted';
   ASSERT (SELECT count(*) FROM classes WHERE name='class-B') = 1, 'B class intact';
 END $$;

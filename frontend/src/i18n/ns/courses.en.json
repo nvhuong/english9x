@@ -1,0 +1,120 @@
+{
+  "nav": {
+    "courses": "Courses"
+  },
+  "loading": "Loading…",
+  "status": {
+    "DRAFT": "Draft",
+    "IN_REVIEW": "In review",
+    "CHANGES_REQUESTED": "Changes requested",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived"
+  },
+  "rule": {
+    "STRICT": "Strict: finish each lesson and pass the chapter test to go on",
+    "COMPLETION": "Completion: finish each lesson to go on, any score",
+    "FREE": "Free: every lesson is open"
+  },
+  "ruleHint": {
+    "STRICT": "A learner opens the next lesson only after finishing the previous one, and a chapter test only counts when its score reaches the chapter's threshold.",
+    "COMPLETION": "A learner opens the next lesson after finishing the previous one; the score of a chapter test does not matter.",
+    "FREE": "Every lesson is open from the start."
+  },
+  "kind": {
+    "LESSON": "Lesson",
+    "CHAPTER_TEST": "Chapter test",
+    "MOCK_TEST": "Mock test"
+  },
+  "refKind": {
+    "LESSON": "strategy lesson",
+    "TEST": "test"
+  },
+  "actions": {
+    "create": "Create course",
+    "save": "Save draft",
+    "saveNewVersion": "Save as a new version",
+    "submit": "Submit for review"
+  },
+  "new": {
+    "title": "New course",
+    "exam": "Exam",
+    "examPlaceholder": "Choose an exam",
+    "code": "Course code",
+    "codeHint": "Exactly 6 characters: capital letters and digits. It cannot change later."
+  },
+  "form": {
+    "heading": "About the course",
+    "name": "Course name",
+    "description": "Description",
+    "author": "Author shown to learners",
+    "authorHint": "For example the teacher's name",
+    "unlockRule": "Unlock rule"
+  },
+  "chapters": {
+    "heading": "Chapters",
+    "empty": "No chapter yet: add the first one.",
+    "chapterN": "Chapter {{n}}",
+    "title": "Chapter title",
+    "passPercent": "Pass mark (%)",
+    "passPercentHint": "The chapter test score needed under the strict rule",
+    "add": "Add a chapter",
+    "remove": "Remove chapter"
+  },
+  "lessons": {
+    "of": "Lessons of chapter {{n}}",
+    "kind": "Kind",
+    "add": "Add a lesson or a test",
+    "addPlaceholder": "Choose one",
+    "chooseExamFirst": "Choose the exam first",
+    "option": "{{title}} ({{what}}, {{status}})",
+    "up": "Move {{title}} up",
+    "down": "Move {{title}} down",
+    "remove": "Remove {{title}}",
+    "removeShort": "Remove"
+  },
+  "list": {
+    "title": "Courses",
+    "description": "The courses of the exams you write or review. A course is reviewed like any other content before learners see it.",
+    "new": "New course",
+    "exam": "Exam",
+    "status": "Status",
+    "all": "All",
+    "emptyTitle": "No course yet",
+    "empty": "Nothing matches. Create a course, or change the filters.",
+    "caption": "Courses",
+    "colTitle": "Name",
+    "colCode": "Code",
+    "colExam": "Exam",
+    "colStatus": "Status",
+    "colVersion": "Version",
+    "colLessons": "Content",
+    "lessonsCount": "{{chapters}} chapters, {{lessons}} lessons",
+    "pagination": "Pages",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "edit": {
+    "back": "All courses",
+    "version": "Version {{n}}",
+    "notFoundTitle": "Course not found",
+    "notFound": "There is no such course, or you may not open it.",
+    "publishedNote": "This version is published and cannot change. Saving makes a new draft, version {{next}}.",
+    "inReviewNote": "This version is being reviewed and cannot be edited.",
+    "archivedNote": "This version has been replaced and cannot be edited.",
+    "saved": "Draft saved.",
+    "savedNewVersion": "Saved as version {{n}}, a new draft.",
+    "submitted": "Submitted for review."
+  },
+  "errors": {
+    "generic": "Something went wrong. Try again.",
+    "invalid": "The course has mistakes. See the fields marked.",
+    "codeTaken": "Another course already uses this code. Choose a different one.",
+    "underReview": "The latest version is being reviewed; wait for the decision.",
+    "anotherAuthor": "Another author is editing the open draft.",
+    "archived": "This course has been archived.",
+    "notEditable": "There is no draft to submit.",
+    "conflict": "Somebody changed this at the same moment. Reload and try again.",
+    "forbidden": "You may not do this.",
+    "notFound": "There is no such course, or you may not open it."
+  }
+}

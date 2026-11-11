@@ -129,7 +129,9 @@ class RlsLeakSweepIT {
                 "GET /api/cms/strategy-lessons/{id}/versions",
                 "POST /api/cms/grading-skills", "PUT /api/cms/grading-skills/{id}", "POST /api/cms/grading-skills/{id}/submit", "POST /api/cms/grading-skills/{id}/dry-run",
                 "GET /api/cms/grading-skills/{id}", "GET /api/cms/grading-skills/{id}/versions", "POST /api/cms/score-tables", "PUT /api/cms/score-tables/{id}",
-                "POST /api/cms/score-tables/{id}/submit", "GET /api/cms/score-tables/{id}", "GET /api/cms/score-tables/{id}/versions")),
+                "POST /api/cms/score-tables/{id}/submit", "GET /api/cms/score-tables/{id}", "GET /api/cms/score-tables/{id}/versions",
+                "POST /api/cms/courses", "PUT /api/cms/courses/{id}", "POST /api/cms/courses/{id}/submit", "GET /api/cms/courses/{id}", "GET /api/cms/courses/{id}/versions",
+                "GET /api/catalog/courses/{code}")),
                 "visited " + r.visited());
     }
 
