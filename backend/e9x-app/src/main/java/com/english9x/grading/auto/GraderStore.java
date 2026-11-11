@@ -1,5 +1,6 @@
 package com.english9x.grading.auto;
 
+import com.english9x.grading.api.DisplayedScores;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -122,27 +123,34 @@ class GraderStore {
                 a.id(), a.userId(), a.orgId(), r.skill(), r.raw(), r.rawMax(), r.scaled(), r.scoreTableVersionId());
     }
 
-    /** The displayed score of each skill that has one so far (OFFICIAL over PRELIMINARY), and whether every one of them is OFFICIAL. */
+    /** The displayed score of each skill that has one so far, chosen by {@link DisplayedScores} (OFFICIAL over PRELIMINARY, a teacher's over the AI's over the automatic), and whether every one of them is OFFICIAL. */
     record Board(Map<String, Double> scores, boolean official) {}
 
     Board displayed(JdbcTemplate j, UUID attemptId) {
+        List<DisplayedScores.Candidate> rows = j.query("select skill, kind, source, scaled from scores where attempt_id = ? and scaled is not null",
+                (rs, n) -> new DisplayedScores.Candidate(rs.getString("skill"), rs.getString("kind"), rs.getString("source"), rs.getBigDecimal("scaled").doubleValue()), attemptId);
+        Map<String, DisplayedScores.Candidate> chosen = DisplayedScores.select(rows);
         Map<String, Double> scores = new LinkedHashMap<>();
-        boolean[] official = {true};
-        j.query("select skill, kind, scaled from scores where attempt_id = ? and scaled is not null order by skill, case kind when 'OFFICIAL' then 0 else 1 end", rs -> {
-            if (scores.putIfAbsent(rs.getString("skill"), rs.getBigDecimal("scaled").doubleValue()) == null && !"OFFICIAL".equals(rs.getString("kind"))) {
-                official[0] = false;
-            }
-        }, attemptId);
-        return new Board(scores, official[0]);
+        boolean official = true;
+        for (Map.Entry<String, DisplayedScores.Candidate> e : new java.util.TreeMap<>(chosen).entrySet()) {
+            scores.put(e.getKey(), e.getValue().scaled());
+            official &= e.getValue().isOfficial();
+        }
+        return new Board(scores, official);
     }
 
-    /** Locks the grading record (concurrent announcers queue behind it) and says whether AttemptScored still has to be announced. */
-    boolean lockUnannounced(JdbcTemplate j, UUID attemptId) {
-        List<Boolean> open = j.query("select announced_at is null from attempt_gradings where attempt_id = ? for update", (rs, n) -> rs.getBoolean(1), attemptId);
-        return !open.isEmpty() && open.get(0);
+    /** What the grading record says has been announced already. */
+    record Announced(boolean preliminary, boolean official) {}
+
+    /** Locks the grading record (concurrent announcers queue behind it). Empty when the automatic scoring has not written it yet. */
+    Optional<Announced> lockAnnounced(JdbcTemplate j, UUID attemptId) {
+        return j.query("select announced_at is not null, official_announced_at is not null from attempt_gradings where attempt_id = ? for update",
+                (rs, n) -> new Announced(rs.getBoolean(1), rs.getBoolean(2)), attemptId).stream().findFirst();
     }
 
-    void markAnnounced(JdbcTemplate j, UUID attemptId, Instant at) {
-        j.update("update attempt_gradings set announced_at = ? where attempt_id = ? and announced_at is null", Timestamp.from(at), attemptId);
+    /** Records the announcement: the preliminary time (if not set yet) and, for an official one, the official time as well. A time already set is never changed. */
+    void markAnnounced(JdbcTemplate j, UUID attemptId, Instant at, boolean official) {
+        j.update("update attempt_gradings set announced_at = coalesce(announced_at, ?), official_announced_at = case when ? then coalesce(official_announced_at, ?) else official_announced_at end "
+                + "where attempt_id = ?", Timestamp.from(at), official, Timestamp.from(at), attemptId);
     }
 }

@@ -20,14 +20,14 @@ import org.springframework.stereotype.Component;
  * the PUBLISHED rows of English9x and of the organisation bound in {@code app.org_id}.
  */
 @Component
-class AiStore {
+public class AiStore {
 
-    record Attempt(UUID id, UUID userId, UUID orgId, UUID testVersionId, String examCode, Instant submittedAt) {}
+    public record Attempt(UUID id, UUID userId, UUID orgId, UUID testVersionId, String examCode, Instant submittedAt) {}
 
     /** One question of the attempt's test, with what the learner gave. {@code recordingPath} is the staged key of a Speaking recording (null = none). */
-    record Item(UUID questionId, String sectionCode, UUID versionId, String typeCode, JsonNode content, double points, JsonNode answer, String recordingPath, String recordingMime) {}
+    public record Item(UUID questionId, String sectionCode, UUID versionId, String typeCode, JsonNode content, double points, JsonNode answer, String recordingPath, String recordingMime) {}
 
-    record Skill(UUID versionId, String rubric, JsonNode criteria, String promptTemplate, JsonNode samples, JsonNode resultSchema) {}
+    public record Skill(UUID versionId, String rubric, JsonNode criteria, String promptTemplate, JsonNode samples, JsonNode resultSchema) {}
 
     private final ObjectMapper json;
 
@@ -35,7 +35,7 @@ class AiStore {
         this.json = json;
     }
 
-    Optional<Attempt> attempt(JdbcTemplate j, UUID attemptId) {
+    public Optional<Attempt> attempt(JdbcTemplate j, UUID attemptId) {
         return j.query("select id, user_id, owner_org_id, test_version_id, exam_code, submitted_at from exam_attempts where id = ? and status = 'SUBMITTED'",
                 (rs, n) -> new Attempt(rs.getObject("id", UUID.class), rs.getObject("user_id", UUID.class), rs.getObject("owner_org_id", UUID.class),
                         rs.getObject("test_version_id", UUID.class), rs.getString("exam_code"),
@@ -43,7 +43,7 @@ class AiStore {
                 attemptId).stream().filter(a -> a.submittedAt() != null && a.examCode() != null).findFirst();
     }
 
-    Map<String, String> sectionSkills(JdbcTemplate j, UUID attemptId) {
+    public Map<String, String> sectionSkills(JdbcTemplate j, UUID attemptId) {
         Map<String, String> out = new LinkedHashMap<>();
         j.query("select section_code, skill from attempt_sections where attempt_id = ? order by position", rs -> {
             out.put(rs.getString("section_code"), rs.getString("skill"));
@@ -52,7 +52,7 @@ class AiStore {
     }
 
     /** Every question of the attempt's test (membership is the test version's, as in the automatic scoring), with the answer and the recording the learner gave. */
-    List<Item> items(JdbcTemplate j, UUID attemptId, UUID testVersionId) {
+    public List<Item> items(JdbcTemplate j, UUID attemptId, UUID testVersionId) {
         return j.query("""
                 select m.section_code, m.question_version_id, v.type_code, v.content::text as c, v.points,
                        (select r.answer::text from attempt_questions aq
@@ -89,7 +89,7 @@ class AiStore {
     }
 
     /** The PUBLISHED skill of the question type the grader may read: the bound organisation's own when it has one, else English9x's; the newest version. */
-    Optional<Skill> skill(JdbcTemplate j, String questionTypeCode) {
+    public Optional<Skill> skill(JdbcTemplate j, String questionTypeCode) {
         return j.query("""
                 select v.id, v.rubric, v.criteria::text as criteria, v.prompt_template, v.samples::text as samples, v.result_schema::text as result_schema
                   from grading_skill_versions v join grading_skills s on s.id = v.grading_skill_id
@@ -100,7 +100,7 @@ class AiStore {
     }
 
     /** question id to band of the evaluations already stored. */
-    Map<UUID, Double> evaluated(JdbcTemplate j, UUID attemptId) {
+    public Map<UUID, Double> evaluated(JdbcTemplate j, UUID attemptId) {
         Map<UUID, Double> out = new LinkedHashMap<>();
         j.query("select question_id, band from ai_evaluations where attempt_id = ?", rs -> {
             out.put(rs.getObject("question_id", UUID.class), rs.getBigDecimal("band").doubleValue());
@@ -119,7 +119,7 @@ class AiStore {
                 + "on conflict (attempt_id, skill, kind) do nothing", a.id(), a.userId(), a.orgId(), skill, kind, band, band);
     }
 
-    Optional<String> state(JdbcTemplate j, UUID attemptId) {
+    public Optional<String> state(JdbcTemplate j, UUID attemptId) {
         return j.queryForList("select state from ai_gradings where attempt_id = ?", String.class, attemptId).stream().findFirst();
     }
 

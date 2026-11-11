@@ -16,6 +16,7 @@ import com.english9x.grading.ai.api.SkillVersion;
 import com.english9x.grading.ai.api.Task;
 import com.english9x.grading.auto.ScoreAnnouncer;
 import com.english9x.grading.db.GraderDatabase;
+import com.english9x.grading.teacher.GradingQueueService;
 import com.english9x.org.api.CurrentContextHolder;
 import com.english9x.org.api.OrgContextDeniedException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -73,6 +74,7 @@ class AiGradingService {
     private final GradingPolicies policies;
     private final StagedFiles staged;
     private final ScoreAnnouncer announcer;
+    private final GradingQueueService teachers;
     private final TransactionTemplate primary;
     private final Clock clock;
     private final ObjectMapper json;
@@ -82,7 +84,7 @@ class AiGradingService {
     private final BigDecimal priceOutput;
 
     AiGradingService(GraderDatabase grader, AiStore store, AiGrader ai, QuestionTypes types, GradingPolicies policies, StagedFiles staged, ScoreAnnouncer announcer,
-            PlatformTransactionManager transactions, Clock clock, ObjectMapper json, @Value("${e9x.exam.late-sync-grace}") Duration grace,
+            GradingQueueService teachers, PlatformTransactionManager transactions, Clock clock, ObjectMapper json, @Value("${e9x.exam.late-sync-grace}") Duration grace,
             @Value("${e9x.grading.ai.per-user-daily-limit:0}") int dailyLimit, @Value("${e9x.gemini.price-per-1k-input:0}") BigDecimal priceInput,
             @Value("${e9x.gemini.price-per-1k-output:0}") BigDecimal priceOutput) {
         this.grader = grader;
@@ -92,6 +94,7 @@ class AiGradingService {
         this.policies = policies;
         this.staged = staged;
         this.announcer = announcer;
+        this.teachers = teachers;
         this.primary = new TransactionTemplate(transactions);
         this.clock = clock;
         this.json = json;
@@ -130,6 +133,7 @@ class AiGradingService {
                 announcer.announce(a.userId(), a.orgId(), a.id());
                 return Outcome.ALREADY_DONE;
             }
+            teachers.enqueue(a, GradingQueueService.Reason.AI_LIMIT); // the limit routed it; the item is made once (a retry after a failed first try finds it)
             return Outcome.TEACHER_QUEUE;
         }
         GradingMode mode = mode(a);
@@ -154,6 +158,7 @@ class AiGradingService {
             int used = grader.read(a.userId(), a.orgId(), j -> store.aiAttemptsSince(j, a.userId(), clock.instant().minus(Duration.ofHours(24))));
             if (used >= dailyLimit) {
                 grader.write(a.userId(), a.orgId(), j -> store.routeToTeachers(j, a));
+                teachers.enqueue(a, GradingQueueService.Reason.AI_LIMIT);
                 LOG.info("attempt {}: the emergency daily AI limit is reached for this person; routed to the teachers' queue", a.id());
                 return Outcome.TEACHER_QUEUE;
             }

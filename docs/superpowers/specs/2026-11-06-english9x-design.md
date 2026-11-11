@@ -330,6 +330,8 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.grading.ai.retry-delays` | `30s,2m,10m` | Thời gian chờ giữa các lần thử lại khi Gemini lỗi | Cấu hình |
 | `e9x.grading.ai.schema-retry` | `1` | Số lần thử lại khi Gemini trả JSON sai schema | Cấu hình |
 | `e9x.grading.claim-timeout` | `24h` | Hạn giáo viên giữ bài đã nhận | Quản trị |
+| `e9x.grading.claim-due-warning` | `2h` | Giáo viên được nhắc (`GRADING_CLAIM_DUE`) khi bài đã nhận sắp quá hạn trong khoảng này (P4.3) | Cấu hình |
+| `e9x.grading.claim-job-interval` | `5m` | Chu kỳ của việc nền `release_expired_claim`: trả bài quá hạn về hàng chờ và nhắc bài sắp quá hạn (P4.3) | Cấu hình |
 | `e9x.grading.default-mode` | `AI` | Chế độ chấm Writing/Speaking (`AI` / `TEACHER` / `BOTH`) khi kỳ thi chưa có dòng chính sách riêng; dòng chính sách của kỳ thi do quản trị đặt (§10.3) luôn thắng giá trị này | Cấu hình |
 | `e9x.exam.default-max-resumes` | `2` | N lần quay lại mặc định khi đề không đặt riêng | Quản trị |
 | `e9x.exam.autosave-interval` | `5s` | Chu kỳ tự lưu đáp án | Cấu hình |

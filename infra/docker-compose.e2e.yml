@@ -94,6 +94,9 @@ services:
       E9X_GEMINI_API_KEY: fake-key
       # F37 watches AI grading give up after the retries: the 30s,2m,10m of production would take 12 minutes (relaxed binding of e9x.grading.ai.retry-delays)
       E9X_GRADING_AI_RETRY_DELAYS: 2s,2s,2s
+      # the teachers' queue: claims past their deadline return to the queue within seconds (F35 moves a deadline into the past; the real default is 5m)
+      E9X_GRADING_CLAIM_JOB_INTERVAL: 3s
+      E9X_JOBS_RECURRING_POLL: 2s
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: "1025"
       E9X_TELEGRAM_API_BASE: http://fake-telegram:8080

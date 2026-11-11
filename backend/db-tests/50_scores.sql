@@ -129,7 +129,7 @@ BEGIN
   ASSERT public.t_attempt('INSERT INTO attempt_gradings(attempt_id,user_id,owner_org_id,interrupted) VALUES (''f5300000-0000-0000-0000-000000000003'',''f5000000-0000-0000-0000-000000000001'',''f5aaaaaa-0000-0000-0000-00000000000a'',false)') = 'err:42501', 'not for an attempt in progress';
   ASSERT public.t_attempt('UPDATE attempt_gradings SET interrupted = false') = 'err:42501', 'the flag is not changed';
   ASSERT public.t_attempt('UPDATE attempt_gradings SET announced_at = now()') = 'rows:1', 'the announcement time is set';
-  ASSERT public.t_attempt('UPDATE attempt_gradings SET announced_at = now()') = 'rows:0', 'once';
+  ASSERT public.t_attempt('UPDATE attempt_gradings SET announced_at = now()') = 'err:42501', 'once (P4.3: the official announcement has its own time, so the row is still open to that one; this one is refused)';
   ASSERT public.t_attempt('DELETE FROM attempt_gradings') = 'err:42501', 'the record is not deleted';
   ASSERT (SELECT count(*) FROM scores) = 2 AND (SELECT count(*) FROM attempt_gradings) = 1, 'the grader reads back its own rows of the session';
 END $$;

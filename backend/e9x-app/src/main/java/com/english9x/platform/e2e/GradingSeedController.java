@@ -108,4 +108,60 @@ class GradingSeedController {
         out.put("evaluations", rows);
         return out;
     }
+
+    record PolicyRequest(UUID testVersionId, String mode) {}
+
+    /**
+     * The grading mode of one test (a TEST-scope policy row, owner and exam of the test, written as the table owner like the administrator's screen would), so that a spec can have
+     * its own attempt graded by the teachers (TEACHER) or by AI and teachers (BOTH) without touching the default of the exam, which every other spec shares.
+     */
+    @PostMapping("/policy")
+    @ResponseStatus(HttpStatus.CREATED)
+    Map<String, Object> policy(@RequestBody PolicyRequest r) {
+        if (r.testVersionId() == null || r.mode() == null || !List.of("AI", "TEACHER", "BOTH").contains(r.mode())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "testVersionId and a mode (AI, TEACHER, BOTH) are required");
+        }
+        Map<String, Object> test = db.jdbc().queryForList("select test_id, owner_org_id, exam_code from test_versions where id = ?", r.testVersionId()).stream().findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "no such test version"));
+        db.jdbc().update("insert into grading_policies(owner_org_id, exam_code, scope, test_id, mode) values (?,?, 'TEST', ?, ?) on conflict (owner_org_id, test_id) where scope = 'TEST' do update set mode = excluded.mode",
+                test.get("owner_org_id"), test.get("exam_code"), test.get("test_id"), r.mode());
+        return Map.of("mode", r.mode());
+    }
+
+    /** The teachers' queue item of an attempt (none until the policy or the AI put it there) and the reviews written for it. */
+    @PostMapping("/queue")
+    Map<String, Object> queue(@RequestBody AttemptRef r) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("item", db.jdbc().queryForList("select id::text as id, state, reason, grading_org_id::text as grading_org_id, claimed_by::text as claimed_by, version from grading_queue_items where attempt_id = ?", r.attemptId())
+                .stream().findFirst().orElse(null));
+        List<Map<String, Object>> reviews = new ArrayList<>();
+        db.jdbc().query("select skill, teacher_id::text as teacher_id, band::float8 as band, ai_band::float8 as ai_band, deviation::float8 as deviation, comment from teacher_reviews where attempt_id = ? order by skill", rs -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("skill", rs.getString("skill"));
+            row.put("teacherId", rs.getString("teacher_id"));
+            row.put("band", rs.getDouble("band"));
+            row.put("aiBand", rs.getObject("ai_band"));
+            row.put("deviation", rs.getObject("deviation"));
+            row.put("comment", rs.getString("comment"));
+            reviews.add(row);
+        }, r.attemptId());
+        out.put("reviews", reviews);
+        return out;
+    }
+
+    /**
+     * The deadline of the claim on an attempt's item passes (the real default is 24 hours, which a spec cannot wait out): the claim's deadline moves into the past, and the
+     * real {@code release_expired_claim} job (the E2E stack runs it every few seconds) returns the item to the queue.
+     */
+    @PostMapping("/queue/expire")
+    Map<String, Object> expire(@RequestBody AttemptRef r) {
+        UUID attempt = r.attemptId();
+        if (attempt == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "attemptId is required");
+        }
+        db.jdbc().execute("DO $$ BEGIN ALTER TABLE grading_queue_items DISABLE TRIGGER grading_queue_items_guard; "
+                + "UPDATE grading_queue_items SET claim_due_at = now() - interval '1 minute' WHERE attempt_id = '" + attempt + "' AND state = 'CLAIMED'; "
+                + "ALTER TABLE grading_queue_items ENABLE TRIGGER grading_queue_items_guard; END $$");
+        return Map.of("expired", true);
+    }
 }

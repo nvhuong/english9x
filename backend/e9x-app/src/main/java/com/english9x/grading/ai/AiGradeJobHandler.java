@@ -3,6 +3,7 @@ package com.english9x.grading.ai;
 import com.english9x.grading.ai.AiStore.Attempt;
 import com.english9x.grading.ai.api.AiGradingException;
 import com.english9x.grading.db.GraderDatabase;
+import com.english9x.grading.teacher.GradingQueueService;
 import com.english9x.notification.api.EventType;
 import com.english9x.notification.api.NotificationService;
 import com.english9x.platform.jobs.api.Job;
@@ -37,13 +38,15 @@ class AiGradeJobHandler implements JobExecutor {
     private final NotificationService notifications;
     private final JdbcTemplate jdbc;
     private final AiStore store;
+    private final GradingQueueService teachers;
 
-    AiGradeJobHandler(AiGradingService service, GraderDatabase grader, NotificationService notifications, JdbcTemplate jdbc, AiStore store) {
+    AiGradeJobHandler(AiGradingService service, GraderDatabase grader, NotificationService notifications, JdbcTemplate jdbc, AiStore store, GradingQueueService teachers) {
         this.service = service;
         this.grader = grader;
         this.notifications = notifications;
         this.jdbc = jdbc;
         this.store = store;
+        this.teachers = teachers;
     }
 
     @Override
@@ -114,6 +117,12 @@ class AiGradeJobHandler implements JobExecutor {
         LOG.error("ai_grade {} for attempt {} gave up: {}", job.id(), a.id(), reason);
         for (UUID admin : jdbc.queryForList("select r_user_id from notification_sys_admins()", UUID.class)) {
             notifications.notify(EventType.AI_GRADING_FAILED, admin, Map.of("attemptId", a.id().toString()), "ai-grading-failed:" + a.id());
+        }
+        // the AI could not do it: the teachers of the attempt's side grade it (their score is official whatever the mode); an item already there (mode TEACHER / BOTH) is left as it is
+        try {
+            teachers.enqueue(a, GradingQueueService.Reason.AI_FAILED);
+        } catch (RuntimeException e) {
+            LOG.error("ai_grade {}: attempt {} could not be put in the teachers' queue: {}", job.id(), a.id(), e.getClass().getSimpleName());
         }
     }
 
