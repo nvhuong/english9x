@@ -2046,6 +2046,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orgs/{id}/classes/{cid}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The report of a class, per learner
+         * @description Course progress, assignments (handed in / late / missing / pending), latest and best score, the weakest question types, attendance rate and study minutes. Only the figures of the organisation that owns the class; for its ORG_ADMIN or the class's teacher. 403 outside an organisation context or without the role; 404 for a class of another organisation.
+         */
+        get: operations["classReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/classes/{cid}/report.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The report of a class as an Excel file (same figures as the JSON)
+         * @description One sheet named after the class, one row per learner. Labels in `lang` (vi or en, default vi). Same access rules as the JSON report; the export is recorded in the audit log.
+         */
+        get: operations["classReportExcel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orgs/{id}/classes/{cid}/sessions": {
         parameters: {
             query?: never;
@@ -2891,6 +2931,16 @@ export interface components {
             email?: string;
             /** Format: uuid */
             userId: string;
+        };
+        ClassReport: {
+            /** Format: uuid */
+            classId: string;
+            className: string;
+            /** Format: date-time */
+            generatedAt: string;
+            /** @enum {string} */
+            kind: "CLASS" | "GROUP";
+            learners: components["schemas"]["ReportLearner"][];
         };
         ClassView: {
             /** @description the caller is the ORG_ADMIN or the teacher of this class */
@@ -4325,6 +4375,83 @@ export interface components {
         RejectOrderRequest: {
             /** @description Why the payment was not accepted: 1 to 500 characters, shown to the learner */
             reason: string;
+        };
+        /** @description The class's assignments for this learner: handed in on time, late, not handed in after the due date (missing), not yet due (pending) */
+        ReportAssignments: {
+            /** Format: int32 */
+            late: number;
+            /** Format: int32 */
+            missing: number;
+            /** Format: int32 */
+            pending: number;
+            /** Format: int32 */
+            submitted: number;
+            /** Format: int32 */
+            total: number;
+        };
+        /** @description Marked sessions; rate = (present + late) / (present + late + absent), excused sessions leave the rate; null when there is nothing to rate */
+        ReportAttendance: {
+            /** Format: int32 */
+            absent: number;
+            /** Format: int32 */
+            excused: number;
+            /** Format: int32 */
+            late: number;
+            /** Format: int32 */
+            present: number;
+            /** Format: double */
+            rate?: number;
+        };
+        /** @description One course the learner holds a seat of in this organisation, with the share of its lessons and chapter tests done */
+        ReportCourse: {
+            code?: string;
+            /** Format: uuid */
+            courseId: string;
+            /** Format: int32 */
+            percent: number;
+            title: string;
+        };
+        ReportLearner: {
+            assignments: components["schemas"]["ReportAssignments"];
+            attendance: components["schemas"]["ReportAttendance"];
+            bestScore?: components["schemas"]["ReportScore"];
+            courses: components["schemas"]["ReportCourse"][];
+            displayName?: string;
+            /** @description only the ORG_ADMIN reads addresses */
+            email?: string;
+            latestScore?: components["schemas"]["ReportScore"];
+            /**
+             * Format: int32
+             * @description mean of the courses' percents; null when the learner has no course in this organisation
+             */
+            progressPercent?: number;
+            /**
+             * Format: int32
+             * @description all study time of the person, in minutes
+             */
+            studyMinutes: number;
+            /** Format: uuid */
+            userId: string;
+            weakTypes: components["schemas"]["ReportWeakType"][];
+        };
+        /** @description A displayed score; kind is PRELIMINARY or OFFICIAL, the label of the grading module */
+        ReportScore: {
+            examCode: string;
+            /** @enum {string} */
+            kind: "PRELIMINARY" | "OFFICIAL";
+            /** Format: double */
+            value: number;
+        };
+        /** @description A question type the learner gets wrong (rate < 1), worst first; rate = correct / total over the attempts made in this organisation */
+        ReportWeakType: {
+            /** Format: int32 */
+            correct: number;
+            /** Format: double */
+            rate: number;
+            /** Format: int32 */
+            total: number;
+            typeCode: string;
+            typeName: string;
         };
         ResetConfirmRequest: {
             newPassword: string;
@@ -9288,6 +9415,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    classReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ClassReport"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    classReportExcel: {
+        parameters: {
+            query?: {
+                lang?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+                cid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
             };
             /** @description Error (RFC 7807 problem details) */
             default: {

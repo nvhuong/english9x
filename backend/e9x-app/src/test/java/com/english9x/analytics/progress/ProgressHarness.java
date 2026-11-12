@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 /** Rows for the progress tests: plans and orders, seats, extra lessons, completed lessons, assignments. */
-abstract class ProgressHarness extends ResultsHarness {
+public abstract class ProgressHarness extends ResultsHarness {
 
     protected record Lessons(UUID course, List<UUID> lessonIds, List<UUID> refIds) {}
 

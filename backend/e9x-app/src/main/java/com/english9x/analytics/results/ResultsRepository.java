@@ -114,6 +114,13 @@ class ResultsRepository {
         }, userId, exam, exam);
     }
 
+    /** The same aggregate for ANOTHER person over one organisation's attempts: the SECURITY DEFINER answer of V202611170001 (the organisation's ORG_ADMIN / TEACHER only), worst first. */
+    List<TypeRate> typeRatesOf(UUID userId, UUID orgId) {
+        return jdbc.query("select type_code, type_name, right_n, total from results_type_rates_of(?, ?)",
+                (rs, n) -> new TypeRate(rs.getString("type_code"), rs.getString("type_name"), rs.getInt("right_n"), rs.getInt("total"),
+                        (double) rs.getInt("right_n") / rs.getInt("total")), userId, orgId);
+    }
+
     int attemptsWithStats(UUID userId, String exam) {
         Integer n = jdbc.queryForObject("select count(distinct attempt_id) from item_type_stats where user_id = ? and (?::text is null or exam_code = ?)", Integer.class, userId, exam, exam);
         return n == null ? 0 : n;

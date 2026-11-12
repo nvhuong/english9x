@@ -13,4 +13,9 @@ export default defineRoutes([
     role: ['ORG_ADMIN', 'TEACHER'],
     lazy: async () => ({ Component: (await import('../../features/classroom/ClassDetailPage')).default }),
   },
+  {
+    path: 'classes/:classId/report',
+    role: ['ORG_ADMIN', 'TEACHER'],
+    lazy: async () => ({ Component: (await import('../../features/classroom/ReportsPage')).default }),
+  },
 ]);

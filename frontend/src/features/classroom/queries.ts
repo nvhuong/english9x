@@ -14,6 +14,8 @@ export type AttendanceStatus = components['schemas']['AttendanceStatus'];
 export type AttendanceSheet = components['schemas']['AttendanceSheet'];
 export type AttendanceReport = components['schemas']['AttendanceReport'];
 export type AttendanceMark = components['schemas']['AttendanceMark'];
+export type ClassReport = components['schemas']['ClassReport'];
+export type ReportLearner = components['schemas']['ReportLearner'];
 export type AssignClassCoursesResponse = components['schemas']['AssignClassCoursesResponse'];
 
 
@@ -198,4 +200,30 @@ export function useAttendanceReport(orgId: string, classId: string) {
     retry: false,
     queryFn: async () => (await api.GET('/api/orgs/{id}/classes/{cid}/attendance', { params: { path: { id: orgId, cid: classId } } })).data as AttendanceReport,
   });
+}
+
+/** The report of a class (F49): one row per learner. */
+export function useClassReport(orgId: string, classId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: useCtxKey('classroom', orgId, 'class', classId, 'report'),
+    retry: false,
+    queryFn: async () => (await api.GET('/api/orgs/{id}/classes/{cid}/report', { params: { path: { id: orgId, cid: classId } } })).data as ClassReport,
+  });
+}
+
+/** Saves the Excel file of the report: the request carries the sign-in, so a plain link would not do. */
+export function useDownloadClassReport(orgId: string, classId: string) {
+  const api = useApi();
+  return async (lang: string, filename: string) => {
+    const res = await api.GET('/api/orgs/{id}/classes/{cid}/report.xlsx', { params: { path: { id: orgId, cid: classId }, query: { lang } }, parseAs: 'blob' });
+    const url = URL.createObjectURL(res.data as unknown as Blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  };
 }

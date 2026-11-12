@@ -386,6 +386,7 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.grading.ai.daily-cost-alert` | `500000` (VND/ngày) | Ngưỡng chi phí Gemini mỗi ngày để cảnh báo quản trị (chỉ cảnh báo, không chặn); trang Giám sát AI (F56) báo mọi ngày (giờ Việt Nam) có tổng chi phí lớn hơn ngưỡng | Quản trị |
 | `e9x.progress.study-weeks` | `8` | Số tuần gần nhất trong biểu đồ phút học theo tuần của trang tiến trình (F24); tuần bắt đầu thứ Hai, giờ Việt Nam | Cấu hình |
 | `e9x.progress.predicted-score-window` | `3` | Điểm dự đoán = trung bình điểm của chừng này lần thi gần nhất (kể cả lần đang xét) cùng kỳ thi (F24) | Cấu hình |
+| `e9x.reports.weak-types` | `3` | Số dạng câu yếu nhất (tỉ lệ đúng < 100%) ghi cho mỗi học viên trong báo cáo lớp JSON và Excel (P6.4, F49) | Cấu hình |
 | `e9x.monitor.max-range-days` | `366` | Khoảng ngày tối đa một lần xem trang Giám sát AI (F56); vượt quá trả 400 | Cấu hình |
 | `e9x.monitor.failed-jobs-limit` | `200` | Số job lỗi tối đa liệt kê trên trang Giám sát AI (F56), mới nhất trước | Cấu hình |
 | `e9x.gemini.model` | `gemini-2.5-flash` | Model dùng để chấm | Cấu hình |

@@ -1034,6 +1034,33 @@
         "required" : [ "addedAt", "userId" ],
         "type" : "object"
       },
+      "ClassReport" : {
+        "properties" : {
+          "classId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "className" : {
+            "type" : "string"
+          },
+          "generatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "CLASS", "GROUP" ],
+            "type" : "string"
+          },
+          "learners" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReportLearner"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "classId", "className", "generatedAt", "kind", "learners" ],
+        "type" : "object"
+      },
       "ClassView" : {
         "properties" : {
           "canManage" : {
@@ -4369,6 +4396,175 @@
           }
         },
         "required" : [ "reason" ],
+        "type" : "object"
+      },
+      "ReportAssignments" : {
+        "description" : "The class's assignments for this learner: handed in on time, late, not handed in after the due date (missing), not yet due (pending)",
+        "properties" : {
+          "late" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "missing" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pending" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "submitted" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "late", "missing", "pending", "submitted", "total" ],
+        "type" : "object"
+      },
+      "ReportAttendance" : {
+        "description" : "Marked sessions; rate = (present + late) / (present + late + absent), excused sessions leave the rate; null when there is nothing to rate",
+        "properties" : {
+          "absent" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "excused" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "late" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "present" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rate" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [ "absent", "excused", "late", "present" ],
+        "type" : "object"
+      },
+      "ReportCourse" : {
+        "description" : "One course the learner holds a seat of in this organisation, with the share of its lessons and chapter tests done",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "percent" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "courseId", "percent", "title" ],
+        "type" : "object"
+      },
+      "ReportLearner" : {
+        "properties" : {
+          "assignments" : {
+            "$ref" : "#/components/schemas/ReportAssignments"
+          },
+          "attendance" : {
+            "$ref" : "#/components/schemas/ReportAttendance"
+          },
+          "bestScore" : {
+            "$ref" : "#/components/schemas/ReportScore"
+          },
+          "courses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReportCourse"
+            },
+            "type" : "array"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "description" : "only the ORG_ADMIN reads addresses",
+            "type" : "string"
+          },
+          "latestScore" : {
+            "$ref" : "#/components/schemas/ReportScore"
+          },
+          "progressPercent" : {
+            "description" : "mean of the courses' percents; null when the learner has no course in this organisation",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "studyMinutes" : {
+            "description" : "all study time of the person, in minutes",
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "weakTypes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReportWeakType"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "assignments", "attendance", "courses", "studyMinutes", "userId", "weakTypes" ],
+        "type" : "object"
+      },
+      "ReportScore" : {
+        "description" : "A displayed score; kind is PRELIMINARY or OFFICIAL, the label of the grading module",
+        "properties" : {
+          "examCode" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "PRELIMINARY", "OFFICIAL" ],
+            "type" : "string"
+          },
+          "value" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [ "examCode", "kind", "value" ],
+        "type" : "object"
+      },
+      "ReportWeakType" : {
+        "description" : "A question type the learner gets wrong (rate < 1), worst first; rate = correct / total over the attempts made in this organisation",
+        "properties" : {
+          "correct" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rate" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "typeName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "correct", "rate", "total", "typeCode", "typeName" ],
         "type" : "object"
       },
       "ResetConfirmRequest" : {
@@ -11098,6 +11294,109 @@
           }
         },
         "tags" : [ "class-controller" ]
+      }
+    },
+    "/api/orgs/{id}/classes/{cid}/report" : {
+      "get" : {
+        "description" : "Course progress, assignments (handed in / late / missing / pending), latest and best score, the weakest question types, attendance rate and study minutes. Only the figures of the organisation that owns the class; for its ORG_ADMIN or the class's teacher. 403 outside an organisation context or without the role; 404 for a class of another organisation.",
+        "operationId" : "classReport",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClassReport"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The report of a class, per learner",
+        "tags" : [ "reports-controller" ]
+      }
+    },
+    "/api/orgs/{id}/classes/{cid}/report.xlsx" : {
+      "get" : {
+        "description" : "One sheet named after the class, one row per learner. Labels in `lang` (vi or en, default vi). Same access rules as the JSON report; the export is recorded in the audit log.",
+        "operationId" : "classReportExcel",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "cid",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "lang",
+          "required" : false,
+          "schema" : {
+            "default" : "vi",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" : {
+                "schema" : {
+                  "format" : "binary",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The report of a class as an Excel file (same figures as the JSON)",
+        "tags" : [ "reports-controller" ]
       }
     },
     "/api/orgs/{id}/classes/{cid}/sessions" : {

@@ -197,5 +197,39 @@
     "teacher": "Giáo viên",
     "learner": "Học viên",
     "attendance": "Điểm danh: {{status}}"
+  },
+  "report": {
+    "title": "Báo cáo lớp",
+    "description": "Mỗi học viên một dòng: tiến độ khoá học, bài giao, điểm, dạng câu yếu, chuyên cần và phút học. Chỉ gồm số liệu trong tổ chức này.",
+    "open": "Báo cáo lớp",
+    "back": "Về lớp",
+    "loading": "Đang tải báo cáo…",
+    "loadFailed": "Không tải được báo cáo.",
+    "empty": "Lớp chưa có học viên.",
+    "caption": "Báo cáo của từng học viên",
+    "download": "Tải Excel",
+    "downloading": "Đang tải…",
+    "downloadFailed": "Không tải được file Excel.",
+    "generatedAt": "Lập lúc {{at}}",
+    "col": {
+      "learner": "Học viên",
+      "progress": "Tiến độ",
+      "courses": "Khoá học",
+      "assignments": "Bài giao",
+      "latest": "Điểm gần nhất",
+      "best": "Điểm tốt nhất",
+      "weak": "Dạng câu yếu",
+      "attendance": "Chuyên cần",
+      "minutes": "Phút học"
+    },
+    "assignments": "{{submitted}} đúng hạn · {{late}} trễ · {{missing}} chưa nộp · {{pending}} chưa đến hạn",
+    "noAssignments": "Chưa giao bài",
+    "noScore": "–",
+    "noWeak": "Không có",
+    "noCourse": "Chưa có khoá",
+    "kind": {
+      "PRELIMINARY": "tạm thời",
+      "OFFICIAL": "chính thức"
+    }
   }
 }
