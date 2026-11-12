@@ -1,7 +1,8 @@
 {
   "nav": {
     "classes": "Classes",
-    "assignments": "Assignments"
+    "assignments": "Assignments",
+    "schedule": "Schedule"
   },
   "retry": "Try again",
   "kind": {
@@ -104,7 +105,11 @@
     "teacher": "Choose the teacher in charge.",
     "member": "Choose a member.",
     "courses": "Choose a licence and at least one course.",
-    "assignment": "Enter the id and the due date."
+    "assignment": "Enter the id and the due date.",
+    "session": "Enter the start and end time.",
+    "sessionEnd": "The end must be after the start.",
+    "meetingUrl": "An online session needs a link starting with https://.",
+    "room": "An in-class session takes a room (no link)."
   },
   "problem": {
     "generic": "Something went wrong. Try again later.",
@@ -119,6 +124,78 @@
     "courseNotInLicense": "A course is not in the licence.",
     "dueInPast": "The due date must be in the future.",
     "targetUnavailable": "That lesson or test is not published or not available to the organisation.",
-    "invalidAssignment": "Choose either a lesson or an exam."
+    "invalidAssignment": "Choose either a lesson or an exam.",
+    "httpsLink": "An online session needs a link starting with https://.",
+    "offlineNoLink": "An in-class session has no link.",
+    "invalidSession": "The session time is not valid.",
+    "notAMember": "Only learners of the class can be marked.",
+    "invalidAttendance": "The attendance data is not valid."
+  },
+  "attendanceStatus": {
+    "PRESENT": "Present",
+    "ABSENT": "Absent",
+    "LATE": "Late",
+    "EXCUSED": "Excused"
+  },
+  "mode": {
+    "OFFLINE": "In class",
+    "ONLINE": "Online"
+  },
+  "sessions": {
+    "title": "Sessions and attendance",
+    "loading": "Loading…",
+    "loadFailed": "The data could not be loaded.",
+    "empty": "There are no sessions yet.",
+    "listCaption": "Sessions of the class",
+    "createTitle": "Add a session",
+    "created": "The session was added.",
+    "mode": "Mode",
+    "startsAt": "Starts",
+    "endsAt": "Ends",
+    "room": "Room",
+    "meetingUrl": "Meeting link (https)",
+    "add": "Add session",
+    "when": "{{date}}, {{from}}–{{to}}",
+    "roomLabel": "Room: {{room}}",
+    "join": "Join the session",
+    "attendance": "Attendance",
+    "hideAttendance": "Hide attendance"
+  },
+  "sheet": {
+    "caption": "Attendance of the session",
+    "member": "Learner",
+    "status": "Status",
+    "note": "Note",
+    "noteOf": "Note for {{name}}",
+    "statusOf": "Status of {{name}}",
+    "save": "Save attendance",
+    "saved": "Attendance saved.",
+    "none": "Choose a status for at least one learner.",
+    "empty": "The class has no learners.",
+    "notMarked": "Not marked"
+  },
+  "rate": {
+    "title": "Attendance rate",
+    "description": "Over the sessions marked: (present + late) / (present + late + absent). Excused sessions are left out.",
+    "caption": "Attendance of each learner",
+    "member": "Learner",
+    "present": "Present",
+    "late": "Late",
+    "absent": "Absent",
+    "excused": "Excused",
+    "rate": "Rate",
+    "none": "–"
+  },
+  "schedule": {
+    "title": "Schedule",
+    "description": "Your sessions in the organisation you picked over the next 60 days, as a learner or as a teacher.",
+    "loading": "Loading the schedule…",
+    "loadFailed": "The schedule could not be loaded.",
+    "empty": "There are no sessions yet.",
+    "emptyHint": "Pick the right organisation in the Context box if you study at a centre.",
+    "listCaption": "Upcoming sessions",
+    "teacher": "Teacher",
+    "learner": "Learner",
+    "attendance": "Attendance: {{status}}"
   }
 }

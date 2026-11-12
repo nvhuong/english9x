@@ -25,6 +25,16 @@ export function classroomProblemMessage(err: unknown, t: TFunction): string {
         return t('problem.targetUnavailable');
       case 'urn:e9x:problem:invalid-assignment':
         return t('problem.invalidAssignment');
+      case 'urn:e9x:problem:online-needs-https-link':
+        return t('problem.httpsLink');
+      case 'urn:e9x:problem:offline-has-no-link':
+        return t('problem.offlineNoLink');
+      case 'urn:e9x:problem:invalid-session':
+        return t('problem.invalidSession');
+      case 'urn:e9x:problem:not-a-member':
+        return t('problem.notAMember');
+      case 'urn:e9x:problem:invalid-attendance':
+        return t('problem.invalidAttendance');
       default:
         return err.status === 403 ? t('problem.forbidden') : t('problem.generic');
     }
