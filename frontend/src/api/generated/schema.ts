@@ -2253,6 +2253,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/results/attempts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The result of one of my attempts
+         * @description Scores per skill labelled PRELIMINARY or OFFICIAL, every question (right or wrong, the answer key, the explanation, the transcript), Writing/Speaking criteria and comments, the interrupted flag. 409 while the attempt is not submitted; state SCORING (nothing else) until the automatic scoring has run; 404 for an attempt that is not mine.
+         */
+        get: operations["attempt_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/results/weakness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My weak question types
+         * @description The share of right answers per question type over my scored attempts (of one exam when given), worst first, and the method lessons of my own courses that teach the weakest ones.
+         */
+        get: operations["weakness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teacher/queue": {
         parameters: {
             query?: never;
@@ -2430,6 +2470,13 @@ export interface components {
             side?: string;
             state?: string;
         };
+        AiFeedback: {
+            /** Format: double */
+            band?: number;
+            /** Format: uuid */
+            questionId?: string;
+            result?: components["schemas"]["JsonNode"];
+        };
         AiView: {
             /** Format: double */
             band?: number;
@@ -2506,6 +2553,18 @@ export interface components {
         };
         AttemptRequest: {
             answers?: components["schemas"]["Answered"][];
+        };
+        AttemptResult: {
+            /** Format: uuid */
+            attemptId?: string;
+            examCode?: string;
+            feedback?: components["schemas"]["ProductiveFeedback"][];
+            interrupted?: boolean;
+            questions?: components["schemas"]["QuestionResult"][];
+            skills?: components["schemas"]["SkillScore"][];
+            state?: string;
+            /** Format: date-time */
+            submittedAt?: string;
         };
         AttendanceMark: {
             note?: string;
@@ -3471,6 +3530,14 @@ export interface components {
             /** Format: int32 */
             streakDays?: number;
         };
+        LessonRef: {
+            /** Format: uuid */
+            courseId?: string;
+            courseTitle?: string;
+            /** Format: uuid */
+            lessonId?: string;
+            title?: string;
+        };
         LicenseCourse: {
             code: string;
             /** Format: uuid */
@@ -3816,6 +3883,11 @@ export interface components {
              */
             row?: number;
         };
+        ProductiveFeedback: {
+            ai?: components["schemas"]["AiFeedback"][];
+            skill?: string;
+            teacher?: components["schemas"]["TeacherFeedback"];
+        };
         PublicConfig: {
             /** Format: int64 */
             examAutosaveIntervalSeconds?: number;
@@ -3918,6 +3990,24 @@ export interface components {
              */
             typeCode?: string;
         };
+        QuestionResult: {
+            answer?: components["schemas"]["JsonNode"];
+            correct?: boolean;
+            correctAnswer?: components["schemas"]["JsonNode"];
+            /** Format: double */
+            earned?: number;
+            explanation?: string;
+            /** Format: double */
+            max?: number;
+            /** Format: uuid */
+            questionId?: string;
+            scored?: boolean;
+            sectionCode?: string;
+            skill?: string;
+            transcript?: string;
+            typeCode?: string;
+            typeName?: string;
+        };
         QuestionSummary: {
             /** Format: uuid */
             createdBy?: string;
@@ -3982,6 +4072,13 @@ export interface components {
         ReassignRequest: {
             /** Format: uuid */
             teacherId?: string;
+        };
+        Recommendation: {
+            lessons?: components["schemas"]["LessonRef"][];
+            /** Format: double */
+            rate?: number;
+            typeCode?: string;
+            typeName?: string;
         };
         RefreshRequest: {
             refreshToken: string;
@@ -4247,6 +4344,18 @@ export interface components {
             /** Format: uuid */
             userId: string;
         };
+        SkillScore: {
+            aggregate?: boolean;
+            label?: string;
+            /** Format: double */
+            raw?: number;
+            /** Format: double */
+            rawMax?: number;
+            /** Format: double */
+            score?: number;
+            skill?: string;
+            source?: string;
+        };
         SkillView: {
             /** Format: double */
             aiBand?: number;
@@ -4340,6 +4449,12 @@ export interface components {
             text?: string;
             typeCode?: string;
         };
+        TeacherFeedback: {
+            /** Format: double */
+            band?: number;
+            comment?: string;
+            criteria?: components["schemas"]["JsonNode"];
+        };
         TelegramLink: {
             deepLink?: string;
             /** Format: date-time */
@@ -4363,6 +4478,23 @@ export interface components {
         };
         TokenRequest: {
             token: string;
+        };
+        TypeRate: {
+            /** Format: int32 */
+            correct?: number;
+            /** Format: double */
+            rate?: number;
+            /** Format: int32 */
+            total?: number;
+            typeCode?: string;
+            typeName?: string;
+        };
+        Weakness: {
+            /** Format: int32 */
+            attempts?: number;
+            exam?: string;
+            recommendations?: components["schemas"]["Recommendation"][];
+            types?: components["schemas"]["TypeRate"][];
         };
     };
     responses: never;
@@ -9520,6 +9652,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Pong"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    attempt_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AttemptResult"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    weakness: {
+        parameters: {
+            query?: {
+                exam?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Weakness"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

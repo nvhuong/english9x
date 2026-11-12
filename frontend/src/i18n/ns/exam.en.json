@@ -82,6 +82,7 @@
     "submitted": "Your test has been submitted.",
     "interrupted": "You re-entered the test more often than allowed, so it was submitted as interrupted.",
     "scoreLater": "Your score will be available once marking is done.",
+    "viewResults": "See my result",
     "home": "Home"
   }
 }

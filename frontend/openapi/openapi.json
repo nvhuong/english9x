@@ -152,6 +152,22 @@
         },
         "type" : "object"
       },
+      "AiFeedback" : {
+        "properties" : {
+          "band" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "questionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "result" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          }
+        },
+        "type" : "object"
+      },
       "AiView" : {
         "properties" : {
           "band" : {
@@ -332,6 +348,46 @@
               "$ref" : "#/components/schemas/Answered"
             },
             "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
+      "AttemptResult" : {
+        "properties" : {
+          "attemptId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "feedback" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProductiveFeedback"
+            },
+            "type" : "array"
+          },
+          "interrupted" : {
+            "type" : "boolean"
+          },
+          "questions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/QuestionResult"
+            },
+            "type" : "array"
+          },
+          "skills" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SkillScore"
+            },
+            "type" : "array"
+          },
+          "state" : {
+            "type" : "string"
+          },
+          "submittedAt" : {
+            "format" : "date-time",
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -2551,6 +2607,25 @@
         },
         "type" : "object"
       },
+      "LessonRef" : {
+        "properties" : {
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "courseTitle" : {
+            "type" : "string"
+          },
+          "lessonId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "LicenseCourse" : {
         "properties" : {
           "code" : {
@@ -3373,6 +3448,23 @@
           }
         }
       },
+      "ProductiveFeedback" : {
+        "properties" : {
+          "ai" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AiFeedback"
+            },
+            "type" : "array"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "teacher" : {
+            "$ref" : "#/components/schemas/TeacherFeedback"
+          }
+        },
+        "type" : "object"
+      },
       "PublicConfig" : {
         "properties" : {
           "examAutosaveIntervalSeconds" : {
@@ -3593,6 +3685,53 @@
         },
         "type" : "object"
       },
+      "QuestionResult" : {
+        "properties" : {
+          "answer" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "correct" : {
+            "type" : "boolean"
+          },
+          "correctAnswer" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          },
+          "earned" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "explanation" : {
+            "type" : "string"
+          },
+          "max" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "questionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "scored" : {
+            "type" : "boolean"
+          },
+          "sectionCode" : {
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "transcript" : {
+            "type" : "string"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "typeName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "QuestionSummary" : {
         "properties" : {
           "createdBy" : {
@@ -3734,6 +3873,27 @@
         "properties" : {
           "teacherId" : {
             "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Recommendation" : {
+        "properties" : {
+          "lessons" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LessonRef"
+            },
+            "type" : "array"
+          },
+          "rate" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "typeName" : {
             "type" : "string"
           }
         },
@@ -4354,6 +4514,35 @@
         "required" : [ "roles", "userId" ],
         "type" : "object"
       },
+      "SkillScore" : {
+        "properties" : {
+          "aggregate" : {
+            "type" : "boolean"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "raw" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "rawMax" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "score" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "source" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "SkillView" : {
         "properties" : {
           "aiBand" : {
@@ -4575,6 +4764,21 @@
         },
         "type" : "object"
       },
+      "TeacherFeedback" : {
+        "properties" : {
+          "band" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "comment" : {
+            "type" : "string"
+          },
+          "criteria" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          }
+        },
+        "type" : "object"
+      },
       "TelegramLink" : {
         "properties" : {
           "deepLink" : {
@@ -4631,6 +4835,53 @@
           }
         },
         "required" : [ "token" ],
+        "type" : "object"
+      },
+      "TypeRate" : {
+        "properties" : {
+          "correct" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rate" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "total" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "typeName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "Weakness" : {
+        "properties" : {
+          "attempts" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "exam" : {
+            "type" : "string"
+          },
+          "recommendations" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Recommendation"
+            },
+            "type" : "array"
+          },
+          "types" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TypeRate"
+            },
+            "type" : "array"
+          }
+        },
         "type" : "object"
       }
     }
@@ -11243,6 +11494,83 @@
           }
         },
         "tags" : [ "platform-controller" ]
+      }
+    },
+    "/api/results/attempts/{id}" : {
+      "get" : {
+        "description" : "Scores per skill labelled PRELIMINARY or OFFICIAL, every question (right or wrong, the answer key, the explanation, the transcript), Writing/Speaking criteria and comments, the interrupted flag. 409 while the attempt is not submitted; state SCORING (nothing else) until the automatic scoring has run; 404 for an attempt that is not mine.",
+        "operationId" : "attempt_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AttemptResult"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The result of one of my attempts",
+        "tags" : [ "results-controller" ]
+      }
+    },
+    "/api/results/weakness" : {
+      "get" : {
+        "description" : "The share of right answers per question type over my scored attempts (of one exam when given), worst first, and the method lessons of my own courses that teach the weakest ones.",
+        "operationId" : "weakness",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Weakness"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "My weak question types",
+        "tags" : [ "results-controller" ]
       }
     },
     "/api/teacher/queue" : {

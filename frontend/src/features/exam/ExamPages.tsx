@@ -47,7 +47,8 @@ function Result({ view }: { view: ExamAttemptView }) {
         {r?.interrupted ? t('result.interrupted') : t('result.submitted')}
       </p>
       <p className="text-muted">{t('result.scoreLater')}</p>
-      <Button asChild><Link to="/">{t('result.home')}</Link></Button>
+      <Button asChild><Link to={`/results/attempts/${view.attemptId}`}>{t('result.viewResults')}</Link></Button>
+      <Button asChild variant="secondary"><Link to="/">{t('result.home')}</Link></Button>
     </div>
   );
 }

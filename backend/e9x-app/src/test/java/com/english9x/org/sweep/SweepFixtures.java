@@ -134,6 +134,9 @@ public final class SweepFixtures {
         // P4.1: the score of B's attempt (read only for the learner; nothing in the API lists scores yet)
         su.update("insert into scores(attempt_id,user_id,owner_org_id,skill,kind,source,raw,raw_max) values (?,?,?,'LISTENING','OFFICIAL','AUTO',1,1)", attemptB, userB, orgB);
         su.update("insert into attempt_gradings(attempt_id,user_id,owner_org_id,interrupted) values (?,?,?,false)", attemptB, userB, orgB);
+        // P4.4: the statistic of one objective question of B's attempt (the weakness page reads the person's own rows only; nothing lists another person's)
+        su.update("insert into item_type_stats(attempt_id,question_version_id,user_id,owner_org_id,exam_code,type_code,skill,earned,max_points,correct) "
+                + "values (?,gen_random_uuid(),?,?,'IELTS','IELTS_R_SHORT_ANSWER','READING',1,1,true)", attemptB, userB, orgB);
         // P4.2: the AI grading record and evaluation of B's attempt
         su.update("insert into ai_gradings(attempt_id,user_id,owner_org_id,state) values (?,?,?,'DONE')", attemptB, userB, orgB);
         su.update("insert into ai_evaluations(attempt_id,question_id,user_id,owner_org_id,model,input_tokens,output_tokens,cost_vnd,band,result) values (?,?,?,?,'gemini',1,1,0,6,'{}'::jsonb)", attemptB, questionOfB, userB, orgB);
