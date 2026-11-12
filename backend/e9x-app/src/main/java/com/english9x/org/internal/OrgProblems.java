@@ -34,6 +34,12 @@ final class OrgProblems {
         return of(HttpStatus.BAD_REQUEST, "validation-failed", "Validation failed", "One or more fields are invalid.", errors, null);
     }
 
+    /** F50: an ENTERPRISE has no teachers, so it cannot pick its own graders or a teacher mode (spec §4). 400: the organisation's type forbids the option. */
+    static ErrorResponseException gradingNotAllowedForEnterprise() {
+        return of(HttpStatus.BAD_REQUEST, "grading-not-allowed", "Grading option not allowed",
+                "An enterprise's learners are always graded by English9x: a centre grader and the teacher modes are not available.", List.of(), null);
+    }
+
     static ErrorResponseException roleNotAllowed(List<FieldProblem> errors) {
         return of(HttpStatus.CONFLICT, "role-not-allowed", "Role not allowed",
                 "An ENTERPRISE organisation cannot have AUTHOR, REVIEWER or TEACHER.", errors, null);
