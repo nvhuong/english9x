@@ -444,6 +444,9 @@ public final class SweepFixtures {
         all.put("POST /api/orgs/{id}/classes/{cid}/sessions", ForeignIdSweep.Fixture.write(sessionBody, classTrio, ForeignIdSweep.Control.of(slots("id", orgA, "cid", classA), sessionBody)));
         all.put("GET /api/orgs/{id}/classes/{cid}/sessions", ForeignIdSweep.Fixture.read(classTrio));
         all.put("GET /api/orgs/{id}/classes/{cid}/attendance", ForeignIdSweep.Fixture.read(classTrio));
+        // P6.4: the class report (JSON and Excel) follows the class: B's class under B's organisation, under A's, and A's organisation with B's class
+        all.put("GET /api/orgs/{id}/classes/{cid}/report", ForeignIdSweep.Fixture.read(classTrio));
+        all.put("GET /api/orgs/{id}/classes/{cid}/report.xlsx", ForeignIdSweep.Fixture.read(classTrio));
         // P4.5: a learner's progress, for the organisation's staff: B's organisation, A's organisation with B's learner, and B's organisation with A's own member
         all.put("GET /api/orgs/{id}/learners/{userId}/progress", ForeignIdSweep.Fixture.read(List.of(
                 new ForeignIdSweep.Attempt(slots("id", orgB, "userId", userB)),

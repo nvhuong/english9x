@@ -197,5 +197,39 @@
     "teacher": "Teacher",
     "learner": "Learner",
     "attendance": "Attendance: {{status}}"
+  },
+  "report": {
+    "title": "Class report",
+    "description": "One row per learner: course progress, assignments, scores, weak question types, attendance and study minutes. Only figures from this organisation.",
+    "open": "Class report",
+    "back": "Back to the class",
+    "loading": "Loading the report…",
+    "loadFailed": "The report could not be loaded.",
+    "empty": "The class has no learners yet.",
+    "caption": "Report of each learner",
+    "download": "Download Excel",
+    "downloading": "Downloading…",
+    "downloadFailed": "The Excel file could not be downloaded.",
+    "generatedAt": "Generated {{at}}",
+    "col": {
+      "learner": "Learner",
+      "progress": "Progress",
+      "courses": "Courses",
+      "assignments": "Assignments",
+      "latest": "Latest score",
+      "best": "Best score",
+      "weak": "Weak question types",
+      "attendance": "Attendance",
+      "minutes": "Study minutes"
+    },
+    "assignments": "{{submitted}} on time · {{late}} late · {{missing}} missing · {{pending}} not yet due",
+    "noAssignments": "No assignments",
+    "noScore": "–",
+    "noWeak": "None",
+    "noCourse": "No course",
+    "kind": {
+      "PRELIMINARY": "preliminary",
+      "OFFICIAL": "official"
+    }
   }
 }

@@ -50,6 +50,11 @@ function ClassDetail({ orgId, classId }: { orgId: string; classId: string }) {
         </Link>
         <h1 className="mt-2 font-serif text-3xl font-bold text-ink">{cls.data.name}</h1>
         <Badge tone="neutral">{t(`kind.${cls.data.kind}`)}</Badge>
+        <p className="mt-2">
+          <Link to={`/org/classes/${classId}/report`} className="text-primary underline">
+            {t('report.open')}
+          </Link>
+        </p>
       </header>
       <section aria-labelledby="roster" className="flex flex-col gap-3">
         <h2 id="roster" className="font-serif text-xl font-semibold">
