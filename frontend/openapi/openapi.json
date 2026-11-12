@@ -152,6 +152,105 @@
         },
         "type" : "object"
       },
+      "AiCostDay" : {
+        "properties" : {
+          "costVnd" : {
+            "type" : "number"
+          },
+          "day" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "evaluations" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "overThreshold" : {
+            "type" : "boolean"
+          },
+          "tokens" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "AiCostPerson" : {
+        "properties" : {
+          "costVnd" : {
+            "type" : "number"
+          },
+          "day" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "evaluations" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "inputTokens" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "outputTokens" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AiDeviation" : {
+        "description" : "Teacher band minus AI band per question type (positive: the AI scored lower than the teacher)",
+        "properties" : {
+          "meanAbsDeviation" : {
+            "type" : "number"
+          },
+          "meanDeviation" : {
+            "type" : "number"
+          },
+          "samples" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "typeCode" : {
+            "type" : "string"
+          },
+          "typeName" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "AiFailedJob" : {
+        "properties" : {
+          "attempts" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "failedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "lastError" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "AiFeedback" : {
         "properties" : {
           "band" : {
@@ -164,6 +263,63 @@
           },
           "result" : {
             "$ref" : "#/components/schemas/JsonNode"
+          }
+        },
+        "type" : "object"
+      },
+      "AiMonitor" : {
+        "properties" : {
+          "aiFailedGradings" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "alertDays" : {
+            "items" : {
+              "format" : "date",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "costAlert" : {
+            "type" : "boolean"
+          },
+          "costByDayAndPerson" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AiCostPerson"
+            },
+            "type" : "array"
+          },
+          "dailyCostAlert" : {
+            "type" : "number"
+          },
+          "days" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AiCostDay"
+            },
+            "type" : "array"
+          },
+          "deviation" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AiDeviation"
+            },
+            "type" : "array"
+          },
+          "failedJobs" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AiFailedJob"
+            },
+            "type" : "array"
+          },
+          "from" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "to" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "totalCostVnd" : {
+            "type" : "number"
           }
         },
         "type" : "object"
@@ -2543,6 +2699,44 @@
         "type" : "object"
       },
       "JsonNode" : { },
+      "LearnerProgress" : {
+        "properties" : {
+          "expired" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProgressPlan"
+            },
+            "type" : "array"
+          },
+          "pendingAssignments" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProgressPending"
+            },
+            "type" : "array"
+          },
+          "plans" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProgressPlan"
+            },
+            "type" : "array"
+          },
+          "scoreSeries" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProgressScorePoint"
+            },
+            "type" : "array"
+          },
+          "streak" : {
+            "$ref" : "#/components/schemas/ProgressStreak"
+          },
+          "weeklyMinutes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProgressWeek"
+            },
+            "type" : "array"
+          }
+        },
+        "type" : "object"
+      },
       "LearningLesson" : {
         "properties" : {
           "blocks" : {
@@ -3461,6 +3655,223 @@
           },
           "teacher" : {
             "$ref" : "#/components/schemas/TeacherFeedback"
+          }
+        },
+        "type" : "object"
+      },
+      "ProgressCourse" : {
+        "properties" : {
+          "bestScore" : {
+            "$ref" : "#/components/schemas/ProgressScore"
+          },
+          "chapterTestsDone" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "chapterTestsTotal" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "chaptersDone" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "chaptersTotal" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examsTaken" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "lastActivity" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "latestScore" : {
+            "$ref" : "#/components/schemas/ProgressScore"
+          },
+          "lessonsDone" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "lessonsTotal" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pendingAssignments" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "percent" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "resumeLessonId" : {
+            "description" : "The next lesson to open (Học tiếp); null when everything is done or the plan is expired (read only)",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProgressPending" : {
+        "properties" : {
+          "className" : {
+            "type" : "string"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "dueAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "overdue" : {
+            "type" : "boolean"
+          }
+        },
+        "type" : "object"
+      },
+      "ProgressPlan" : {
+        "description" : "One plan (a paid order, ORDER) or one seat of an organisation's licence (SEAT) with the courses it grants",
+        "properties" : {
+          "activatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "courses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProgressCourse"
+            },
+            "type" : "array"
+          },
+          "coursesMax" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "coursesUsed" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "daysLeft" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "organisation" : {
+            "type" : "string"
+          },
+          "readOnly" : {
+            "type" : "boolean"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "validUntil" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ProgressScore" : {
+        "description" : "A score as displayed: kind is PRELIMINARY or OFFICIAL (the label of the grading module, never recomputed here)",
+        "properties" : {
+          "examCode" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "value" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "ProgressScorePoint" : {
+        "description" : "One scored attempt; predicted = mean of this score and the two before it of the same exam",
+        "properties" : {
+          "at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "attemptId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "predicted" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "score" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "type" : "object"
+      },
+      "ProgressStreak" : {
+        "properties" : {
+          "currentDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "lastDay" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "longestDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ProgressWeek" : {
+        "properties" : {
+          "minutes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "weekStart" : {
+            "format" : "date",
+            "type" : "string"
           }
         },
         "type" : "object"
@@ -4892,6 +5303,53 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/admin/ai-monitor" : {
+      "get" : {
+        "description" : "Failed jobs, AI cost per day and per person, AI-vs-teacher deviation per question type, and the alert for days above e9x.grading.ai.daily-cost-alert. `from` / `to` are inclusive dates (Vietnam days), default the last 30 days, at most 366 days. 403 for anybody else.",
+        "operationId" : "monitor",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "from",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AiMonitor"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "AI grading monitor (SYS_ADMIN only)",
+        "tags" : [ "ai-monitor-controller" ]
+      }
+    },
     "/api/admin/audit-log" : {
       "get" : {
         "operationId" : "list_16",
@@ -9509,7 +9967,7 @@
     },
     "/api/me/assignments" : {
       "get" : {
-        "operationId" : "mine_3",
+        "operationId" : "mine_4",
         "responses" : {
           "200" : {
             "content" : {
@@ -9569,7 +10027,7 @@
     },
     "/api/me/entitlements" : {
       "get" : {
-        "operationId" : "mine_2",
+        "operationId" : "mine_3",
         "responses" : {
           "200" : {
             "content" : {
@@ -9779,6 +10237,36 @@
           }
         },
         "tags" : [ "notification-controller" ]
+      }
+    },
+    "/api/me/progress" : {
+      "get" : {
+        "description" : "One card per plan (ORDER) or seat (SEAT): activation, expiry, days left, courses used / allowed; per course the % done, chapters and lessons done, chapter tests, exams sat, latest / best score (PRELIMINARY or OFFICIAL), assignments not handed in, the lesson to resume; plans that ended are in `expired` (read only). Also the predicted-score series, study minutes per week, the streak.",
+        "operationId" : "mine_2",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LearnerProgress"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "My progress by plan",
+        "tags" : [ "progress-controller" ]
       }
     },
     "/api/me/schedule" : {
@@ -11079,6 +11567,53 @@
           }
         },
         "tags" : [ "member-controller" ]
+      }
+    },
+    "/api/orgs/{id}/learners/{userId}/progress" : {
+      "get" : {
+        "description" : "Only the seats the organisation issued and the work done in it. 403 outside an organisation context or without the role; 404 for another organisation, or for a person who is not a member.",
+        "operationId" : "ofLearner",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LearnerProgress"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "A learner's progress, for the ORG_ADMIN or a TEACHER of the organisation",
+        "tags" : [ "progress-controller" ]
       }
     },
     "/api/orgs/{id}/members/import" : {
