@@ -32,7 +32,7 @@ class ProgressServiceTest {
         UUID ielts = UUID.randomUUID();
         rows.add(row(ielts, "IELTS", 2, "OVERALL", "PRELIMINARY", "AI", 5.0));
         rows.add(row(ielts, "IELTS", 2, "OVERALL", "OFFICIAL", "TEACHER", 7.0));
-        List<ScorePoint> s = ProgressService.series(ProgressService.attempts(rows).values());
+        List<ScorePoint> s = ProgressService.series(ProgressService.attempts(rows).values(), 3);
         List<ScorePoint> toeic = s.stream().filter(p -> p.examCode().equals("TOEIC")).toList();
         assertEquals(List.of(500.0, 550.0, 600.0, 700.0), toeic.stream().map(ScorePoint::predicted).toList());
         List<ScorePoint> ielts2 = s.stream().filter(p -> p.examCode().equals("IELTS")).toList();

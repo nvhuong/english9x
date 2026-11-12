@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,17 +52,20 @@ import org.springframework.transaction.annotation.Transactional;
 class ProgressService {
 
     static final ZoneId ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    static final int WEEKS = 8;
-    static final int PREDICT_WINDOW = 3;
 
     private final ProgressRepository repo;
     private final Authz authz;
     private final Clock clock;
+    private final int weeks;
+    private final int predictWindow;
 
-    ProgressService(ProgressRepository repo, Authz authz, Clock clock) {
+    ProgressService(ProgressRepository repo, Authz authz, Clock clock, @Value("${e9x.progress.study-weeks:8}") int weeks,
+            @Value("${e9x.progress.predicted-score-window:3}") int predictWindow) {
         this.repo = repo;
         this.authz = authz;
         this.clock = clock;
+        this.weeks = weeks;
+        this.predictWindow = predictWindow;
     }
 
     @Transactional(readOnly = true)
@@ -112,7 +116,7 @@ class ProgressService {
 
         List<PendingAssignment> pend = pending.stream()
                 .map(p -> new PendingAssignment(p.id(), p.className(), p.dueAt(), now.isAfter(p.dueAt()), p.courseId())).toList();
-        return new Progress(plans, expired, series(attempts.values()), weeks(user, org, now), streak(user, org, now), pend);
+        return new Progress(plans, expired, series(attempts.values(), predictWindow), weeks(user, org, now), streak(user, org, now), pend);
     }
 
     private PlanCard card(List<Plan> g, Instant now, boolean ended, Map<UUID, Course> courses, java.util.Collection<Attempt> attempts, List<Pending> pending) {
@@ -162,7 +166,7 @@ class ProgressService {
         return out;
     }
 
-    static List<ScorePoint> series(java.util.Collection<Attempt> attempts) {
+    static List<ScorePoint> series(java.util.Collection<Attempt> attempts, int window) {
         Map<String, List<Attempt>> byExam = new LinkedHashMap<>();
         attempts.stream().filter(a -> a.score() != null).sorted(Comparator.comparing(Attempt::at)).forEach(a -> byExam.computeIfAbsent(a.exam(), k -> new ArrayList<>()).add(a));
         List<ScorePoint> out = new ArrayList<>();
@@ -170,7 +174,7 @@ class ProgressService {
             for (int i = 0; i < list.size(); i++) {
                 double sum = 0;
                 int n = 0;
-                for (int j = Math.max(0, i - PREDICT_WINDOW + 1); j <= i; j++) {
+                for (int j = Math.max(0, i - window + 1); j <= i; j++) {
                     sum += list.get(j).score().value();
                     n++;
                 }
@@ -184,13 +188,13 @@ class ProgressService {
 
     private List<WeekMinutes> weeks(UUID user, UUID org, Instant now) {
         LocalDate thisWeek = now.atZone(ZONE).toLocalDate().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        LocalDate first = thisWeek.minusWeeks(WEEKS - 1);
+        LocalDate first = thisWeek.minusWeeks(weeks - 1);
         Map<LocalDate, Integer> seconds = new HashMap<>();
         for (Object[] r : repo.study(user, org, first)) {
             seconds.merge(((LocalDate) r[0]).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)), (Integer) r[1], Integer::sum);
         }
         List<WeekMinutes> out = new ArrayList<>();
-        for (int i = 0; i < WEEKS; i++) {
+        for (int i = 0; i < weeks; i++) {
             LocalDate w = first.plus(i, ChronoUnit.WEEKS);
             out.add(new WeekMinutes(w, seconds.getOrDefault(w, 0) / 60));
         }

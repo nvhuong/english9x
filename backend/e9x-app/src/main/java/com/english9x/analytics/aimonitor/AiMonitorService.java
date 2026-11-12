@@ -32,19 +32,22 @@ import org.springframework.web.ErrorResponseException;
 class AiMonitorService {
 
     static final ZoneId ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    static final int MAX_DAYS = 366;
-    static final int JOB_LIMIT = 200;
 
     private final AiMonitorRepository repo;
     private final Authz authz;
     private final Clock clock;
     private final BigDecimal threshold;
+    private final int maxDays;
+    private final int jobLimit;
 
-    AiMonitorService(AiMonitorRepository repo, Authz authz, Clock clock, @Value("${e9x.grading.ai.daily-cost-alert:500000}") BigDecimal threshold) {
+    AiMonitorService(AiMonitorRepository repo, Authz authz, Clock clock, @Value("${e9x.grading.ai.daily-cost-alert:500000}") BigDecimal threshold,
+            @Value("${e9x.monitor.max-range-days:366}") int maxDays, @Value("${e9x.monitor.failed-jobs-limit:200}") int jobLimit) {
         this.repo = repo;
         this.authz = authz;
         this.clock = clock;
         this.threshold = threshold;
+        this.maxDays = maxDays;
+        this.jobLimit = jobLimit;
     }
 
     @Transactional(readOnly = true)
@@ -52,8 +55,8 @@ class AiMonitorService {
         authz.require(Role.SYS_ADMIN, Optional.empty());
         LocalDate to = toDate != null ? toDate : clock.instant().atZone(ZONE).toLocalDate();
         LocalDate from = fromDate != null ? fromDate : to.minusDays(29);
-        if (from.isAfter(to) || ChronoUnit.DAYS.between(from, to) >= MAX_DAYS) {
-            ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "from must not be after to, and the range is at most " + MAX_DAYS + " days.");
+        if (from.isAfter(to) || ChronoUnit.DAYS.between(from, to) >= maxDays) {
+            ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "from must not be after to, and the range is at most " + maxDays + " days.");
             p.setType(URI.create("urn:e9x:problem:invalid-range"));
             p.setTitle("Invalid range");
             throw new ErrorResponseException(HttpStatus.BAD_REQUEST, p, null);
@@ -82,7 +85,7 @@ class AiMonitorService {
             total = total.add(c);
             days.add(new DayCost(d, c, t[0], (int) t[1], over));
         }
-        return new Monitor(from, to, threshold, !alertDays.isEmpty(), alertDays, total, days, persons, repo.failedJobs(start, end, JOB_LIMIT), repo.aiFailures(start, end),
+        return new Monitor(from, to, threshold, !alertDays.isEmpty(), alertDays, total, days, persons, repo.failedJobs(start, end, jobLimit), repo.aiFailures(start, end),
                 repo.deviation(start, end));
     }
 }

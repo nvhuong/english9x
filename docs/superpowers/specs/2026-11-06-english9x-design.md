@@ -384,7 +384,10 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.events.publication-max-age` | `30d` | Event module chưa hoàn tất quá tuổi này bị ghi log lỗi và xoá, để một dòng hỏng không giữ dữ liệu cá nhân mãi (§6) | Cấu hình |
 | `e9x.backup.retention` | `14` | Số bản sao lưu giữ lại | Cấu hình |
 | `e9x.grading.ai.daily-cost-alert` | `500000` (VND/ngày) | Ngưỡng chi phí Gemini mỗi ngày để cảnh báo quản trị (chỉ cảnh báo, không chặn); trang Giám sát AI (F56) báo mọi ngày (giờ Việt Nam) có tổng chi phí lớn hơn ngưỡng | Quản trị |
-| (hằng số trong mã, P4.5) | điểm dự đoán = trung bình 3 lần thi gần nhất cùng kỳ thi; phút học 8 tuần gần nhất (tuần bắt đầu thứ Hai, giờ Việt Nam); giám sát AI tối đa 366 ngày, 200 job lỗi | Cách tính tiến trình theo gói (F24) và trang Giám sát AI (F56); không phải khoá cấu hình | Mã nguồn |
+| `e9x.progress.study-weeks` | `8` | Số tuần gần nhất trong biểu đồ phút học theo tuần của trang tiến trình (F24); tuần bắt đầu thứ Hai, giờ Việt Nam | Cấu hình |
+| `e9x.progress.predicted-score-window` | `3` | Điểm dự đoán = trung bình điểm của chừng này lần thi gần nhất (kể cả lần đang xét) cùng kỳ thi (F24) | Cấu hình |
+| `e9x.monitor.max-range-days` | `366` | Khoảng ngày tối đa một lần xem trang Giám sát AI (F56); vượt quá trả 400 | Cấu hình |
+| `e9x.monitor.failed-jobs-limit` | `200` | Số job lỗi tối đa liệt kê trên trang Giám sát AI (F56), mới nhất trước | Cấu hình |
 | `e9x.gemini.model` | `gemini-2.5-flash` | Model dùng để chấm | Cấu hình |
 | `e9x.gemini.timeout` | `60s` | Thời gian chờ mỗi lần gọi | Cấu hình |
 | `e9x.gemini.price-per-1k-input` / `-output` | theo bảng giá hiện hành | Dùng để ước tính chi phí hiển thị | Cấu hình |
