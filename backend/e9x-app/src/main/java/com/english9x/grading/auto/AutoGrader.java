@@ -118,12 +118,13 @@ class AutoGrader {
         }
         boolean wrote = false;
         if (!grader.read(a.userId(), a.orgId(), j -> store.graded(j, a.id()))) {
-            List<Row> rows = score(a);
+            Scoring scoring = score(a);
             wrote = grader.write(a.userId(), a.orgId(), j -> {
                 if (!store.begin(j, a)) {
                     return false; // a concurrent run was first
                 }
-                rows.forEach(r -> store.insertScore(j, a, r));
+                scoring.rows().forEach(r -> store.insertScore(j, a, r));
+                scoring.stats().forEach(t -> store.insertStat(j, a, t)); // the statistic of F38 is written with the scores it agrees with
                 return true;
             });
         }
@@ -135,7 +136,10 @@ class AutoGrader {
 
     private record Raw(double earned, double max) {}
 
-    private List<Row> score(Attempt a) {
+    /** The score rows of the attempt and, from the same scorer run, one statistic per objective question (the weakness page of F38). */
+    private record Scoring(List<Row> rows, List<GraderStore.Stat> stats) {}
+
+    private Scoring score(Attempt a) {
         Map<String, String> skillOfSection = new LinkedHashMap<>();
         List<Item> items = new ArrayList<>();
         String[] variant = new String[1];
@@ -148,6 +152,7 @@ class AutoGrader {
 
         Map<String, Raw> raw = new LinkedHashMap<>();
         Set<String> notObjective = new LinkedHashSet<>();
+        List<GraderStore.Stat> stats = new ArrayList<>();
         for (Item item : items) {
             String skill = skillOfSection.get(item.sectionCode());
             if (skill == null) {
@@ -161,6 +166,7 @@ class AutoGrader {
             AnswerKey key = AnswerMapper.key(item.key(), item.points(), item.versionId());
             ItemResult result = ObjectiveScorers.forKind(type.kind()).score(key, AnswerMapper.answer(item.answer()));
             raw.merge(skill, new Raw(result.earned(), result.max()), (x, y) -> new Raw(x.earned() + y.earned(), x.max() + y.max()));
+            stats.add(new GraderStore.Stat(item.versionId(), skill, item.typeCode(), round(result.earned()), round(result.max()), result.correct()));
         }
         notObjective.forEach(raw::remove); // a skill with a question for a teacher or the AI is not scored here, not even in part
 
@@ -174,7 +180,7 @@ class AutoGrader {
         if (total != null && total.scaled() != null) {
             rows.add(new Row(ScoreAggregates.aggregateSkill(a.examCode()), null, null, total.scaled(), total.scoreTableVersionId()));
         }
-        return rows;
+        return new Scoring(rows, stats);
     }
 
     private static double round(double v) {

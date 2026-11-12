@@ -372,6 +372,7 @@ Các giá trị dưới đây do nhóm phát triển đặt khi viết spec, **c
 | `e9x.learning.streak.min-minutes` | `10` | Số phút học để tính một ngày trong chuỗi | Quản trị |
 | `e9x.learning.heartbeat-interval` | `30s` | Chu kỳ gửi tín hiệu đang học | Cấu hình |
 | `e9x.learning.idle-timeout` | `2m` | Không tương tác quá thời gian này thì ngừng tính giờ | Cấu hình |
+| `e9x.results.recommendation-count` | `3` | Số dạng câu yếu nhất (tỉ lệ đúng < 100%, có bài phương pháp người dùng có quyền) được gợi ý ở màn kết quả (P4.4, F38) | Cấu hình |
 | `e9x.notification.session-reminder` | `1h` | Nhắc trước buổi học | Quản trị |
 | `e9x.notification.telegram.api-base` | `https://api.telegram.org` | Địa chỉ Bot API (E2E trỏ tới fake Telegram) | Cấu hình |
 | `e9x.notification.telegram.bot-token` | không có mặc định | Token của bot; để trống = tắt kênh Telegram. Không bao giờ vào log, thân lỗi hay mã nguồn | Cấu hình (biến môi trường) |

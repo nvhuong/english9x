@@ -27,7 +27,10 @@ class GraderStore {
     record Attempt(UUID id, UUID userId, UUID orgId, UUID testVersionId, String examCode, Instant submittedAt, boolean interrupted) {}
 
     /** One question of the attempt with the answer the learner gave (null = none) and the solution side of the pinned version. */
-    record Item(UUID questionId, String sectionCode, UUID versionId, String typeCode, JsonNode key, double points, JsonNode answer) {}
+    record Item(UUID questionId, String sectionCode, UUID versionId, String typeCode, JsonNode key, double points, JsonNode answer, String explanation) {}
+
+    /** What a statistic row holds: one objective question of the attempt, right or not (F38). */
+    record Stat(UUID questionVersionId, String skill, String typeCode, double earned, double max, boolean correct) {}
 
     /** What a score row holds. */
     record Row(String skill, Double raw, Double rawMax, Double scaled, UUID scoreTableVersionId) {}
@@ -74,7 +77,7 @@ class GraderStore {
      */
     List<Item> items(JdbcTemplate j, UUID attemptId, UUID testVersionId) {
         return j.query("""
-                select m.section_code, m.question_version_id, v.type_code, v.answer_key::text as k, v.points,
+                select m.section_code, m.question_version_id, v.type_code, v.answer_key::text as k, v.points, v.explanation,
                        (select r.answer::text from attempt_questions aq
                           join responses r on r.attempt_id = aq.attempt_id and r.question_id = aq.question_id
                          where aq.attempt_id = ? and aq.question_version_id = m.question_version_id and aq.section_code = m.section_code
@@ -96,7 +99,7 @@ class GraderStore {
             }
             BigDecimal points = rs.getBigDecimal("points");
             return new Item(rs.getObject("question_id", UUID.class), rs.getString("section_code"), versionId, rs.getString("type_code"),
-                    tree(rs.getString("k")), points.doubleValue(), tree(rs.getString("a")));
+                    tree(rs.getString("k")), points.doubleValue(), tree(rs.getString("a")), rs.getString("explanation"));
         }, attemptId, attemptId, testVersionId);
     }
 
@@ -121,6 +124,12 @@ class GraderStore {
         j.update("insert into scores(attempt_id, user_id, owner_org_id, skill, kind, source, raw, raw_max, scaled, score_table_version_id) "
                         + "values (?,?,?,?, 'OFFICIAL', 'AUTO', ?,?,?,?) on conflict (attempt_id, skill, kind) do nothing",
                 a.id(), a.userId(), a.orgId(), r.skill(), r.raw(), r.rawMax(), r.scaled(), r.scoreTableVersionId());
+    }
+
+    void insertStat(JdbcTemplate j, Attempt a, Stat t) {
+        j.update("insert into item_type_stats(attempt_id, question_version_id, user_id, owner_org_id, exam_code, type_code, skill, earned, max_points, correct) "
+                        + "values (?,?,?,?,?,?,?,?,?,?) on conflict (attempt_id, question_version_id) do nothing",
+                a.id(), t.questionVersionId(), a.userId(), a.orgId(), a.examCode(), t.typeCode(), t.skill(), t.earned(), t.max(), t.correct());
     }
 
     /** The displayed score of each skill that has one so far, chosen by {@link DisplayedScores} (OFFICIAL over PRELIMINARY, a teacher's over the AI's over the automatic), and whether every one of them is OFFICIAL. */
