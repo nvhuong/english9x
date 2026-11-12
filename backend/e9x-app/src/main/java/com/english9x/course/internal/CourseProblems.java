@@ -73,6 +73,21 @@ final class CourseProblems {
                 "Somebody changed this at the same moment. Reload it and try again.", List.of());
     }
 
+    static ErrorResponseException notShareable() {
+        return of(HttpStatus.CONFLICT, "course-not-shareable", "Not shareable",
+                "An English9x course is already in the catalogue; only a centre's course can be shared.", List.of());
+    }
+
+    static ErrorResponseException notPublishedForShare() {
+        return of(HttpStatus.CONFLICT, "course-not-published", "Publish first",
+                "Only a PUBLISHED course can be offered to the shared catalogue.", List.of());
+    }
+
+    static ErrorResponseException shareConflict() {
+        return of(HttpStatus.CONFLICT, "share-conflict", "Already in that state",
+                "This course is not in a state this share action can change. Reload it and try again.", List.of());
+    }
+
     private static ErrorResponseException of(HttpStatus status, String slug, String title, String detail, List<FieldProblem> errors) {
         ProblemDetail p = ProblemDetail.forStatusAndDetail(status, detail);
         p.setType(URI.create("urn:e9x:problem:" + slug));
