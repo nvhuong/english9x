@@ -19,7 +19,7 @@ import org.springframework.context.ApplicationContext;
  * What the three results tests share: a TOEIC attempt sat through the exam room's API (P1 and P5, one question each; keys A and D), scored by the real {@code grade_attempt} job
  * (run by hand with the clock moved past the late-sync grace; the worker is off), and method lessons written as rows.
  */
-abstract class ResultsHarness extends ExamIT {
+public abstract class ResultsHarness extends ExamIT {
 
     protected static final Duration GRACE = Duration.ofMinutes(2); // e9x.exam.late-sync-grace
 
