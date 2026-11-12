@@ -146,7 +146,7 @@ class TeacherQueueService {
     Detail detail(UUID id) {
         authz.require(Role.TEACHER, Optional.empty());
         UUID me = me();
-        QueueRepository.Item item = held(id, me);
+        QueueRepository.Item item = heldForView(id, me);
         return grader.read(item.userId(), item.ownerOrgId(), j -> {
             Attempt a = ai.attempt(j, item.attemptId()).orElseThrow(TeacherProblems::notFound);
             Map<String, List<Item>> bySkill = skillsToGrade(j, a);
@@ -322,6 +322,19 @@ class TeacherQueueService {
     private QueueRepository.Item held(UUID id, UUID me) {
         QueueRepository.Item item = visible(id);
         if (!"CLAIMED".equals(item.state()) || !me.equals(item.claimedBy())) {
+            throw TeacherProblems.conflict("not-claimed-by-you", "Not claimed by you", "Claim the submission first.");
+        }
+        return item;
+    }
+
+    /**
+     * The detail screen may also be READ once the teacher has finished grading it: the last skill saved turns the item DONE, and the screen refetches to show the completed
+     * review. Grading and fetching the recording still need a live claim ({@link #held}); only this read-only view tolerates the teacher's own DONE item (RLS keeps it visible
+     * because {@code claimed_by = me}).
+     */
+    private QueueRepository.Item heldForView(UUID id, UUID me) {
+        QueueRepository.Item item = visible(id);
+        if (!me.equals(item.claimedBy()) || !("CLAIMED".equals(item.state()) || "DONE".equals(item.state()))) {
             throw TeacherProblems.conflict("not-claimed-by-you", "Not claimed by you", "Claim the submission first.");
         }
         return item;

@@ -83,6 +83,9 @@ test.describe('F39 B2C plan', () => {
     const c2 = await seed.billing.course();
     const name = `Gói F39 UI ${suffix}`;
     expect((await org.api(a.token, 'POST', '/api/admin/plans', { body: { name, priceVnd: 499000, months: 3, maxCourses: 1, active: true } })).status).toBe(201);
+    // There must be an active receiving account for the order page to show the transfer note; this test owns that setup rather than leaning on another spec (F40) having run
+    // first — the one-active-account invariant is global, so relying on test order made this flaky once the suite's ordering changed.
+    expect((await org.api(a.token, 'PUT', '/api/admin/payment-account', { body: { bankBin: '970436', accountNo: `9${Date.now().toString().slice(-9)}`, accountName: 'CONG TY ENGLISH9X' } })).status, 'activate a receiving account').toBe(200);
 
     // the picker allows one course (the plan's limit) and frees the other when it is un-ticked
     await auth.loginAs(page, learner);

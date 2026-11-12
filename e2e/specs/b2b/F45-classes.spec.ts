@@ -87,7 +87,10 @@ test.describe('F45 classes and groups', () => {
     const otherBoss = await seed.verifiedLearner({ email: uniqueEmail('f45-other') });
     await seed.member({ orgId: other.orgId, userId: otherBoss.userId, roles: [{ role: 'ORG_ADMIN' }] });
     const ot = await org.apiLogin(otherBoss);
-    expect((await org.api(ot.token, 'GET', `/api/orgs/${center.orgId}/classes/${classId}`, { org: center.orgId })).status, 'an organisation not of their context').toBe(404);
+    // Asserting the context of an organisation you hold no grant in is denied before any resource is looked at: 403, the convention F08 fixes (F08-data-isolation line 47:
+    // `x-org-context` of another org → 403). It leaks nothing about the class (the request never reaches it); flipping this to 404 would contradict F08's passing assertion.
+    expect((await org.api(ot.token, 'GET', `/api/orgs/${center.orgId}/classes/${classId}`, { org: center.orgId })).status, 'a context the person holds no grant in').toBe(403);
+    // In their own context, a class that belongs to another organisation is simply not found — existence is not leaked (F44 convention).
     expect((await org.api(ot.token, 'GET', `/api/orgs/${other.orgId}/classes/${classId}`, { org: other.orgId })).status, 'a class that is not theirs').toBe(404);
   });
 
