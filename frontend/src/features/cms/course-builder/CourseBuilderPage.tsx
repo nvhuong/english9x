@@ -5,6 +5,7 @@ import { ApiProblemError } from '../../../api/problem';
 import { Badge, Button, EmptyState, Input, Select } from '../../../design';
 import { FormAlert, FormNotice } from '../../auth/components';
 import { EMPTY_DRAFT, addChapter, addLesson, draftOf, lessonOf, moveLesson, removeChapter, removeLesson, updateChapter } from './model';
+import { SharedCatalogPanel } from './SharedCatalogPanel';
 import { courseProblemText, issuesAt, issuesOf, type FieldIssue } from './problems';
 import { useCourse, useCourseMutations, useExamCodes, useRefChoices } from './queries';
 import type { ContentStatus, CourseDraft, CourseVersion, LessonKind, UnlockRule } from './types';
@@ -249,6 +250,7 @@ function Editor({ version }: { version: CourseVersion | undefined }) {
         </div>
         {problem && <FormAlert>{problem}</FormAlert>}
       </form>
+      {published && version && <SharedCatalogPanel version={version} />}
     </div>
   );
 }

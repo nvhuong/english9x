@@ -31,7 +31,7 @@ export interface CourseVersion {
   authorDisplay: string;
   unlockRule: UnlockRule;
   chapters: CourseChapter[];
-  sharedStatus: 'NONE' | 'PENDING' | 'APPROVED';
+  sharedStatus: 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
 export interface CourseSummary {

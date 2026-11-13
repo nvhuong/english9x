@@ -70,5 +70,13 @@ export function useCourseMutations() {
       mutationFn: async (courseId: string) => (await api.POST('/api/cms/courses/{id}/submit', { params: { path: { id: courseId } } })).data,
       onSuccess: drop,
     }),
+    share: useMutation({
+      mutationFn: async (courseId: string) => (await api.POST('/api/cms/courses/{id}/share', { params: { path: { id: courseId } } })).data as unknown as CourseVersion,
+      onSuccess: drop,
+    }),
+    withdrawShare: useMutation({
+      mutationFn: async (courseId: string) => (await api.POST('/api/cms/courses/{id}/share/withdraw', { params: { path: { id: courseId } } })).data as unknown as CourseVersion,
+      onSuccess: drop,
+    }),
   };
 }

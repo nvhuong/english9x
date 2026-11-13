@@ -1,0 +1,30 @@
+{
+  "nav": "Grading settings",
+  "title": "Grading settings",
+  "description": "Choose who grades your learners' Writing and Speaking, and how.",
+  "loading": "Loading…",
+  "grader": {
+    "label": "Grader",
+    "CENTER": "The centre's own teachers",
+    "ENGLISH9X": "English9x"
+  },
+  "mode": {
+    "label": "Writing and Speaking mode",
+    "AI": "AI only",
+    "TEACHER": "Teacher only",
+    "BOTH": "AI and teacher"
+  },
+  "graderHint": {
+    "CENTER": "Work that needs a teacher goes to your centre's teachers' queue.",
+    "ENGLISH9X": "Work that needs a teacher goes to English9x teachers' queue."
+  },
+  "modeHint": "With a mode that includes a teacher, learners' work is put in the queue of the grader you chose.",
+  "enterpriseLocked": "An enterprise's learners are always graded by English9x with AI, so this setting is locked. Centre teachers and teacher modes are for centres only.",
+  "save": "Save settings",
+  "saved": "Grading settings saved.",
+  "errors": {
+    "notAllowed": "An enterprise cannot choose centre teachers or a teacher mode: its learners are always graded by English9x with AI.",
+    "failed": "Could not save the settings. Please try again.",
+    "loadFailed": "Could not load the grading settings."
+  }
+}
