@@ -18,6 +18,26 @@ INSERT INTO event_publication(id,listener_id,event_type,serialized_event,publica
  (gen_random_uuid(),'L','E','{"userId":"60000000-0000-0000-0000-000000000001"}', now(), now()),             -- completed: scrubbed
  (gen_random_uuid(),'L','E','{"userId":"60000000-0000-0000-0000-000000000001"}', now(), NULL);                -- incomplete: left (pending redelivery)
 
+-- the person's attempt data: an essay (responses.answer), a Speaking recording (speaking_recordings), a teacher's feedback (teacher_reviews.comment) and a paid order (orders.bank_ref)
+INSERT INTO exams(code,name) VALUES ('IELTS','IELTS') ON CONFLICT DO NOTHING;
+INSERT INTO users(id,email,email_verified_at) VALUES ('60000000-0000-0000-0000-000000000003','erase-teacher@x.test', now());
+INSERT INTO exam_attempts(id,user_id,owner_org_id,test_version_id,status,exam_code,max_resumes,submitted_at,interrupted,submit_reason) VALUES
+ ('60444444-0000-0000-0000-000000000041','60000000-0000-0000-0000-000000000001','60aaaaaa-0000-0000-0000-00000000000a',gen_random_uuid(),'SUBMITTED','IELTS',2, now(), false,'LEARNER');
+INSERT INTO attempt_questions(attempt_id,question_id,user_id,question_version_id,section_code) VALUES
+ ('60444444-0000-0000-0000-000000000041','60444444-0000-0000-0000-0000000000a1','60000000-0000-0000-0000-000000000001',gen_random_uuid(),'WRITING'),
+ ('60444444-0000-0000-0000-000000000041','60444444-0000-0000-0000-0000000000a2','60000000-0000-0000-0000-000000000001',gen_random_uuid(),'SPEAKING');
+INSERT INTO responses(attempt_id,question_id,user_id,answer,answered_at,saved_at) VALUES
+ ('60444444-0000-0000-0000-000000000041','60444444-0000-0000-0000-0000000000a1','60000000-0000-0000-0000-000000000001','"My Writing essay: I grew up in Hanoi and my family runs a small shop."'::jsonb, now(), now());
+INSERT INTO speaking_recordings(attempt_id,question_id,user_id,storage_path,mime_type,size_bytes,uploaded_at) VALUES
+ ('60444444-0000-0000-0000-000000000041','60444444-0000-0000-0000-0000000000a2','60000000-0000-0000-0000-000000000001','staging/recordings/60444444-0000-0000-0000-000000000041/60444444-0000-0000-0000-0000000000a2.webm','audio/webm',1234, now());
+INSERT INTO grading_queue_items(id,attempt_id,user_id,owner_org_id,grading_org_id,exam_code,reason) VALUES
+ ('60444444-0000-0000-0000-000000000051','60444444-0000-0000-0000-000000000041','60000000-0000-0000-0000-000000000001','60aaaaaa-0000-0000-0000-00000000000a','60aaaaaa-0000-0000-0000-00000000000a','IELTS','POLICY');
+INSERT INTO teacher_reviews(queue_item_id,attempt_id,user_id,owner_org_id,skill,teacher_id,criteria,comment,band) VALUES
+ ('60444444-0000-0000-0000-000000000051','60444444-0000-0000-0000-000000000041','60000000-0000-0000-0000-000000000001','60aaaaaa-0000-0000-0000-00000000000a','WRITING','60000000-0000-0000-0000-000000000003','{"TA":6}'::jsonb,'Good structure, Nguyen. Work on cohesion.',6);
+INSERT INTO plans(id,name,price_vnd,months,max_courses) VALUES ('60555555-0000-0000-0000-000000000061','Erase plan',100000,1,2);
+INSERT INTO orders(id,code,user_id,plan_id,plan_months,amount_vnd,status,bank_ref,confirmed_at) VALUES
+ ('60555555-0000-0000-0000-000000000062','ER0001','60000000-0000-0000-0000-000000000001','60555555-0000-0000-0000-000000000061',1,100000,'CONFIRMED','Nguyen Van A chuyen khoan ER0001', now());
+
 DO $$
 BEGIN
   ASSERT has_function_privilege('e9x_app','erase_personal_data(uuid)','EXECUTE'), 'the request role may run the erasure';
@@ -26,6 +46,10 @@ BEGIN
      'the erasure is a definer with a pinned search_path';
   ASSERT NOT has_table_privilege('e9x_app','audit_log','DELETE') AND NOT has_table_privilege('e9x_app','audit_log','UPDATE'),
      'erasure gives the request role no new right over the append-only log';
+  ASSERT has_function_privilege('e9x_app','personal_data_recording_keys(uuid)','EXECUTE')
+     AND NOT has_function_privilege('public','personal_data_recording_keys(uuid)','EXECUTE')
+     AND (SELECT prosecdef AND proconfig::text LIKE '%search_path=pg_catalog, public, pg_temp%' FROM pg_proc WHERE proname = 'personal_data_recording_keys'),
+     'the recording-keys lister is a narrow definer the request role may run';
 END $$;
 
 SELECT erase_personal_data('60000000-0000-0000-0000-000000000001');
@@ -47,13 +71,43 @@ BEGIN
   ASSERT (SELECT count(*) FROM event_publication WHERE completion_date IS NOT NULL AND position('60000000-0000-0000-0000-000000000001' IN serialized_event) > 0) = 0,
      'the completed event publication is gone';
   ASSERT (SELECT count(*) FROM event_publication WHERE completion_date IS NULL) = 1, 'the incomplete one is left for redelivery';
+  -- the attempt data that is personal or biometric
+  ASSERT (SELECT count(*) FROM speaking_recordings WHERE user_id = '60000000-0000-0000-0000-000000000001') = 0, 'the Speaking recordings'' rows are gone (the objects are deleted by PersonalDataService)';
+  ASSERT (SELECT answer = 'null'::jsonb FROM responses WHERE attempt_id = '60444444-0000-0000-0000-000000000041' AND question_id = '60444444-0000-0000-0000-0000000000a1'),
+     'the learner''s essay free text is scrubbed';
+  ASSERT (SELECT count(*) FROM responses WHERE user_id = '60000000-0000-0000-0000-000000000001' AND answer::text ILIKE '%Hanoi%') = 0, 'no essay PII remains';
+  ASSERT (SELECT comment = '' FROM teacher_reviews WHERE queue_item_id = '60444444-0000-0000-0000-000000000051'), 'the teacher''s feedback on the person''s attempt is scrubbed';
+  ASSERT (SELECT bank_ref IS NULL AND status = 'CONFIRMED' FROM orders WHERE id = '60555555-0000-0000-0000-000000000062'), 'the transfer memo is cleared but the order stays for accounting';
+  -- the recording keys the service would delete are available through the narrow definer (now empty, since the rows are gone)
+  ASSERT (SELECT count(*) FROM personal_data_recording_keys('60000000-0000-0000-0000-000000000001')) = 0, 'no recording keys remain after erasure';
   -- a second run is harmless (the person is already a tombstone)
   PERFORM erase_personal_data('60000000-0000-0000-0000-000000000001');
 END $$;
 
--- the append-only log still refuses deletion, erasure or not
+-- the append-only log still refuses deletion, erasure or not; and the teacher-review immutability trigger the definer lifted to scrub the comment is back ON
 DO $$
 BEGIN
   ASSERT (SELECT count(*) FROM pg_trigger WHERE tgrelid = 'audit_log'::regclass AND tgname IN ('audit_log_no_change','audit_log_no_truncate')) = 2,
      'the audit log is still append-only';
+  ASSERT (SELECT tgenabled <> 'D' FROM pg_trigger WHERE tgrelid = 'teacher_reviews'::regclass AND tgname = 'teacher_reviews_immutable'),
+     'the teacher-review immutability trigger is re-enabled after the erasure (the definer lifted it only to scrub the comment)';
 END $$;
+
+-- a NORMAL caller (the request role) still cannot change or delete a teacher review: the trigger is on and e9x_app has no UPDATE/DELETE grant either
+CREATE FUNCTION public.t_tr(stmt text) RETURNS text LANGUAGE plpgsql AS $$
+BEGIN
+  EXECUTE stmt; RETURN 'ok';
+EXCEPTION WHEN OTHERS THEN RETURN 'err:' || SQLSTATE;
+END $$;
+GRANT EXECUTE ON FUNCTION public.t_tr(text) TO e9x_app;
+SET ROLE e9x_app;
+SELECT set_config('app.user_id','60000000-0000-0000-0000-000000000003',false), set_config('app.org_id','60aaaaaa-0000-0000-0000-00000000000a',false),
+       set_config('app.e9x_staff','',false), set_config('app.org_admin','on',false);
+DO $$
+BEGIN
+  ASSERT public.t_tr($q$UPDATE teacher_reviews SET comment = 'tampered' WHERE queue_item_id = '60444444-0000-0000-0000-000000000051'$q$) <> 'ok',
+     'a normal caller cannot change a teacher review (trigger on, no grant)';
+  ASSERT public.t_tr($q$DELETE FROM teacher_reviews WHERE queue_item_id = '60444444-0000-0000-0000-000000000051'$q$) <> 'ok',
+     'nor delete one';
+END $$;
+RESET ROLE;

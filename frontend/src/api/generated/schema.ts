@@ -321,7 +321,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Erase a person's personal data (Nghị định 13/2023): scrubs users, auth identities, invitations, notifications and finished work. SYS_ADMIN. */
+        /** Erase a person's personal data (Nghị định 13/2023): scrubs users, identities, invitations, notifications, voice recordings, essays, feedback and transfer memos. SYS_ADMIN. */
         delete: operations["erase"];
         options?: never;
         head?: never;

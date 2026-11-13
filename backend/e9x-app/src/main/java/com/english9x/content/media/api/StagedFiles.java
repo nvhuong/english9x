@@ -16,4 +16,10 @@ public interface StagedFiles {
 
     /** Deleting what is not there is not an error; a store that fails is logged and ignored (this is cleanup). */
     void deleteQuietly(String key);
+
+    /**
+     * Deletes the object, THROWING when the store cannot be reached. For a caller that must not silently orphan the object (erasing biometric voice data under Nghị
+     * định 13/2023): a failure fails the caller's transaction so neither side is half-done. Deleting what is not there is still not an error.
+     */
+    void delete(String key);
 }

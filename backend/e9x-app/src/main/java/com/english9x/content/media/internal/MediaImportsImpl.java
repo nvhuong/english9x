@@ -85,6 +85,15 @@ class MediaImportsImpl implements MediaImports, StagedFiles {
         }
     }
 
+    @Override
+    public void delete(String key) {
+        try {
+            store.delete(checked(key));
+        } catch (MediaStorageException e) {
+            throw new StagedFilesException("cannot delete a staged file", e);
+        }
+    }
+
     private static String checked(String key) {
         if (key == null || !KEY.matcher(key).matches() || key.contains("..")) {
             throw new IllegalArgumentException("not a staging key");

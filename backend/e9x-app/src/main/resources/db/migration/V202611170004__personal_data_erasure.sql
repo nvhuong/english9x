@@ -4,8 +4,10 @@
 -- touches it; a name or an address is read AT VIEW TIME from users / invitations (AuditQueryService), so scrubbing those tables erases it from the audit screen too
 -- (the screen then shows a tombstone / null). The erasure is a SINGLE narrow SECURITY DEFINER owned by the migration role, not a new grant to e9x_app on any log table.
 -- What it covers: the person's own account fields and sign-in identities; the invitations addressed to them (whatever their state); their notifications, preferences and
--- Telegram link; and the finished background work (completed event publications, terminal jobs) whose payload may carry their data. Live/pending work is left: it is
--- not ours to drop mid-flight, and it carries no more than ids.
+-- Telegram link; the finished background work (completed event publications, terminal jobs) whose payload may carry their data; their Speaking RECORDINGS' rows (voice is
+-- biometric data — the objects themselves are deleted from the store by PersonalDataService through personal_data_recording_keys, before these rows go); the learner's
+-- authored free text (responses.answer — Writing essays); the teacher's FEEDBACK on the person's attempts (teacher_reviews.comment); and the payer's transfer memo
+-- (orders.bank_ref). Live/pending work is left: it is not ours to drop mid-flight, and it carries no more than ids; the orders rows stay for accounting, only the memo goes.
 
 CREATE FUNCTION erase_personal_data(p_user uuid) RETURNS integer
   LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
@@ -41,10 +43,31 @@ BEGIN
   DELETE FROM event_publication WHERE completion_date IS NOT NULL AND position(p_user::text IN serialized_event) > 0;
   DELETE FROM jobs WHERE status IN ('SUCCEEDED', 'FAILED') AND position(p_user::text IN payload::text) > 0;
 
+  -- 5. the person's attempt data that is personal or biometric. The definer is owned by e9x_owner, so the attempt-freeze / window guards (which exempt the owner) do
+  --    not block these. The Speaking recordings' OBJECTS are deleted first, by PersonalDataService, through personal_data_recording_keys; here the rows go with the rest.
+  DELETE FROM speaking_recordings WHERE user_id = p_user;
+  UPDATE responses SET answer = 'null'::jsonb WHERE user_id = p_user;         -- the learner's authored free text (Writing essays); scores and item stats are already derived
+  -- teacher_reviews is immutable by a trigger (a review is never changed): the owner lifts it just to scrub the free-text comment (the band and criteria, a grading
+  -- record, stay). The ALTER takes ACCESS EXCLUSIVE, so no other session writes the table while it is off; it is on again before the function returns.
+  ALTER TABLE teacher_reviews DISABLE TRIGGER teacher_reviews_immutable;
+  UPDATE teacher_reviews SET comment = '' WHERE user_id = p_user;            -- the teacher's feedback tied to the person's attempts
+  ALTER TABLE teacher_reviews ENABLE TRIGGER teacher_reviews_immutable;
+  UPDATE orders SET bank_ref = NULL WHERE user_id = p_user;                   -- the transfer memo (may carry the payer's name); the order row stays for accounting
+
   RETURN v_invitations;
 END $$;
 REVOKE ALL ON FUNCTION erase_personal_data(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION erase_personal_data(uuid) TO e9x_app;
+
+-- The Speaking recordings' object-storage keys of a person. PersonalDataService reads them (the recordings are the learner's own under RLS, so a narrow SECURITY DEFINER
+-- is needed for a SYS_ADMIN erasing another person) and deletes the objects BEFORE erase_personal_data deletes the rows, so a voice blob (biometric data) is never
+-- orphaned in the store. It reveals object keys of the subject only — nothing personal in the string, and only the keys of that one user.
+CREATE FUNCTION personal_data_recording_keys(p_user uuid) RETURNS SETOF text
+  LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
+  SELECT storage_path FROM speaking_recordings WHERE user_id = p_user
+$$;
+REVOKE ALL ON FUNCTION personal_data_recording_keys(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION personal_data_recording_keys(uuid) TO e9x_app;
 
 -- Fix (review of P1, triage ledger 113): auth_purge_no_consent read conkey[1], which is only the first column of a foreign key, so a composite foreign key that
 -- references users would have been read on the wrong column. Pair each conkey with its confkey and pick the referencing column that maps to users.id. Body unchanged
