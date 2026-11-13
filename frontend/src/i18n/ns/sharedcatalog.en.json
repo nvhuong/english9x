@@ -1,0 +1,59 @@
+{
+  "nav": "Shared catalogue",
+  "title": "Shared course catalogue",
+  "description": "Courses that centres offer to the English9x shared catalogue. Once approved, a course is visible to individual learners and to every centre.",
+  "loading": "Loading…",
+  "retry": "Try again",
+  "empty": "No course is waiting for review",
+  "emptyHint": "When a centre offers a course to the shared catalogue it appears here.",
+  "caption": "Courses waiting to enter the shared catalogue",
+  "col": {
+    "course": "Course",
+    "exam": "Exam",
+    "version": "Version",
+    "center": "Authoring centre",
+    "actions": "Actions"
+  },
+  "version": "Version {{n}}",
+  "approve": "Approve",
+  "approveFor": "Approve course {{title}}",
+  "reject": "Reject",
+  "rejectFor": "Reject course {{title}}",
+  "approved": "Approved course {{title}} into the shared catalogue.",
+  "rejected": "Rejected course {{title}}. The centre may revise it and offer it again.",
+  "ownCourse": "Your own organisation's course: you cannot approve it.",
+  "noPermission": "You are not allowed to decide on this course.",
+  "cancel": "Cancel",
+  "rejectTitle": "Reject course {{title}}?",
+  "rejectDescription": "The course moves to the rejected status.",
+  "rejectBody": "The centre may revise the course and offer it again for review.",
+  "rejectSubmit": "Reject course",
+  "errors": {
+    "alreadyDecided": "This course has already been decided.",
+    "notAllowed": "You are not allowed to decide on this course.",
+    "failed": "That did not work. Please try again.",
+    "loadFailed": "Could not load the review queue."
+  },
+  "share": {
+    "heading": "English9x shared catalogue",
+    "description": "Offer a published course to the shared catalogue. Once English9x approves it, individual learners and every centre can see it.",
+    "status": "Status:",
+    "state": {
+      "NONE": "Not offered",
+      "PENDING": "Waiting for review",
+      "APPROVED": "In the shared catalogue",
+      "REJECTED": "Rejected"
+    },
+    "submit": "Offer to the shared catalogue",
+    "withdraw": "Withdraw request",
+    "resubmit": "Offer again",
+    "submitted": "The course was offered to the shared catalogue and waits for review.",
+    "withdrawn": "Request withdrawn.",
+    "rejectedHint": "English9x rejected this course. You may revise it and offer it again.",
+    "errors": {
+      "conflict": "Could not offer it: the course must be published and not already pending or approved.",
+      "forbidden": "You are not allowed to offer this course to the shared catalogue.",
+      "failed": "That did not work. Please try again."
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "nav": "Cấu hình chấm bài",
+  "title": "Cấu hình chấm bài",
+  "description": "Chọn bên chấm bài Viết và Nói của học viên trong tổ chức, và cách chấm.",
+  "loading": "Đang tải…",
+  "grader": {
+    "label": "Bên chấm",
+    "CENTER": "Giáo viên của trung tâm",
+    "ENGLISH9X": "English9x"
+  },
+  "mode": {
+    "label": "Cách chấm Viết và Nói",
+    "AI": "Chỉ AI",
+    "TEACHER": "Chỉ giáo viên",
+    "BOTH": "AI và giáo viên"
+  },
+  "graderHint": {
+    "CENTER": "Bài cần giáo viên sẽ vào hàng chờ của giáo viên trung tâm.",
+    "ENGLISH9X": "Bài cần giáo viên sẽ vào hàng chờ của giáo viên English9x."
+  },
+  "modeHint": "Với cách chấm có giáo viên, bài của học viên được đưa vào hàng chờ của bên chấm đã chọn.",
+  "enterpriseLocked": "Học viên của doanh nghiệp luôn do English9x chấm bằng AI, nên cấu hình này được khoá. Giáo viên của trung tâm và chế độ có giáo viên chỉ dành cho trung tâm.",
+  "save": "Lưu cấu hình",
+  "saved": "Đã lưu cấu hình chấm bài.",
+  "errors": {
+    "notAllowed": "Tổ chức doanh nghiệp không được chọn giáo viên trung tâm hay chế độ có giáo viên: học viên luôn do English9x chấm bằng AI.",
+    "failed": "Không lưu được cấu hình. Vui lòng thử lại.",
+    "loadFailed": "Không tải được cấu hình chấm bài."
+  }
+}

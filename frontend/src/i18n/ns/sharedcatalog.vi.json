@@ -1,0 +1,59 @@
+{
+  "nav": "Kho chung",
+  "title": "Kho khoá học chung",
+  "description": "Các khoá học trung tâm gửi lên kho chung của English9x. Sau khi duyệt, khoá học hiện cho học viên cá nhân và mọi trung tâm.",
+  "loading": "Đang tải…",
+  "retry": "Thử lại",
+  "empty": "Không có khoá học nào chờ duyệt",
+  "emptyHint": "Khi một trung tâm gửi khoá học lên kho chung, khoá đó sẽ hiện ở đây.",
+  "caption": "Khoá học chờ duyệt vào kho chung",
+  "col": {
+    "course": "Khoá học",
+    "exam": "Kỳ thi",
+    "version": "Phiên bản",
+    "center": "Trung tâm tác giả",
+    "actions": "Thao tác"
+  },
+  "version": "Phiên bản {{n}}",
+  "approve": "Duyệt",
+  "approveFor": "Duyệt khoá {{title}}",
+  "reject": "Từ chối",
+  "rejectFor": "Từ chối khoá {{title}}",
+  "approved": "Đã duyệt khoá {{title}} vào kho chung.",
+  "rejected": "Đã từ chối khoá {{title}}. Trung tâm có thể sửa rồi gửi lại.",
+  "ownCourse": "Khoá của tổ chức bạn: bạn không tự duyệt được.",
+  "noPermission": "Bạn không có quyền duyệt khoá này.",
+  "cancel": "Huỷ",
+  "rejectTitle": "Từ chối khoá {{title}}?",
+  "rejectDescription": "Khoá sẽ chuyển sang trạng thái bị từ chối.",
+  "rejectBody": "Trung tâm có thể chỉnh sửa khoá rồi gửi lại để duyệt.",
+  "rejectSubmit": "Từ chối khoá",
+  "errors": {
+    "alreadyDecided": "Khoá này đã được quyết định rồi.",
+    "notAllowed": "Bạn không có quyền quyết định khoá này.",
+    "failed": "Không thực hiện được. Vui lòng thử lại.",
+    "loadFailed": "Không tải được hàng chờ duyệt."
+  },
+  "share": {
+    "heading": "Kho khoá học chung của English9x",
+    "description": "Gửi khoá học đã xuất bản lên kho chung. Sau khi English9x duyệt, khoá sẽ hiện cho học viên cá nhân và mọi trung tâm.",
+    "status": "Trạng thái:",
+    "state": {
+      "NONE": "Chưa gửi",
+      "PENDING": "Đang chờ duyệt",
+      "APPROVED": "Đã vào kho chung",
+      "REJECTED": "Bị từ chối"
+    },
+    "submit": "Gửi lên kho chung",
+    "withdraw": "Rút lại yêu cầu",
+    "resubmit": "Gửi lại",
+    "submitted": "Đã gửi khoá học lên kho chung, đang chờ duyệt.",
+    "withdrawn": "Đã rút yêu cầu.",
+    "rejectedHint": "English9x đã từ chối khoá này. Bạn có thể sửa rồi gửi lại.",
+    "errors": {
+      "conflict": "Không gửi được: khoá phải đã xuất bản và chưa chờ duyệt hay đã được duyệt.",
+      "forbidden": "Bạn không có quyền gửi khoá này lên kho chung.",
+      "failed": "Không thực hiện được. Vui lòng thử lại."
+    }
+  }
+}
