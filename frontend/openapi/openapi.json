@@ -2211,6 +2211,10 @@
         },
         "type" : "object"
       },
+      "Grader" : {
+        "enum" : [ "CENTER", "ENGLISH9X" ],
+        "type" : "string"
+      },
       "GradingCriterion" : {
         "properties" : {
           "code" : {
@@ -2251,6 +2255,34 @@
             "type" : "string"
           }
         },
+        "type" : "object"
+      },
+      "GradingSettingsRequest" : {
+        "properties" : {
+          "grader" : {
+            "$ref" : "#/components/schemas/Grader"
+          },
+          "mode" : {
+            "description" : "The Writing/Speaking mode for the centre's learners; absent leaves it unchanged",
+            "enum" : [ "AI", "TEACHER", "BOTH" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "grader" ],
+        "type" : "object"
+      },
+      "GradingSettingsView" : {
+        "properties" : {
+          "grader" : {
+            "$ref" : "#/components/schemas/Grader"
+          },
+          "mode" : {
+            "description" : "The organisation's Writing/Speaking mode, null when none is set (the exam's applies)",
+            "enum" : [ "AI", "TEACHER", "BOTH" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "grader" ],
         "type" : "object"
       },
       "GradingSkillDryRunRequest" : {
@@ -5121,6 +5153,61 @@
         "required" : [ "roles", "userId" ],
         "type" : "object"
       },
+      "SharedCatalogDecision" : {
+        "properties" : {
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sharedStatus" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "SharedCatalogQueueItem" : {
+        "properties" : {
+          "authorDisplay" : {
+            "type" : "string"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "courseId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "examCode" : {
+            "type" : "string"
+          },
+          "ownerName" : {
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "sharedStatus" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "versionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
       "SkillScore" : {
         "properties" : {
           "aggregate" : {
@@ -5856,7 +5943,7 @@
     },
     "/api/admin/orders/{code}/reject" : {
       "post" : {
-        "operationId" : "reject",
+        "operationId" : "reject_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "code",
@@ -6333,6 +6420,153 @@
           }
         },
         "tags" : [ "teacher-queue-controller" ]
+      }
+    },
+    "/api/admin/shared-catalog" : {
+      "get" : {
+        "operationId" : "queue_1",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "exam",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/SharedCatalogQueueItem"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The shared-catalogue queue: PENDING centre courses with the version in force and the owning centre",
+        "tags" : [ "shared-catalog-controller" ]
+      }
+    },
+    "/api/admin/shared-catalog/{id}/approve" : {
+      "post" : {
+        "operationId" : "approve_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SharedCatalogDecision"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Approve a pending course into the shared catalogue (PENDING -> APPROVED); it becomes visible to B2C and every centre",
+        "tags" : [ "shared-catalog-controller" ]
+      }
+    },
+    "/api/admin/shared-catalog/{id}/reject" : {
+      "post" : {
+        "operationId" : "reject",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SharedCatalogDecision"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Decline a course (PENDING or APPROVED -> REJECTED); the owner may revise and offer it again",
+        "tags" : [ "shared-catalog-controller" ]
+      }
+    },
+    "/api/admin/users/{id}/personal-data" : {
+      "delete" : {
+        "operationId" : "erase",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Erase a person's personal data (Nghị định 13/2023): scrubs users, identities, invitations, notifications, voice recordings, essays, feedback and transfer memos. SYS_ADMIN.",
+        "tags" : [ "personal-data-controller" ]
       }
     },
     "/api/auth/config" : {
@@ -6937,7 +7171,7 @@
     },
     "/api/cms/courses/{id}" : {
       "get" : {
-        "operationId" : "get_5",
+        "operationId" : "get_6",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -7025,6 +7259,83 @@
           }
         },
         "summary" : "Save a course: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)",
+        "tags" : [ "course-controller" ]
+      }
+    },
+    "/api/cms/courses/{id}/share" : {
+      "post" : {
+        "description" : "The owner's AUTHOR of the exam or ORG_ADMIN. 409 when the course is English9x's, not published, or already pending/approved.",
+        "operationId" : "share",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsCourseVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Offer this centre's PUBLISHED course to the English9x shared catalogue (F21): shared_status becomes PENDING",
+        "tags" : [ "course-controller" ]
+      }
+    },
+    "/api/cms/courses/{id}/share/withdraw" : {
+      "post" : {
+        "operationId" : "withdrawShare",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CmsCourseVersion"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Withdraw a pending share request (PENDING -> NONE)",
         "tags" : [ "course-controller" ]
       }
     },
@@ -7201,7 +7512,7 @@
     },
     "/api/cms/grading-skills/{id}" : {
       "get" : {
-        "operationId" : "get_4",
+        "operationId" : "get_5",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -7529,7 +7840,7 @@
     },
     "/api/cms/import/{jobId}" : {
       "get" : {
-        "operationId" : "get_10",
+        "operationId" : "get_11",
         "parameters" : [ {
           "in" : "path",
           "name" : "jobId",
@@ -7818,7 +8129,7 @@
     },
     "/api/cms/question-groups/{id}" : {
       "get" : {
-        "operationId" : "get_3",
+        "operationId" : "get_4",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8142,7 +8453,7 @@
     },
     "/api/cms/questions/{id}" : {
       "get" : {
-        "operationId" : "get_2",
+        "operationId" : "get_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8495,7 +8806,7 @@
     },
     "/api/cms/reviews/{reviewId}" : {
       "get" : {
-        "operationId" : "get_9",
+        "operationId" : "get_10",
         "parameters" : [ {
           "in" : "path",
           "name" : "reviewId",
@@ -8696,7 +9007,7 @@
     },
     "/api/cms/score-tables/{id}" : {
       "get" : {
-        "operationId" : "get_1",
+        "operationId" : "get_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -8958,7 +9269,7 @@
     },
     "/api/cms/strategy-lessons/{id}" : {
       "get" : {
-        "operationId" : "get",
+        "operationId" : "get_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -9228,7 +9539,7 @@
     },
     "/api/cms/tests/{id}" : {
       "get" : {
-        "operationId" : "get_8",
+        "operationId" : "get_9",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -9471,7 +9782,7 @@
     },
     "/api/exam/attempts/{id}" : {
       "get" : {
-        "operationId" : "get_7",
+        "operationId" : "get_8",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -10900,7 +11211,7 @@
     },
     "/api/orgs/{id}/classes/{cid}" : {
       "get" : {
-        "operationId" : "get_6",
+        "operationId" : "get_7",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -11619,6 +11930,88 @@
         },
         "summary" : "Record (or correct) the attendance of members of the class at the session; ORG_ADMIN or the class's teacher. Answers with the whole sheet",
         "tags" : [ "attendance-controller" ]
+      }
+    },
+    "/api/orgs/{id}/grading-settings" : {
+      "get" : {
+        "operationId" : "get",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingSettingsView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "grading-settings-controller" ]
+      },
+      "put" : {
+        "operationId" : "set_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GradingSettingsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingSettingsView"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "tags" : [ "grading-settings-controller" ]
       }
     },
     "/api/orgs/{id}/invitations" : {

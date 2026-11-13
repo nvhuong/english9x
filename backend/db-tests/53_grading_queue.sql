@@ -73,7 +73,7 @@ BEGIN
      AND NOT has_table_privilege('e9x_grader', 'teacher_reviews', 'UPDATE'), 'a review is written by the grader and never changed';
   ASSERT NOT has_column_privilege('e9x_app', 'teacher_reviews', 'ai_band', 'SELECT') AND NOT has_column_privilege('e9x_app', 'teacher_reviews', 'deviation', 'SELECT')
      AND has_column_privilege('e9x_app', 'teacher_reviews', 'band', 'SELECT'), 'the request role does not read the AI band or the deviation';
-  ASSERT NOT has_table_privilege('e9x_app', 'org_grading_sides', 'INSERT') AND NOT has_table_privilege('e9x_app', 'org_grading_sides', 'UPDATE'), 'the grading side is not written here (P6.5)';
+  ASSERT NOT has_table_privilege('e9x_app', 'org_grading_sides', 'DELETE'), 'the grading side is never deleted (P6.5 opened only the narrow INSERT/UPDATE write door, see db-test 58)';
   ASSERT has_function_privilege('e9x_grader', 'grading_queue_side(uuid)', 'EXECUTE') AND NOT has_function_privilege('e9x_app', 'grading_queue_side(uuid)', 'EXECUTE'),
      'the side function is the grader''s';
   ASSERT has_function_privilege('e9x_app', 'grading_queue_teachers(uuid)', 'EXECUTE') AND has_function_privilege('e9x_app', 'scores_has_official(uuid,uuid)', 'EXECUTE')

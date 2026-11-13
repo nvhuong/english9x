@@ -149,4 +149,51 @@ class CourseRepository {
         }
         return rows;
     }
+
+    // ---- the shared catalogue (F21) ---------------------------------------------------------------------------------------------------
+
+    /** One row of the English9x reviewers' shared-catalogue queue: the PENDING course, the version in force and the owning centre. */
+    record QueueRow(UUID courseId, String code, String examCode, String sharedStatus, UUID ownerOrgId, String ownerName, UUID versionId, int versionNo,
+                    String title, String authorDisplay, Instant updatedAt) {}
+
+    /** The shared status of a course, empty when the caller's RLS view does not hold the row. */
+    Optional<String> sharedStatus(UUID courseId) {
+        return jdbc.query("select shared_status from courses where id = ?", (rs, n) -> rs.getString(1), courseId).stream().findFirst();
+    }
+
+    /**
+     * Moves a course's shared status under Row-Level Security (the request / decide policy decides whether the caller may); {@code allowedFrom} are the
+     * literal current statuses the move accepts. @return rows changed (0 when the row or the transition is not the caller's).
+     */
+    private int moveShared(UUID courseId, String to, String allowedFromInList) {
+        return jdbc.update("update courses set shared_status = ? where id = ? and shared_status in (" + allowedFromInList + ")", to, courseId);
+    }
+
+    int requestShare(UUID courseId) {
+        return moveShared(courseId, "PENDING", "'NONE', 'REJECTED'");
+    }
+
+    int withdrawShare(UUID courseId) {
+        return moveShared(courseId, "NONE", "'PENDING'");
+    }
+
+    int approveShare(UUID courseId) {
+        return moveShared(courseId, "APPROVED", "'PENDING'");
+    }
+
+    int rejectShare(UUID courseId) {
+        return moveShared(courseId, "REJECTED", "'PENDING', 'APPROVED'");
+    }
+
+    /** The PENDING shared-catalogue queue of an exam (null = every exam the reviewer may see), newest first. RLS scopes it to the exam's English9x reviewers. */
+    List<QueueRow> sharedQueue(String examCode) {
+        return jdbc.query("select c.id, c.code, c.exam_code, c.shared_status, c.owner_org_id, shared_catalog_owner_name(c.owner_org_id), "
+                + "v.id, v.version_no, v.title, v.author_display, v.updated_at "
+                + "from courses c join course_versions v on v.course_id = c.id and v.status = 'PUBLISHED' "
+                + "where c.shared_status = 'PENDING' " + (examCode == null ? "" : "and c.exam_code = ? ")
+                + "order by v.updated_at desc, c.id",
+                (rs, n) -> new QueueRow(rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3), rs.getString(4), rs.getObject(5, UUID.class), rs.getString(6),
+                        rs.getObject(7, UUID.class), rs.getInt(8), rs.getString(9), rs.getString(10), instant(rs.getTimestamp(11))),
+                examCode == null ? new Object[] {} : new Object[] {examCode});
+    }
 }

@@ -125,7 +125,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["reject"];
+        post: operations["reject_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -255,6 +255,74 @@ export interface paths {
         put?: never;
         post: operations["reassign"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/shared-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The shared-catalogue queue: PENDING centre courses with the version in force and the owning centre */
+        get: operations["queue_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/shared-catalog/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a pending course into the shared catalogue (PENDING -> APPROVED); it becomes visible to B2C and every centre */
+        post: operations["approve_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/shared-catalog/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline a course (PENDING or APPROVED -> REJECTED); the owner may revise and offer it again */
+        post: operations["reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/{id}/personal-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Erase a person's personal data (Nghị định 13/2023): scrubs users, identities, invitations, notifications, voice recordings, essays, feedback and transfer memos. SYS_ADMIN. */
+        delete: operations["erase"];
         options?: never;
         head?: never;
         patch?: never;
@@ -531,13 +599,50 @@ export interface paths {
             cookie?: never;
         };
         /** One course: its latest version, or the numbered one */
-        get: operations["get_5"];
+        get: operations["get_6"];
         /**
          * Save a course: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)
          * @description 422 with errors[] by JSON path.
          */
         put: operations["update_5"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/courses/{id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Offer this centre's PUBLISHED course to the English9x shared catalogue (F21): shared_status becomes PENDING
+         * @description The owner's AUTHOR of the exam or ORG_ADMIN. 409 when the course is English9x's, not published, or already pending/approved.
+         */
+        post: operations["share"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/courses/{id}/share/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a pending share request (PENDING -> NONE) */
+        post: operations["withdrawShare"];
         delete?: never;
         options?: never;
         head?: never;
@@ -610,7 +715,7 @@ export interface paths {
             cookie?: never;
         };
         /** One skill: its latest version, or the numbered one */
-        get: operations["get_4"];
+        get: operations["get_5"];
         /** Edit a skill: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
         put: operations["update_4"];
         post?: never;
@@ -717,7 +822,7 @@ export interface paths {
             cookie?: never;
         };
         /** State of an import, its errors by row and column, and the drafts it made */
-        get: operations["get_10"];
+        get: operations["get_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -822,7 +927,7 @@ export interface paths {
             cookie?: never;
         };
         /** One group: its latest version, or the numbered one, with the solution side */
-        get: operations["get_3"];
+        get: operations["get_4"];
         /** Edit a group: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
         put: operations["update_3"];
         post?: never;
@@ -911,7 +1016,7 @@ export interface paths {
             cookie?: never;
         };
         /** One question: its latest version, or the numbered one, with the answer key */
-        get: operations["get_2"];
+        get: operations["get_3"];
         /** Edit a question: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
         put: operations["update_2"];
         post?: never;
@@ -1031,7 +1136,7 @@ export interface paths {
             cookie?: never;
         };
         /** One review with the version under review and the earlier published version to compare it with */
-        get: operations["get_9"];
+        get: operations["get_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1103,7 +1208,7 @@ export interface paths {
             cookie?: never;
         };
         /** One table: its latest version, or the numbered one */
-        get: operations["get_1"];
+        get: operations["get_2"];
         /** Edit a table: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
         put: operations["update_1"];
         post?: never;
@@ -1176,7 +1281,7 @@ export interface paths {
             cookie?: never;
         };
         /** One lesson: its latest version, or the numbered one */
-        get: operations["get"];
+        get: operations["get_1"];
         /** Edit a lesson: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
         put: operations["update"];
         post?: never;
@@ -1249,7 +1354,7 @@ export interface paths {
             cookie?: never;
         };
         /** One test: its latest version, or the numbered one, with the check against the exam */
-        get: operations["get_8"];
+        get: operations["get_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1359,7 +1464,7 @@ export interface paths {
             cookie?: never;
         };
         /** The attempt as it stands now (current section and what is saved in it) */
-        get: operations["get_7"];
+        get: operations["get_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1952,7 +2057,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_6"];
+        get: operations["get_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2115,6 +2220,22 @@ export interface paths {
         get: operations["sheet"];
         /** Record (or correct) the attendance of members of the class at the session; ORG_ADMIN or the class's teacher. Answers with the whole sheet */
         put: operations["mark"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{id}/grading-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put: operations["set_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3449,6 +3570,8 @@ export interface components {
              */
             testVersionId?: string;
         };
+        /** @enum {string} */
+        Grader: "CENTER" | "ENGLISH9X";
         GradingCriterion: {
             code?: string;
             /** Format: double */
@@ -3466,6 +3589,22 @@ export interface components {
             /** Format: uuid */
             mediaId?: string;
             text?: string;
+        };
+        GradingSettingsRequest: {
+            grader: components["schemas"]["Grader"];
+            /**
+             * @description The Writing/Speaking mode for the centre's learners; absent leaves it unchanged
+             * @enum {string}
+             */
+            mode?: "AI" | "TEACHER" | "BOTH";
+        };
+        GradingSettingsView: {
+            grader: components["schemas"]["Grader"];
+            /**
+             * @description The organisation's Writing/Speaking mode, null when none is set (the exam's applies)
+             * @enum {string}
+             */
+            mode?: "AI" | "TEACHER" | "BOTH";
         };
         GradingSkillDryRunRequest: {
             /**
@@ -4697,6 +4836,29 @@ export interface components {
             /** Format: uuid */
             userId: string;
         };
+        SharedCatalogDecision: {
+            /** Format: uuid */
+            courseId?: string;
+            sharedStatus?: string;
+        };
+        SharedCatalogQueueItem: {
+            authorDisplay?: string;
+            code?: string;
+            /** Format: uuid */
+            courseId?: string;
+            examCode?: string;
+            ownerName?: string;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            sharedStatus?: string;
+            title?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: uuid */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
         SkillScore: {
             aggregate?: boolean;
             label?: string;
@@ -5115,7 +5277,7 @@ export interface operations {
             };
         };
     };
-    reject: {
+    reject_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5517,6 +5679,128 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["AdminQueueItemView"];
                 };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    queue_1: {
+        parameters: {
+            query?: {
+                exam?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SharedCatalogQueueItem"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    approve_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SharedCatalogDecision"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SharedCatalogDecision"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    erase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Error (RFC 7807 problem details) */
             default: {
@@ -6064,7 +6348,7 @@ export interface operations {
             };
         };
     };
-    get_5: {
+    get_6: {
         parameters: {
             query?: {
                 version?: number;
@@ -6111,6 +6395,68 @@ export interface operations {
                 "application/json": components["schemas"]["CmsCourseRequest"];
             };
         };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsCourseVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    share: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CmsCourseVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    withdrawShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK */
             200: {
@@ -6260,7 +6606,7 @@ export interface operations {
             };
         };
     };
-    get_4: {
+    get_5: {
         parameters: {
             query?: {
                 version?: number;
@@ -6519,7 +6865,7 @@ export interface operations {
             };
         };
     };
-    get_10: {
+    get_11: {
         parameters: {
             query?: never;
             header?: never;
@@ -6744,7 +7090,7 @@ export interface operations {
             };
         };
     };
-    get_3: {
+    get_4: {
         parameters: {
             query?: {
                 version?: number;
@@ -6974,7 +7320,7 @@ export interface operations {
             };
         };
     };
-    get_2: {
+    get_3: {
         parameters: {
             query?: {
                 version?: number;
@@ -7232,7 +7578,7 @@ export interface operations {
             };
         };
     };
-    get_9: {
+    get_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -7391,7 +7737,7 @@ export interface operations {
             };
         };
     };
-    get_1: {
+    get_2: {
         parameters: {
             query?: {
                 version?: number;
@@ -7587,7 +7933,7 @@ export interface operations {
             };
         };
     };
-    get: {
+    get_1: {
         parameters: {
             query?: {
                 version?: number;
@@ -7784,7 +8130,7 @@ export interface operations {
             };
         };
     };
-    get_8: {
+    get_9: {
         parameters: {
             query?: {
                 version?: number;
@@ -7976,7 +8322,7 @@ export interface operations {
             };
         };
     };
-    get_7: {
+    get_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -9160,7 +9506,7 @@ export interface operations {
             };
         };
     };
-    get_6: {
+    get_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -9618,6 +9964,72 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["AttendanceSheet"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradingSettingsView"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    set_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradingSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradingSettingsView"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

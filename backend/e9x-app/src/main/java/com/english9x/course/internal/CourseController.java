@@ -125,4 +125,17 @@ class CourseController {
     ResponseEntity<SubmittedDto> submit(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).cacheControl(CacheControl.noStore()).body(new SubmittedDto(service.submit(id)));
     }
+
+    @PostMapping("/{id}/share")
+    @Operation(summary = "Offer this centre's PUBLISHED course to the English9x shared catalogue (F21): shared_status becomes PENDING",
+            description = "The owner's AUTHOR of the exam or ORG_ADMIN. 409 when the course is English9x's, not published, or already pending/approved.")
+    ResponseEntity<VersionDto> share(@PathVariable UUID id) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(VersionDto.of(service.share(id)));
+    }
+
+    @PostMapping("/{id}/share/withdraw")
+    @Operation(summary = "Withdraw a pending share request (PENDING -> NONE)")
+    ResponseEntity<VersionDto> withdrawShare(@PathVariable UUID id) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(VersionDto.of(service.withdrawShare(id)));
+    }
 }

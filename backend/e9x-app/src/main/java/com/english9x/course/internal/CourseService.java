@@ -1,5 +1,6 @@
 package com.english9x.course.internal;
 
+import com.english9x.audit.api.AuditLog;
 import com.english9x.catalog.api.Exams;
 import com.english9x.content.strategy.api.StrategyLessonVersionView;
 import com.english9x.content.strategy.api.StrategyLessonVersions;
@@ -62,14 +63,16 @@ class CourseService {
     private final TestVersions tests;
     private final ReviewService reviews;
     private final CourseRepository repository;
+    private final AuditLog audit;
 
-    CourseService(Authz authz, Exams exams, StrategyLessonVersions lessons, TestVersions tests, ReviewService reviews, CourseRepository repository) {
+    CourseService(Authz authz, Exams exams, StrategyLessonVersions lessons, TestVersions tests, ReviewService reviews, CourseRepository repository, AuditLog audit) {
         this.authz = authz;
         this.exams = exams;
         this.lessons = lessons;
         this.tests = tests;
         this.reviews = reviews;
         this.repository = repository;
+        this.audit = audit;
     }
 
     @Transactional
@@ -185,6 +188,54 @@ class CourseService {
             throw CourseProblems.anotherAuthorsDraft();
         }
         return reviews.submit(new VersionRef(CourseVersions.REVIEW_TYPE, latest.versionId()));
+    }
+
+    // ---- the shared catalogue (F21): the owner's side -------------------------------------------------------------------------------
+
+    /** The owner asks English9x to publish a PUBLISHED course in the shared catalogue (NONE/REJECTED -> PENDING). The owner's AUTHOR of the exam or ORG_ADMIN. */
+    @Transactional
+    Version share(UUID courseId) {
+        Header header = repository.header(courseId).orElseThrow(CourseProblems::notFound);
+        requireOwnOrgCourse(header);
+        requireOwnerSharer(header.examCode());
+        Version latest = repository.latest(courseId).orElseThrow(CourseProblems::notFound);
+        if (latest.status() != ContentStatus.PUBLISHED) {
+            throw CourseProblems.notPublishedForShare();
+        }
+        move(repository.requestShare(courseId));
+        audit.record("course.share-request", "course", courseId, java.util.Map.of("ownerOrgId", header.ownerOrgId().toString(), "exam", header.examCode()));
+        return repository.latest(courseId).orElseThrow(CourseProblems::conflict);
+    }
+
+    /** The owner withdraws a request still PENDING (PENDING -> NONE). */
+    @Transactional
+    Version withdrawShare(UUID courseId) {
+        Header header = repository.header(courseId).orElseThrow(CourseProblems::notFound);
+        requireOwnOrgCourse(header);
+        requireOwnerSharer(header.examCode());
+        move(repository.withdrawShare(courseId));
+        audit.record("course.share-withdraw", "course", courseId, java.util.Map.of("ownerOrgId", header.ownerOrgId().toString(), "exam", header.examCode()));
+        return repository.latest(courseId).orElseThrow(CourseProblems::conflict);
+    }
+
+    /** Sharing is only for a centre's own course: an English9x course or another organisation's is "not found" for this action (no 409 that would reveal it). */
+    private void requireOwnOrgCourse(Header header) {
+        UUID ctx = binding().orgId().orElse(null);
+        if (header.ownerOrgId() == null || !header.ownerOrgId().equals(ctx)) {
+            throw CourseProblems.notFound();
+        }
+    }
+
+    private void requireOwnerSharer(String examCode) {
+        if (!authz.has(Role.AUTHOR, Optional.of(examCode)) && !authz.has(Role.ORG_ADMIN, Optional.empty())) {
+            throw new AccessDeniedException("not an author of " + examCode + " or an organisation admin");
+        }
+    }
+
+    private void move(int rows) {
+        if (rows != 1) {
+            throw CourseProblems.shareConflict();
+        }
     }
 
     // ---- the checks -----------------------------------------------------------------------------------------------------------------
