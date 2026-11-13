@@ -80,9 +80,12 @@ test.describe('F15 score tables', () => {
     expect(all.map((v) => [v.versionNo, v.status])).toEqual([[1, 'ARCHIVED'], [2, 'PUBLISHED']]);
     expect(all[0]!.rows).toEqual(saved.body.rows);
 
-    // the list shows the latest version of each table
+    // the list shows the latest version of each table — assert THIS table's own row link
+    // (the list also shows any English9x default table of the same skill, so match by href, not skill name alone)
     await page.goto('/cms/score-tables');
-    await expect(page.getByRole('link', { name: 'LISTENING' })).toBeVisible();
+    const ownLink = page.locator(`a[href="/cms/score-tables/${tableId}"]`);
+    await expect(ownLink).toBeVisible();
+    await expect(ownLink).toHaveText('LISTENING');
   });
 
   test('F15 the scope TEST is not available yet; the other refusals are by path; a score a function computes has no table', async ({ request, org, uniqueEmail }) => {
