@@ -73,11 +73,6 @@ final class CourseProblems {
                 "Somebody changed this at the same moment. Reload it and try again.", List.of());
     }
 
-    static ErrorResponseException notShareable() {
-        return of(HttpStatus.CONFLICT, "course-not-shareable", "Not shareable",
-                "An English9x course is already in the catalogue; only a centre's course can be shared.", List.of());
-    }
-
     static ErrorResponseException notPublishedForShare() {
         return of(HttpStatus.CONFLICT, "course-not-published", "Publish first",
                 "Only a PUBLISHED course can be offered to the shared catalogue.", List.of());

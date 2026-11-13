@@ -196,9 +196,7 @@ class CourseService {
     @Transactional
     Version share(UUID courseId) {
         Header header = repository.header(courseId).orElseThrow(CourseProblems::notFound);
-        if (header.ownerOrgId() == null) {
-            throw CourseProblems.notShareable();
-        }
+        requireOwnOrgCourse(header);
         requireOwnerSharer(header.examCode());
         Version latest = repository.latest(courseId).orElseThrow(CourseProblems::notFound);
         if (latest.status() != ContentStatus.PUBLISHED) {
@@ -213,13 +211,19 @@ class CourseService {
     @Transactional
     Version withdrawShare(UUID courseId) {
         Header header = repository.header(courseId).orElseThrow(CourseProblems::notFound);
-        if (header.ownerOrgId() == null) {
-            throw CourseProblems.notShareable();
-        }
+        requireOwnOrgCourse(header);
         requireOwnerSharer(header.examCode());
         move(repository.withdrawShare(courseId));
         audit.record("course.share-withdraw", "course", courseId, java.util.Map.of("ownerOrgId", header.ownerOrgId().toString(), "exam", header.examCode()));
         return repository.latest(courseId).orElseThrow(CourseProblems::conflict);
+    }
+
+    /** Sharing is only for a centre's own course: an English9x course or another organisation's is "not found" for this action (no 409 that would reveal it). */
+    private void requireOwnOrgCourse(Header header) {
+        UUID ctx = binding().orgId().orElse(null);
+        if (header.ownerOrgId() == null || !header.ownerOrgId().equals(ctx)) {
+            throw CourseProblems.notFound();
+        }
     }
 
     private void requireOwnerSharer(String examCode) {

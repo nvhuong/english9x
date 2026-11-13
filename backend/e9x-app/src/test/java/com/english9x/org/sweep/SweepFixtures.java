@@ -94,6 +94,12 @@ public final class SweepFixtures {
     /** Raw tokens of an invitation of org B, and of one org A's member may really accept (plausible: 40-64 URL-safe characters). */
     public final String tokenB = "sweep-foreign-invitation-token-of-org-b-0001";
     public final String tokenForA = "sweep-own-invitation-token-for-the-a-member1";
+    /** P6.5: A's own PUBLISHED courses — one NONE (the control of POST share) and one already PENDING (the control of share/withdraw) — and a throwaway user the erasure control may really erase. */
+    public final UUID shareCourseA = UUID.randomUUID();
+    public final String shareCourseCodeA = "A00010";
+    public final UUID withdrawCourseA = UUID.randomUUID();
+    public final String withdrawCourseCodeA = "A00011";
+    public final UUID erasableUser = UUID.randomUUID();
 
     private final JdbcTemplate su;
 
@@ -303,6 +309,17 @@ public final class SweepFixtures {
             su.update(courseHeader, ownCourses[i], orgA, ownCodes[i], authorA);
             su.update(courseVersion, UUID.randomUUID(), ownCourses[i], orgA, authorA, "DRAFT");
         }
+        // P6.5: two PUBLISHED courses of A for the shared-catalogue controls — one NONE (POST share), one already PENDING (share/withdraw)
+        for (Object[] sc : new Object[][] {{shareCourseA, shareCourseCodeA, "NONE"}, {withdrawCourseA, withdrawCourseCodeA, "PENDING"}}) {
+            su.update(courseHeader, sc[0], orgA, sc[1], authorA);
+            UUID ver = UUID.randomUUID();
+            su.update(courseVersion, ver, sc[0], orgA, authorA, "DRAFT");
+            su.update("update course_versions set status = 'IN_REVIEW' where id = ?", ver);
+            su.update("update course_versions set status = 'PUBLISHED' where id = ?", ver);
+            su.update("update courses set shared_status = ? where id = ?", sc[2], sc[0]);
+        }
+        // P6.5: a throwaway user the personal-data erasure control may really erase
+        su.update("insert into users(id,email,email_verified_at,consent_at) values (?,'erasable-sweep@x.test',now(),now())", erasableUser);
         // P5.1: plans are a price list shared by everybody; orders belong to a person (B's member has one, with an item; A's member has one too, the positive control)
         su.update("insert into plans(id,name,price_vnd,months,max_courses) values (?,'Sweep plan',100000,1,2)", planId);
         su.update("insert into courses(id,owner_org_id,exam_code,code,title,status) values (?,null,'IELTS','SWPUB1','Published','PUBLISHED')", publishedCourse);
@@ -561,6 +578,19 @@ public final class SweepFixtures {
         all.put("POST /api/cms/score-tables", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
         all.put("PUT /api/cms/score-tables/{id}", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
         all.put("POST /api/cms/score-tables/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null, englishNine));
+        // P6.5 (F50): centre grading configuration. A's ORG_ADMIN (the sweep's caller) sets A's own organisation's; a foreign organisation id is refused.
+        String gradingBody = "{\"grader\":\"ENGLISH9X\",\"mode\":\"AI\"}";
+        all.put("PUT /api/orgs/{id}/grading-settings", ForeignIdSweep.Fixture.write(gradingBody, List.of(), ForeignIdSweep.Control.of(slot("id", orgA), gradingBody)));
+        // P6.5 (F21): the owner's share path. A's ORG_ADMIN offers and withdraws A's own PUBLISHED course; a foreign course id is a 404.
+        all.put("POST /api/cms/courses/{id}/share", ForeignIdSweep.Fixture.write(null, List.of(), ForeignIdSweep.Control.of(slot("id", shareCourseA), null)));
+        all.put("POST /api/cms/courses/{id}/share/withdraw", ForeignIdSweep.Fixture.write(null, List.of(), ForeignIdSweep.Control.of(slot("id", withdrawCourseA), null)));
+        // the English9x decision is a REVIEWER of the exam's, a role none of the sweep's callers holds; SharedCatalogIT measures the 2xx and every refusal (owner and SYS_ADMIN cannot approve)
+        String sharedDecision = "decided by an English9x REVIEWER of the exam, a role none of the sweep's callers holds; SharedCatalogIT measures the real decisions and the refusals, the foreign ids are walked here";
+        all.put("POST /api/admin/shared-catalog/{id}/approve", new ForeignIdSweep.Fixture(null, List.of(), null, sharedDecision));
+        all.put("POST /api/admin/shared-catalog/{id}/reject", new ForeignIdSweep.Fixture(null, List.of(), null, sharedDecision));
+        // P6.5 (§15): personal-data erasure is a SYS_ADMIN's. A's ORG_ADMIN is refused whatever the user id; the ADMIN control really erases a throwaway user.
+        all.put("DELETE /api/admin/users/{id}/personal-data", ForeignIdSweep.Fixture.write(null, List.of(),
+                new ForeignIdSweep.Control(slot("id", erasableUser), null, ForeignIdSweep.ADMIN)));
         examFixtures(all);
         learningFixtures(all);
         gradingFixtures(all);
