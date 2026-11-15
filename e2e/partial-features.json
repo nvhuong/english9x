@@ -8,16 +8,6 @@
       "owner": "P5.4 (checkout screens)"
     },
     {
-      "id": "F07",
-      "pending": "'danh sách khoá/lớp đổi theo': there are no courses or classes yet. Today the data that changes with the context is the organisation's members and roles, the menus the roles open, and the switcher; the course and class lists must be asserted in the same two-organisation setup.",
-      "owner": "P3.1 (courses), P6.1 (classes and members)"
-    },
-    {
-      "id": "F08",
-      "pending": "'mở URL lớp/khoá riêng của tổ chức B → 404': there is no class or course page or endpoint yet. Today the same scenario runs against the organisation-owned pages and endpoints that exist (members, roles, invitations) in the browser and over HTTP; the class and course URLs must be added.",
-      "owner": "P3.1 (courses), P6.1 (classes)"
-    },
-    {
       "id": "F13",
       "pending": "Done through the real stack (P2.6): the author builds a TOEIC test on the screen part by part from published question groups, the screen checks it against the exam (a count that differs warns, a missing skill blocks the review), the number of resumes is set per test, the test is published only by a review that waits for its groups (a draft group refuses the approval), and an edit makes version 2 while version 1 stays PUBLISHED (the review is run by seed.reviewVersion, the real ReviewService, until the review screens exist). Pending: 'gắn bảng quy đổi ghi đè' on a screen (the TEST scope is enabled in the database since V202611120002 and resolve uses it, covered by TestVersionViewIT.publishingVersion2OfATestKeepsTheOverride and db-test 44; no CMS screen or endpoint writes the override yet: its header is the administrator's, its rows are versioned content), and the full-size tests 'TOEIC 200 câu' / 'IELTS 4 kỹ năng' with every count right (they need ~100 published questions: the Excel import of P2.7 makes them).",
       "owner": "P2.7 (import: full-size tests), the override screen (an administrator's)"
