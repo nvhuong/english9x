@@ -56,7 +56,9 @@ export function aiCriteriaRows(result: Json | null | undefined): Array<[string, 
     });
   }
   if (c && typeof c === 'object') return criteriaRows(c);
-  return Object.entries(obj).flatMap(([k, v]): Array<[string, string]> => (typeof v === 'number' ? [[k, String(v)]] : []));
+  // a total is not a criterion: the band of the whole answer is shown beside the feedback, never as a row
+  const TOTAL = /^(band|score|overall|total)|(_|[a-z])(band|score|overall|total)$/i;
+  return Object.entries(obj).flatMap(([k, v]): Array<[string, string]> => (typeof v === 'number' && !TOTAL.test(k) ? [[k, String(v)]] : []));
 }
 
 /** What the AI heard in a spoken answer, when the grading skill's schema asks for it. */

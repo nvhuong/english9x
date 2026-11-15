@@ -48,8 +48,8 @@ test.describe('F41 entitlement access', () => {
   });
 
   test('F41 when the plan ends the lesson and a new exam are closed on the real screens, the old result still reads and the attempt under way is finished', async ({ page, request, auth, seed, org, uniqueEmail }) => {
-    // two minutes of late-sync grace are waited out for real before the old attempt is scored
-    test.setTimeout(480_000);
+    // two minutes of late-sync grace are waited out for real before an attempt is scored (the attempt finished after the plan ended is scored too)
+    test.setTimeout(600_000);
     const s = await staffed(['TOEIC'], 'f41', { request, uniqueEmail, apiLogin: org.apiLogin });
     const mark = s.author.userId.slice(0, 6);
     const testVersionId = await publishedToeicTestVersion(s, `F41 exam ${mark}`);
@@ -104,6 +104,18 @@ test.describe('F41 entitlement access', () => {
     const refused = await api(token, 'POST', '/api/exam/attempts', { body: { testVersionId } });
     expect(refused.status, refused.text).toBe(403);
 
+    // the attempt that was under way when the plan ended is still finished in the exam room (first, while its section still has time) and then scored
+    await page.goto(`/exam/attempts/${second.attemptId}`);
+    await expect(page.getByRole('region', { name: 'Câu hỏi' })).toBeVisible();
+    await finishSection(page);
+    await expect(page.getByText('Phần 2/2')).toBeVisible();
+    await finishSection(page);
+    await expect(page.getByTestId('exam-result')).toHaveAttribute('data-status', 'SUBMITTED');
+    await poll('the scores of the attempt that was finished after the plan ended', async () => ((await seed.grading.scores(second.attemptId)).graded ? true : null), { timeoutMs: 360_000, intervalMs: 3_000 });
+    await page.goto(`/results/attempts/${second.attemptId}`);
+    await expect(page.getByRole('heading', { level: 1, name: 'Kết quả của bạn' })).toBeVisible();
+    await expect(page.getByTestId('skill-score').first()).toBeVisible();
+
     // the OLD result is still read once it is scored: the scores with their label, the key and the explanation
     await poll('the scores of the old attempt', async () => ((await seed.grading.scores(first.attemptId)).graded ? true : null), { timeoutMs: 360_000, intervalMs: 3_000 });
     await page.goto(`/results/attempts/${first.attemptId}`);
@@ -114,13 +126,5 @@ test.describe('F41 entitlement access', () => {
     await expect(questions.filter({ has: page.getByText('Sai', { exact: true }) }).getByText(/Đáp án đúng: D/)).toBeVisible();
     await page.goto('/results/weakness');
     await expect(page.getByTestId('type-rate')).toHaveCount(2);
-
-    // the attempt that was under way when the plan ended is still finished in the exam room
-    await page.goto(`/exam/attempts/${second.attemptId}`);
-    await expect(page.getByRole('region', { name: 'Câu hỏi' })).toBeVisible();
-    await finishSection(page);
-    await expect(page.getByText('Phần 2/2')).toBeVisible();
-    await finishSection(page);
-    await expect(page.getByTestId('exam-result')).toHaveAttribute('data-status', 'SUBMITTED');
   });
 });

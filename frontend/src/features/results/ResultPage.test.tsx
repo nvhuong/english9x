@@ -78,6 +78,16 @@ describe('ResultPage', () => {
     expect(within(fb).getByText('I live in a small town.')).toBeInTheDocument();
   });
 
+  it('does not take the total band of a flat AI result for a criterion', async () => {
+    const flat = { task_response: 7, coherence: 6.5, overallBand: 6.5, band: 6.5, total_score: 13, feedback: 'ok' };
+    stubApi({ [`GET /api/results/attempts/${ID}`]: () => json(200, ready({ feedback: [{ skill: 'WRITING', ai: [{ questionId: 'w1', band: 6.5, result: flat }], teacher: null }] })) });
+    renderAt(`/results/attempts/${ID}`, '/results/attempts/:attemptId', <ResultPage />);
+    const criteria = within(await screen.findByTestId('feedback')).getByLabelText('Tiêu chí');
+    expect(within(criteria).getByText('task_response')).toBeInTheDocument();
+    expect(within(criteria).getByText('coherence')).toBeInTheDocument();
+    for (const k of ['overallBand', 'band', 'total_score']) expect(within(criteria).queryByText(k)).toBeNull();
+  });
+
   it('can show only the wrong or blank answers', async () => {
     stubApi({ [`GET /api/results/attempts/${ID}`]: () => json(200, ready()) });
     renderAt(`/results/attempts/${ID}`, '/results/attempts/:attemptId', <ResultPage />);
