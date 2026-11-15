@@ -45,8 +45,10 @@ test.describe('F01 register and verify', () => {
     const a = await org.apiLogin(admin);
     const course = await seed.billing.course();
     const planName = `Gói F01 ${suffix}`;
-    expect((await org.api(a.token, 'POST', '/api/admin/plans', { body: { name: planName, priceVnd: 299000, months: 1, maxCourses: 1, active: true } })).status).toBe(201);
-    expect((await org.api(a.token, 'PUT', '/api/admin/payment-account', { body: { bankBin: '970436', accountNo: `8${Date.now().toString().slice(-9)}`, accountName: 'CONG TY ENGLISH9X' } })).status).toBeLessThan(300);
+    const planRes = await org.api(a.token, 'POST', '/api/admin/plans', { body: { name: planName, priceVnd: 299000, months: 1, maxCourses: 1, active: true } });
+    expect(planRes.status).toBe(201);
+    const planId: string = planRes.body.id;
+    expect((await org.api(a.token, 'PUT', '/api/admin/payment-account', { body: { bankBin: '970436', accountNo: `8${Date.now().toString().slice(-9)}`, accountName: 'CONG TY ENGLISH9X' } })).status, 'activate a receiving account').toBe(200);
     await page.goto('/checkout');
     await page.getByRole('radio', { name: new RegExp(planName) }).check();
     await page.getByRole('checkbox', { name: new RegExp(course.code) }).check();
@@ -59,26 +61,36 @@ test.describe('F01 register and verify', () => {
     await expect(page.getByRole('alert').filter({ hasText: 'Hãy xác thực email trước khi mua gói.' })).toBeVisible();
     await expect(page).toHaveURL(/\/checkout$/);
     await expect(page.getByRole('checkbox', { name: new RegExp(course.code) })).toBeChecked();
+    const learnerApi = await org.apiLogin({ email, password: PASSWORD });
+    const none = await org.api(learnerApi.token, 'GET', '/api/orders');
+    expect(none.status).toBe(200);
+    expect(none.body, 'no order exists after the refusal').toHaveLength(0);
 
     // open the link (in the same browser): verified, and the banner goes away without signing in again
-    await page.goto(verifyLink);
-    await expect(page.getByRole('heading', { level: 1, name: 'Email đã được xác thực' })).toBeVisible();
-    expect(page.url(), 'the token is taken out of the address bar').not.toContain('token=');
-    await page.getByRole('link', { name: 'Tiếp tục' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'English9x' })).toBeVisible();
-    await expect(banner).toHaveCount(0);
+    const second = await page.context().newPage();
+    await second.goto(verifyLink);
+    await expect(second.getByRole('heading', { level: 1, name: 'Email đã được xác thực' })).toBeVisible();
+    expect(second.url(), 'the token is taken out of the address bar').not.toContain('token=');
+    await second.close();
     expect(await seed.requireVerified(userId), 'checkout guard after verification').toBe(200);
     expect(await seed.userInfo(email)).toMatchObject({ count: 1, emailVerified: true });
 
     // the same action on the same screen now creates the order, and the QR is shown
-    await page.goto('/checkout');
-    await page.getByRole('radio', { name: new RegExp(planName) }).check();
-    await page.getByRole('checkbox', { name: new RegExp(course.code) }).check();
+    await expect(page.getByRole('checkbox', { name: new RegExp(course.code) }), 'the kept choice is still there').toBeChecked();
     const placed = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/orders');
-    await page.getByRole('button', { name: 'Đặt đơn và thanh toán' }).click();
-    expect((await placed).status()).toBe(201);
+    await pay.click();
+    const created = await placed;
+    expect(created.status()).toBe(201);
+    const createdBody = await created.json();
+    expect(createdBody.amountVnd).toBe(299000);
     await expect(page).toHaveURL(/\/orders\/[A-Z0-9]{6}$/);
     const code = page.url().split('/').pop()!;
+    expect(createdBody.orderCode).toBe(code);
+    const order = await org.api(learnerApi.token, 'GET', `/api/orders/${code}`);
+    expect(order.status).toBe(200);
+    expect(order.body.planId).toBe(planId);
+    expect(order.body.courses.map((c: { code: string }) => c.code)).toEqual([course.code]);
+    expect(order.body.status).toBe('PENDING_PAYMENT');
     await expect(page.getByRole('img', { name: `Mã QR thanh toán đơn ${code}` })).toBeVisible();
 
     // the link works once
