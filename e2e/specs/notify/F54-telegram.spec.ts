@@ -2,6 +2,7 @@
 // Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
 import { reviewWorld } from './_world';
+import { classroomWorld, ordersWorld, planWorld, runChannels, type Fx, type World } from './_events';
 
 test.describe('F54 Telegram notifications', () => {
   test('F54 link with a one-time token, get the event in the chat, a reused token is refused', async ({ page, browser, seed, auth, telegram, uniqueEmail }) => {
@@ -59,4 +60,24 @@ test.describe('F54 Telegram notifications', () => {
     await page.getByRole('button', { name: 'Huỷ kết nối' }).click();
     await expect(page.getByText('Chưa kết nối Telegram')).toBeVisible();
   });
+});
+
+const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World> }> = [
+  { name: 'orders', build: ordersWorld },
+  { name: 'plan', build: planWorld },
+  { name: 'classroom', build: classroomWorld },
+];
+
+// The other §13 events, each by its real trigger (see _events.ts): every recipient is linked to a chat of their own (the one-time link and the real webhook) and the chat
+// receives the event's bold title, text and the link to the notification centre; a linked person who is not a recipient of the event gets nothing of it. The grading events
+// are asserted by the one grading run in grading-events.spec.ts.
+test.describe('F54 Telegram: the other spec 13 events', () => {
+  for (const w of worlds) {
+    test(`F54 ${w.name} events reach the linked chat of the recipient`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {
+      const fx: Fx = { seed, org, uniqueEmail, request };
+      const world = await w.build(fx, `f54${w.name}`);
+      test.setTimeout(world.timeoutMs);
+      await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { telegram: true } });
+    });
+  }
 });

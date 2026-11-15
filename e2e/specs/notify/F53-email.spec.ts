@@ -3,6 +3,7 @@
 import { test, expect } from '../../fixtures';
 import { submitQuestion } from '../../fixtures/review';
 import { reviewWorld } from './_world';
+import { classroomWorld, ordersWorld, pickOff, planWorld, runChannels, type Fx, type World } from './_events';
 
 test.describe('F53 email notifications', () => {
   test('F53 the event arrives in Mailpit in the person\'s language; with email off for that event nothing is sent', async ({ page, browser, seed, auth, mailpit, uniqueEmail }) => {
@@ -54,4 +55,25 @@ test.describe('F53 email notifications', () => {
     expect(mail.HTML).not.toContain('<b>Ann</b>');
     expect(mail.HTML).toContain('&lt;b&gt;Ann&lt;/b&gt; &amp; &quot;Lee&quot;');
   });
+});
+
+const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World> }> = [
+  { name: 'orders', build: ordersWorld },
+  { name: 'plan', build: planWorld },
+  { name: 'classroom', build: classroomWorld },
+];
+
+// The other §13 events, each by its real trigger (see _events.ts): the mail is in Mailpit with the event's subject, text and the link to the notification centre.
+// Email off for one event (switched on the real preference screen; the first event of a person who has a LATER event): its in-app notice arrives, no mail comes, asserted
+// only after the later event's mail has arrived. The grading events: grading-events.spec.ts.
+test.describe('F53 email: the other spec 13 events', () => {
+  for (const w of worlds) {
+    test(`F53 ${w.name} events arrive in Mailpit; email off for one of them sends none`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {
+      const fx: Fx = { seed, org, uniqueEmail, request };
+      const world = await w.build(fx, `f53${w.name}`);
+      test.setTimeout(world.timeoutMs);
+      const { first } = pickOff(world);
+      await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { email: true }, off: [{ who: first.who, event: first.event, channel: 'Email' }] });
+    });
+  }
 });

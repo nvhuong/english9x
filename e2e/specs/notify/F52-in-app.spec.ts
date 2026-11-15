@@ -1,7 +1,9 @@
 // F52 — Thông báo trong app (spec §16.2): "Sự kiện tạo thông báo, đánh dấu đã đọc".
-// Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
+// The other §13 events (orders, plans, scores, grading queue, assignments, sessions, failed AI grading) are raised by real triggers in _events.ts and asserted on the
+// recipient's real screen below. Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
 import { reviewWorld } from './_world';
+import { classroomWorld, ordersWorld, planWorld, runChannels, type Fx, type World } from './_events';
 
 test.describe('F52 in-app notifications', () => {
   test('F52 an event creates a notification, the bell counts it, it can be marked read, it is the same in every context and private', async ({ page, browser, seed, auth, org, uniqueEmail }) => {
@@ -80,4 +82,22 @@ test.describe('F52 in-app notifications', () => {
     await expect(page.getByText('Vui lòng đăng nhập để xem thông báo.')).toBeVisible();
     await expect(page.getByRole('link', { name: /^Thông báo, / })).toHaveCount(0);
   });
+});
+
+const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World> }> = [
+  { name: 'orders', build: ordersWorld },
+  { name: 'plan', build: planWorld },
+  { name: 'classroom', build: classroomWorld },
+];
+
+// The grading events are asserted on every channel by the ONE grading run in grading-events.spec.ts.
+test.describe('F52 the other spec 13 events reach the recipient\'s notification screen', () => {
+  for (const w of worlds) {
+    test(`F52 ${w.name} events are listed on the recipient's screen, unread, and can be marked read`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {
+      const fx: Fx = { seed, org, uniqueEmail, request };
+      const world = await w.build(fx, `f52${w.name}`);
+      test.setTimeout(world.timeoutMs);
+      await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { screen: true } });
+    });
+  }
 });

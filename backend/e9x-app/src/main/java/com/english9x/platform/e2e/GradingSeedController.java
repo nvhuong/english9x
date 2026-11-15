@@ -149,19 +149,27 @@ class GradingSeedController {
         return out;
     }
 
+    record ExpireRef(UUID attemptId, Integer dueInMinutes) {}
+
     /**
-     * The deadline of the claim on an attempt's item passes (the real default is 24 hours, which a spec cannot wait out): the claim's deadline moves into the past, and the
-     * real {@code release_expired_claim} job (the E2E stack runs it every few seconds) returns the item to the queue.
+     * The deadline of the claim on an attempt's item moves (the real default is 24 hours, which a spec cannot wait out). Without {@code dueInMinutes} it moves into the
+     * past and the real {@code release_expired_claim} job (the E2E stack runs it every few seconds) returns the item to the queue. With {@code dueInMinutes} it moves to that many
+     * minutes from now (1 to 1440): the claim stays, and the same job warns the teacher once the deadline is within {@code e9x.grading.claim-due-warning} ({@code GRADING_CLAIM_DUE}).
      */
     @PostMapping("/queue/expire")
-    Map<String, Object> expire(@RequestBody AttemptRef r) {
+    Map<String, Object> expire(@RequestBody ExpireRef r) {
         UUID attempt = r.attemptId();
         if (attempt == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "attemptId is required");
         }
+        Integer minutes = r.dueInMinutes();
+        if (minutes != null && (minutes < 1 || minutes > 1440)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "dueInMinutes must be between 1 and 1440");
+        }
+        String due = minutes == null ? "now() - interval '1 minute'" : "now() + interval '" + minutes + " minutes'";
         db.jdbc().execute("DO $$ BEGIN ALTER TABLE grading_queue_items DISABLE TRIGGER grading_queue_items_guard; "
-                + "UPDATE grading_queue_items SET claim_due_at = now() - interval '1 minute' WHERE attempt_id = '" + attempt + "' AND state = 'CLAIMED'; "
+                + "UPDATE grading_queue_items SET claim_due_at = " + due + " WHERE attempt_id = '" + attempt + "' AND state = 'CLAIMED'; "
                 + "ALTER TABLE grading_queue_items ENABLE TRIGGER grading_queue_items_guard; END $$");
-        return Map.of("expired", true);
+        return Map.of("expired", minutes == null);
     }
 }

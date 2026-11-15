@@ -1,7 +1,9 @@
 // F55 — Tuỳ chọn kênh (spec §16.2): "Bật/tắt theo sự kiện × kênh có hiệu lực".
 // Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
+import { poll } from '../../helpers/env';
 import { reviewWorld } from './_world';
+import { classroomWorld, ordersWorld, pickOff, planWorld, runChannels, type Fx, type World } from './_events';
 
 test.describe('F55 channel preferences', () => {
   test('F55 switching an event x channel off or on changes what is sent, per event and per channel', async ({ page, browser, seed, auth, telegram, mailpit, uniqueEmail }) => {
@@ -62,4 +64,46 @@ test.describe('F55 channel preferences', () => {
     // exactly one 'published' mail exists: the one for the approved event before email was switched off; the later approval sent none
     expect(await mailpit.countEmailsTo(w.reviewer.email, 'Nội dung đã được xuất bản')).toBe(1);
   });
+});
+
+const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World> }> = [
+  { name: 'orders', build: ordersWorld },
+  { name: 'plan', build: planWorld },
+  { name: 'classroom', build: classroomWorld },
+];
+
+// The grading events (one run, all four channels): grading-events.spec.ts.
+// The other §13 events: the preference screen has a row for each and it takes effect. Before the world runs, one event is switched off on the real preference
+// screen per channel (Email and Telegram for the first event of a person who has a later one): the in-app notice arrives, the channel left on delivers it, the channel switched off does not (asserted after a LATER event of that person has
+// arrived on that channel). For the orders the choice is then reversed: switched on again, the next rejection reaches that channel.
+test.describe('F55 channel preferences: the other spec 13 events', () => {
+  for (const w of worlds) {
+    test(`F55 ${w.name} events: a channel switched off gets nothing, switched on delivers`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {
+      const fx: Fx = { seed, org, uniqueEmail, request };
+      const world = await w.build(fx, `f55${w.name}`);
+      test.setTimeout(world.timeoutMs);
+      const { first } = pickOff(world);
+      const all = world.steps.flatMap((st) => st.expects);
+      // Email AND Telegram off for the first event of a person who has a later one: the later event's arrival on each channel anchors the absence.
+      // Orders also switch Telegram off for the last event (ORDER_REJECTED), for the reversal below.
+      const lastE = all[all.length - 1]!;
+      const off = [
+        { who: first.who, event: first.event, channel: 'Email' as const },
+        { who: first.who, event: first.event, channel: 'Telegram' as const },
+        ...(w.name === 'orders' ? [{ who: lastE.who, event: lastE.event, channel: 'Telegram' as const }] : []),
+      ];
+      const r = await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { email: true, telegram: true }, off });
+      if (w.name === 'orders') {
+        // reversed: ORDER_REJECTED (Telegram was off, nothing arrived) is switched on and raised again with another order
+        const step = world.steps[world.steps.length - 1]!;
+        const before = await r.count(lastE.who, lastE.event, 'Telegram');
+        expect(before).toBe(0);
+        await r.setBox(lastE.who, lastE.event, 'Telegram', true);
+        await step.fire();
+        await poll('ORDER_REJECTED by Telegram once it is switched on', async () => ((await r.count(lastE.who, lastE.event, 'Telegram')) > 0 ? true : null), { timeoutMs: 60_000, intervalMs: 1_000 });
+        // exactly one: the first rejection (switched off) never arrived, the second (switched on) did
+        expect(await r.count(lastE.who, lastE.event, 'Telegram')).toBe(1);
+      }
+    });
+  }
 });
