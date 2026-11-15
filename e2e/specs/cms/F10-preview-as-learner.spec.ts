@@ -2,10 +2,13 @@
 // Also the screens of F06 and F09 that the work queue and the preview bring: "Hàng việc của tôi" is scoped to the exams the person is assigned, an AUTHOR of
 // IELTS does not see or open a TOEIC question, and a person who wrote a version is not offered it to review.
 //
-// The REAL stack. Until the exam room of P3.4 exists the preview is the CMS's minimal renderer; the part "looks like the exam room" is pending, see
-// e2e/partial-features.json (F10, owner P3.4). What is asserted here is the part that must never change: the preview shows the learner's side and
-// not one word of the solution side (answer key, explanation, transcript, model answer).
+// The REAL stack. The preview draws the question with the exam room's own component (QuestionInput), so "giống phòng thi" is asserted by sitting a
+// published IELTS test and comparing, for the first question of each section, the controls and texts of the room with those of the preview of the
+// same question. What is also asserted is the part that must never change: the preview shows the learner's side and not one word of the solution
+// side (answer key, explanation, transcript, model answer).
+import type { Locator } from '@playwright/test';
 import { test, expect } from '../../fixtures';
+import { enterExam, finishSection } from '../exam/_exam';
 import { createQuestion, exampleOf, exampleTypeCodes, examOfType, staffed, withMedia } from '../../fixtures/content';
 
 /** Every string in a JSON value. */
@@ -14,6 +17,29 @@ function strings(node: unknown): string[] {
   if (Array.isArray(node)) return node.flatMap(strings);
   if (node && typeof node === 'object') return Object.values(node).flatMap(strings);
   return [];
+}
+
+/**
+ * What a person can do with a question and read in it: its controls (kind, label, the options of a select) and the texts around them, without media,
+ * buttons or status lines (the room has its own navigation, the preview has none). The ids React makes are not part of it.
+ */
+async function shapeOf(scope: Locator): Promise<{ controls: Array<{ tag: string; type: string; name: string; options: string[] }>; texts: string[] }> {
+  return scope.evaluate((root) => {
+    const clean = (x: string | null | undefined) => (x ?? '').replace(/\s+/g, ' ').trim();
+    const nameOf = (el: Element) => clean(el.getAttribute('aria-label')) || clean((el as HTMLInputElement).labels?.[0]?.textContent);
+    const controls = [...root.querySelectorAll('input, select, textarea')].map((el) => ({
+      tag: el.tagName.toLowerCase(),
+      type: el.getAttribute('type') ?? '',
+      name: nameOf(el),
+      options: el.tagName === 'SELECT' ? [...el.querySelectorAll('option')].map((o) => clean(o.textContent)) : [],
+    }));
+    const copy = root.cloneNode(true) as HTMLElement;
+    copy.querySelectorAll('audio, video, img, button, select, textarea, [role=status], [role=alert]').forEach((n) => n.remove());
+    const texts: string[] = [];
+    const walker = document.createTreeWalker(copy, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) if (clean(n.textContent)) texts.push(clean(n.textContent));
+    return { controls, texts };
+  });
 }
 
 test.describe('F10 preview as the learner', () => {
@@ -74,6 +100,39 @@ test.describe('F10 preview as the learner', () => {
       const LEARNER_WORDS = new Set(['TRUE', 'FALSE', 'YES', 'NO', 'NOT GIVEN']); // the fixed choices of the learner's side
       const secrets = strings(example.answerKey).filter((x) => x.length >= 8 && !contentWords.has(x) && !LEARNER_WORDS.has(x));
       for (const secret of [...secrets, `EXPLANATION ${code}`]) expect(page_, `${code}: ${secret}`).not.toContain(secret);
+    }
+  });
+
+  test('F10 the preview is drawn like the exam room: for the first question of each section of an IELTS test, the controls and texts of the room and of the preview are the same', async ({ page, browser, seed, auth }) => {
+    test.setTimeout(420_000);
+    const exam = await seed.publishedIeltsTest({ variant: 'AC' });
+    const learner = await seed.learnerWithPlan({ courses: 1 });
+    await auth.loginAs(page, learner);
+    await enterExam(page, exam.testVersionId);
+
+    // the room: listening (multiple choice), reading (True/False/Not Given), writing (essay), speaking (the prompt)
+    const room = page.getByRole('region', { name: 'Câu hỏi', exact: true });
+    const inRoom: Array<Awaited<ReturnType<typeof shapeOf>>> = [];
+    for (const [i, part] of exam.parts.entries()) {
+      await expect(page.getByText(`Phần ${i + 1}/4`)).toBeVisible();
+      if (part.sectionCode !== 'SPEAKING') await expect(room.locator('input, textarea, select').first()).toBeVisible();
+      else await expect(room.locator('p.font-serif').first()).toBeVisible(); // the topic of the speaking part
+      inRoom.push(await shapeOf(room));
+      if (i < exam.parts.length - 1) await finishSection(page);
+    }
+    expect(inRoom.map((x) => x.controls.length > 0 || x.texts.length > 0)).toEqual([true, true, true, true]);
+
+    // the preview of the same four questions, by the author of the test
+    const author = await (await browser.newContext()).newPage();
+    await auth.loginAs(author, exam.staff.authorLogin);
+    for (const [i, part] of exam.parts.entries()) {
+      await author.goto(`/cms/questions/${part.questions[0]!.questionId}/preview`);
+      const view = author.getByRole('region', { name: 'Câu hỏi như học viên thấy' });
+      await expect(view, part.sectionCode).toBeVisible();
+      const preview = await shapeOf(view);
+      expect(preview.controls, `${part.sectionCode}: the same controls, with the same labels`).toEqual(inRoom[i]!.controls);
+      expect(preview.texts.length, `${part.sectionCode}: the preview shows text`).toBeGreaterThan(0);
+      for (const text of preview.texts) expect(inRoom[i]!.texts, `${part.sectionCode}: the room shows "${text}" too`).toContain(text);
     }
   });
 

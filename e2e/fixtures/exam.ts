@@ -19,6 +19,8 @@ export interface SeededExam {
   title: string;
   testVersionId: string;
   parts: SeededPart[];
+  /** The people who wrote and reviewed the questions (the author may edit them and sign in to the CMS; the reviewer approves a new version). */
+  staff: Staffed & { authorLogin: { email: string; password: string }; reviewerLogin: { email: string; password: string } };
 }
 
 interface QSpec {
@@ -40,7 +42,7 @@ async function inBatches<T, R>(items: T[], size: number, fn: (x: T) => Promise<R
 }
 
 /** Builds, reviews and publishes a test of `examCode` through the REAL CMS and review (the same path as F33), with the answer key it returns. */
-async function publishTest(s: Staffed, examCode: string, variant: string | undefined, title: string, parts: PSpec[]): Promise<SeededExam> {
+async function publishTest(s: SeededExam['staff'], examCode: string, variant: string | undefined, title: string, parts: PSpec[]): Promise<SeededExam> {
   let counter = 0;
   const seededParts: SeededPart[] = parts.map((p) => ({ sectionCode: p.sectionCode, skill: p.skill, questions: [] }));
   const groupIds: string[][] = parts.map(() => []);
@@ -85,7 +87,7 @@ async function publishTest(s: Staffed, examCode: string, variant: string | undef
   });
   expect(saved.status, saved.text).toBe(200);
   await seed.reviewVersion({ type: 'test', versionId: saved.body.versionId, authorId: s.author.userId, reviewerId: s.reviewer.userId, orgId: s.orgId, outcome: 'approved' });
-  return { testId: created.body.testId as string, title, testVersionId: saved.body.versionId as string, parts: seededParts };
+  return { testId: created.body.testId as string, title, testVersionId: saved.body.versionId as string, parts: seededParts, staff: s };
 }
 
 function kindOf(typeCode: string): string {

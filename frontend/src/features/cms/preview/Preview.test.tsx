@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { INTERACTION_KINDS, type InteractionKind } from '../question-form/kinds';
+import { QuestionInput } from '../../exam';
 import { QuestionPreview, learnerContent } from './QuestionPreview';
 
 // Words that exist only on the solution side. If any of them is on the page, the preview leaked.
@@ -53,4 +54,17 @@ describe('Preview.neverRendersAnswerKey', () => {
     expect(screen.getByText('Why?')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /alpha/ })).toBeInTheDocument();
   });
+});
+
+describe('Preview.looksLikeTheExamRoom', () => {
+  // The preview and the room draw a question with the same component: the markup is the same, up to the ids React generates.
+  const normal = (html: string) => html.replace(/ (id|for|name|aria-describedby)="[^"]*"/g, '');
+  for (const kind of INTERACTION_KINDS) {
+    it(`${kind}: the preview is the room's QuestionInput for the same content`, () => {
+      const { container } = view(kind, CONTENT[kind]);
+      const section = container.querySelector('section')!;
+      const room = render(<QuestionInput kind={kind} content={CONTENT[kind] as never} value={undefined} onChange={() => undefined} number={1} />);
+      expect(normal(section.innerHTML)).toContain(normal(room.container.innerHTML));
+    });
+  }
 });
