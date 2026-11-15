@@ -102,7 +102,7 @@ test.describe('F07 context switch', () => {
     // the list of the organisation being switched to is slow: the window in which stale data of the other one would show
     const slow = { ctx: '' };
     const delay = async (route: import('@playwright/test').Route) => {
-      if ((route.request().headers()['x-org-context'] ?? '') === slow.ctx) await new Promise((r) => setTimeout(r, 2500));
+      if ((route.request().headers()['x-org-context'] ?? '') === slow.ctx) await new Promise((r) => setTimeout(r, 4000));
       await route.continue();
     };
     await page.route(/\/api\/cms\/courses(\?.*)?$/, delay);
@@ -117,7 +117,7 @@ test.describe('F07 context switch', () => {
     slow.ctx = b.id;
     await org.switchContext(page, b.name);
     await expect(page.getByRole('link', { name: a.course })).toHaveCount(0);
-    await expect(page.getByRole('status').filter({ hasText: 'Đang tải…' })).toBeVisible();
+    await expect(page.locator('#main').getByRole('status').filter({ hasText: 'Đang tải…' })).toBeVisible({ timeout: 2000 });
     await expect(page.getByRole('link', { name: a.course })).toHaveCount(0);
     await expect(page.getByRole('link', { name: b.course })).toBeVisible();
     await expect(page.getByRole('link', { name: a.course })).toHaveCount(0);
@@ -129,7 +129,7 @@ test.describe('F07 context switch', () => {
     slow.ctx = a.id;
     await org.switchContext(page, a.name);
     await expect(page.getByTestId('class-row').filter({ hasText: b.className })).toHaveCount(0);
-    await expect(page.getByRole('status').filter({ hasText: 'Đang tải danh sách…' })).toBeVisible();
+    await expect(page.locator('#main').getByRole('status').filter({ hasText: 'Đang tải danh sách…' })).toBeVisible({ timeout: 2000 });
     await expect(page.getByTestId('class-row').filter({ hasText: b.className })).toHaveCount(0);
     await expect(page.getByTestId('class-row').filter({ hasText: a.className })).toBeVisible();
     await expect(page.getByTestId('class-row').filter({ hasText: b.className })).toHaveCount(0);

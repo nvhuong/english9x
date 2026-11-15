@@ -23,7 +23,7 @@ test.describe('F08 data isolation', () => {
     // the browser: A's admin, in A, opens B's members page by its URL
     await auth.loginAs(page, adminA);
     await org.switchContext(page, `Trung tâm A ${suffix}`);
-    const denied = page.waitForResponse((r) => r.url().includes(`/api/orgs/${b.orgId}/role-grants`));
+    const denied = page.waitForResponse((r) => r.request().method() === 'GET' && new URL(r.url()).pathname === `/api/orgs/${b.orgId}/role-grants`);
     await page.goto(`/org/${b.orgId}/members`);
     expect((await denied).status()).toBe(404);
     await expect(page.getByRole('heading', { level: 1, name: 'Không tìm thấy trang' })).toBeVisible();
@@ -90,15 +90,15 @@ test.describe('F08 data isolation', () => {
     // the browser: A's person, in A's context, opens B's URLs
     await auth.loginAs(page, personA);
     await org.switchContext(page, a.name);
-    const classResp = page.waitForResponse((r) => r.url().includes(`/classes/${bClassId}`) && !r.url().includes('/members'));
+    const classResp = page.waitForResponse((r) => r.request().method() === 'GET' && new URL(r.url()).pathname === `/api/orgs/${a.orgId}/classes/${bClassId}`);
     await page.goto(`/org/classes/${bClassId}`);
     expect((await classResp).status()).toBe(404);
     await expect(page.getByRole('heading', { level: 1, name: 'Không tìm thấy trang' })).toBeVisible();
-    const courseResp = page.waitForResponse((r) => r.url().includes(`/api/cms/courses/${bCourse.courseId}`));
+    const courseResp = page.waitForResponse((r) => r.request().method() === 'GET' && new URL(r.url()).pathname === `/api/cms/courses/${bCourse.courseId}`);
     await page.goto(`/cms/courses/${bCourse.courseId}`);
     expect((await courseResp).status()).toBe(404);
     await expect(page.getByText('Không tìm thấy khoá học', { exact: true })).toBeVisible();
-    const outlineResp = page.waitForResponse((r) => r.url().includes(`/api/catalog/courses/${bCourse.code}`));
+    const outlineResp = page.waitForResponse((r) => r.request().method() === 'GET' && new URL(r.url()).pathname === `/api/catalog/courses/${bCourse.code}`);
     await page.goto(`/courses/${bCourse.code}`);
     expect((await outlineResp).status()).toBe(404);
     await expect(page.getByText('Không tìm thấy khoá học', { exact: true })).toBeVisible();
