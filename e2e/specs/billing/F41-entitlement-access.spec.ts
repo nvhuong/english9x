@@ -1,9 +1,15 @@
 // F41 — Quyền học (spec §16.2): "Entitlement hết hạn → không vào học được nhưng xem được kết quả cũ".
 //
-// !! PARTIAL (see e2e/partial-features.json). P5.1 builds the gate (billing.api.Entitlements) and the plan-expiry notices. Here the REAL gate is asked as a person
-// !! through the seed API, and the learner's own entitlement list and notifications are read through the real API. The lesson page and the exam room that call the
-// !! gate arrive with P3.1 and P3.3, and the results page with P4.4: "cannot open a lesson / can still read old results" is then asserted on those screens.
+// Part 1 (seed API and the learner's own API): the gate (billing.api.Entitlements) and the PLAN_EXPIRING / PLAN_EXPIRED notices.
+// Part 2 (the real screens): a learner whose plan runs out while an attempt is under way and after one was scored. Once it has ended the lesson page and the course
+// map say the learner needs a plan, a new exam is refused, the OLD RESULT page still shows the scores and the key, and the attempt that was under way is still
+// finished in the exam room.
 import { test, expect } from '../../fixtures';
+import { staffed } from '../../fixtures/content';
+import { publishedCourse, publishedLesson, publishedToeicTestVersion } from '../../fixtures/course';
+import { api } from '../../fixtures/org';
+import { poll } from '../../helpers/env';
+import { finishSection } from '../exam/_exam';
 
 test.describe('F41 entitlement access', () => {
   test('F41 an active plan opens new learning, an expired one does not but keeps the attempt that was under way and the history, and the learner is told twice', async ({ seed, org, uniqueEmail }) => {
@@ -39,5 +45,82 @@ test.describe('F41 entitlement access', () => {
     await expect.poll(kinds, { timeout: 40_000 }).toEqual(['PLAN_EXPIRED', 'PLAN_EXPIRING']);
     await new Promise((r) => setTimeout(r, 3_000)); // the jobs have run twice: a duplicate would have been made by now
     expect(await kinds()).toEqual(['PLAN_EXPIRED', 'PLAN_EXPIRING']);
+  });
+
+  test('F41 when the plan ends the lesson and a new exam are closed on the real screens, the old result still reads and the attempt under way is finished', async ({ page, request, auth, seed, org, uniqueEmail }) => {
+    // two minutes of late-sync grace are waited out for real before the old attempt is scored
+    test.setTimeout(480_000);
+    const s = await staffed(['TOEIC'], 'f41', { request, uniqueEmail, apiLogin: org.apiLogin });
+    const mark = s.author.userId.slice(0, 6);
+    const testVersionId = await publishedToeicTestVersion(s, `F41 exam ${mark}`);
+    const course = await publishedCourse(s, 'FREE', {
+      l1: await publishedLesson(s, 'TOEIC', `F41 lesson ${mark}`),
+      test: await publishedToeicTestVersion(s, `F41 chapter test ${mark}`),
+      l2: await publishedLesson(s, 'TOEIC', `F41 lesson two ${mark}`),
+    }, `F41 course ${mark}`);
+    const lessonId = course.chapters[0]!.lessons[0]!.id;
+
+    const learner = await seed.verifiedLearner({ email: uniqueEmail('f41-screens') });
+    const token = (await org.apiLogin(learner)).token;
+    // the plan runs out 90 seconds from now: long enough to start two attempts over the API, short enough to be over before the first one is scored
+    await seed.billing.entitlement({ userId: learner.userId, courseId: course.courseId, startsInDays: -10, endsInSeconds: 90 });
+    expect(await seed.billing.gate({ userId: learner.userId, courseId: course.courseId })).toMatchObject({ activeFor: true });
+
+    const sit = async () => {
+      const started = await api(token, 'POST', '/api/exam/attempts', { body: { testVersionId } });
+      expect(started.status, started.text).toBe(201);
+      return started.body;
+    };
+    const answer = async (attemptId: string, view: any, value: string) => {
+      await new Promise((r) => setTimeout(r, 1500));
+      const answeredAt = new Date(Date.parse(view.serverNow) + 1000).toISOString();
+      const put = await api(token, 'PUT', `/api/exam/attempts/${attemptId}/responses/${view.currentSection.groups[0].questions[0].questionId}`, { body: { answer: value, answeredAt } });
+      expect(put.status, put.text).toBe(204);
+    };
+    // attempt 1 is sat and submitted (right on Part 1, wrong on Part 5); attempt 2 is started and left half-way
+    const first = await sit();
+    await answer(first.attemptId, first, 'A');
+    const reading = await api(token, 'POST', `/api/exam/attempts/${first.attemptId}/sections/P1/finish`);
+    expect(reading.status, reading.text).toBe(200);
+    await answer(first.attemptId, reading.body, 'A');
+    expect((await api(token, 'POST', `/api/exam/attempts/${first.attemptId}/submit`)).status).toBe(200);
+    const second = await sit();
+    await answer(second.attemptId, second, 'A');
+
+    // the plan ends
+    await poll('the plan to end', async () => ((await seed.billing.gate({ userId: learner.userId, courseId: course.courseId })).activeFor ? null : true), { timeoutMs: 120_000, intervalMs: 2_000 });
+    await seed.billing.runJob('expire_entitlements');
+
+    // the lesson and the map of the course say the learner needs a plan
+    await auth.loginAs(page, learner);
+    await page.goto(`/learn/lessons/${lessonId}`);
+    await expect(page.getByText('Bạn cần có gói học cho khoá này.')).toBeVisible();
+    await expect(page.getByText(`SECRET-LESSON-BODY of F41 lesson ${mark}`)).toHaveCount(0);
+    await page.goto(`/learn/courses/${course.courseId}`);
+    await expect(page.getByText('Bạn cần có gói học cho khoá này.')).toBeVisible();
+    // a new exam is refused on the screen and by the server
+    await page.goto(`/exam/start/${testVersionId}`);
+    await expect(page.getByText('Bạn chưa có quyền làm đề này')).toBeVisible();
+    const refused = await api(token, 'POST', '/api/exam/attempts', { body: { testVersionId } });
+    expect(refused.status, refused.text).toBe(403);
+
+    // the OLD result is still read once it is scored: the scores with their label, the key and the explanation
+    await poll('the scores of the old attempt', async () => ((await seed.grading.scores(first.attemptId)).graded ? true : null), { timeoutMs: 360_000, intervalMs: 3_000 });
+    await page.goto(`/results/attempts/${first.attemptId}`);
+    await expect(page.getByRole('heading', { level: 1, name: 'Kết quả của bạn' })).toBeVisible();
+    await expect(page.locator('[data-testid="skill-score"][data-skill="LISTENING"]')).toHaveAttribute('data-label', 'OFFICIAL');
+    const questions = page.getByTestId('question-result');
+    await expect(questions).toHaveCount(2);
+    await expect(questions.filter({ has: page.getByText('Sai', { exact: true }) }).getByText(/Đáp án đúng: D/)).toBeVisible();
+    await page.goto('/results/weakness');
+    await expect(page.getByTestId('type-rate')).toHaveCount(2);
+
+    // the attempt that was under way when the plan ended is still finished in the exam room
+    await page.goto(`/exam/attempts/${second.attemptId}`);
+    await expect(page.getByRole('region', { name: 'Câu hỏi' })).toBeVisible();
+    await finishSection(page);
+    await expect(page.getByText('Phần 2/2')).toBeVisible();
+    await finishSection(page);
+    await expect(page.getByTestId('exam-result')).toHaveAttribute('data-status', 'SUBMITTED');
   });
 });

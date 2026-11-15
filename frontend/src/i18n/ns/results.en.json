@@ -31,6 +31,7 @@
     "alternatives": "or",
     "explanation": "Explanation",
     "transcript": "Transcript",
+    "spokenTranscript": "Transcript of the spoken answer",
     "points": "{{earned}} / {{max}} points",
     "feedbackTitle": "Writing and Speaking feedback",
     "feedbackSkill": "{{skill}}",

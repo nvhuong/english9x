@@ -39,3 +39,29 @@ export function feedbackText(result: Json | null | undefined): string {
 export function percent(rate: number): number {
   return Math.round(rate * 100);
 }
+
+/**
+ * The criteria scores of an AI result. The grading skill's schema decides the shape: a {@code criteria} object, a list of {@code {name, band}}, or (the usual one) one
+ * numeric field per criterion beside the free text.
+ */
+export function aiCriteriaRows(result: Json | null | undefined): Array<[string, string]> {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) return [];
+  const obj = result as Record<string, Json>;
+  const c = obj.criteria;
+  if (Array.isArray(c)) {
+    return c.flatMap((x): Array<[string, string]> => {
+      const o = x && typeof x === 'object' && !Array.isArray(x) ? (x as Record<string, Json>) : null;
+      const score = o?.band ?? o?.score;
+      return o && typeof o.name === 'string' && typeof score === 'number' ? [[o.name, String(score)]] : [];
+    });
+  }
+  if (c && typeof c === 'object') return criteriaRows(c);
+  return Object.entries(obj).flatMap(([k, v]): Array<[string, string]> => (typeof v === 'number' ? [[k, String(v)]] : []));
+}
+
+/** What the AI heard in a spoken answer, when the grading skill's schema asks for it. */
+export function transcriptText(result: Json | null | undefined): string {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) return '';
+  const v = (result as Record<string, Json>).transcript;
+  return typeof v === 'string' ? v.trim() : '';
+}

@@ -67,7 +67,7 @@ export const seed = {
   /** Billing fixtures (P5.1): courses, entitlements with any dates, aged orders, the real jobs on demand, the real access gate asked as a person. */
   billing: {
     course: (examCode?: string) => post<{ courseId: string; code: string }>('billing/course', examCode ? { examCode } : undefined),
-    entitlement: (opts: { userId: string; courseId: string; startsInDays?: number; endsInDays?: number; endsInHours?: number }) => post<{ entitlementId: string }>('billing/entitlement', opts),
+    entitlement: (opts: { userId: string; courseId: string; startsInDays?: number; endsInDays?: number; endsInHours?: number; endsInSeconds?: number }) => post<{ entitlementId: string }>('billing/entitlement', opts),
     agedOrder: (opts: { userId: string; planId: string; ageDays: number }) => post<{ orderId: string; code: string }>('billing/aged-order', opts),
     runJob: (type: 'expire_orders' | 'expire_entitlements' | 'plan_expiry_reminder') => post<{ queued: string }>('billing/run-job', { type }),
     gate: (opts: { userId: string; courseId: string; attemptStartedDaysAgo?: number }) => post<{ activeFor: boolean; canContinueAttempt?: boolean }>('billing/gate', opts),

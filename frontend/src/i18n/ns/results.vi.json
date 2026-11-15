@@ -31,6 +31,7 @@
     "alternatives": "hoặc",
     "explanation": "Giải thích",
     "transcript": "Bài nghe (transcript)",
+    "spokenTranscript": "Bản ghi lời nói (transcript)",
     "points": "{{earned}} / {{max}} điểm",
     "feedbackTitle": "Nhận xét Writing và Speaking",
     "feedbackSkill": "{{skill}}",

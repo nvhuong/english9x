@@ -61,6 +61,23 @@ describe('ResultPage', () => {
     expect(within(fb).getByText('TA')).toBeInTheDocument();
   });
 
+  it('shows the criteria scores of an AI result that is flat (one field per criterion, as the grading skill\'s schema gives it), its comment and the transcript of a spoken answer', async () => {
+    const flat = { task_response: 7, coherence: 6.5, feedback: 'Clear position.', transcript: 'I live in a small town.' };
+    stubApi({
+      [`GET /api/results/attempts/${ID}`]: () => json(200, ready({ feedback: [{ skill: 'SPEAKING', ai: [{ questionId: 's1', band: 6.5, result: flat }], teacher: null }] })),
+    });
+    renderAt(`/results/attempts/${ID}`, '/results/attempts/:attemptId', <ResultPage />);
+    const fb = await screen.findByTestId('feedback');
+    const criteria = within(fb).getByLabelText('Tiêu chí');
+    expect(within(criteria).getByText('task_response')).toBeInTheDocument();
+    expect(within(criteria).getByText('7')).toBeInTheDocument();
+    expect(within(criteria).getByText('6.5')).toBeInTheDocument();
+    expect(within(criteria).queryByText('Clear position.')).toBeNull();
+    expect(within(fb).getByText('Clear position.')).toBeInTheDocument();
+    expect(within(fb).getByText('Bản ghi lời nói (transcript)')).toBeInTheDocument();
+    expect(within(fb).getByText('I live in a small town.')).toBeInTheDocument();
+  });
+
   it('can show only the wrong or blank answers', async () => {
     stubApi({ [`GET /api/results/attempts/${ID}`]: () => json(200, ready()) });
     renderAt(`/results/attempts/${ID}`, '/results/attempts/:attemptId', <ResultPage />);

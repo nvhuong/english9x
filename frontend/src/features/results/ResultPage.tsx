@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ApiProblemError } from '../../api/problem';
 import { Badge, Button, EmptyState, type BadgeTone } from '../../design';
 import { FormAlert } from '../auth/components';
-import { answerText, criteriaRows, feedbackText, keySlots } from './format';
+import { aiCriteriaRows, answerText, criteriaRows, feedbackText, keySlots, transcriptText } from './format';
 import { useAttemptResult } from './queries';
 import type { AttemptResult, ProductiveFeedback, QuestionResult, ScoreLabel, SkillScore } from './types';
 
@@ -155,14 +155,20 @@ function Feedback({ feedback }: { feedback: ProductiveFeedback[] }) {
           {f.ai.map((a) => (
             <div key={a.questionId} className="flex flex-col gap-1">
               <p className="text-sm font-semibold text-ink">{t('attempt.aiFeedback')} · {t('attempt.band', { band: a.band })}</p>
-              <CriteriaList criteria={(a.result as { criteria?: never } | null)?.criteria ?? null} />
+              <CriteriaList rows={aiCriteriaRows(a.result)} />
               {feedbackText(a.result) && <p className="whitespace-pre-wrap text-sm text-ink">{feedbackText(a.result)}</p>}
+              {transcriptText(a.result) && (
+                <details open className="rounded-md bg-sunken p-2 text-sm text-ink">
+                  <summary className="cursor-pointer font-semibold">{t('attempt.spokenTranscript')}</summary>
+                  <p className="mt-1 whitespace-pre-wrap">{transcriptText(a.result)}</p>
+                </details>
+              )}
             </div>
           ))}
           {f.teacher && (
             <div className="flex flex-col gap-1">
               <p className="text-sm font-semibold text-ink">{t('attempt.teacherFeedback')} · {t('attempt.band', { band: f.teacher.band })}</p>
-              <CriteriaList criteria={f.teacher.criteria} />
+              <CriteriaList rows={criteriaRows(f.teacher.criteria)} />
               {f.teacher.comment && <p className="whitespace-pre-wrap text-sm text-ink">{f.teacher.comment}</p>}
             </div>
           )}
@@ -172,9 +178,8 @@ function Feedback({ feedback }: { feedback: ProductiveFeedback[] }) {
   );
 }
 
-function CriteriaList({ criteria }: { criteria: unknown }) {
+function CriteriaList({ rows }: { rows: Array<[string, string]> }) {
   const { t } = useTranslation('results');
-  const rows = criteriaRows(criteria as never);
   if (rows.length === 0) return null;
   return (
     <dl aria-label={t('attempt.criteria')} className="grid grid-cols-[auto_1fr] gap-x-3 text-sm text-ink">
