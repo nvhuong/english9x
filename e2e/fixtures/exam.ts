@@ -121,6 +121,20 @@ export async function publishedToeicTest(): Promise<SeededExam> {
 }
 
 /**
+ * A PUBLISHED TOEIC test of two short parts: P2 (Listening, one question with the group's audio) and P5 (Reading, two questions), timed by
+ * `durations` in seconds. Made through the same real CMS and review as the full test; for the timing scenarios (F30, F31), where 200 questions add
+ * nothing. TOEIC has no Writing or Speaking, so the attempt never reaches the AI grading (no fake-Gemini lock needed).
+ */
+export async function publishedShortToeicTest(durations: { listening: number; reading: number }): Promise<SeededExam> {
+  const s = await staff('toeic-short');
+  const title = `TOEIC short ${Math.random().toString(36).slice(2, 8)}`;
+  return publishTest(s, 'TOEIC', undefined, title, [
+    { sectionCode: 'P2', skill: 'LISTENING', durationSec: durations.listening, groups: [{ audio: true, content: { title: 'P2 group' }, questions: [{ typeCode: 'TOEIC_P2_QUESTION_RESPONSE' }] }] },
+    { sectionCode: 'P5', skill: 'READING', durationSec: durations.reading, groups: [{ content: { title: 'P5 group' }, questions: [{ typeCode: 'TOEIC_P5_INCOMPLETE_SENTENCE' }, { typeCode: 'TOEIC_P5_INCOMPLETE_SENTENCE' }] }] },
+  ]);
+}
+
+/**
  * A PUBLISHED IELTS test of `variant` with every kind the room must draw: Listening (audio, multiple choice, typed gaps, matching), Reading (passage,
  * True/False/Not Given, Yes/No/Not Given, short answer), Writing (task 1 and task 2) and Speaking (part 2, with a short preparation).
  */

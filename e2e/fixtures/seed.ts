@@ -117,6 +117,10 @@ export const seed = {
    */
   publishedToeicTest: async (): Promise<SeededTest & import('./exam').SeededExam> => (await import('./exam')).publishedToeicTest(),
 
+  /** A published TOEIC test of two short timed parts (P2 Listening: 1 question; P5 Reading: 2 questions), same path as above. For F30 / F31. */
+  publishedShortToeicTest: async (durations: { listening: number; reading: number }): Promise<SeededTest & import('./exam').SeededExam> =>
+    (await import('./exam')).publishedShortToeicTest(durations),
+
   /** A published IELTS test of the given variant (Listening with audio, Reading with a passage, Writing, Speaking), same path as above. */
   publishedIeltsTest: async (opts: { variant: 'AC' | 'GT' }): Promise<SeededTest & import('./exam').SeededExam> => (await import('./exam')).publishedIeltsTest(opts),
 
