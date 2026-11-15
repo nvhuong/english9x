@@ -1,7 +1,9 @@
 // F52 — Thông báo trong app (spec §16.2): "Sự kiện tạo thông báo, đánh dấu đã đọc".
-// Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
+// The other §13 events (orders, plans, scores, grading queue, assignments, sessions, failed AI grading) are raised by real triggers in _events.ts and asserted on the
+// recipient's real screen below. Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
 import { reviewWorld } from './_world';
+import { EVENTS, classroomWorld, drive, gradingWorld, ordersWorld, planWorld, type Fx, type World } from './_events';
 
 test.describe('F52 in-app notifications', () => {
   test('F52 an event creates a notification, the bell counts it, it can be marked read, it is the same in every context and private', async ({ page, browser, seed, auth, org, uniqueEmail }) => {
@@ -81,3 +83,54 @@ test.describe('F52 in-app notifications', () => {
     await expect(page.getByRole('link', { name: /^Thông báo, / })).toHaveCount(0);
   });
 });
+
+const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World>; gemini?: boolean }> = [
+  { name: 'orders', build: ordersWorld },
+  { name: 'plan', build: planWorld },
+  { name: 'classroom', build: classroomWorld },
+  { name: 'grading', build: gradingWorld, gemini: true },
+];
+
+test.describe('F52 every other spec 13 event reaches the recipient\'s notification screen', () => {
+  for (const w of worlds.filter((x) => !x.gemini)) {
+    test(`F52 ${w.name} events are listed on the recipient's screen`, async ({ browser, seed, auth, org, uniqueEmail, request }) => {
+      const world = await w.build({ seed, org, uniqueEmail, request }, `f52${w.name}`);
+      test.setTimeout(world.timeoutMs);
+      await screens(browser, auth, org, world);
+    });
+  }
+
+  test('F52 grading events (queue, preliminary and official score, claim due, failed AI grading) are listed on the recipient\'s screen', async ({ browser, seed, auth, org, uniqueEmail, request, gemini }) => {
+    const world = await gradingWorld({ seed, org, uniqueEmail, request, gemini }, 'f52grading');
+    test.setTimeout(world.timeoutMs);
+    await screens(browser, auth, org, world);
+  });
+});
+
+async function screens(browser: import('@playwright/test').Browser, auth: any, org: Fx['org'], world: World): Promise<void> {
+  const pages = new Map<string, import('@playwright/test').Page>();
+  const pageOf = async (who: World['people'][number]) => {
+    let page = pages.get(who.userId);
+    if (!page) {
+      page = await (await browser.newContext({ ignoreHTTPSErrors: true })).newPage();
+      await auth.loginAs(page, who);
+      pages.set(who.userId, page);
+    }
+    return page;
+  };
+  await drive(org, world, async (e) => {
+    const page = await pageOf(e.who);
+    await page.goto('/notifications');
+    const heading = page.getByRole('heading', { level: 2, name: EVENTS[e.event].title }).first();
+    await expect(async () => {
+      await page.reload();
+      await expect(heading).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 40_000 });
+    const item = page.getByRole('listitem').filter({ has: heading }).first();
+    await expect(item).toContainText(EVENTS[e.event].body);
+    await expect(item).toContainText('Chưa đọc');
+    await expect(page.getByRole('link', { name: /^Thông báo, \d+ chưa đọc$/ })).toBeVisible();
+    await item.getByRole('button', { name: new RegExp(`Đánh dấu đã đọc: ${EVENTS[e.event].title}`) }).click();
+    await expect(item).toContainText('Đã đọc');
+  });
+}

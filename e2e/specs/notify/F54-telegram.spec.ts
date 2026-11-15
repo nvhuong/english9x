@@ -1,7 +1,9 @@
 // F54 — Telegram (spec §16.2): "Liên kết bot bằng token → fake-telegram nhận tin đúng sự kiện; token dùng lại bị từ chối".
 // Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
+import { poll } from '../../helpers/env';
 import { reviewWorld } from './_world';
+import { EVENTS, classroomWorld, drive, gradingWorld, linkTelegram, ordersWorld, planWorld, telegramFor, type Fx, type World } from './_events';
 
 test.describe('F54 Telegram notifications', () => {
   test('F54 link with a one-time token, get the event in the chat, a reused token is refused', async ({ page, browser, seed, auth, telegram, uniqueEmail }) => {
@@ -58,5 +60,51 @@ test.describe('F54 Telegram notifications', () => {
     // disconnecting stops it
     await page.getByRole('button', { name: 'Huỷ kết nối' }).click();
     await expect(page.getByText('Chưa kết nối Telegram')).toBeVisible();
+  });
+});
+
+// The other §13 events, each by its real trigger (see _events.ts): every recipient is linked to a chat of their own (the one-time link and the real webhook), and the chat
+// receives the event's bold title and text, with the link to the notification centre. People who are not linked get nothing: the unlinked sibling of each world is checked.
+const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World>; gemini?: boolean }> = [
+  { name: 'orders', build: ordersWorld },
+  { name: 'plan', build: planWorld },
+  { name: 'classroom', build: classroomWorld },
+  { name: 'grading', build: gradingWorld, gemini: true },
+];
+
+async function chats(telegram: typeof import('../../helpers/telegram').telegram, org: Fx['org'], world: World) {
+  const chatOf = new Map<string, string>();
+  for (const who of world.people) chatOf.set(who.userId, await linkTelegram(org, telegram, who));
+  await drive(org, world, async (e) => {
+    const chat = chatOf.get(e.who.userId)!;
+    const found = await poll(`${e.event} in the Telegram chat of ${e.who.email}`, async () => {
+      const m = await telegramFor(telegram, chat, e.event);
+      return m.length > 0 ? m : null;
+    }, { timeoutMs: 60_000, intervalMs: 1_000 });
+    expect(found[0]!.text).toContain(`<b>${EVENTS[e.event].title}</b>`);
+    expect(found[0]!.text).toContain(EVENTS[e.event].body);
+    expect(found[0]!.text).toContain('href="https://localhost/notifications"');
+    // nobody else's chat got it: the message is in this person's chat only
+    for (const [userId, other] of chatOf) {
+      if (userId !== e.who.userId && !world.steps.some((st) => st.expects.some((x) => x.who.userId === userId && x.event === e.event))) {
+        expect(await telegramFor(telegram, other, e.event)).toHaveLength(0);
+      }
+    }
+  });
+}
+
+test.describe('F54 Telegram: the other spec 13 events', () => {
+  for (const w of worlds.filter((x) => !x.gemini)) {
+    test(`F54 ${w.name} events reach the linked chat of the recipient`, async ({ seed, org, telegram, uniqueEmail, request }) => {
+      const world = await w.build({ seed, org, uniqueEmail, request }, `f54${w.name}`);
+      test.setTimeout(world.timeoutMs);
+      await chats(telegram, org, world);
+    });
+  }
+
+  test('F54 grading events reach the linked chat of the recipient', async ({ seed, org, telegram, uniqueEmail, request, gemini }) => {
+    const world = await gradingWorld({ seed, org, uniqueEmail, request, gemini }, 'f54grading');
+    test.setTimeout(world.timeoutMs);
+    await chats(telegram, org, world);
   });
 });

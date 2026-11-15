@@ -101,6 +101,8 @@ services:
       E9X_JOBS_RECURRING_POLL: 2s
       # F47 watches the session reminder go out within seconds (the real default is 5m); relaxed binding of e9x.classroom.session-job-interval
       E9X_CLASSROOM_SESSIONJOBINTERVAL: 3s
+      # F52-F55 watch the "assignment due soon" notice go out within seconds (the real default is 1h); relaxed binding of e9x.classroom.job-interval
+      E9X_CLASSROOM_JOBINTERVAL: 3s
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: "1025"
       E9X_TELEGRAM_API_BASE: http://fake-telegram:8080

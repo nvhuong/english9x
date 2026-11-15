@@ -101,8 +101,8 @@ export const seed = {
         item: { id: string; state: 'OPEN' | 'CLAIMED' | 'DONE'; reason: string; grading_org_id: string | null; claimed_by: string | null; version: number } | null;
         reviews: Array<{ skill: string; teacherId: string; band: number; aiBand: number | null; deviation: number | null; comment: string }>;
       }>('grading/queue', { attemptId }),
-    /** The deadline of the claim on the attempt's item passes; the real release_expired_claim job (every few seconds in the E2E stack) then returns the item to the queue. */
-    expireClaim: (attemptId: string) => post<{ expired: boolean }>('grading/queue/expire', { attemptId }),
+    /** The deadline of the claim on the attempt's item passes; the real release_expired_claim job (every few seconds in the E2E stack) then returns the item to the queue. With `dueInMinutes` the deadline instead moves to that many minutes from now: the claim stays and the same job warns the teacher (GRADING_CLAIM_DUE). */
+    expireClaim: (attemptId: string, opts: { dueInMinutes?: number } = {}) => post<{ expired: boolean }>('grading/queue/expire', { attemptId, ...opts }),
   },
 
   /** Course fixtures (P3.1): the REAL lesson gate asked as a person, with the progress the test states (the learning module that owns the real progress is P3.2). */
