@@ -8,8 +8,8 @@ import { QuestionPreview } from './QuestionPreview';
 
 /**
  * /cms/questions/:id/preview: "Xem trước như học viên". The author or reviewer sees the question the way the exam shows it. The page hands the preview the
- * content and nothing else: the answer key, the explanation and the transcript stay on the editor page, the solution side. (Until the exam room of P3.4
- * exists this uses the minimal renderer of this folder; the room replaces it.)
+ * content and nothing else: the answer key, the explanation and the transcript stay on the editor page, the solution side.  The question is drawn by the exam room's own
+ * component (QuestionInput).
  */
 export default function PreviewPage() {
   const { t } = useTranslation('preview');

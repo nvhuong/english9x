@@ -19,16 +19,5 @@
   },
   "audio": "the question's audio",
   "image": "the question's image",
-  "gap": "Gap {{n}}",
-  "chooseOne": "Choose one answer.",
-  "chooseN": "Choose {{n}} answers.",
-  "pick": "Choose…",
-  "matchFor": "Choice for item {{n}}",
-  "label": "Label number {{n}}",
-  "minWords": "Write at least {{n}} words.",
-  "yourAnswer": "Your answer",
-  "timing": "Preparation {{prepare}} s, speaking {{speak}} s.",
-  "record": "Record (not available in the preview)",
-  "moveUp": "Move item {{n}} up",
-  "moveDown": "Move item {{n}} down"
+  "record": "Record (not available in the preview)"
 }

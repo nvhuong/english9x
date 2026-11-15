@@ -19,16 +19,5 @@
   },
   "audio": "âm thanh của câu hỏi",
   "image": "hình của câu hỏi",
-  "gap": "Chỗ trống {{n}}",
-  "chooseOne": "Chọn một đáp án.",
-  "chooseN": "Chọn {{n}} đáp án.",
-  "pick": "Chọn…",
-  "matchFor": "Lựa chọn cho mục {{n}}",
-  "label": "Nhãn số {{n}}",
-  "minWords": "Viết ít nhất {{n}} từ.",
-  "yourAnswer": "Bài làm của bạn",
-  "timing": "Chuẩn bị {{prepare}} giây, nói {{speak}} giây.",
-  "record": "Ghi âm (không dùng khi xem trước)",
-  "moveUp": "Đưa mục {{n}} lên",
-  "moveDown": "Đưa mục {{n}} xuống"
+  "record": "Ghi âm (không dùng khi xem trước)"
 }
