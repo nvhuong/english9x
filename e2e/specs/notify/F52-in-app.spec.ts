@@ -90,8 +90,7 @@ const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<Wo
   { name: 'classroom', build: classroomWorld },
 ];
 
-// The grading events (queue, preliminary and official score, claim due, failed AI grading) are listed on the recipient's screen by the ONE grading run of
-// F55-channel-prefs.spec.ts (it holds the fake Gemini for minutes: it is taken once, and that run asserts the screen, the mail, the chat and the preferences).
+// The grading events are asserted on every channel by the ONE grading run in grading-events.spec.ts.
 test.describe('F52 the other spec 13 events reach the recipient\'s notification screen', () => {
   for (const w of worlds) {
     test(`F52 ${w.name} events are listed on the recipient's screen, unread, and can be marked read`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {

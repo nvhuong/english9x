@@ -3,7 +3,7 @@
 import { test, expect } from '../../fixtures';
 import { poll } from '../../helpers/env';
 import { reviewWorld } from './_world';
-import { classroomWorld, gradingWorld, ordersWorld, pickOff, planWorld, runChannels, type Fx, type World } from './_events';
+import { classroomWorld, ordersWorld, pickOff, planWorld, runChannels, type Fx, type World } from './_events';
 
 test.describe('F55 channel preferences', () => {
   test('F55 switching an event x channel off or on changes what is sent, per event and per channel', async ({ page, browser, seed, auth, telegram, mailpit, uniqueEmail }) => {
@@ -72,8 +72,9 @@ const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<Wo
   { name: 'classroom', build: classroomWorld },
 ];
 
+// The grading events (one run, all four channels): grading-events.spec.ts.
 // The other §13 events: the preference screen has a row for each and it takes effect. Before the world runs, one event is switched off on the real preference
-// screen per channel (Email for the first event of a person who has a later one) and ONE for the world's last event (Telegram): the in-app notice arrives, the channel left on delivers it, the channel switched off does not (asserted after a LATER event of that person has
+// screen per channel (Email and Telegram for the first event of a person who has a later one): the in-app notice arrives, the channel left on delivers it, the channel switched off does not (asserted after a LATER event of that person has
 // arrived on that channel). For the orders the choice is then reversed: switched on again, the next rejection reaches that channel.
 test.describe('F55 channel preferences: the other spec 13 events', () => {
   for (const w of worlds) {
@@ -83,9 +84,14 @@ test.describe('F55 channel preferences: the other spec 13 events', () => {
       test.setTimeout(world.timeoutMs);
       const { first } = pickOff(world);
       const all = world.steps.flatMap((st) => st.expects);
-      // Telegram off for the LAST event of the world (nothing follows it: settle time only), Email off for the first one that a later event follows
+      // Email AND Telegram off for the first event of a person who has a later one: the later event's arrival on each channel anchors the absence.
+      // Orders also switch Telegram off for the last event (ORDER_REJECTED), for the reversal below.
       const lastE = all[all.length - 1]!;
-      const off = [{ who: first.who, event: first.event, channel: 'Email' as const }, { who: lastE.who, event: lastE.event, channel: 'Telegram' as const }];
+      const off = [
+        { who: first.who, event: first.event, channel: 'Email' as const },
+        { who: first.who, event: first.event, channel: 'Telegram' as const },
+        ...(w.name === 'orders' ? [{ who: lastE.who, event: lastE.event, channel: 'Telegram' as const }] : []),
+      ];
       const r = await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { email: true, telegram: true }, off });
       if (w.name === 'orders') {
         // reversed: ORDER_REJECTED (Telegram was off, nothing arrived) is switched on and raised again with another order
@@ -95,24 +101,9 @@ test.describe('F55 channel preferences: the other spec 13 events', () => {
         await r.setBox(lastE.who, lastE.event, 'Telegram', true);
         await step.fire();
         await poll('ORDER_REJECTED by Telegram once it is switched on', async () => ((await r.count(lastE.who, lastE.event, 'Telegram')) > 0 ? true : null), { timeoutMs: 60_000, intervalMs: 1_000 });
+        // exactly one: the first rejection (switched off) never arrived, the second (switched on) did
+        expect(await r.count(lastE.who, lastE.event, 'Telegram')).toBe(1);
       }
     });
   }
-
-  // The ONE run of the grading events. The fake Gemini lock is taken once for it, so it carries every channel of the four specs: F52 (the screen), F53 (mail),
-  // F54 (the chat) and F55 (the preferences): every recipient is linked, every event is asserted on the screen, by mail and in the chat, except the two switched off
-  // on the preference screen: Email off for SCORE_PRELIMINARY (SCORE_OFFICIAL follows to the same learner) and Telegram off for GRADING_QUEUE_NEW (GRADING_CLAIM_DUE follows
-  // to the same teacher). Their absence is asserted after the later event arrived on that channel.
-  test('F55 F52 F53 F54 the grading events reach the screen, the mailbox and the chat, and the channel switched off for an event gets nothing', async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request, gemini }) => {
-    const fx: Fx = { seed, org, uniqueEmail, request, gemini };
-    const world = await gradingWorld(fx, 'f55grading');
-    test.setTimeout(world.timeoutMs);
-    const all = world.steps.flatMap((st) => st.expects);
-    const find = (event: string) => all.find((e) => e.event === event)!;
-    const off = [
-      { who: find('SCORE_PRELIMINARY').who, event: 'SCORE_PRELIMINARY' as const, channel: 'Email' as const },
-      { who: find('GRADING_QUEUE_NEW').who, event: 'GRADING_QUEUE_NEW' as const, channel: 'Telegram' as const },
-    ];
-    await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { screen: true, email: true, telegram: true }, off });
-  });
 });

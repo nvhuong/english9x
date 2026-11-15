@@ -65,7 +65,7 @@ const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<Wo
 
 // The other §13 events, each by its real trigger (see _events.ts): the mail is in Mailpit with the event's subject, text and the link to the notification centre.
 // Email off for one event (switched on the real preference screen; the first event of a person who has a LATER event): its in-app notice arrives, no mail comes, asserted
-// only after the later event's mail has arrived. The grading events are asserted by the one grading run of F55-channel-prefs.spec.ts (it holds the fake Gemini for minutes).
+// only after the later event's mail has arrived. The grading events: grading-events.spec.ts.
 test.describe('F53 email: the other spec 13 events', () => {
   for (const w of worlds) {
     test(`F53 ${w.name} events arrive in Mailpit; email off for one of them sends none`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {

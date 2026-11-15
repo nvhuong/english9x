@@ -70,7 +70,7 @@ const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<Wo
 
 // The other §13 events, each by its real trigger (see _events.ts): every recipient is linked to a chat of their own (the one-time link and the real webhook) and the chat
 // receives the event's bold title, text and the link to the notification centre; a linked person who is not a recipient of the event gets nothing of it. The grading events
-// are asserted by the one grading run of F55-channel-prefs.spec.ts (it holds the fake Gemini for minutes).
+// are asserted by the one grading run in grading-events.spec.ts.
 test.describe('F54 Telegram: the other spec 13 events', () => {
   for (const w of worlds) {
     test(`F54 ${w.name} events reach the linked chat of the recipient`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {
