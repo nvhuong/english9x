@@ -1,11 +1,11 @@
 // F07 — Chuyển ngữ cảnh (spec §16.2): "Người thuộc 2 tổ chức chuyển ngữ cảnh → danh sách khoá/lớp đổi theo".
 //
-// !! PARTIAL. There are no courses or classes yet (P3.1 courses, P6.1 classes), so the lists that change with the context are
-// !! the ones that exist: the members and roles of the organisation, the areas and menus the roles open, and the switcher
-// !! itself. The scenario is real: one person in two organisations, the data in the UI changes with the context, no data of the
-// !! organisation left behind is shown while the new one loads, the choice survives a reload, and a context the person no
-// !! longer belongs to is dropped without an error loop. e2e/partial-features.json lists the course/class part and its owner.
+// Completed through the real course (P3.1, P6.5) and class (P6.2) screens: one person (ORG_ADMIN + AUTHOR) in two organisations switches the
+// context on the page they are looking at; the CMS course list and the class list change with it, nothing of the old organisation is shown while
+// the new one loads (Review Focus #1: TanStack Query keys carry the context), the members/roles page and the server-side header check are covered too.
 import { test, expect } from '../../fixtures';
+import { staffed } from '../../fixtures/content';
+import { publishedCourse, publishedLesson, publishedToeicTestVersion } from '../../fixtures/course';
 
 test.describe('F07 context switch', () => {
   test('F07 switching changes the data in the UI, and nothing of the old organisation is shown while the new one loads', async ({ page, seed, auth, org, uniqueEmail }) => {
@@ -72,6 +72,79 @@ test.describe('F07 context switch', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Bạn chưa có quyền xem trang này' })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Tổ chức' })).toHaveCount(0);
     await expect(page.getByText(`Học viên Beta ${suffix}`)).toHaveCount(0);
+  });
+
+  test('F07 a person of two organisations switching context sees that organisation\'s courses and classes, never the previous one\'s', async ({ page, request, seed, auth, org, uniqueEmail }) => {
+    test.setTimeout(300_000);
+    const mark = Math.random().toString(36).slice(2, 8);
+    const deps = { request, uniqueEmail, apiLogin: org.apiLogin };
+    // two centres, each with its own staff and a PUBLISHED course that is the centre's private content (F51)
+    const orgs = [] as Array<{ id: string; name: string; course: string; className: string }>;
+    const person = await seed.verifiedLearner({ email: uniqueEmail('f07-lists'), displayName: 'Người Hai Trung Tâm' });
+    for (const key of ['a', 'b'] as const) {
+      const s = await staffed(['TOEIC'], `f07-${key}`, deps, { inOrganisation: true });
+      const l1 = await publishedLesson(s, 'TOEIC', `Bài ${key} ${mark}`);
+      const l2 = await publishedLesson(s, 'TOEIC', `Bài hai ${key} ${mark}`);
+      const t1 = await publishedToeicTestVersion(s, `Kiểm tra ${key} ${mark}`);
+      const course = `Khoá riêng ${key.toUpperCase()} ${mark}`;
+      await publishedCourse(s, 'FREE', { l1, test: t1, l2 }, course);
+      await seed.member({ orgId: s.orgId!, userId: person.userId, roles: [{ role: 'ORG_ADMIN' }, { role: 'AUTHOR', examCode: 'TOEIC' }] });
+      const teacher = await seed.verifiedLearner({ email: uniqueEmail(`f07-teacher-${key}`) });
+      await seed.member({ orgId: s.orgId!, userId: teacher.userId, roles: [{ role: 'TEACHER', examCode: 'TOEIC' }] });
+      const className = `Lớp ${key.toUpperCase()} ${mark}`;
+      const { token } = await org.apiLogin(person);
+      const made = await org.api(token, 'POST', `/api/orgs/${s.orgId}/classes`, { org: s.orgId, body: { name: className, teacherId: teacher.userId } });
+      expect(made.status, made.text).toBe(201);
+      orgs.push({ id: s.orgId!, name: s.orgName!, course, className });
+    }
+    const [a, b] = orgs as [typeof orgs[number], typeof orgs[number]];
+
+    // the list of the organisation being switched to is slow: the window in which stale data of the other one would show
+    const slow = { ctx: '' };
+    const delay = async (route: import('@playwright/test').Route) => {
+      if ((route.request().headers()['x-org-context'] ?? '') === slow.ctx) await new Promise((r) => setTimeout(r, 2500));
+      await route.continue();
+    };
+    await page.route(/\/api\/cms\/courses(\?.*)?$/, delay);
+    await page.route(/\/api\/orgs\/[^/]+\/classes$/, delay);
+
+    // courses: A's, then B's, with A's gone at once on the same page
+    await auth.loginAs(page, person);
+    await org.switchContext(page, a.name);
+    await page.goto('/cms/courses');
+    await expect(page.getByRole('link', { name: a.course })).toBeVisible();
+    await expect(page.getByRole('link', { name: b.course })).toHaveCount(0);
+    slow.ctx = b.id;
+    await org.switchContext(page, b.name);
+    await expect(page.getByRole('link', { name: a.course })).toHaveCount(0);
+    await expect(page.getByRole('status').filter({ hasText: 'Đang tải…' })).toBeVisible();
+    await expect(page.getByRole('link', { name: a.course })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: b.course })).toBeVisible();
+    await expect(page.getByRole('link', { name: a.course })).toHaveCount(0);
+
+    // classes: B's (the context now), then A's, with B's gone at once
+    await page.goto('/org/classes');
+    await expect(page.getByTestId('class-row').filter({ hasText: b.className })).toBeVisible();
+    await expect(page.getByTestId('class-row').filter({ hasText: a.className })).toHaveCount(0);
+    slow.ctx = a.id;
+    await org.switchContext(page, a.name);
+    await expect(page.getByTestId('class-row').filter({ hasText: b.className })).toHaveCount(0);
+    await expect(page.getByRole('status').filter({ hasText: 'Đang tải danh sách…' })).toBeVisible();
+    await expect(page.getByTestId('class-row').filter({ hasText: b.className })).toHaveCount(0);
+    await expect(page.getByTestId('class-row').filter({ hasText: a.className })).toBeVisible();
+    await expect(page.getByTestId('class-row').filter({ hasText: b.className })).toHaveCount(0);
+
+    // the same through the server: the header decides, each list carries only its own organisation's rows
+    slow.ctx = '';
+    const { token } = await org.apiLogin(person);
+    for (const [mine, theirs] of [[a, b], [b, a]] as const) {
+      const courses = await org.api(token, 'GET', '/api/cms/courses', { org: mine.id });
+      expect(courses.text).toContain(mine.course);
+      expect(courses.text).not.toContain(theirs.course);
+      const classes = await org.api(token, 'GET', `/api/orgs/${mine.id}/classes`, { org: mine.id });
+      expect(classes.text).toContain(mine.className);
+      expect(classes.text).not.toContain(theirs.className);
+    }
   });
 
   test('F07 a stored context the person no longer belongs to falls back to "Cá nhân" without an error loop', async ({ page, seed, auth, uniqueEmail }) => {
