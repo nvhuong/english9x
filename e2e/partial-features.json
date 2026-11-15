@@ -3,11 +3,6 @@
   "note": "Features whose Playwright spec exists but cannot yet cover the whole §16.2 scenario. Each entry says what is pending and which task owns it. Never fake or skip a test to remove an entry: finish the scenario, then delete the entry. scripts/check-e2e-coverage.mjs counts these as PARTIAL; E9X_E2E_GATE=strict fails while any remains.",
   "features": [
     {
-      "id": "F01",
-      "pending": "'chưa xác thực thì không mua được gói' through the checkout SCREEN: POST /api/orders already refuses an unverified learner (F39 asserts urn:e9x:problem:email-not-verified at the real endpoint, OrderServiceIT.unverifiedEmailCannotOrder), but there is no plan/checkout page yet, so the browser scenario (open a plan, try to pay, get refused, verify, the same order goes through) is pending.",
-      "owner": "P5.4 (checkout screens)"
-    },
-    {
       "id": "F13",
       "pending": "Done through the real stack (P2.6): the author builds a TOEIC test on the screen part by part from published question groups, the screen checks it against the exam (a count that differs warns, a missing skill blocks the review), the number of resumes is set per test, the test is published only by a review that waits for its groups (a draft group refuses the approval), and an edit makes version 2 while version 1 stays PUBLISHED (the review is run by seed.reviewVersion, the real ReviewService, until the review screens exist). Pending: 'gắn bảng quy đổi ghi đè' on a screen (the TEST scope is enabled in the database since V202611120002 and resolve uses it, covered by TestVersionViewIT.publishingVersion2OfATestKeepsTheOverride and db-test 44; no CMS screen or endpoint writes the override yet: its header is the administrator's, its rows are versioned content), and the full-size tests 'TOEIC 200 câu' / 'IELTS 4 kỹ năng' with every count right (they need ~100 published questions: the Excel import of P2.7 makes them).",
       "owner": "P2.7 (import: full-size tests), the override screen (an administrator's)"
