@@ -13,11 +13,6 @@
       "owner": "P2.7 (import: full-size tests), the override screen (an administrator's)"
     },
     {
-      "id": "F14",
-      "pending": "Done through the real stack (P2.4): the author writes a lesson with all ten block types on the editor screen, the server keeps them in order, refuses a video host outside the allowlist and a lesson without a question type, and publishes the lesson only through a review that waits for the embedded question (the review is run by seed.reviewVersion, the real ReviewService, until the review screens exist). The learner side is covered by Vitest (StrategyLessonView: every block, the embedded question hides its answer until the learner has answered) and by StrategyLessonIT. Pending: 'học viên thấy đúng' in the browser: there is no learner lesson route until P3.2, which must render StrategyLessonView from QuestionVersions#examView, a signed link per file and an answer checker, and extend this spec with the learner reading a published lesson (frames from YouTube/Vimeo allowed by the CSP, the embedded question answered).",
-      "owner": "P3.2 (lesson page), P2.9 (review queue replaces seed.reviewVersion)"
-    },
-    {
       "id": "F15",
       "pending": "Done through the real stack (P2.5): the author makes the DEFAULT table of an exam skill on the screen, the server refuses a gap in the raw values and a score that falls (TableConverter), the table is published only by a review (seed.reviewVersion, the real ReviewService, until the review screens exist), an edit makes version 2 and the published version is untouched, version 1 is archived when 2 is published. Pending: 'ghi đè' on the screen (since P2.6 the database accepts a TEST-scope table for a real test, written by the administrator of the test's owner only, and ScoreTables#resolve uses it for every version of the test; the score-table CMS still answers 409 for scope TEST and no screen sets an override: see the F13 entry), and 'kết quả thi dùng đúng bảng; sửa bảng không đổi kết quả cũ' (an exam result records the score table version it used: no results exist yet).",
       "owner": "the override screen (an administrator's, with the F13 entry), P4.1 (results use and record the table version)"
@@ -26,11 +21,6 @@
       "id": "F16",
       "pending": "Done through the real stack (P2.5): the author writes the IELTS Writing Task 2 skill on the screen (rubric, criteria, prompt template with the four variables, scored samples, result schema that must declare every criterion), a review publishes it, a teacher of the exam reads the published one and a learner never does, an edit makes version 2. Pending: 'chạy thử với bài mẫu' (the dry run calls the AI grader of P4.2 and validates the answer against the result schema: the server answers 501 dry-run-unavailable and sends nothing until then) and 'dùng khi chấm' (the AI grading job takes the published skill of the question type).",
       "owner": "P4.2 (AiGrader: the dry run), P4.3 (the grading job uses the skill)"
-    },
-    {
-      "id": "F18",
-      "pending": "Done through the real stack (P2.3, P2.9): editing a published question makes a new draft version and never touches the published one, one open version per question, a colleague cannot take a draft over; the new version is published only by a reviewer on the real review screen, which shows it against the earlier published version field by field (F17-review-workflow, F18-versioning). Pending: 'học viên đang thi vẫn thấy bản cũ' (a learner IN an exam keeps reading the version the attempt began on: no exam room exists yet).",
-      "owner": "P3.4 (exam room: the attempt keeps its version)"
     },
     {
       "id": "F52",
@@ -56,16 +46,6 @@
       "id": "F58",
       "pending": "The 8 main screens of the design mockups are not built yet: 01 course catalogue, 02 chapter map, 03 lesson, 04 exam room Reading, 05 exam room Speaking, 06 result, 07 CMS review queue, 08 admin QR orders. They move from PENDING_MAIN_SCREENS to SCREENS in the spec as they appear (see its header and the P1.12 note in the foundation plan).",
       "owner": "P3.1 (01, 02), P3.2 (03), P3.4 (04, 05), P4.4 (06), P2.9 (07), P5.4 (08)"
-    },
-    {
-      "id": "F10",
-      "pending": "Done through the real stack (P2.8): the preview of every question type of the catalog is opened from the editor, shows the learner's side (stem, options, gaps, media) and never a word of the solution side (answer key, explanation, transcript, model answer). Pending: 'giống phòng thi': until the exam room of P3.4 exists the preview is the CMS's minimal renderer keyed by InteractionKind; P3.4 replaces it with the room's own question component and this spec must then also compare the preview with the room's rendering of the same question.",
-      "owner": "P3.4 (exam room component replaces the minimal renderer)"
-    },
-    {
-      "id": "F19",
-      "pending": "Done through the real stack (P3.1): the author builds a STRICT course on the screen (the server checks the six-character code; a taken code is 409), a review publishes it, and the REAL lesson gate answers ALLOWED / LOCKED / NOT_ENTITLED as the rule, the learner's progress (stated by the test through seed.course.gate) and the entitlement say, for STRICT, COMPLETION (score ignored) and FREE. Pending: the same through the learner's own screens, with progress written by real lesson completions and chapter tests (the lesson page and the learning module that owns progress are P3.2's).",
-      "owner": "P3.2 (lesson page, chapter map, real progress)"
     }
   ]
 }

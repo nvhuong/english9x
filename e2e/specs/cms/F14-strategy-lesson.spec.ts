@@ -2,11 +2,12 @@
 //
 // The REAL stack: the author builds a lesson with every block type on the editor screen; the server validates each block against its schema (video
 // hosts against the allowlist, files and the embedded question against the exam), keeps the blocks in order, and the lesson is published only through a
-// review that waits for the embedded question to be published. The part about the LEARNER seeing it ("học viên thấy đúng") needs the lesson page of
-// P3.2; it is listed in e2e/partial-features.json. Until then the learner side is covered by the Vitest tests of StrategyLessonView and by the
-// integration test of what the learner-facing reads return (StrategyLessonIT).
+// review that waits for the embedded question to be published. The part about the LEARNER seeing it ("học viên thấy đúng") is the last test: a
+// learner with a plan opens the published lesson on the real lesson page (/learn/lessons/:id) and reads all ten kinds of block in order, with the video
+// frame the CSP allows, the embedded question answerable, and no answer or explanation anywhere until it has been answered.
 import { test, expect } from '../../fixtures';
 import { publishedQuestion, createQuestion, staffed, uploadFile } from '../../fixtures/content';
+import { newCode } from '../../fixtures/course';
 import type { Page } from '@playwright/test';
 
 /** Adds a block the way a keyboard user chooses from a long list (the options are taller than the page in a small window). */
@@ -168,5 +169,113 @@ test.describe('F14 strategy lesson', () => {
     expect((await org.api(s.reviewer.token, 'POST', '/api/cms/strategy-lessons', { org: s.orgId, body })).status).toBe(403);
     expect((await org.api(other.author.token, 'GET', `/api/cms/strategy-lessons/${made.body.lessonId}`, { org: other.orgId })).status).toBe(404);
     expect((await org.api(other.author.token, 'POST', '/api/cms/strategy-lessons', { org: other.orgId, body })).status).toBe(403);
+  });
+  test('F14 the learner reads the published lesson on the lesson page: every kind of block in order, the video frame the CSP allows, the question embedded in it answered, and no answer before that', async ({ page, request, auth, seed, org, uniqueEmail }) => {
+    test.setTimeout(240_000);
+    const s = await staffed(['TOEIC'], 'f14-learner', { request, uniqueEmail, apiLogin: org.apiLogin });
+    const media = s.mediaByExam.TOEIC!;
+    const mark = s.author.userId.slice(0, 6);
+    const videoId = await uploadFile(request, s.author.token, s.orgId, 'TOEIC', 'clip.mp4', 'video/mp4');
+    const q = await publishedQuestion(s, 'TOEIC_P5_INCOMPLETE_SENTENCE');
+    const texts = {
+      heading: `Read the question first ${mark}`,
+      paragraph: `Underline the keywords, then scan the passage ${mark}.`,
+      tip: `Answers keep the words of the passage ${mark}.`,
+      trap: `A word that matches is not always the answer ${mark}.`,
+      example: `Worked example ${mark}`,
+      problem: `Where was the meeting held ${mark}?`,
+      step1: `Underline "meeting" ${mark}.`,
+      step2: `Find the sentence with the place ${mark}.`,
+      answer: `In the library ${mark}`,
+    };
+    const made = await org.api(s.author.token, 'POST', '/api/cms/strategy-lessons', {
+      org: s.orgId,
+      body: {
+        examCode: 'TOEIC',
+        title: `Method ${mark}`,
+        questionTypeCodes: ['TOEIC_P5_INCOMPLETE_SENTENCE'],
+        blocks: [
+          { type: 'heading', level: 2, text: texts.heading },
+          { type: 'paragraph', text: texts.paragraph },
+          { type: 'table', header: ['Step', 'Action'], rows: [['1', 'Skim'], ['2', 'Scan']], caption: 'The two steps' },
+          { type: 'image', imageMediaId: media.imageId, alt: 'A one pixel diagram', caption: 'The diagram' },
+          { type: 'audio', audioMediaId: media.audioId, caption: 'The recording' },
+          { type: 'video-upload', videoMediaId: videoId, caption: 'The clip' },
+          { type: 'video-embed', provider: 'youtube', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', caption: 'The method video' },
+          { type: 'callout', kind: 'tip', text: texts.tip },
+          { type: 'callout', kind: 'trap', text: texts.trap },
+          { type: 'embedded-question', questionVersionId: q.versionId },
+          { type: 'worked-example', title: texts.example, problem: texts.problem, steps: [texts.step1, texts.step2], answer: texts.answer },
+        ],
+      },
+    });
+    expect(made.status, made.text).toBe(201);
+    await seed.reviewVersion({ type: 'strategy_lesson', versionId: made.body.versionId, authorId: s.author.userId, reviewerId: s.reviewer.userId, orgId: s.orgId, outcome: 'approved' });
+    const course = await org.api(s.author.token, 'POST', '/api/cms/courses', {
+      org: s.orgId,
+      body: { examCode: 'TOEIC', code: newCode(), title: `Method course ${mark}`, description: 'd', authorDisplay: 'Ms Lan', unlockRule: 'FREE', chapters: [{ title: 'Chapter 1', passThreshold: 0.7, lessons: [{ kind: 'LESSON', refId: made.body.versionId }] }] },
+    });
+    expect(course.status, course.text).toBe(201);
+    await seed.reviewVersion({ type: 'course', versionId: course.body.versionId, authorId: s.author.userId, reviewerId: s.reviewer.userId, orgId: s.orgId, outcome: 'approved' });
+    const lessonId = course.body.chapters[0].lessons[0].id as string;
+    const learner = await seed.verifiedLearner({ email: uniqueEmail('f14-learner') });
+    await seed.billing.entitlement({ userId: learner.userId, courseId: course.body.courseId, endsInDays: 30 });
+    const token = (await org.apiLogin(learner)).token;
+
+    // what the server hands the learner has no answer key and no explanation at all
+    const raw = await org.api(token, 'GET', `/api/learning/lessons/${lessonId}`);
+    expect(raw.status, raw.text).toBe(200);
+    for (const secret of ['answerKey', 'answer_key', 'explanation', 'because', 'Script of the recording']) expect(raw.text, secret).not.toContain(secret);
+
+    const violations: string[] = [];
+    page.on('console', (m) => {
+      if (/Content Security Policy|Refused to (frame|load)/i.test(m.text())) violations.push(m.text());
+    });
+    await auth.loginAs(page, learner);
+    const doc = await page.goto(`/learn/lessons/${lessonId}`);
+    const csp = (await doc!.allHeaders())['content-security-policy'] ?? '';
+    expect(csp, 'the page may frame YouTube and Vimeo and nothing else').toMatch(/frame-src https:\/\/www\.youtube\.com https:\/\/player\.vimeo\.com;/);
+
+    const article = page.locator('article');
+    await expect(article.getByRole('heading', { level: 1, name: `Method ${mark}` })).toBeVisible();
+    await expect(article.getByRole('heading', { level: 2, name: texts.heading })).toBeVisible();
+    await expect(article.getByText(texts.paragraph)).toBeVisible();
+    await expect(article.getByRole('columnheader', { name: 'Step' })).toBeVisible();
+    await expect(article.getByRole('cell', { name: 'Scan' })).toBeVisible();
+    const image = article.getByRole('img', { name: 'A one pixel diagram' });
+    await expect(image).toBeVisible();
+    await expect.poll(() => image.evaluate((el) => (el as HTMLImageElement).naturalWidth), 'the image loads from its signed link').toBeGreaterThan(0);
+    await expect(article.locator('audio[aria-label="The recording"]')).toHaveAttribute('src', /\/api\/media\//);
+    await expect(article.locator('video[aria-label="The clip"]')).toHaveAttribute('src', /\/api\/media\//);
+    const frame = article.locator('iframe[title="Video: The method video"]');
+    await expect(frame, 'the frame is rebuilt on the provider\'s own embed address').toHaveAttribute('src', 'https://www.youtube.com/embed/dQw4w9WgXcQ');
+    await expect(article.getByRole('complementary', { name: 'Mẹo' })).toContainText(texts.tip);
+    await expect(article.getByRole('complementary', { name: 'Bẫy' })).toContainText(texts.trap);
+    // the blocks are in the order the author wrote them
+    const body = await article.innerText();
+    const at = [texts.heading, texts.paragraph, 'The two steps', 'The diagram', 'The recording', 'The clip', 'The method video', texts.tip, texts.trap, 'Thử một câu', texts.example].map((x) => body.indexOf(x));
+    expect(at.every((x) => x >= 0), `every block is on the page: ${at}`).toBe(true);
+    expect(at, 'in order').toEqual([...at].sort((a, b) => a - b));
+
+    // the worked example keeps its result back until it is asked for
+    const example = article.getByRole('region', { name: `Ví dụ giải: ${texts.example}` });
+    await expect(example.getByText(texts.problem)).toBeVisible();
+    await expect(example.getByText(texts.step2)).toBeVisible();
+    await expect(example.getByText(texts.answer)).toHaveCount(0);
+    await example.getByRole('button', { name: 'Xem kết quả' }).click();
+    await expect(example.getByText(texts.answer)).toBeVisible();
+
+    // the embedded question: no answer and no explanation until it is answered; a wrong answer then shows the right one and why
+    const question = article.getByRole('region', { name: 'Thử một câu' });
+    await expect(question.getByRole('radio')).toHaveCount(4);
+    for (const hidden of ['Đáp án:', 'Giải thích', 'because']) await expect(page.getByText(hidden), `before answering: ${hidden}`).toHaveCount(0);
+    await question.getByRole('radio', { name: /^A\./ }).check();
+    await question.getByRole('button', { name: 'Kiểm tra' }).click();
+    await expect(question.getByText('Chưa đúng')).toBeVisible();
+    await expect(question.getByText('Đáp án: D')).toBeVisible();
+    await expect(question.getByText('because')).toBeVisible();
+    await expect(question.getByRole('radio').first()).toBeDisabled();
+
+    expect(violations, 'the CSP refused nothing on the lesson page').toEqual([]);
   });
 });

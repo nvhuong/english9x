@@ -1,11 +1,13 @@
 // F18 — Phiên bản (spec §16.2): "Sửa câu đã xuất bản → học viên đang thi vẫn thấy bản cũ → bản mới chỉ hiện sau khi duyệt".
 //
 // What the question versions of P2.3 do, through the real stack: editing a published question makes a NEW draft version and never touches the
-// published one; the new version is published only by a review; one open version per question; a colleague cannot take a draft over. The two
-// parts that need other tasks are listed in e2e/partial-features.json: a learner IN AN EXAM keeping the old version (the exam room, P3.3/P3.4)
-// and the side-by-side comparison screen (P2.9).
+// published one; the new version is published only by a review; one open version per question; a colleague cannot take a draft over. The last
+// last test sits a learner IN AN EXAM through the real room: a new version of a question of the test is published by a real review in the middle of
+// the attempt, and the learner still reads, answers and is scored on the version the attempt began on.
 import { test, expect } from '../../fixtures';
 import { exampleOf, publishedQuestion, staffed } from '../../fixtures/content';
+import { poll } from '../../helpers/env';
+import { enterExam, finishSection } from '../exam/_exam';
 
 type Version = { versionNo: number; status: string; versionId: string; content: { stem: string } };
 
@@ -105,5 +107,70 @@ test.describe('F18 versioning', () => {
     expect((await org.api(s.reviewer.token, 'PUT', `/api/cms/questions/${questionId}`, { org: s.orgId, body })).status).toBe(403);
     const after = await org.api(s.author.token, 'GET', `/api/cms/questions/${questionId}`, { org: s.orgId });
     expect(after.body.content.stem).toBe('Mine?');
+  });
+  test('F18 a learner in an exam keeps the question version the attempt began on when a new version is published in the middle, and is scored by it', async ({ page, seed, auth, org }) => {
+    test.setTimeout(540_000);
+    const exam = await seed.publishedShortToeicTest({ listening: 900, reading: 900 });
+    await seed.grading.scoreTable({ testVersionId: exam.testVersionId, skill: 'LISTENING', scaled: [0, 5] });
+    await seed.grading.scoreTable({ testVersionId: exam.testVersionId, skill: 'READING', scaled: [0, 5, 10] });
+    const staff = exam.staff;
+    const learner = await seed.learnerWithPlan({ courses: 1, examCode: 'TOEIC' });
+    const [listening, reading] = exam.parts;
+    const target = reading!.questions[0]!; // the first question of P5, which has a stem to tell the versions apart
+    const learnerToken = (await org.apiLogin({ email: learner.email, password: learner.password })).token;
+    type RoomQuestion = { questionId: string; versionId: string; content: { stem: string } };
+    const roomQuestion = async (token: string, attemptId: string): Promise<RoomQuestion> => {
+      const view = await org.api(token, 'GET', `/api/exam/attempts/${attemptId}`);
+      expect(view.status, view.text).toBe(200);
+      return (view.body.currentSection.groups as Array<{ questions: RoomQuestion[] }>).flatMap((g) => g.questions).find((q) => q.questionId === target.questionId)!;
+    };
+
+    // the learner sits P2, then P5 opens
+    await auth.loginAs(page, learner);
+    const attemptId = await enterExam(page, exam.testVersionId);
+    await page.keyboard.press(String(listening!.questions[0]!.answer));
+    await finishSection(page);
+    await expect(page.getByText('Phần 2/2')).toBeVisible();
+    const before = await roomQuestion(learnerToken, attemptId);
+    expect(before.content.stem).toMatch(/^Question \d+$/);
+    await expect(page.getByRole('region', { name: 'Câu hỏi' })).toContainText(before.content.stem);
+
+    // in the middle of the attempt the author edits the question (a new stem and ANOTHER right answer) and a reviewer publishes version 2
+    const author = (await org.apiLogin(staff.authorLogin)).token;
+    const current = await org.api(author, 'GET', `/api/cms/questions/${target.questionId}`, { org: staff.orgId });
+    expect(current.status, current.text).toBe(200);
+    const oldKey = String(target.answer);
+    const newKey = ['A', 'B', 'C', 'D'].find((k) => k !== oldKey)!;
+    const newStem = `NEW VERSION ${staff.author.userId.slice(0, 8)}`;
+    const edited = await org.api(author, 'PUT', `/api/cms/questions/${target.questionId}`, {
+      org: staff.orgId,
+      body: { content: { ...current.body.content, stem: newStem }, answerKey: { ...current.body.answerKey, slots: [[newKey]] } },
+    });
+    expect(edited.status, edited.text).toBe(201);
+    expect(edited.body.versionNo).toBe(2);
+    await seed.reviewVersion({ type: 'question', versionId: edited.body.versionId, authorId: staff.author.userId, reviewerId: staff.reviewer.userId, orgId: staff.orgId, outcome: 'approved' });
+    const versions = (await org.api(staff.reviewer.token, 'GET', `/api/cms/questions/${target.questionId}/versions`, { org: staff.orgId })).body as Array<{ versionNo: number; status: string; versionId: string }>;
+    expect(versions.map((v) => [v.versionNo, v.status]), 'the new version is published').toEqual([[1, 'PUBLISHED'], [2, 'PUBLISHED']]);
+    expect(versions[0]!.versionId).toBe(before.versionId);
+
+    // the room the learner is in (reloaded, the way a person who comes back to the tab sees it) still has version 1: stem, version id, and the same on the server
+    await page.reload();
+    await expect(page.getByText('Phần 2/2')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Câu hỏi' })).toContainText(before.content.stem);
+    await expect(page.getByText(newStem)).toHaveCount(0);
+    const after = await roomQuestion(learnerToken, attemptId);
+    expect(after.versionId, 'the attempt still points at the version it began on').toBe(before.versionId);
+    expect(after.versionId).not.toBe(edited.body.versionId);
+    expect(after.content.stem).toBe(before.content.stem);
+
+    // the learner answers with the key of version 1 and submits: the result is scored by version 1 (version 2's key is another letter)
+    await page.keyboard.press(oldKey);
+    await finishSection(page);
+    await expect(page.getByTestId('exam-result')).toHaveAttribute('data-status', 'SUBMITTED');
+    const scores = await poll('the scores', async () => {
+      const r = await seed.grading.scores(attemptId);
+      return r.graded ? r : null;
+    }, { timeoutMs: 360_000, intervalMs: 3_000 });
+    expect(scores.scores.find((x) => x.skill === 'READING'), 'the answer was right by the key of the version the attempt began on').toMatchObject({ raw: 1, rawMax: 2, scaled: 5 });
   });
 });
