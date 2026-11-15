@@ -49,15 +49,15 @@ class BillingSeedController {
         return Map.of("courseId", id.toString(), "code", code);
     }
 
-    record EntitlementRequest(UUID userId, UUID courseId, Integer startsInDays, Integer endsInDays, Integer endsInHours) {}
+    record EntitlementRequest(UUID userId, UUID courseId, Integer startsInDays, Integer endsInDays, Integer endsInHours, Integer endsInSeconds) {}
 
-    /** An order-sourced entitlement from {@code startsInDays} (default -30) to {@code endsInDays} (or {@code endsInHours}) from now. */
+    /** An order-sourced entitlement from {@code startsInDays} (default -30) to {@code endsInDays} (or {@code endsInHours}, or {@code endsInSeconds}: a plan that runs out while a spec is still going) from now. */
     @PostMapping("/entitlement")
     @ResponseStatus(HttpStatus.CREATED)
     Map<String, Object> entitlement(@RequestBody EntitlementRequest r) {
         Instant now = Instant.now();
         Instant from = now.plus(Duration.ofDays(r.startsInDays() == null ? -30 : r.startsInDays()));
-        Instant until = r.endsInHours() != null ? now.plus(Duration.ofHours(r.endsInHours())) : now.plus(Duration.ofDays(r.endsInDays() == null ? 30 : r.endsInDays()));
+        Instant until = r.endsInSeconds() != null ? now.plusSeconds(r.endsInSeconds()) : r.endsInHours() != null ? now.plus(Duration.ofHours(r.endsInHours())) : now.plus(Duration.ofDays(r.endsInDays() == null ? 30 : r.endsInDays()));
         UUID id = db.jdbc().queryForObject("insert into entitlements(user_id, course_id, valid_from, valid_until, source_order_id) values (?, ?, ?, ?, gen_random_uuid()) returning id",
                 UUID.class, r.userId(), r.courseId(), Timestamp.from(from), Timestamp.from(until));
         return Map.of("entitlementId", id.toString());

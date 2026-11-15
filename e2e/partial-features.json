@@ -43,11 +43,6 @@
       "owner": "P3.4 (exam room: the attempt keeps its version)"
     },
     {
-      "id": "F41",
-      "pending": "The gate (billing.api.Entitlements) and the PLAN_EXPIRING / PLAN_EXPIRED notices are asserted through the seed API and the learner's own API. Pending: 'cannot open a lesson / can still read old results' on the real screens, which call the gate: lesson page and exam room do not exist yet.",
-      "owner": "P3.1 (lesson gate), P3.3 (exam: canContinueAttempt), P4.4 (results page)"
-    },
-    {
       "id": "F52",
       "pending": "The notification pipeline is real end to end (workflow events through the Modulith registry, listeners, jobs, SMTP/Mailpit, the fake Telegram Bot API, the real screens), and, since P2.9, so is the TRIGGER for the review events: a real submit over the CMS API and a real approve / request-changes on the review screen. Pending: the other spec §13 events (scores, grading queue, assignments, session reminders), whose source modules do not exist yet.",
       "owner": "sources: the order notices are real since P5.2 (asserted in F40: ORDER_PENDING, ORDER_CONFIRMED by app and mail, ORDER_REJECTED) and the plan-expiry notices since P5.1 (F41); P4.2/P4.3 (scores, grading), P6.2/P6.3 (assignments, sessions)"
@@ -81,16 +76,6 @@
       "id": "F19",
       "pending": "Done through the real stack (P3.1): the author builds a STRICT course on the screen (the server checks the six-character code; a taken code is 409), a review publishes it, and the REAL lesson gate answers ALLOWED / LOCKED / NOT_ENTITLED as the rule, the learner's progress (stated by the test through seed.course.gate) and the entitlement say, for STRICT, COMPLETION (score ignored) and FREE. Pending: the same through the learner's own screens, with progress written by real lesson completions and chapter tests (the lesson page and the learning module that owns progress are P3.2's).",
       "owner": "P3.2 (lesson page, chapter map, real progress)"
-    },
-    {
-      "id": "F34",
-      "pending": "'điểm theo tiêu chí, nhận xét, transcript hiển thị' on the learner's results page: the AI grading is covered through the real stack and the fake Gemini (the evaluations, tokens, cost and the Writing / Speaking scores are read through the seed API), but the results page that shows the criteria, the comments and the transcript does not exist yet.",
-      "owner": "P4.4 (results page)"
-    },
-    {
-      "id": "F36",
-      "pending": "'AI hiện ngay là sơ bộ' / 'điểm GV thay, là chính thức' as the LEARNER sees it: the spec covers the AI's PRELIMINARY scores and the SCORE_PRELIMINARY notice, the teacher's grading on the real screen, the OFFICIAL score replacing it, the stored AI-teacher deviation and the SCORE_OFFICIAL notice (the score rows are read through the seed API), but the results page that shows the 'sơ bộ' / 'chính thức' labels does not exist yet.",
-      "owner": "P4.4 (results page)"
     }
   ]
 }

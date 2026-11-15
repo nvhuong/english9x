@@ -47,10 +47,11 @@ export async function ensureGradingSkill(s: Staffed, questionTypeCode: string): 
     criteria: CRITERIA,
     promptTemplate: 'Rubric:\n{{rubric}}\n\nScored examples:\n{{samples}}\n\nQuestion:\n{{task}}\n\nLearner answer:\n{{response}}',
     samples: [{ band: 7, text: 'Some people believe that technology isolates us. I partly agree, because...', commentary: 'Clear position.' }],
+    // a spoken answer's schema also asks for what the model heard: the learner's results page shows it as the transcript (F34)
     resultSchema: {
       type: 'object',
-      properties: { task_response: { type: 'number' }, coherence: { type: 'number' }, feedback: { type: 'string' } },
-      required: ['task_response', 'coherence', 'feedback'],
+      properties: { task_response: { type: 'number' }, coherence: { type: 'number' }, feedback: { type: 'string' }, ...(questionTypeCode.startsWith('IELTS_S_') ? { transcript: { type: 'string' } } : {}) },
+      required: ['task_response', 'coherence', 'feedback', ...(questionTypeCode.startsWith('IELTS_S_') ? ['transcript'] : [])],
     },
   };
   const made = await api(s.author.token, 'POST', '/api/cms/grading-skills', { org: s.orgId, body });

@@ -2,8 +2,8 @@
 //
 // Mode BOTH (the policy of this spec's own test): after the late-sync grace the AI grades the essay and the recording (the fake Gemini answers band 6.5) and the learner is told
 // the score is PRELIMINARY; the attempt is also in the teachers' queue, where a teacher sees the AI's result next to the answer, scores each criterion on the real screen and
-// saves. Their score is OFFICIAL and replaces the AI's, the deviation (teacher minus AI) is stored, and the learner is told the official score is ready. The page that shows the
-// labels to the learner is P4.4 (e2e/partial-features.json): until then the spec reads the score rows through the seed API.
+// saves. Their score is OFFICIAL and replaces the AI's, the deviation (teacher minus AI) is stored, and the learner is told the official score is ready. The learner's own results page
+// shows the AI's scores labelled "Sơ bộ" first and, after the teacher, the teacher's labelled "Chính thức" (with the teacher's comment) in their place.
 import { test, expect } from '../../fixtures';
 import { staffed } from '../../fixtures/content';
 import { ensureGradingSkill, publishedIeltsTest, sitWritingAndSpeaking } from '../../fixtures/ai-grading';
@@ -47,6 +47,21 @@ test.describe('F36 both mode', () => {
     await poll('SCORE_PRELIMINARY', async () => ((await inbox()).some((n) => n.type === 'SCORE_PRELIMINARY' && n.data?.attemptId === attemptId) ? true : null), { timeoutMs: 30_000 });
     expect((await inbox()).some((n) => n.type === 'SCORE_OFFICIAL' && n.data?.attemptId === attemptId), 'not official yet').toBe(false);
 
+    // the learner's results page: the AI's scores, labelled preliminary, and no official one
+    const skillScore = (skill: string) => page.locator(`[data-testid="skill-score"][data-skill="${skill}"]`);
+    await auth.loginAs(page, learner);
+    await page.goto(`/results/attempts/${attemptId}`);
+    for (const skill of ['WRITING', 'SPEAKING']) {
+      await expect(skillScore(skill)).toHaveAttribute('data-label', 'PRELIMINARY');
+      await expect(skillScore(skill).getByText('Sơ bộ', { exact: true })).toBeVisible();
+      await expect(skillScore(skill).getByText('6.5', { exact: true })).toBeVisible();
+      await expect(skillScore(skill).getByText('AI', { exact: true })).toBeVisible();
+      await expect(skillScore(skill).getByText('Chính thức', { exact: true })).toHaveCount(0);
+    }
+    await expect(page.getByText('Nhận xét của giáo viên'), 'no teacher feedback yet').toHaveCount(0);
+    await page.getByRole('button', { name: 'Đăng xuất' }).click();
+    await expect(page).toHaveURL(/\/login/);
+
     // the teacher claims it and grades both skills on the real screen, with the AI's result beside the answer
     const item = await poll('the item in the teachers\' queue', async () => (await seed.grading.queue(attemptId)).item, { timeoutMs: 60_000, intervalMs: 1_000 });
     expect(item).toMatchObject({ state: 'OPEN', reason: 'POLICY' });
@@ -86,5 +101,23 @@ test.describe('F36 both mode', () => {
 
     // and the learner is told the official score is ready
     await poll('SCORE_OFFICIAL', async () => ((await inbox()).some((n) => n.type === 'SCORE_OFFICIAL' && n.data?.attemptId === attemptId) ? true : null), { timeoutMs: 30_000 });
+
+    // and on the results page the teacher's scores replace the AI's: official, with the teacher's comment
+    await page.getByRole('button', { name: 'Đăng xuất' }).click();
+    await expect(page).toHaveURL(/\/login/);
+    await auth.loginAs(page, learner);
+    await page.goto(`/results/attempts/${attemptId}`);
+    await expect(skillScore('WRITING')).toHaveAttribute('data-label', 'OFFICIAL');
+    await expect(skillScore('WRITING').getByText('7.5', { exact: true })).toBeVisible();
+    await expect(skillScore('WRITING').getByText('Giáo viên', { exact: true })).toBeVisible();
+    await expect(skillScore('SPEAKING')).toHaveAttribute('data-label', 'OFFICIAL');
+    await expect(skillScore('SPEAKING').getByText('7', { exact: true })).toBeVisible();
+    for (const skill of ['WRITING', 'SPEAKING']) {
+      await expect(skillScore(skill).getByText('Sơ bộ', { exact: true })).toHaveCount(0);
+      await expect(skillScore(skill).getByText('Chính thức', { exact: true })).toBeVisible();
+    }
+    const writingFb = page.locator('[data-testid="feedback"][data-skill="WRITING"]');
+    await expect(writingFb.getByText('Nhận xét của giáo viên')).toBeVisible();
+    await expect(writingFb.getByText('Clear position, good paragraphing.')).toBeVisible();
   });
 });
