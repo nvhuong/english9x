@@ -1,7 +1,9 @@
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext, Browser, Page } from '@playwright/test';
 import { expect } from '../../fixtures';
 import { staffed } from '../../fixtures/content';
 import { ensureGradingSkill, publishedIeltsTest, sitWritingAndSpeaking } from '../../fixtures/ai-grading';
+import type { loginAs as LoginAs } from '../../fixtures/auth';
+import type { mailpit as Mailpit } from '../../helpers/mailpit';
 import type { api as Api, apiLogin as ApiLogin } from '../../fixtures/org';
 import type { seed as Seed } from '../../fixtures/seed';
 import { poll } from '../../helpers/env';
@@ -211,7 +213,7 @@ export async function gradingWorld({ seed, org, uniqueEmail, request, gemini }: 
   return {
     name: 'grading',
     people: [learner, teacher, admin],
-    timeoutMs: 720_000,
+    timeoutMs: 900_000,
     steps: [
       {
         // The first attempt is graded by the fake Gemini (answers band 6.5) once the late-sync grace is over. The second is submitted a minute later, so the first has been
@@ -285,18 +287,146 @@ export async function linkTelegram(org: Fx['org'], telegram: typeof Telegram, wh
   return chat;
 }
 
-/** Runs the steps in order; after each step waits for every expected notification to be in its recipient's inbox, then calls `each` for it. */
-export async function drive(org: Fx['org'], world: World, each: (e: Expect, step: Step) => Promise<void>): Promise<void> {
-  for (const step of world.steps) {
-    await step.fire();
-    for (const e of step.expects) {
-      await arrived(org, e);
-      await each(e, step);
-    }
-  }
-}
-
 /** The Telegram messages for the chat whose bold first line is the event's title. */
 export async function telegramFor(telegram: typeof Telegram, chat: string, event: EventId): Promise<Array<{ text: string }>> {
   return (await telegram.messagesFor(chat)).filter((m) => m.text.includes(`<b>${EVENTS[event].title}</b>`));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
+// the channels
+
+export type Off = 'Email' | 'Telegram';
+export interface OffPref { who: Person; event: EventId; channel: Off }
+export interface Channels {
+  /** F52: the recipient's real notification screen lists it (and it can be marked read). */
+  screen?: boolean;
+  /** F53: the mail is in Mailpit. */
+  email?: boolean;
+  /** F54: the message is in the person's linked chat. */
+  telegram?: boolean;
+}
+const SETTLE_MS = 3_000;
+
+/** The first expectation that a LATER expectation of the same person (another event) follows: its arrival is the barrier for the absence of the first. */
+export function pickOff(world: World): { first: Expect; later: Expect } {
+  const all = world.steps.flatMap((st) => st.expects);
+  for (let i = 0; i < all.length; i++) {
+    const later = all.slice(i + 1).find((x) => x.who.userId === all[i]!.who.userId && x.event !== all[i]!.event);
+    if (later) return { first: all[i]!, later };
+  }
+  throw new Error(`world ${world.name} has no person with two events`);
+}
+
+/**
+ * Raises the world's events in order and asserts each on the channels asked for. Counts are taken BEFORE a step fires and an arrival means "one more than before"
+ * (parallel specs raise the same event types for other people; the recipients are this world's own people, but a count is still what proves THIS step's event).
+ * `off` entries are switched off on the real preference screen first; their absence is asserted only after a LATER event of the same person has arrived on the same
+ * channel (the delivery jobs of one person's notices are queued in order), plus a short settle time; with no later event it is the settle time alone.
+ */
+export async function runChannels(o: {
+  fx: Fx; world: World; browser: Browser; auth: { loginAs: typeof LoginAs }; telegram: typeof Telegram; mailpit: typeof Mailpit;
+  use: Channels; off?: OffPref[];
+}) {
+  const { fx, world, browser, auth, telegram, mailpit, use } = o;
+  const off = o.off ?? [];
+  const isOff = (who: Person, event: EventId, channel: Off) => off.some((x) => x.who.userId === who.userId && x.event === event && x.channel === channel);
+  const chatOf = new Map<string, string>();
+  if (use.telegram) for (const who of world.people) chatOf.set(who.userId, await linkTelegram(fx.org, telegram, who));
+
+  const setBox = async (who: Person, event: EventId, channel: Off, on: boolean) => {
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
+    const page = await ctx.newPage();
+    await auth.loginAs(page, who);
+    await page.goto('/notifications/preferences');
+    const name = new RegExp(`^${channel}: ${EVENTS[event].title}`);
+    await expect(page.getByRole('checkbox', { name })).toBeChecked({ checked: !on });
+    await page.getByRole('checkbox', { name }).click();
+    await expect(page.getByRole('checkbox', { name })).toBeChecked({ checked: on });
+    await page.reload();
+    await expect(page.getByRole('checkbox', { name })).toBeChecked({ checked: on });
+    await ctx.close();
+  };
+  for (const x of off) await setBox(x.who, x.event, x.channel, false);
+
+  const pages = new Map<string, Page>();
+  const pageOf = async (who: Person) => {
+    let page = pages.get(who.userId);
+    if (!page) {
+      page = await (await browser.newContext({ ignoreHTTPSErrors: true })).newPage();
+      await auth.loginAs(page, who);
+      pages.set(who.userId, page);
+    }
+    return page;
+  };
+  const count = async (who: Person, event: EventId, channel: 'App' | Off): Promise<number> => {
+    if (channel === 'App') return (await inboxTypes(fx.org, who)).filter((t) => t === event).length;
+    if (channel === 'Email') return mailpit.countEmailsTo(who.email, EVENTS[event].title);
+    return (await telegramFor(telegram, chatOf.get(who.userId)!, event)).length;
+  };
+  const channelsUsed: Off[] = [...(use.email ? ['Email' as const] : []), ...(use.telegram ? ['Telegram' as const] : [])];
+  const pending: Array<{ who: Person; event: EventId; channel: Off; base: number }> = [];
+  const never = async (p: { who: Person; event: EventId; channel: Off; base: number }) =>
+    expect(await count(p.who, p.event, p.channel), `${p.event} by ${p.channel} to ${p.who.email} is switched off`).toBe(p.base);
+
+  for (const step of world.steps) {
+    const base = new Map<string, number>();
+    const k = (e: Expect, c: 'App' | Off) => `${e.who.userId}:${e.event}:${c}`;
+    for (const e of step.expects) for (const c of ['App', ...channelsUsed] as const) base.set(k(e, c), await count(e.who, e.event, c));
+    await step.fire();
+    for (const e of step.expects) {
+      await poll(`${e.event} in the inbox of ${e.who.email}`, async () => ((await count(e.who, e.event, 'App')) > base.get(k(e, 'App'))! ? true : null), { timeoutMs: 120_000, intervalMs: 1_000 });
+      if (use.screen) {
+        const page = await pageOf(e.who);
+        await page.goto('/notifications');
+        const heading = page.getByRole('heading', { level: 2, name: EVENTS[e.event].title }).first();
+        await expect(async () => {
+          await page.reload();
+          await expect(heading).toBeVisible({ timeout: 2_000 });
+        }).toPass({ timeout: 40_000 });
+        const item = page.getByRole('listitem').filter({ has: heading }).first();
+        await expect(item).toContainText(EVENTS[e.event].body);
+        await expect(item).toContainText('Chưa đọc');
+        await expect(page.getByRole('link', { name: /^Thông báo, \d+ chưa đọc$/ })).toBeVisible();
+        await item.getByRole('button', { name: new RegExp(`Đánh dấu đã đọc: ${EVENTS[e.event].title}`) }).click();
+        await expect(item).toContainText('Đã đọc');
+      }
+      for (const channel of channelsUsed) {
+        const before = base.get(k(e, channel))!;
+        if (isOff(e.who, e.event, channel)) {
+          pending.push({ who: e.who, event: e.event, channel, base: before });
+          continue;
+        }
+        await poll(`${e.event} by ${channel} to ${e.who.email}`, async () => ((await count(e.who, e.event, channel)) > before ? true : null), { timeoutMs: 60_000, intervalMs: 1_000 });
+        if (channel === 'Email') {
+          const mail = await mailpit.lastEmailTo(e.who.email, { subjectIncludes: EVENTS[e.event].title, timeoutMs: 20_000 });
+          expect(mail.Subject).toBe(EVENTS[e.event].title);
+          expect(mail.Text).toContain('Xin chào');
+          expect(mail.Text).toContain(EVENTS[e.event].body);
+          expect(mailpit.linksIn(mail).some((l) => l === 'https://localhost/notifications')).toBe(true);
+        } else {
+          const text = (await telegramFor(telegram, chatOf.get(e.who.userId)!, e.event)).map((m) => m.text).join('\n');
+          expect(text).toContain(`<b>${EVENTS[e.event].title}</b>`);
+          expect(text).toContain(EVENTS[e.event].body);
+          expect(text).toContain('href="https://localhost/notifications"');
+          // nobody else's chat got it, unless they are a recipient of the same event
+          for (const other of world.people) {
+            if (other.userId !== e.who.userId && !world.steps.some((st) => st.expects.some((x) => x.who.userId === other.userId && x.event === e.event))) {
+              expect(await count(other, e.event, 'Telegram'), `${e.event} must not reach ${other.email}`).toBe(0);
+            }
+          }
+        }
+        // a later event of the same person has now arrived on this channel: the switched-off earlier ones had every chance to arrive first
+        for (const p of pending.filter((x) => x.who.userId === e.who.userId && x.channel === channel && x.event !== e.event)) {
+          await new Promise((r) => setTimeout(r, SETTLE_MS));
+          await never(p);
+          pending.splice(pending.indexOf(p), 1);
+        }
+      }
+    }
+  }
+  if (pending.length > 0) {
+    await new Promise((r) => setTimeout(r, SETTLE_MS * 2));
+    for (const p of pending) await never(p);
+  }
+  return { setBox, count };
 }

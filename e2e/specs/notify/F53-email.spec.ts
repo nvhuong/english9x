@@ -3,7 +3,7 @@
 import { test, expect } from '../../fixtures';
 import { submitQuestion } from '../../fixtures/review';
 import { reviewWorld } from './_world';
-import { EVENTS, classroomWorld, drive, gradingWorld, ordersWorld, planWorld, type Fx, type World } from './_events';
+import { classroomWorld, ordersWorld, pickOff, planWorld, runChannels, type Fx, type World } from './_events';
 
 test.describe('F53 email notifications', () => {
   test('F53 the event arrives in Mailpit in the person\'s language; with email off for that event nothing is sent', async ({ page, browser, seed, auth, mailpit, uniqueEmail }) => {
@@ -57,55 +57,23 @@ test.describe('F53 email notifications', () => {
   });
 });
 
-// The other §13 events, each by its real trigger (see _events.ts): the mail is in Mailpit with the event's subject and text, a link to the notification centre, and the person's name.
-// "Email off for the event -> not sent" is proven per world on its LAST step's first event: its in-app notification arrives, and so does a mail of an earlier (email on) event
-// of the same person or, where the person has none, a settle time after the in-app notice, long past the delivery job's pick-up.
-const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World>; gemini?: boolean }> = [
+const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World> }> = [
   { name: 'orders', build: ordersWorld },
   { name: 'plan', build: planWorld },
   { name: 'classroom', build: classroomWorld },
-  { name: 'grading', build: gradingWorld, gemini: true },
 ];
 
-async function mails(mailpit: typeof import('../../helpers/mailpit').mailpit, world: World, org: Fx['org'], page: import('@playwright/test').Page, auth: any, off: { event: keyof typeof EVENTS; who: World['people'][number] }) {
-  // email off for one event of one person, on the real preference screen
-  await auth.loginAs(page, off.who);
-  await page.goto('/notifications/preferences');
-  const box = page.getByRole('checkbox', { name: new RegExp(`^Email: ${EVENTS[off.event].title}`) });
-  await expect(box).toBeChecked();
-  await box.click();
-  await expect(box).not.toBeChecked();
-  await page.reload();
-  await expect(page.getByRole('checkbox', { name: new RegExp(`^Email: ${EVENTS[off.event].title}`) })).not.toBeChecked();
-  await drive(org, world, async (e) => {
-    if (e.event === off.event && e.who === off.who) {
-      // in the inbox (drive waited for that); no mail, once a settle time has passed
-      await new Promise((r) => setTimeout(r, 8_000));
-      expect(await mailpit.countEmailsTo(e.who.email, EVENTS[e.event].title)).toBe(0);
-      return;
-    }
-    const mail = await mailpit.lastEmailTo(e.who.email, { subjectIncludes: EVENTS[e.event].title, timeoutMs: 60_000 });
-    expect(mail.Subject).toBe(EVENTS[e.event].title);
-    expect(mail.Text).toContain('Xin chào');
-    expect(mail.Text).toContain(EVENTS[e.event].body);
-    expect(mailpit.linksIn(mail).some((l) => l === 'https://localhost/notifications')).toBe(true);
-  });
-}
-
+// The other §13 events, each by its real trigger (see _events.ts): the mail is in Mailpit with the event's subject, text and the link to the notification centre.
+// Email off for one event (switched on the real preference screen; the first event of a person who has a LATER event): its in-app notice arrives, no mail comes, asserted
+// only after the later event's mail has arrived. The grading events are asserted by the one grading run of F55-channel-prefs.spec.ts (it holds the fake Gemini for minutes).
 test.describe('F53 email: the other spec 13 events', () => {
-  for (const w of worlds.filter((x) => !x.gemini)) {
-    test(`F53 ${w.name} events arrive in Mailpit; email off for one of them sends none`, async ({ page, seed, auth, org, mailpit, uniqueEmail, request }) => {
-      const world = await w.build({ seed, org, uniqueEmail, request }, `f53${w.name}`);
+  for (const w of worlds) {
+    test(`F53 ${w.name} events arrive in Mailpit; email off for one of them sends none`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {
+      const fx: Fx = { seed, org, uniqueEmail, request };
+      const world = await w.build(fx, `f53${w.name}`);
       test.setTimeout(world.timeoutMs);
-      const last = world.steps[world.steps.length - 1]!.expects[0]!;
-      await mails(mailpit, world, org, page, auth, last);
+      const { first } = pickOff(world);
+      await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { email: true }, off: [{ who: first.who, event: first.event, channel: 'Email' }] });
     });
   }
-
-  test('F53 grading events arrive in Mailpit; email off for the official score sends none', async ({ page, seed, auth, org, mailpit, uniqueEmail, request, gemini }) => {
-    const world = await gradingWorld({ seed, org, uniqueEmail, request, gemini }, 'f53grading');
-    test.setTimeout(world.timeoutMs);
-    const last = world.steps[world.steps.length - 1]!.expects[0]!;
-    await mails(mailpit, world, org, page, auth, last);
-  });
 });

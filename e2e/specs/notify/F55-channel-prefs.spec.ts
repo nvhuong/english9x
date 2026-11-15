@@ -3,7 +3,7 @@
 import { test, expect } from '../../fixtures';
 import { poll } from '../../helpers/env';
 import { reviewWorld } from './_world';
-import { EVENTS, classroomWorld, drive, gradingWorld, linkTelegram, ordersWorld, planWorld, telegramFor, type EventId, type Fx, type Person, type World } from './_events';
+import { classroomWorld, gradingWorld, ordersWorld, pickOff, planWorld, runChannels, type Fx, type World } from './_events';
 
 test.describe('F55 channel preferences', () => {
   test('F55 switching an event x channel off or on changes what is sent, per event and per channel', async ({ page, browser, seed, auth, telegram, mailpit, uniqueEmail }) => {
@@ -66,85 +66,53 @@ test.describe('F55 channel preferences', () => {
   });
 });
 
-// The other §13 events: the preference screen has a row for each, and it takes effect. Before anything is raised, every event of a world gets ONE channel switched off on the real
-// preference screen, alternating (Email off / Telegram off) along the events; then the event is raised by its real trigger (see _events.ts). The channel left on delivers it,
-// the channel switched off does not (checked once the on channel has delivered the same notification, plus a settle time), and the in-app notice arrives whatever the choice.
-// For the orders the choice is then reversed (the off channel switched on): the next rejection reaches it.
-const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World>; gemini?: boolean }> = [
+const worlds: Array<{ name: string; build: (fx: Fx, label: string) => Promise<World> }> = [
   { name: 'orders', build: ordersWorld },
   { name: 'plan', build: planWorld },
   { name: 'classroom', build: classroomWorld },
-  { name: 'grading', build: gradingWorld, gemini: true },
 ];
 
-type Off = 'Email' | 'Telegram';
-const SETTLE_MS = 5_000;
-
-async function run(fx: Fx, world: World, page: import('@playwright/test').Page, auth: any, telegram: typeof import('../../helpers/telegram').telegram, mailpit: typeof import('../../helpers/mailpit').mailpit, browser: import('@playwright/test').Browser) {
-  const chatOf = new Map<string, string>();
-  for (const who of world.people) chatOf.set(who.userId, await linkTelegram(fx.org, telegram, who));
-  const off = new Map<string, Off>(); // `${userId}:${event}`
-  const key = (who: Person, event: EventId) => `${who.userId}:${event}`;
-  let i = 0;
-  for (const st of world.steps) for (const e of st.expects) off.set(key(e.who, e.event), i++ % 2 === 0 ? 'Email' : 'Telegram');
-
-  const setBox = async (who: Person, event: EventId, channel: Off, on: boolean) => {
-    const ctx = await browser.newContext({ ignoreHTTPSErrors: true });
-    const p = await ctx.newPage();
-    await auth.loginAs(p, who);
-    await p.goto('/notifications/preferences');
-    const box = p.getByRole('checkbox', { name: new RegExp(`^${channel}: ${EVENTS[event].title}`) });
-    await expect(box).toBeChecked({ checked: !on });
-    await box.click();
-    await expect(box).toBeChecked({ checked: on });
-    await p.reload();
-    await expect(p.getByRole('checkbox', { name: new RegExp(`^${channel}: ${EVENTS[event].title}`) })).toBeChecked({ checked: on });
-    await ctx.close();
-  };
-  for (const [k, channel] of off) {
-    const [userId, event] = k.split(':') as [string, EventId];
-    await setBox(world.people.find((p) => p.userId === userId)!, event, channel, false);
-  }
-
-  const delivered = async (who: Person, event: EventId, channel: Off) => {
-    if (channel === 'Email') return mailpit.countEmailsTo(who.email, EVENTS[event].title);
-    return (await telegramFor(telegram, chatOf.get(who.userId)!, event)).length;
-  };
-  await drive(fx.org, world, async (e) => {
-    const channelOff = off.get(key(e.who, e.event))!;
-    const channelOn: Off = channelOff === 'Email' ? 'Telegram' : 'Email';
-    // the channel left on delivers it
-    await poll(`${e.event} by ${channelOn} to ${e.who.email}`, async () => ((await delivered(e.who, e.event, channelOn)) > 0 ? true : null), { timeoutMs: 60_000, intervalMs: 1_000 });
-    // the one switched off does not
-    await new Promise((r) => setTimeout(r, SETTLE_MS));
-    expect(await delivered(e.who, e.event, channelOff), `${e.event} by ${channelOff} is switched off`).toBe(0);
-  });
-  return { off, setBox, delivered, key };
-}
-
+// The other §13 events: the preference screen has a row for each and it takes effect. Before the world runs, one event is switched off on the real preference
+// screen per channel (Email for the first event of a person who has a later one) and ONE for the world's last event (Telegram): the in-app notice arrives, the channel left on delivers it, the channel switched off does not (asserted after a LATER event of that person has
+// arrived on that channel). For the orders the choice is then reversed: switched on again, the next rejection reaches that channel.
 test.describe('F55 channel preferences: the other spec 13 events', () => {
-  for (const w of worlds.filter((x) => !x.gemini)) {
-    test(`F55 ${w.name} events: the channel switched off gets nothing, the other delivers`, async ({ page, browser, seed, auth, org, telegram, mailpit, uniqueEmail, request }) => {
+  for (const w of worlds) {
+    test(`F55 ${w.name} events: a channel switched off gets nothing, switched on delivers`, async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request }) => {
       const fx: Fx = { seed, org, uniqueEmail, request };
       const world = await w.build(fx, `f55${w.name}`);
       test.setTimeout(world.timeoutMs);
-      const r = await run(fx, world, page, auth, telegram, mailpit, browser);
+      const { first } = pickOff(world);
+      const all = world.steps.flatMap((st) => st.expects);
+      // Telegram off for the LAST event of the world (nothing follows it: settle time only), Email off for the first one that a later event follows
+      const lastE = all[all.length - 1]!;
+      const off = [{ who: first.who, event: first.event, channel: 'Email' as const }, { who: lastE.who, event: lastE.event, channel: 'Telegram' as const }];
+      const r = await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { email: true, telegram: true }, off });
       if (w.name === 'orders') {
-        // reversed: the last event's channel is switched on again and the next rejection reaches it
-        const last = world.steps[world.steps.length - 1]!;
-        const e = last.expects[0]!;
-        const channel = r.off.get(r.key(e.who, e.event))!;
-        await r.setBox(e.who, e.event, channel, true);
-        await last.fire();
-        await poll(`${e.event} by ${channel} once it is switched on`, async () => ((await r.delivered(e.who, e.event, channel)) > 0 ? true : null), { timeoutMs: 60_000, intervalMs: 1_000 });
+        // reversed: ORDER_REJECTED (Telegram was off, nothing arrived) is switched on and raised again with another order
+        const step = world.steps[world.steps.length - 1]!;
+        const before = await r.count(lastE.who, lastE.event, 'Telegram');
+        expect(before).toBe(0);
+        await r.setBox(lastE.who, lastE.event, 'Telegram', true);
+        await step.fire();
+        await poll('ORDER_REJECTED by Telegram once it is switched on', async () => ((await r.count(lastE.who, lastE.event, 'Telegram')) > 0 ? true : null), { timeoutMs: 60_000, intervalMs: 1_000 });
       }
     });
   }
 
-  test('F55 grading events: the channel switched off gets nothing, the other delivers', async ({ page, browser, seed, auth, org, telegram, mailpit, uniqueEmail, request, gemini }) => {
+  // The ONE run of the grading events. The fake Gemini lock is taken once for it, so it carries every channel of the four specs: F52 (the screen), F53 (mail),
+  // F54 (the chat) and F55 (the preferences): every recipient is linked, every event is asserted on the screen, by mail and in the chat, except the two switched off
+  // on the preference screen: Email off for SCORE_PRELIMINARY (SCORE_OFFICIAL follows to the same learner) and Telegram off for GRADING_QUEUE_NEW (GRADING_CLAIM_DUE follows
+  // to the same teacher). Their absence is asserted after the later event arrived on that channel.
+  test('F55 F52 F53 F54 the grading events reach the screen, the mailbox and the chat, and the channel switched off for an event gets nothing', async ({ browser, seed, auth, org, mailpit, telegram, uniqueEmail, request, gemini }) => {
     const fx: Fx = { seed, org, uniqueEmail, request, gemini };
     const world = await gradingWorld(fx, 'f55grading');
     test.setTimeout(world.timeoutMs);
-    await run(fx, world, page, auth, telegram, mailpit, browser);
+    const all = world.steps.flatMap((st) => st.expects);
+    const find = (event: string) => all.find((e) => e.event === event)!;
+    const off = [
+      { who: find('SCORE_PRELIMINARY').who, event: 'SCORE_PRELIMINARY' as const, channel: 'Email' as const },
+      { who: find('GRADING_QUEUE_NEW').who, event: 'GRADING_QUEUE_NEW' as const, channel: 'Telegram' as const },
+    ];
+    await runChannels({ fx, world, browser, auth, telegram, mailpit, use: { screen: true, email: true, telegram: true }, off });
   });
 });
