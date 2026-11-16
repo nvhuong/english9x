@@ -31,6 +31,12 @@ class ScoreTableRepository implements ScoreTableVersions {
 
     record Filter(String examCode, ContentStatus status) {}
 
+    /** A test as the override needs it: whose it is, its exam and variant. */
+    record TestRef(UUID id, UUID ownerOrgId, String examCode, String variant) {}
+
+    /** A TEST-scope table of a test with its latest version (none until an author wrote the first one). */
+    record TestOverride(UUID tableId, UUID testId, UUID ownerOrgId, String examCode, String skill, UUID versionId, Integer versionNo, ContentStatus status) {}
+
     private static final String FROM = " from score_table_versions v join score_tables t on t.id = v.score_table_id ";
     private static final String COLUMNS = "v.id, v.score_table_id, v.version_no, v.status, v.owner_org_id, v.exam_code, t.skill, t.scope, t.test_id, t.function, "
             + "v.entries::text as entries, v.created_by, v.created_at, v.updated_at";
@@ -83,6 +89,31 @@ class ScoreTableRepository implements ScoreTableVersions {
         return jdbc.query("select id, owner_org_id, exam_code, skill, scope, test_id, function from score_tables "
                 + "where scope = 'EXAM' and exam_code = ? and skill = ? and owner_org_id is not distinct from ?", HEADER, examCode, skill, ownerOrgId)
                 .stream().findFirst();
+    }
+
+    /** The test, if the caller can see it (row-level security: the AUTHOR or REVIEWER of its exam in its owner's context). */
+    Optional<TestRef> test(UUID testId) {
+        return jdbc.query("select id, owner_org_id, exam_code, variant from tests where id = ?",
+                (rs, n) -> new TestRef(rs.getObject(1, UUID.class), rs.getObject(2, UUID.class), rs.getString(3), rs.getString(4)), testId).stream().findFirst();
+    }
+
+    /** The override of one skill of a test, if there is one the caller can see. */
+    Optional<Header> override(UUID testId, String skill) {
+        return jdbc.query("select id, owner_org_id, exam_code, skill, scope, test_id, function from score_tables where scope = 'TEST' and test_id = ? and skill = ?",
+                HEADER, testId, skill).stream().findFirst();
+    }
+
+    /** The overrides of a test, by skill, each with its latest version the caller can see (none yet: nulls). */
+    List<TestOverride> overrides(UUID testId) {
+        return jdbc.query("""
+                select t.id, t.test_id, t.owner_org_id, t.exam_code, t.skill, v.id as version_id, v.version_no, v.status
+                  from score_tables t
+                  left join lateral (select id, version_no, status from score_table_versions where score_table_id = t.id order by version_no desc limit 1) v on true
+                 where t.scope = 'TEST' and t.test_id = ?
+                 order by t.skill
+                """, (rs, n) -> new TestOverride(rs.getObject("id", UUID.class), rs.getObject("test_id", UUID.class), rs.getObject("owner_org_id", UUID.class),
+                rs.getString("exam_code"), rs.getString("skill"), rs.getObject("version_id", UUID.class), (Integer) rs.getObject("version_no"),
+                rs.getString("status") == null ? null : ContentStatus.valueOf(rs.getString("status"))), testId);
     }
 
     private static final RowMapper<Header> HEADER = (rs, n) -> new Header(rs.getObject(1, UUID.class), rs.getObject(2, UUID.class), rs.getString(3),

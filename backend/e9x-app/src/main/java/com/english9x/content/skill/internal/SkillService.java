@@ -3,7 +3,12 @@ package com.english9x.content.skill.internal;
 import com.english9x.catalog.api.QuestionTypeDef;
 import com.english9x.catalog.api.QuestionTypes;
 import com.english9x.content.skill.api.GradingSkillVersionView;
+import com.english9x.content.media.api.MediaAssets;
+import com.english9x.content.media.api.MediaFiles;
+import com.english9x.content.media.api.MediaKind;
+import com.english9x.content.media.api.StagedFilesException;
 import com.english9x.content.skill.api.GradingSkillVersions;
+import com.english9x.content.skill.api.SkillDryRunner;
 import com.english9x.content.skill.internal.SkillProblems.FieldProblem;
 import com.english9x.content.skill.internal.SkillRepository.Content;
 import com.english9x.content.skill.internal.SkillRepository.Header;
@@ -14,15 +19,22 @@ import com.english9x.workflow.api.ContentStatus;
 import com.english9x.workflow.api.ReviewService;
 import com.english9x.workflow.api.VersionRef;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Grading skills (F16): the rubric, criteria, prompt template, samples and result schema the AI grades a Writing or Speaking answer with. Same rules as
@@ -39,8 +51,11 @@ class SkillService {
 
     record Page(List<SkillRepository.Summary> items, long total, int offset, int limit) {}
 
-    /** What a dry run is asked to grade: the text of an answer, or a recording. */
-    record DryRun(String response, UUID mediaId) {}
+    /** What a dry run is asked to grade: the text of an answer, or a recording; {@code task} is the question (optional). */
+    record DryRun(String response, UUID mediaId, String task) {}
+
+    /** The question the model is told about when the dry run names none. */
+    static final String DEFAULT_TASK = "(dry run: no question was given; grade the answer against the rubric)";
 
     private static final int PAGE = 50;
 
@@ -49,13 +64,21 @@ class SkillService {
     private final ReviewService reviews;
     private final SkillRepository repository;
     private final SkillValidator validator;
+    private final ObjectProvider<SkillDryRunner> runner;
+    private final MediaFiles media;
+    private final TransactionTemplate readOnly;
 
-    SkillService(Authz authz, QuestionTypes types, ReviewService reviews, SkillRepository repository, SkillValidator validator) {
+    SkillService(Authz authz, QuestionTypes types, ReviewService reviews, SkillRepository repository, SkillValidator validator, ObjectProvider<SkillDryRunner> runner,
+            MediaFiles media, PlatformTransactionManager transactions) {
         this.authz = authz;
         this.types = types;
         this.reviews = reviews;
         this.repository = repository;
         this.validator = validator;
+        this.runner = runner;
+        this.media = media;
+        this.readOnly = new TransactionTemplate(transactions);
+        this.readOnly.setReadOnly(true);
     }
 
     @Transactional
@@ -172,23 +195,65 @@ class SkillService {
     }
 
     /**
-     * Runs the latest version of the skill on a sample answer without saving a score. It calls the AI grader of P4.2 (Gemini) and checks the answer against the
-     * result schema; that grader does not exist yet, so the answer is 501 and nothing is sent to anybody.
+     * Runs the latest version of the skill (any status: the author tries a draft before submitting it) on a sample answer and returns the model's answer, validated
+     * against the result schema by the AI grader; nothing is saved, no score is kept and no limit is counted. The rows are read in a short read-only transaction; the call
+     * to the model happens after it, so no database connection waits for Gemini. Without an AI grader in the application the answer is 501.
      */
-    @Transactional(readOnly = true)
-    void dryRun(UUID skillId, DryRun what) {
-        Header header = repository.header(skillId).orElseThrow(SkillProblems::notFound);
-        Optional<String> exam = Optional.of(header.examCode());
-        if (!authz.has(Role.AUTHOR, exam) && !authz.has(Role.REVIEWER, exam)) {
-            throw new AccessDeniedException("not an author or reviewer of " + header.examCode());
-        }
-        repository.latest(skillId).orElseThrow(SkillProblems::notFound);
+    DryRunOutcome dryRun(UUID skillId, DryRun what) {
         boolean text = what != null && what.response() != null && !what.response().isBlank();
-        boolean media = what != null && what.mediaId() != null;
-        if (text == media) {
-            throw SkillProblems.invalid(List.of(new FieldProblem("response", "give the answer as text (response) or as a recording (mediaId), one of the two")));
+        Prepared prepared = readOnly.execute(st -> {
+            Header header = repository.header(skillId).orElseThrow(SkillProblems::notFound);
+            Optional<String> exam = Optional.of(header.examCode());
+            if (!authz.has(Role.AUTHOR, exam) && !authz.has(Role.REVIEWER, exam)) {
+                throw new AccessDeniedException("not an author or reviewer of " + header.examCode());
+            }
+            GradingSkillVersionView latest = repository.latest(skillId).orElseThrow(SkillProblems::notFound);
+            boolean recording = what != null && what.mediaId() != null;
+            if (text == recording) {
+                throw SkillProblems.invalid(List.of(new FieldProblem("response", "give the answer as text (response) or as a recording (mediaId), one of the two")));
+            }
+            return new Prepared(latest, text ? new SkillDryRunner.Answer.Text(what.response()) : recording(header.examCode(), what.mediaId()));
+        });
+        SkillDryRunner grader = runner.getIfAvailable();
+        if (grader == null) {
+            throw SkillProblems.dryRunUnavailable();
         }
-        throw SkillProblems.dryRunUnavailable();
+        String task = what.task() == null || what.task().isBlank() ? DEFAULT_TASK : what.task();
+        try {
+            return new DryRunOutcome(prepared.skill(), grader.run(prepared.skill(), task, prepared.answer()));
+        } catch (SkillDryRunner.Failure e) {
+            throw SkillProblems.dryRunFailed(e.kind(), e.getMessage());
+        }
+    }
+
+    /** The version that ran and the model's validated answer. */
+    record DryRunOutcome(GradingSkillVersionView skill, SkillDryRunner.Result result) {}
+
+    private record Prepared(GradingSkillVersionView skill, SkillDryRunner.Answer answer) {}
+
+    /** A recording of the skill's exam the caller may see (row-level security), read whole: Speaking answers are short. */
+    private SkillDryRunner.Answer recording(String examCode, UUID mediaId) {
+        Path tmp = null;
+        try {
+            tmp = Files.createTempFile("e9x-dry-run-", ".bin");
+            MediaAssets.MediaInfo info = media.copyTo(mediaId, tmp);
+            if (info.kind() != MediaKind.AUDIO || !examCode.equals(info.examCode())) {
+                throw SkillProblems.invalid(List.of(new FieldProblem("mediaId", "is not a recording of the exam " + examCode)));
+            }
+            return new SkillDryRunner.Answer.Audio(Files.readAllBytes(tmp), info.mimeType());
+        } catch (NoSuchElementException e) {
+            throw SkillProblems.invalid(List.of(new FieldProblem("mediaId", "is not a file you can use")));
+        } catch (IOException | StagedFilesException e) {
+            throw SkillProblems.dryRunFailed(SkillDryRunner.Failure.Kind.TRANSIENT, "the recording could not be read");
+        } finally {
+            if (tmp != null) {
+                try {
+                    Files.deleteIfExists(tmp);
+                } catch (IOException ignored) {
+                    // a temp file
+                }
+            }
+        }
     }
 
     // ---- the checks ---------------------------------------------------------------------------------------------------------------

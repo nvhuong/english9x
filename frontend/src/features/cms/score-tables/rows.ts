@@ -20,4 +20,5 @@ export function textOf(rows: ScoreRow[]): string {
   return rows.map((r) => `${r.raw}\t${r.scaled}`).join('\n');
 }
 
-export const draftOf = (examCode: string, skill: string, text: string): ScoreTableDraft => ({ examCode, skill, scope: 'EXAM', rows: parseRows(text) });
+export const draftOf = (examCode: string, skill: string, text: string, testId?: string | null): ScoreTableDraft =>
+  testId ? { examCode, skill, scope: 'TEST', testId, rows: parseRows(text) } : { examCode, skill, scope: 'EXAM', rows: parseRows(text) };

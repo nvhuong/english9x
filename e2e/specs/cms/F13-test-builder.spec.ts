@@ -3,9 +3,9 @@
 // What the test builder of P2.6 does, through the real stack: an AUTHOR builds a TOEIC test on the screen part by part from PUBLISHED question groups,
 // the screen shows what the exam expects of each part (a count that differs warns; a missing skill blocks the review), the number of resumes is set per
 // test, the test is published only by a review, and editing a published test makes version 2 and never touches the published one. The part of the
-// scenario that needs other tasks is listed in e2e/partial-features.json: the CMS screen where an administrator attaches a per-test conversion table
-// (the database, the lookup and the API listing of overrides are done and tested in IT and db-tests), and the full 200-question / four-skill IELTS
-// tests (a hundred published questions are made by the Excel import of P2.7, which this scenario will use).
+// scenario that is still pending is listed in e2e/partial-features.json: the full 200-question TOEIC and four-skill IELTS tests (a hundred published
+// questions of many types, each needing its own review). The per-test conversion table ("gắn bảng quy đổi ghi đè") is attached on the administrator's
+// screen, found on this builder screen and written by an author in F15-score-tables.spec.ts.
 import { test, expect } from '../../fixtures';
 import { publishedQuestion, staffed } from '../../fixtures/content';
 

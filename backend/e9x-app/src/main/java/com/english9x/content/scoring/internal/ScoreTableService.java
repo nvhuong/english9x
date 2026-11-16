@@ -9,6 +9,7 @@ import com.english9x.content.scoring.api.ScoreTableVersions;
 import com.english9x.content.scoring.internal.RowsValidator.Result;
 import com.english9x.content.scoring.internal.ScoreProblems.FieldProblem;
 import com.english9x.content.scoring.internal.ScoreTableRepository.Header;
+import com.english9x.content.scoring.internal.ScoreTableRepository.TestOverride;
 import com.english9x.org.api.Authz;
 import com.english9x.org.api.CurrentContextHolder;
 import com.english9x.org.api.Role;
@@ -31,8 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
  * table's exam; the policies ask again), what state (only the latest version decides: own DRAFT / CHANGES_REQUESTED edited in place, another author's
  * refused, IN_REVIEW and ARCHIVED refused, PUBLISHED gives a NEW draft version), what content ({@link RowsValidator}: the domain's TableConverter).
  *
- * <p>Only the EXAM scope exists (the default of an exam, English9x's). TEST scope is refused with 409 until P2.6 creates tests, and the database
- * refuses the row too.
+ * <p>Two scopes. EXAM: the default of an exam, English9x's, made by an AUTHOR with its first version ({@link #create}). TEST: the override of one test
+ * (spec 2, row 6 "Quản trị đặt"; spec 10.2). Its header is the ADMINISTRATOR's of the test's owner (SYS_ADMIN for an English9x test, ORG_ADMIN of the
+ * organisation for its own), who attaches it ({@link #attach}); its rows are versioned content like any table: an AUTHOR of the exam writes version 1 with
+ * {@link #update} (and later versions the same way), a review publishes it. The database says the same (V202611120002: the insert policy of a TEST header, the
+ * trigger that gives it the owner and exam of its test). A result records the version it was converted with (P4.1), so a new version never changes an old result.
  */
 @Service
 class ScoreTableService {
@@ -65,10 +69,14 @@ class ScoreTableService {
         }
         authz.require(Role.AUTHOR, Optional.of(body.examCode()));
         CurrentContextHolder.Binding who = binding();
-        requireExamScope(body.scope());
+        requireScope(body.scope());
+        if (ScoreScope.TEST.name().equals(body.scope())) {
+            throw ScoreProblems.invalid(List.of(new FieldProblem("scope", "an override of one test is attached by the administrator of the test's owner "
+                    + "(POST /api/cms/score-tables/overrides); an author then writes its rows (PUT /api/cms/score-tables/{id})")));
+        }
         List<FieldProblem> errors = new ArrayList<>();
         if (body.testId() != null) {
-            errors.add(new FieldProblem("testId", "belongs to scope TEST, which is not available yet; the default of the exam has no test"));
+            errors.add(new FieldProblem("testId", "belongs to scope TEST; the default of the exam has no test"));
         }
         Optional<ExamInfo> exam = exams.find(body.examCode());
         if (exam.isEmpty()) {
@@ -105,11 +113,17 @@ class ScoreTableService {
         Header header = repository.header(tableId).orElseThrow(ScoreProblems::notFound);
         authz.require(Role.AUTHOR, Optional.of(header.examCode()));
         CurrentContextHolder.Binding who = binding();
-        requireExamScope(body.scope());
-        ScoreTableVersionView latest = repository.latest(tableId).orElseThrow(ScoreProblems::notFound);
+        requireScope(body.scope());
+        Optional<ScoreTableVersionView> found = repository.latest(tableId);
+        if (found.isEmpty() && header.scope() != ScoreScope.TEST) {
+            throw ScoreProblems.notFound();
+        }
         List<FieldProblem> errors = new ArrayList<>();
-        if (body.testId() != null) {
-            errors.add(new FieldProblem("testId", "belongs to scope TEST, which is not available yet; the default of the exam has no test"));
+        if (!header.scope().name().equals(body.scope())) {
+            errors.add(new FieldProblem("scope", "cannot change: this table is of scope " + header.scope()));
+        }
+        if (body.testId() != null && !body.testId().equals(header.testId())) {
+            errors.add(new FieldProblem("testId", header.testId() == null ? "belongs to scope TEST; the default of the exam has no test" : "cannot change: the table is the override of its test"));
         }
         if (body.examCode() != null && !body.examCode().equals(header.examCode())) {
             errors.add(new FieldProblem("examCode", "cannot change: make a new table"));
@@ -123,6 +137,21 @@ class ScoreTableService {
         if (!errors.isEmpty()) {
             throw ScoreProblems.invalid(errors);
         }
+        if (found.isEmpty()) {
+            // an override the administrator attached and nobody wrote yet: its first version
+            Result first = RowsValidator.validate(body.rows());
+            if (!first.errors().isEmpty()) {
+                throw ScoreProblems.invalid(first.errors());
+            }
+            UUID versionId = UUID.randomUUID();
+            try {
+                repository.insertVersion(versionId, header, 1, first.rows(), who.userId());
+            } catch (DataAccessException e) {
+                throw translate(e);
+            }
+            return new Saved(repository.find(versionId).orElseThrow(ScoreProblems::conflict), true);
+        }
+        ScoreTableVersionView latest = found.get();
         switch (latest.status()) {
             case IN_REVIEW -> throw ScoreProblems.underReview();
             case ARCHIVED -> throw ScoreProblems.retired();
@@ -178,6 +207,63 @@ class ScoreTableService {
         return new Page(repository.list(filter, PAGE, offset), repository.count(filter), offset, PAGE);
     }
 
+    /**
+     * Attaches the override of one skill to a test: its header only (scope TEST, owner and exam of the test, function TABLE). For the administrator of the test's
+     * owner in that context, who can open the test; the rows come from an author ({@link #update}) and the review. One override per test and skill (409 with its id).
+     */
+    @Transactional
+    TestOverride attach(UUID testId, String skill) {
+        List<FieldProblem> missing = new ArrayList<>();
+        if (testId == null) {
+            missing.add(new FieldProblem("testId", "is required"));
+        }
+        if (skill == null || skill.isBlank()) {
+            missing.add(new FieldProblem("skill", "is required"));
+        }
+        if (!missing.isEmpty()) {
+            throw ScoreProblems.invalid(missing);
+        }
+        ScoreTableRepository.TestRef test = repository.test(testId).orElseThrow(ScoreProblems::testNotFound);
+        authz.require(test.ownerOrgId() == null ? Role.SYS_ADMIN : Role.ORG_ADMIN, Optional.of(test.examCode()));
+        binding();
+        List<String> skills = exams.find(test.examCode()).map(ExamInfo::scoreSkills).orElse(List.of());
+        if (!skills.contains(skill)) {
+            throw ScoreProblems.invalid(List.of(new FieldProblem("skill", "is not a score of this exam (it keeps " + skills + ")")));
+        }
+        if (skill.startsWith("READING_") && test.variant() != null && !skill.equals("READING_" + test.variant())) {
+            throw ScoreProblems.invalid(List.of(new FieldProblem("skill", "is the Reading of another variant; this test is " + test.variant())));
+        }
+        String function = repository.examDefault(test.examCode(), skill, null).map(Header::function).orElse("TABLE");
+        if (!"TABLE".equals(function)) {
+            throw ScoreProblems.invalid(List.of(new FieldProblem("skill", "is computed by " + function + ", it has no table to override")));
+        }
+        Optional<Header> existing = repository.override(testId, skill);
+        if (existing.isPresent()) {
+            throw ScoreProblems.exists(existing.get().id());
+        }
+        Header header = new Header(UUID.randomUUID(), test.ownerOrgId(), test.examCode(), skill, ScoreScope.TEST, testId, "TABLE");
+        try {
+            repository.insertHeader(header);
+        } catch (DataAccessException e) {
+            throw translate(e);
+        }
+        return new TestOverride(header.id(), testId, header.ownerOrgId(), header.examCode(), skill, null, null, null);
+    }
+
+    /** The overrides of a test, each with its latest version (none until an author wrote one). For its staff and its administrator. */
+    @Transactional(readOnly = true)
+    List<TestOverride> overrides(UUID testId) {
+        if (testId == null) {
+            throw ScoreProblems.invalid(List.of(new FieldProblem("testId", "is required")));
+        }
+        ScoreTableRepository.TestRef test = repository.test(testId).orElseThrow(ScoreProblems::testNotFound);
+        Optional<String> exam = Optional.of(test.examCode());
+        if (!authz.has(Role.AUTHOR, exam) && !authz.has(Role.REVIEWER, exam) && !authz.has(test.ownerOrgId() == null ? Role.SYS_ADMIN : Role.ORG_ADMIN, exam)) {
+            throw new AccessDeniedException("not staff of " + test.examCode());
+        }
+        return repository.overrides(testId);
+    }
+
     @Transactional
     UUID submit(UUID tableId) {
         Header header = repository.header(tableId).orElseThrow(ScoreProblems::notFound);
@@ -194,15 +280,12 @@ class ScoreTableService {
 
     // ---- the checks ---------------------------------------------------------------------------------------------------------------
 
-    /** EXAM is the only scope until P2.6; anything else that names a scope is refused (TEST: 409, it exists in the design but cannot be stored). */
-    private static void requireExamScope(String scope) {
+    /** The scope is named in every write: EXAM or TEST. */
+    private static void requireScope(String scope) {
         if (scope == null || scope.isBlank()) {
-            throw ScoreProblems.invalid(List.of(new FieldProblem("scope", "is required: EXAM")));
+            throw ScoreProblems.invalid(List.of(new FieldProblem("scope", "is required: EXAM or TEST")));
         }
-        if ("TEST".equals(scope)) {
-            throw ScoreProblems.testScopeUnavailable();
-        }
-        if (!"EXAM".equals(scope)) {
+        if (!"EXAM".equals(scope) && !"TEST".equals(scope)) {
             throw ScoreProblems.invalid(List.of(new FieldProblem("scope", "must be EXAM or TEST")));
         }
     }

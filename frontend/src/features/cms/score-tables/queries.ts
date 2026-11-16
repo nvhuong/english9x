@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../../../api/useApi';
 import { ctxKey, publicKey, useContextStore } from '../../../app/stores/context';
-import type { ExamScores, ScoreTableDraft, ScoreTableFilters, ScoreTablePage, ScoreTableVersion } from './types';
+import type { ExamScores, ScoreTableDraft, ScoreTableFilters, ScoreTablePage, ScoreTableVersion, TestOverride } from './types';
 
 /** The exams of the catalogue with the scores each keeps (the skills a table can be made for). The same in every context. */
 export function useExamScores() {
@@ -58,4 +58,27 @@ export function useScoreTableMutations() {
       onSuccess: drop,
     }),
   };
+}
+
+/** The overrides of one test (each with its latest version, none until an author wrote one). */
+export function useTestOverrides(testId: string | undefined) {
+  const api = useApi();
+  const ctx = useContextStore((s) => s.orgId);
+  return useQuery({
+    queryKey: ctxKey(ctx, 'cms', 'score-tables', 'overrides', testId ?? 'none'),
+    enabled: Boolean(testId),
+    queryFn: async () => ((await api.GET('/api/cms/score-tables/overrides' as never, { params: { query: { testId } } } as never)) as { data?: unknown }).data as TestOverride[],
+  });
+}
+
+/** The administrator of the test's owner attaches the override of one skill to the test; an author then writes its rows. */
+export function useAttachOverride() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const ctx = useContextStore((s) => s.orgId);
+  return useMutation({
+    mutationFn: async (body: { testId: string; skill: string }) =>
+      ((await api.POST('/api/cms/score-tables/overrides' as never, { body } as never)) as { data?: unknown }).data as TestOverride,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ctxKey(ctx, 'cms', 'score-tables') }),
+  });
 }

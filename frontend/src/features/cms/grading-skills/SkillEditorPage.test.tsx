@@ -97,13 +97,14 @@ describe('SkillEditorPage: new', () => {
 });
 
 describe('SkillEditorPage: edit', () => {
-  it('saves a draft in place, submits it, and a dry run says the AI grader is not built yet', async () => {
+  it('saves a draft in place, submits it, and a dry run shows the AI result', async () => {
     const calls = stubApi({
       ...BASE,
       [`GET /api/cms/grading-skills/${ID}`]: () => json(200, SKILL),
       [`PUT /api/cms/grading-skills/${ID}`]: () => json(200, SKILL),
       [`POST /api/cms/grading-skills/${ID}/submit`]: () => json(202, { reviewId: '7d6e5f40-1b2c-4d3e-8f90-a1b2c3d4e5f6' }),
-      [`POST /api/cms/grading-skills/${ID}/dry-run`]: () => problem(501, 'dry-run-unavailable', { status: 501 }),
+      [`POST /api/cms/grading-skills/${ID}/dry-run`]: () =>
+        json(200, { result: { criteria: { TR: 6.5, CC: 6 }, feedback: 'Clear position.' }, band: 6.5, model: 'gemini', inputTokens: 10, outputTokens: 5, versionId: SKILL.versionId, versionNo: 1 }),
     });
     renderAt(`/cms/grading-skills/${ID}`, '/cms/grading-skills/:id', <SkillEditorPage />);
     expect(await screen.findByText('Bản nháp')).toBeInTheDocument();
@@ -116,8 +117,24 @@ describe('SkillEditorPage: edit', () => {
 
     await userEvent.type(screen.getByLabelText('Bài làm mẫu để chạy thử'), 'Some people believe...');
     await userEvent.click(screen.getByRole('button', { name: 'Chạy thử' }));
-    expect(await screen.findByText(/Chạy thử cần bộ chấm AI, chưa có/)).toBeInTheDocument();
+    const result = await screen.findByRole('region', { name: 'Kết quả chạy thử' });
+    expect(within(result).getByText(/Band 6\.5/)).toBeInTheDocument();
+    expect(within(result).getByText(/Clear position\./)).toBeInTheDocument();
+    expect(screen.queryByText(/không có/)).not.toBeInTheDocument();
     expect(calls.find((c) => c.path.endsWith('/dry-run'))!.body).toEqual({ response: 'Some people believe...' });
+  });
+
+  it('keeps the message only when the server has no AI grader (501)', async () => {
+    stubApi({
+      ...BASE,
+      [`GET /api/cms/grading-skills/${ID}`]: () => json(200, SKILL),
+      [`POST /api/cms/grading-skills/${ID}/dry-run`]: () => problem(501, 'dry-run-unavailable', { status: 501 }),
+    });
+    renderAt(`/cms/grading-skills/${ID}`, '/cms/grading-skills/:id', <SkillEditorPage />);
+    await userEvent.type(await screen.findByLabelText('Bài làm mẫu để chạy thử'), 'Some people believe...');
+    await userEvent.click(screen.getByRole('button', { name: 'Chạy thử' }));
+    expect(await screen.findByText(/Chạy thử cần bộ chấm AI, máy chủ này không có/)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Kết quả chạy thử' })).not.toBeInTheDocument();
   });
 
   it('explains that a published version is not changed, and locks one under review', async () => {

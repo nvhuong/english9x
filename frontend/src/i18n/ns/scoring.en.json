@@ -1,6 +1,7 @@
 {
   "nav": {
-    "scoreTables": "Score tables"
+    "scoreTables": "Score tables",
+    "scoreOverrides": "Test overrides"
   },
   "loading": "Loading…",
   "status": {
@@ -47,7 +48,9 @@
     "archivedNote": "This version is archived and cannot be edited.",
     "functionNote": "This score is computed by the function {{function}}; there is no table to edit.",
     "notFoundTitle": "Table not found",
-    "notFound": "The table does not exist, or you may not open it in this context."
+    "notFound": "The table does not exist, or you may not open it in this context.",
+    "scopeTest": "Override of one test",
+    "overrideEmpty": "This override is attached to the test but has no rows yet. Save the rows to make version 1."
   },
   "list": {
     "title": "Score tables",
@@ -82,5 +85,26 @@
     "forbidden": "You may not do this with this table.",
     "notFound": "Table not found.",
     "generic": "Something went wrong. Try again in a few minutes."
+  },
+  "overrides": {
+    "heading": "Score table overrides",
+    "note": "The administrator attaches a table of its own for one skill to this test; an author fills in its rows and a reviewer publishes it. Results of the test use the override instead of the default table of the exam.",
+    "empty": "This test has no override.",
+    "list": "Overrides of the test",
+    "noRows": "No rows yet",
+    "open": "Open the {{skill}} override",
+    "write": "Write the rows",
+    "edit": "Edit the table",
+    "skill": "Score to override",
+    "skillPlaceholder": "Choose a skill",
+    "attach": "Attach override"
+  },
+  "attach": {
+    "title": "Attach a score table override to a test",
+    "description": "A table of its own for one skill of one test, instead of the default table of the exam. The administrator attaches it here; an author writes the rows on the score tables screen and a reviewer publishes it.",
+    "testId": "Test id",
+    "testIdHint": "The id of the test (not of a version), in the address of its builder page.",
+    "done": "Attached the {{skill}} override. An author can write its rows.",
+    "openEditor": "Open the table"
   }
 }

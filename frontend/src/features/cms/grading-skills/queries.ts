@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../../../api/useApi';
 import { ctxKey, useContextStore } from '../../../app/stores/context';
-import type { SkillDraft, SkillFilters, SkillPage, SkillVersion } from './types';
+import type { DryRunResult, SkillDraft, SkillFilters, SkillPage, SkillVersion } from './types';
 
 export function useSkillList(filters: SkillFilters) {
   const api = useApi();
@@ -44,10 +44,10 @@ export function useSkillMutations() {
       mutationFn: async (skillId: string) => (await api.POST('/api/cms/grading-skills/{id}/submit', { params: { path: { id: skillId } } })).data,
       onSuccess: drop,
     }),
-    /** Runs the skill on a sample answer without saving a score. Until the AI grader exists the server answers 501 (dry-run-unavailable). */
+    /** Runs the skill on a sample answer without saving a score: 200 with the model's answer; 501 (dry-run-unavailable) only when the server has no AI grader. */
     dryRun: useMutation({
       mutationFn: async ({ skillId, response }: { skillId: string; response: string }) =>
-        (await api.POST('/api/cms/grading-skills/{id}/dry-run', { params: { path: { id: skillId } }, body: { response } })).data,
+        (await api.POST('/api/cms/grading-skills/{id}/dry-run', { params: { path: { id: skillId } }, body: { response } })).data as unknown as DryRunResult,
     }),
   };
 }

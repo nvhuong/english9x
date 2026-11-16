@@ -306,15 +306,20 @@ class GradingSkillIT extends QuestionIT {
     }
 
     @Test
-    void dryRunWaitsForTheAiGrader() {
+    void dryRunGoesToTheAiGraderAndSavesNothing() {
         Staff s = staff("IELTS");
         String id = create(s, body(s)).body().path("skillId").asText();
         Map<String, Object> run = new HashMap<>();
         run.put("response", "Some people believe that...");
+        long evaluations = su.queryForObject("select count(*) from ai_evaluations", Long.class);
+        // the IT has no Gemini key: the real AiGrader refuses before sending anything, and the CMS says why (502 ai-grader-refused)
         Res r = post("/api/cms/grading-skills/" + id + "/dry-run", run, s.author(), s.org());
-        assertEquals(501, r.status(), r.raw());
-        assertEquals("urn:e9x:problem:dry-run-unavailable", r.problemType());
-        assertEquals(501, post("/api/cms/grading-skills/" + id + "/dry-run", run, s.reviewer(), s.org()).status());
+        assertEquals(502, r.status(), r.raw());
+        assertEquals("urn:e9x:problem:ai-grader-refused", r.problemType());
+        assertEquals(502, post("/api/cms/grading-skills/" + id + "/dry-run", run, s.reviewer(), s.org()).status());
+        assertEquals(evaluations, su.queryForObject("select count(*) from ai_evaluations", Long.class), "a dry run stores no evaluation");
+        // neither or both of text and recording
+        assertEquals(422, post("/api/cms/grading-skills/" + id + "/dry-run", new HashMap<>(), s.author(), s.org()).status());
         // the same gates as every call: unknown skill, a person who is not staff of the exam
         assertEquals(404, post("/api/cms/grading-skills/" + UUID.randomUUID() + "/dry-run", run, s.author(), s.org()).status());
         assertEquals(403, post("/api/cms/grading-skills/" + id + "/dry-run", run, user("nobody"), s.org()).status(), "not even a member of the organisation");

@@ -48,7 +48,9 @@
     "hint": "Run the saved skill on a sample answer to see what the AI returns. No score is kept.",
     "response": "Sample answer to run",
     "run": "Run",
-    "unavailable": "A dry run needs the AI grader, which is not built yet. The skill is saved and reviewed as usual."
+    "unavailable": "A dry run needs the AI grader, which this server does not have. The skill is saved and reviewed as usual.",
+    "resultTitle": "Dry run result",
+    "band": "Band {{band}} (skill version {{version}})"
   },
   "actions": {
     "createDraft": "Save draft",

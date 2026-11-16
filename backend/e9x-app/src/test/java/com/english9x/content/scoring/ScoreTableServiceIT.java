@@ -221,30 +221,55 @@ class ScoreTableServiceIT extends OrgIT {
     }
 
     @Test
-    void testScopeIsRefusedUntilTestsExist() {
+    void anOverrideIsAttachedByTheAdministratorAndWrittenByAnAuthor() {
+        // an English9x IELTS test (Academic), written by the author: its administrator is a SYS_ADMIN who can also open it (a REVIEWER of the exam)
+        UUID testId = UUID.randomUUID();
+        su.update("insert into tests(id, owner_org_id, exam_code, variant, created_by) values (?, null, 'IELTS', 'AC', ?)", testId, staff.author());
+        UUID admin = user("admin");
+        grant(admin, null, null, "SYS_ADMIN");
+        grant(admin, null, "IELTS", "REVIEWER");
+        Map<String, Object> attach = new HashMap<>();
+        attach.put("testId", testId);
+        attach.put("skill", "LISTENING");
+
+        // scope TEST is not made through the default's endpoint
         Map<String, Object> b = body("LISTENING", rows(0, 1));
         b.put("scope", "TEST");
-        b.put("testId", UUID.randomUUID());
-        Res r = post("/api/cms/score-tables", b, staff.author(), null);
-        assertEquals(409, r.status(), r.raw());
-        assertEquals("urn:e9x:problem:test-scope-unavailable", r.problemType());
+        b.put("testId", testId);
+        Res viaCreate = post("/api/cms/score-tables", b, staff.author(), null);
+        assertEquals(422, viaCreate.status(), viaCreate.raw());
+        assertEquals(List.of("scope"), fields(viaCreate));
+        // the author is not the administrator: the header is not theirs to attach
+        assertEquals(403, post("/api/cms/score-tables/overrides", attach, staff.author(), null).status());
         assertEquals(0, su.queryForObject("select count(*) from score_tables where scope = 'TEST'", Long.class));
-        assertEquals(0, tablesOf("LISTENING"));
-        // a table that exists cannot be turned into one either
-        Res ok = create("LISTENING", rows(0, 1));
-        assertEquals(409, put("/api/cms/score-tables/" + ok.body().path("tableId").asText(), b, staff.author(), null).status());
-        // a test id means nothing for the exam default
-        Map<String, Object> withTest = body("LISTENING", rows(0, 1));
-        withTest.put("testId", UUID.randomUUID());
-        Res stray = post("/api/cms/score-tables", withTest, staff.author(), null);
-        assertEquals(422, stray.status(), stray.raw());
-        assertEquals(List.of("testId"), fields(stray));
-        // the scope is required and is one of the two
-        Map<String, Object> none = body("LISTENING", rows(0, 1));
-        none.remove("scope");
-        assertEquals(422, post("/api/cms/score-tables", none, staff.author(), null).status());
-        none.put("scope", "ORG");
-        assertEquals(422, post("/api/cms/score-tables", none, staff.author(), null).status());
+
+        Res attached = post("/api/cms/score-tables/overrides", attach, admin, null);
+        assertEquals(201, attached.status(), attached.raw());
+        String table = attached.body().path("tableId").asText();
+        assertTrue(attached.body().path("versionId").isNull());
+        assertEquals(1, su.queryForObject("select count(*) from score_tables where scope = 'TEST' and test_id = ? and owner_org_id is null and function = 'TABLE'", Long.class, testId));
+        Res again = post("/api/cms/score-tables/overrides", attach, admin, null);
+        assertEquals(409, again.status());
+        assertEquals(table, again.body().path("tableId").asText());
+        // a function's score and the Reading of the other variant have no override
+        attach.put("skill", "OVERALL");
+        assertEquals(422, post("/api/cms/score-tables/overrides", attach, admin, null).status());
+        attach.put("skill", "READING_GT");
+        assertEquals(422, post("/api/cms/score-tables/overrides", attach, admin, null).status());
+
+        // the author writes version 1 (scope TEST, its own test); the review publishes it (resolve reads it for every version of the test: TestVersionViewIT)
+        Map<String, Object> rows = body("LISTENING", rows(0, 7.5));
+        rows.put("scope", "TEST");
+        assertEquals(422, put("/api/cms/score-tables/" + table, body("LISTENING", rows(0, 7.5)), staff.author(), null).status(), "the scope never changes");
+        Res v1 = put("/api/cms/score-tables/" + table, rows, staff.author(), null);
+        assertEquals(201, v1.status(), v1.raw());
+        assertEquals(1, v1.body().path("versionNo").asInt());
+        assertEquals("TEST", v1.body().path("scope").asText());
+        Res listed = get("/api/cms/score-tables/overrides?testId=" + testId, admin, null);
+        assertEquals(200, listed.status(), listed.raw());
+        assertEquals("DRAFT", listed.body().path(0).path("status").asText());
+        approve(v1);
+        assertEquals("PUBLISHED", get("/api/cms/score-tables/overrides?testId=" + testId, staff.reviewer(), null).body().path(0).path("status").asText());
     }
 
     @Test
