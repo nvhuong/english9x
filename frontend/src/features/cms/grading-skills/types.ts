@@ -61,3 +61,14 @@ export interface SkillFilters {
 
 /** The question types a skill can be made for: the ones a person writes, not the ones an answer key scores. */
 export const GRADED_KINDS = ['ESSAY', 'SPEAKING_RESPONSE'];
+
+/** The answer of POST /api/cms/grading-skills/{id}/dry-run (hand-typed until the OpenAPI snapshot is regenerated with Docker). */
+export interface DryRunResult {
+  result: Record<string, unknown>;
+  band: number;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  versionId: string;
+  versionNo: number;
+}

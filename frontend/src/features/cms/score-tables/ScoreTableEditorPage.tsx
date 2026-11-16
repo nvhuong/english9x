@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ApiProblemError } from '../../../api/problem';
 import { Badge, Button, EmptyState, Select } from '../../../design';
 import { FormAlert, FormNotice } from '../../auth/components';
 import { issuesOf, scoreProblemText, type FieldIssue } from './problems';
-import { useExamScores, useScoreTable, useScoreTableMutations } from './queries';
+import { useExamScores, useScoreTable, useScoreTableMutations, useTestOverrides } from './queries';
 import { draftOf, textOf } from './rows';
 import { ScoreTableForm } from './ScoreTableForm';
 import type { ContentStatus, ScoreTableVersion } from './types';
@@ -111,8 +111,11 @@ function Create() {
 function Edit({ tableId }: { tableId: string }) {
   const { t } = useTranslation('scoring');
   const table = useScoreTable(tableId);
+  const testId = useSearchParams()[0].get('test') ?? undefined;
   const [notice, setNotice] = useState<string | null>(null);
   const v = table.data;
+  const firstWrite = table.error instanceof ApiProblemError && table.error.status === 404 && testId !== undefined;
+  if (firstWrite) return <FirstWrite tableId={tableId} testId={testId} />;
   if (table.isPending) {
     return (
       <p role="status" className="text-muted">
@@ -126,6 +129,66 @@ function Edit({ tableId }: { tableId: string }) {
   }
   // a different version (a new draft after saving a published one) starts from the server's copy
   return <EditBody key={v.versionId} v={v} notice={notice} setNotice={setNotice} />;
+}
+
+/** The override of a test that the administrator attached and nobody wrote yet: it has no version, so the first save makes version 1 (PUT, scope TEST). */
+function FirstWrite({ tableId, testId }: { tableId: string; testId: string }) {
+  const { t } = useTranslation('scoring');
+  const overrides = useTestOverrides(testId);
+  const { save } = useScoreTableMutations();
+  const navigate = useNavigate();
+  const [text, setText] = useState('');
+  const [issues, setIssues] = useState<FieldIssue[]>([]);
+  const [problem, setProblem] = useState<string | null>(null);
+  const o = (overrides.data ?? []).find((x) => x.tableId === tableId);
+  if (overrides.isPending) {
+    return (
+      <p role="status" className="text-muted">
+        {t('loading')}
+      </p>
+    );
+  }
+  if (!o) return <EmptyState title={t('edit.notFoundTitle')} description={t('edit.notFound')} />;
+  return (
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-2">
+        <Link to="/cms/score-tables" className="text-sm text-primary underline">
+          {t('edit.back')}
+        </Link>
+        <Heading>{t('edit.title', { skill: o.skill })}</Heading>
+        <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
+          <span>{o.examCode}</span>
+          <span>{t('edit.scopeTest')}</span>
+        </p>
+        <FormNotice tone="info">{t('edit.overrideEmpty')}</FormNotice>
+      </header>
+      <ScoreTableForm
+        text={text}
+        onChange={(x) => {
+          setText(x);
+          setIssues([]);
+        }}
+        issues={issues}
+        saving={save.isPending}
+        saveLabel={t('actions.createDraft')}
+        onSave={() => {
+          setProblem(null);
+          setIssues([]);
+          save.mutate(
+            { tableId, draft: draftOf(o.examCode, o.skill, text, testId) },
+            {
+              onSuccess: () => navigate(`/cms/score-tables/${tableId}`),
+              onError: (err) => {
+                setIssues(issuesOf(err));
+                setProblem(scoreProblemText(t, err));
+              },
+            },
+          );
+        }}
+      />
+      {problem && issues.length === 0 && <FormAlert>{problem}</FormAlert>}
+    </div>
+  );
 }
 
 function EditBody({ v, notice, setNotice }: { v: ScoreTableVersion; notice: string | null; setNotice: (n: string | null) => void }) {
@@ -149,7 +212,7 @@ function EditBody({ v, notice, setNotice }: { v: ScoreTableVersion; notice: stri
           <Badge tone={TONE[v.status]}>{t(`status.${v.status}`)}</Badge>
           <span>{t('edit.version', { n: v.versionNo })}</span>
           <span>{v.examCode}</span>
-          <span>{t('edit.scopeExam')}</span>
+          <span>{v.scope === 'TEST' ? t('edit.scopeTest') : t('edit.scopeExam')}</span>
         </p>
         {computed && <FormNotice tone="info">{t('edit.functionNote', { function: v.function })}</FormNotice>}
         {!computed && published && <FormNotice tone="info">{t('edit.publishedNote', { next: v.versionNo + 1 })}</FormNotice>}
@@ -172,7 +235,7 @@ function EditBody({ v, notice, setNotice }: { v: ScoreTableVersion; notice: stri
           setIssues([]);
           setNotice(null);
           save.mutate(
-            { tableId: v.tableId, draft: draftOf(v.examCode, v.skill, text) },
+            { tableId: v.tableId, draft: draftOf(v.examCode, v.skill, text, v.scope === 'TEST' ? v.testId : null) },
             {
               onSuccess: ({ version, newVersion }) => setNotice(newVersion ? t('edit.savedNewVersion', { n: version.versionNo }) : t('edit.saved')),
               onError: (err) => {

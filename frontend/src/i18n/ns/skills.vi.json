@@ -48,7 +48,9 @@
     "hint": "Chạy bản skill đã lưu trên một bài làm mẫu để xem kết quả AI trả về. Không lưu điểm nào.",
     "response": "Bài làm mẫu để chạy thử",
     "run": "Chạy thử",
-    "unavailable": "Chạy thử cần bộ chấm AI, chưa có. Skill vẫn lưu và duyệt như bình thường."
+    "unavailable": "Chạy thử cần bộ chấm AI, máy chủ này không có. Skill vẫn lưu và duyệt như bình thường.",
+    "resultTitle": "Kết quả chạy thử",
+    "band": "Band {{band}} (phiên bản {{version}} của skill)"
   },
   "actions": {
     "createDraft": "Lưu bản nháp",

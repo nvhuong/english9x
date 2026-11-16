@@ -1,6 +1,7 @@
 {
   "nav": {
-    "scoreTables": "Bảng quy đổi"
+    "scoreTables": "Bảng quy đổi",
+    "scoreOverrides": "Bảng ghi đè của đề"
   },
   "loading": "Đang tải…",
   "status": {
@@ -47,7 +48,9 @@
     "archivedNote": "Bản này đã được lưu trữ và không sửa được.",
     "functionNote": "Điểm này được tính bằng hàm {{function}}, không có bảng để sửa.",
     "notFoundTitle": "Không tìm thấy bảng",
-    "notFound": "Bảng không tồn tại, hoặc bạn không có quyền mở nó trong ngữ cảnh này."
+    "notFound": "Bảng không tồn tại, hoặc bạn không có quyền mở nó trong ngữ cảnh này.",
+    "scopeTest": "Bảng ghi đè của một đề",
+    "overrideEmpty": "Bảng ghi đè này đã được gắn cho đề nhưng chưa có dòng nào. Lưu các dòng để tạo phiên bản 1."
   },
   "list": {
     "title": "Bảng quy đổi",
@@ -82,5 +85,26 @@
     "forbidden": "Bạn không có quyền với bảng này.",
     "notFound": "Không tìm thấy bảng.",
     "generic": "Có lỗi xảy ra. Thử lại sau ít phút."
+  },
+  "overrides": {
+    "heading": "Bảng quy đổi ghi đè",
+    "note": "Quản trị viên gắn bảng riêng của một kỹ năng cho đề này; tác giả điền các dòng, người duyệt xuất bản. Kết quả thi của đề dùng bảng ghi đè thay cho bảng mặc định của kỳ thi.",
+    "empty": "Đề này chưa có bảng ghi đè.",
+    "list": "Các bảng ghi đè của đề",
+    "noRows": "Chưa có dòng nào",
+    "open": "Mở bảng ghi đè {{skill}}",
+    "write": "Điền các dòng",
+    "edit": "Sửa bảng",
+    "skill": "Điểm cần ghi đè",
+    "skillPlaceholder": "Chọn một kỹ năng",
+    "attach": "Gắn bảng ghi đè"
+  },
+  "attach": {
+    "title": "Gắn bảng quy đổi ghi đè cho đề",
+    "description": "Bảng riêng của một kỹ năng cho một đề, thay cho bảng mặc định của kỳ thi. Quản trị viên gắn bảng ở đây; tác giả điền các dòng ở màn Bảng quy đổi, người duyệt xuất bản.",
+    "testId": "Mã đề (testId)",
+    "testIdHint": "Mã của đề (không phải của một phiên bản), có trong địa chỉ trang dựng đề.",
+    "done": "Đã gắn bảng ghi đè {{skill}}. Tác giả có thể điền các dòng.",
+    "openEditor": "Mở bảng"
   }
 }

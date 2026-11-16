@@ -30,11 +30,12 @@ export interface ScoreTablePage {
   limit: number;
 }
 
-/** The body of POST / PUT /api/cms/score-tables. Only the EXAM scope can be written until tests can be built. */
+/** The body of POST / PUT /api/cms/score-tables. Scope TEST (the override of one test, attached first) is only written with PUT. */
 export interface ScoreTableDraft {
   examCode: string;
   skill: string;
-  scope: 'EXAM';
+  scope: 'EXAM' | 'TEST';
+  testId?: string;
   rows: Array<{ raw: number | null; scaled: number | null }>;
 }
 
@@ -48,4 +49,15 @@ export interface ExamScores {
   code: string;
   name: string;
   scoreSkills: string[];
+}
+
+/** An override of one test as GET/POST /api/cms/score-tables/overrides answer (hand-typed until the OpenAPI snapshot is regenerated with Docker). */
+export interface TestOverride {
+  tableId: string;
+  testId: string;
+  examCode: string;
+  skill: string;
+  versionId: string | null;
+  versionNo: number | null;
+  status: ContentStatus | null;
 }

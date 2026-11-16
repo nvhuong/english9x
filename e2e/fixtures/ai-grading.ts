@@ -17,6 +17,11 @@ async function publishedGroup(s: Staffed, typeCode: string, title: string, withA
 }
 
 export async function publishedIeltsTest(s: Staffed, title: string): Promise<string> {
+  return (await publishedIeltsTestWithId(s, title)).versionId;
+}
+
+/** The same, with the id of the TEST (not of its version): what a per-test score table override is attached to. */
+export async function publishedIeltsTestWithId(s: Staffed, title: string): Promise<{ testId: string; versionId: string }> {
   const parts = [
     { sectionCode: 'LISTENING', durationSec: 600, groups: [await publishedGroup(s, 'IELTS_L_SENTENCE_COMPLETION', `${title} listening`, true)] },
     { sectionCode: 'READING', durationSec: 600, groups: [await publishedGroup(s, 'IELTS_R_IDENTIFYING_INFORMATION', `${title} reading`, false)] },
@@ -28,7 +33,7 @@ export async function publishedIeltsTest(s: Staffed, title: string): Promise<str
   const saved = await api(s.author.token, 'PUT', `/api/cms/tests/${created.body.testId}/structure`, { org: s.orgId, body: { parts } });
   expect(saved.status, saved.text).toBe(200);
   await seed.reviewVersion({ type: 'test', versionId: saved.body.versionId, authorId: s.author.userId, reviewerId: s.reviewer.userId, orgId: s.orgId, outcome: 'approved' });
-  return saved.body.versionId as string;
+  return { testId: created.body.testId as string, versionId: saved.body.versionId as string };
 }
 
 const CRITERIA = [

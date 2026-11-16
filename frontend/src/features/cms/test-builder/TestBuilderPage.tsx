@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ApiProblemError } from '../../../api/problem';
 import { Badge, Button, EmptyState, Input, Select, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '../../../design';
 import { FormAlert, FormNotice } from '../../auth/components';
+import { TestOverrides } from '../score-tables/TestOverrides';
 import { addPart, draftOf, moveGroup, removePart, updatePart } from './model';
 import { issuesAt, issuesOf, testProblemText, type FieldIssue } from './problems';
 import { useExams, useGroupChoices, useTest, useTestMutations } from './queries';
@@ -350,6 +351,7 @@ function EditBody({ v, exam, notice, setNotice }: { v: TestVersion; exam: ExamIn
           <p className="text-sm text-muted">{t('check.overrides', { skills: v.scoreTableOverrides.map((o) => o.skill).join(', ') })}</p>
         )}
       </section>
+      <TestOverrides testId={v.testId} examCode={v.examCode} variant={v.variant} />
     </div>
   );
 }

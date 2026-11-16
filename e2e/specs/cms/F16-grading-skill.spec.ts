@@ -3,16 +3,18 @@
 // What the grading skills of P2.5 do, through the real stack: the author writes the skill of IELTS Writing Task 2 on the screen (rubric, criteria, prompt
 // template, scored samples, the JSON Schema of the AI's answer); the server refuses a result schema that does not declare every criterion; the skill is
 // published only by a review, a teacher of the exam reads it once published (a learner never does), and editing a published skill makes a new draft
-// version. Two parts of the scenario need the AI grader (P4.2) and are listed in e2e/partial-features.json: the "chạy thử" with a sample answer (the
-// server answers 501 until then and sends nothing anywhere) and "dùng khi chấm" (the AI grading job).
+// version. The "chạy thử" with a sample answer calls the AI grader through the fake Gemini and shows the answer, validated against the result schema, on
+// the screen (nothing is saved); a model that breaks the schema is a 502 and a failing one a 5xx, never a made-up result. "Dùng khi chấm" (the AI grading
+// job reads the published skill of the question type) is F34.
 import { test, expect } from '../../fixtures';
 import { staffed } from '../../fixtures/content';
 
 type Version = { versionNo: number; status: string; versionId: string; rubric: string };
 
 test.describe('F16 grading skill', () => {
-  test('F16 the author writes the IELTS Writing Task 2 skill; a result schema missing a criterion is refused by path; a dry run says the AI grader is not built yet; a review publishes it', async ({ page, request, auth, seed, org, uniqueEmail }) => {
+  test('F16 the author writes the IELTS Writing Task 2 skill; a result schema missing a criterion is refused by path; a dry run shows the AI answer and saves nothing; a review publishes it', async ({ page, request, auth, seed, org, uniqueEmail, gemini }) => {
     test.setTimeout(180_000);
+    await gemini.reset();
     const s = await staffed(['IELTS'], 'f16-ui', { request, uniqueEmail, apiLogin: org.apiLogin }, { inOrganisation: true });
     const teacher = await seed.verifiedLearner({ email: uniqueEmail('f16-teacher') });
     await seed.member({ orgId: s.orgId!, userId: teacher.userId, roles: [{ role: 'TEACHER', examCode: 'IELTS' }] });
@@ -63,13 +65,27 @@ test.describe('F16 grading skill', () => {
     expect(Object.keys(saved.body.resultSchema.properties).sort()).toEqual(['coherence', 'feedback', 'task_response']); // jsonb does not keep the order of keys
     for (const v of ['{{rubric}}', '{{samples}}', '{{task}}', '{{response}}']) expect(saved.body.promptTemplate).toContain(v);
 
-    // the dry run needs the AI grader (P4.2): the screen says so, and the server answers 501 without sending anything
+    // the dry run calls the AI grader (the fake Gemini answers per the skill's result schema) and shows its answer; nothing is saved
     await page.getByLabel('Bài làm mẫu để chạy thử').fill('Some people believe that...');
+    const running = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === `/api/cms/grading-skills/${skillId}/dry-run`);
     await page.getByRole('button', { name: 'Chạy thử' }).click();
-    await expect(page.getByText(/Chạy thử cần bộ chấm AI, chưa có/)).toBeVisible();
-    const dry = await org.api(s.author.token, 'POST', `/api/cms/grading-skills/${skillId}/dry-run`, { org: s.orgId, body: { response: 'x' } });
-    expect(dry.status).toBe(501);
-    expect(dry.body.type).toBe('urn:e9x:problem:dry-run-unavailable');
+    const ran = await running;
+    expect(ran.status(), await ran.text()).toBe(200);
+    const shown = page.getByRole('region', { name: 'Kết quả chạy thử' });
+    await expect(shown.getByText(/Band \d/)).toBeVisible();
+    await expect(shown.getByText('Fake feedback from fake-gemini.')).toBeVisible();
+    const dry = await org.api(s.author.token, 'POST', `/api/cms/grading-skills/${skillId}/dry-run`, { org: s.orgId, body: { response: 'Some people believe that technology...' } });
+    expect(dry.status, dry.text).toBe(200);
+    expect(Object.keys(dry.body.result).sort(), 'the answer matches the skill\'s result schema: a score per criterion and the feedback').toEqual(['coherence', 'feedback', 'task_response']);
+    expect(dry.body).toMatchObject({ versionNo: 1, versionId: saved.body.versionId });
+    expect(typeof dry.body.band).toBe('number');
+    const sent = await gemini.requests();
+    expect(sent.length, 'one request to the model per dry run').toBe(2);
+    // neither run kept anything: the skill is still the one draft, and a dry run needs a response
+    expect((await org.api(s.author.token, 'GET', `/api/cms/grading-skills/${skillId}/versions`, { org: s.orgId })).body).toHaveLength(1);
+    const empty = await org.api(s.author.token, 'POST', `/api/cms/grading-skills/${skillId}/dry-run`, { org: s.orgId, body: {} });
+    expect(empty.status).toBe(422);
+    expect((await gemini.requests()).length, 'a refused dry run sends nothing').toBe(2);
 
     // one skill per question type and owner
     const again = await org.api(s.author.token, 'POST', '/api/cms/grading-skills', { org: s.orgId, body: { ...saved.body, questionTypeCode: 'IELTS_W_TASK2' } });

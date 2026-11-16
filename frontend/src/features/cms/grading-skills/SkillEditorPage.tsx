@@ -205,7 +205,7 @@ function EditBody({ v, notice, setNotice }: { v: SkillVersion; notice: string | 
   );
 }
 
-/** "Chạy thử": the saved skill on a sample answer, no score kept. It needs the AI grader (P4.2); until then the server says so and nothing is sent anywhere. */
+/** "Chạy thử": the saved skill on a sample answer, no score kept. The AI's answer is shown as returned; the message stays only for a server without an AI grader (501). */
 function DryRun({ skillId }: { skillId: string }) {
   const { t } = useTranslation('skills');
   const { dryRun } = useSkillMutations();
@@ -225,6 +225,7 @@ function DryRun({ skillId }: { skillId: string }) {
           disabled={response.trim() === ''}
           onClick={() => {
             setMessage(null);
+            dryRun.reset();
             dryRun.mutate({ skillId, response }, { onError: (err) => setMessage(skillProblemText(t, err)) });
           }}
         >
@@ -232,6 +233,13 @@ function DryRun({ skillId }: { skillId: string }) {
         </Button>
       </div>
       {message && <FormNotice tone="info">{message}</FormNotice>}
+      {dryRun.data && (
+        <section aria-label={t('dryRun.resultTitle')} className="flex flex-col gap-2 rounded-md border border-edge p-4">
+          <h3 className="font-semibold text-ink">{t('dryRun.resultTitle')}</h3>
+          <p className="text-sm text-muted">{t('dryRun.band', { band: dryRun.data.band, version: dryRun.data.versionNo })}</p>
+          <pre className="overflow-x-auto whitespace-pre-wrap text-sm text-ink">{JSON.stringify(dryRun.data.result, null, 2)}</pre>
+        </section>
+      )}
     </section>
   );
 }
