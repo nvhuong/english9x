@@ -114,9 +114,12 @@ jobs:
       - run: pnpm -C e2e install --frozen-lockfile
       - run: pnpm -C e2e exec tsc --noEmit
 
-  # Playwright against the real Compose stack (scripts/e2e.sh: clean DB, always torn down). It was green locally,
-  # but has not yet run on a GitHub runner, so it does NOT block merges (continue-on-error) until W10, when
-  # this flag is removed together with setting E9X_E2E_GATE=strict. Videos and traces are uploaded either way.
+  # Playwright against the real Compose stack (scripts/e2e.sh: clean DB, always torn down). It does NOT block merges
+  # (continue-on-error) and E9X_E2E_GATE is NOT strict, ON PURPOSE (ruling of W10): F13 and F16 are still listed as
+  # partial in e2e/partial-features.json, so the strict gate (node scripts/check-e2e-coverage.mjs) would turn CI red.
+  # The condition for removing continue-on-error and setting E9X_E2E_GATE=strict: that partial list is empty
+  # (F13 and F16 completed, entries removed) and the job has run green on a GitHub runner.
+  # Videos and traces are uploaded either way.
   e2e:
     name: e2e (Playwright on Compose, non-blocking until W10)
     runs-on: ubuntu-latest
