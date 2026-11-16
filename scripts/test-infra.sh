@@ -8,6 +8,7 @@
 #      a SigV4 link signed for the public host is served through Caddy (200, the stored bytes) because Caddy keeps the client's Host; the same Caddyfile with
 #      `header_up Host {upstream_hostport}` is refused by MinIO (the measurement behind the note in infra/Caddyfile); altered, expired and unsigned requests are
 #      refused; the route forwards GET of one object key of one bucket and nothing else, and the application's key reaches nothing outside the bucket.
+# `--no-docker` runs only the backup-script tests at the top (healthcheck, restore-media with a fake mc, the in-place drill's refusal and dry run).
 # Touches only the containers and the network it creates here (labels below), and removes them. Needs Docker. Run by verify.sh and by the CI job `compose`.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -32,6 +33,57 @@ cleanup() {
   rm -f "$ROOT/infra/.env.infra-test.$$"
 }
 trap cleanup EXIT
+
+echo "== backup scripts (no Docker: fake files, fake mc)"
+TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"; cleanup' EXIT
+hc() { BACKUP_DIR="$1" E9X_BACKUP_MAX_AGE_MIN="${2:-1560}" bash infra/backup/healthcheck.sh 2>&1; }
+mkdump() { printf 'select 1;\n' | gzip > "$1/pg-$2.sql.gz"; (cd "$1" && sha256sum "pg-$2.sql.gz" > "pg-$2.sql.gz.sha256"); }
+H="$TMP/hc"; mkdir -p "$H"
+if out="$(hc "$H")"; then ko "an empty backup directory must be unhealthy"; else ok "healthcheck: no dump is unhealthy ($out)"; fi
+mkdump "$H" 20260101T000000Z
+if hc "$H" >/dev/null; then ok "healthcheck: a fresh dump with a matching checksum is healthy"; else ko "healthcheck: fresh dump refused"; fi
+touch -d '3 hours ago' "$H/pg-20260101T000000Z.sql.gz"
+if out="$(hc "$H" 120)"; then ko "healthcheck: a dump older than the limit must be unhealthy"; else ok "healthcheck: a dump older than the limit is unhealthy ($out)"; fi
+if hc "$H" 1560 >/dev/null; then ok "healthcheck: the same dump is healthy under a longer limit"; else ko "healthcheck: limit not honoured"; fi
+rm "$H/pg-20260101T000000Z.sql.gz.sha256"
+if out="$(hc "$H")"; then ko "healthcheck: a dump without a checksum file must be unhealthy"; else ok "healthcheck: no checksum file is unhealthy ($out)"; fi
+mkdump "$H" 20260101T000000Z; printf 'x' >> "$H/pg-20260101T000000Z.sql.gz"
+if out="$(hc "$H")"; then ko "healthcheck: a dump that does not match its checksum must be unhealthy"; else ok "healthcheck: a corrupt dump is unhealthy ($out)"; fi
+mkdump "$H" 20260102T000000Z   # the NEWEST one decides, an older bad one does not matter
+if hc "$H" >/dev/null; then ok "healthcheck: the newest dump decides"; else ko "healthcheck: newest dump not used"; fi
+
+# restore-media.sh with a fake mc on PATH: the bucket is "empty" until `mc mirror` ran, then holds the number of files in the source
+FB="$TMP/bin"; mkdir -p "$FB" "$TMP/src/sub"; printf a > "$TMP/src/a"; printf b > "$TMP/src/sub/b"
+cat > "$FB/mc" <<'FAKE'
+#!/usr/bin/env bash
+echo "$*" >> "$FAKE_MC_LOG"
+case "$1" in
+  mirror) touch "$FAKE_MC_STATE" ;;
+  ls) if [ -f "$FAKE_MC_STATE" ] || [ -n "${FAKE_MC_PRE:-}" ]; then for i in $(seq 1 "${FAKE_MC_COUNT:-2}"); do echo "obj$i"; done; fi ;;
+esac
+FAKE
+chmod +x "$FB/mc"
+rm_env=(env PATH="$FB:$PATH" FAKE_MC_LOG="$TMP/mc.log" FAKE_MC_STATE="$TMP/mc.state" MINIO_ENDPOINT=http://x MINIO_BUCKET=b MINIO_ROOT_USER=u MINIO_ROOT_PASSWORD=p MC_CONFIG_DIR="$TMP/mcc")
+if "${rm_env[@]}" bash infra/backup/restore-media.sh "$TMP/nope" >/dev/null 2>&1; then ko "restore-media: a missing source directory must fail"; else ok "restore-media: a missing source directory fails"; fi
+if out="$("${rm_env[@]}" bash infra/backup/restore-media.sh "$TMP/src" 2>&1)" && grep -q '^mirror --overwrite --quiet '"$TMP/src"' e9x/b$' "$TMP/mc.log" && grep -q '^mb --ignore-existing e9x/b$' "$TMP/mc.log"; then ok "restore-media: makes the bucket if missing and mirrors the directory into it ($out)"; else ko "restore-media: $out / $(cat "$TMP/mc.log")"; fi
+rm -f "$TMP/mc.state"
+if out="$("${rm_env[@]}" FAKE_MC_PRE=1 bash infra/backup/restore-media.sh "$TMP/src" 2>&1)"; then ko "restore-media: a bucket that already holds objects must be refused"; else ok "restore-media: refuses a bucket that already holds objects"; fi
+rm -f "$TMP/mc.state"
+if out="$("${rm_env[@]}" FAKE_MC_COUNT=1 bash infra/backup/restore-media.sh "$TMP/src" 2>&1)"; then ko "restore-media: fewer objects than files must fail"; else ok "restore-media: fails when objects are missing after the mirror"; fi
+
+# the in-place drill: refuses without confirmation; its dry run deletes only the two data volumes and never uses down -v
+if bash infra/backup/drill-restore-inplace.sh >/dev/null 2>&1; then ko "drill: must refuse without E9X_DRILL_CONFIRM"; else ok "drill: refuses without E9X_DRILL_CONFIRM"; fi
+dry="$(E9X_DRILL_DRY_RUN=1 E9X_DRILL_CONFIRM=delete-english9x-volumes E9X_DRILL_DIR="$TMP/drill" bash infra/backup/drill-restore-inplace.sh 2>&1)" || ko "drill: dry run failed: $dry"
+case "$dry" in
+  *"docker volume rm english9x_pgdata english9x_miniodata"*"restore.sh"*"restore-media.sh"*) ok "drill: dry run removes pgdata and miniodata, then restores both halves";; *) ko "drill: dry run order is wrong: $dry";;
+esac
+case "$dry" in *" down -v"*|*"--volumes"*|*"volume rm english9x_backups"*) ko "drill: it must never delete the backups volume";; *) ok "drill: never uses down -v and never touches the backups volume";; esac
+for f in healthcheck restore-media drill-restore-inplace backup restore mirror-media; do bash -n "infra/backup/$f.sh" && ok "bash -n $f.sh" || ko "bash -n $f.sh"; done
+if command -v node >/dev/null && node --check infra/k6/exam-50.js 2>/dev/null; then ok "k6 script is valid JavaScript"; else ko "k6 script does not parse (or no node)"; fi
+if [ "${1:-}" = "--no-docker" ]; then
+  trap 'rm -rf "$TMP"' EXIT   # no containers were made
+  echo; echo "infra tests (no Docker): $((pass+fail)), passed: $pass, failed: $fail"; [ "$fail" -eq 0 ]; exit $?
+fi
 
 echo "== compose: required settings"
 base=(docker compose -p "$RUN" -f infra/docker-compose.yml)
