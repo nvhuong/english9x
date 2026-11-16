@@ -9,11 +9,12 @@ mkdir -p "$DIR"
 
 pg_dump --no-owner --format=plain | gzip > "$DIR/pg-$STAMP.sql.gz.tmp"
 mv "$DIR/pg-$STAMP.sql.gz.tmp" "$DIR/pg-$STAMP.sql.gz"
+(cd "$DIR" && sha256sum "pg-$STAMP.sql.gz" > "pg-$STAMP.sql.gz.sha256")   # healthcheck.sh and the restore drill verify the dump against it
 echo "pg_dump -> pg-$STAMP.sql.gz"
 
 # retention: the newest $KEEP dumps survive
 ls -1 "$DIR"/pg-*.sql.gz 2>/dev/null | sort -r | tail -n +"$((KEEP + 1))" | while read -r old; do
-  find "$old" -delete
+  find "$old" "$old.sha256" -delete 2>/dev/null || true
   echo "pruned $(basename "$old")"
 done
 

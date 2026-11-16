@@ -200,8 +200,8 @@ services:
       minio-init:
         condition: service_completed_successfully
     healthcheck:
-      # healthy once a dump from the past 26h exists (startup run + every 24h)
-      test: ["CMD-SHELL", "find /backups -name 'pg-*.sql.gz' -mmin -1560 | grep -q ."]
+      # healthy once the newest dump is under E9X_BACKUP_MAX_AGE_MIN (default 1560 = 26h: startup run + every 24h) old and matches its .sha256 (infra/backup/healthcheck.sh)
+      test: ["CMD", "/usr/local/bin/healthcheck.sh"]
       interval: 30s
       timeout: 5s
       retries: 10

@@ -5,7 +5,7 @@
 # and the SECURITY DEFINER functions would run as a superuser.
 #   PGHOST=postgres PGDATABASE=e9x E9X_OWNER_PASSWORD=<E9X_FLYWAY_PASSWORD> restore.sh /backups/pg-<stamp>.sql.gz    (the service `backup` has these set)
 # Refuses a database that already has tables, and any login other than e9x_owner. One transaction: a failure leaves the database empty.
-# The MinIO half: see README (Backup and restore).
+# The MinIO half: restore-media.sh (README, Backup and restore).
 set -euo pipefail
 dump="${1:-}"
 [ -n "$dump" ] && [ -f "$dump" ] || { echo "usage: restore.sh <pg-*.sql.gz>  (no such file: '$dump')" >&2; exit 2; }
