@@ -1,11 +1,11 @@
 // F58 — i18n + accessibility: every screen is scanned with axe (WCAG 2.1 A/AA, serious and critical fail) in light and
 // dark, and the vi/en language switch really changes the UI and survives a reload.
 //
-// !! F58 IS NOT FINISHED. The coverage gate counts this file as "covered" because it holds active tests, but spec
-// !! §16.2 asks for the 8 MAIN SCREENS to be scanned and most of them do not exist yet. F58 finishes (W10) only when
-// !! every screen in PENDING_MAIN_SCREENS below has moved into SCREENS. Each run prints the pending list as a test
-// !! annotation. Tracking: docs/superpowers/plans/2026-11-06-english9x-p1-foundation.md, task P1.12 note, referenced
-// !! from the W10 completion criteria. Do not delete the pending list to make it look done.
+// The 8 MAIN SCREENS of the design mockups (docs/superpowers/design/mockups/01..08) are scanned too, each on its real route in its real
+// state, with data made through the real stack (specs/common/_main-screens.ts): 01 course catalogue (a guest, one published course listed),
+// 02 chapter map and 03 lesson (a learner with a plan, STRICT course), 04 exam room Reading and 05 exam room Speaking (IELTS attempts at
+// that section), 06 result (a TOEIC attempt scored by the real job), 07 CMS review queue (a submitted question), 08 admin QR orders (a
+// pending order). Vietnamese and English, light and dark, serious/critical axe violations fail.
 //
 // Scanned today, signed in (P1.5): the admin area (empty state), organisations, one organisation's members + invitations, staff
 // invitations, the audit log (P1.9, with records), and the organisation admin's members page in its context. Both languages, light and dark.
@@ -22,6 +22,9 @@ import type { Page } from '@playwright/test';
 import { test, expect } from '../../fixtures';
 import { chooseGoogleAccount } from '../../helpers/google';
 import { reviewWorld } from '../notify/_world';
+import { loginAs } from '../../fixtures/auth';
+import { env } from '../../helpers/env';
+import { buildMainScreensWorld, type MainScreensWorld, type Person } from './_main-screens';
 
 interface Screen { name: string; path: string; heading: { vi: RegExp; en: RegExp } }
 
@@ -43,17 +46,90 @@ const SCREENS: Screen[] = [
   { name: 'accept invitation (visitor)', path: '/accept-invitation?token=axe-scan-token', heading: { vi: /^Lời mời tham gia English9x$/, en: /^Invitation to join English9x$/ } },
 ];
 
-// The 8 main screens of the design mockups (docs/superpowers/design/mockups/01..08) and the task that builds each.
-// Move an entry into SCREENS (with a real route and real data from the seed API) as soon as it exists.
-const PENDING_MAIN_SCREENS = [
-  '01 course catalogue (P3.1)',
-  '02 chapter map (P3.1)',
-  '03 lesson (P3.2)',
-  '04 exam room, Reading (P3.4)',
-  '05 exam room, Speaking (P3.4)',
-  '06 result (P4.4)',
-  '07 CMS review queue (P2.9)',
-  '08 admin QR orders (P5.4)',
+// The 8 main screens of the design mockups (docs/superpowers/design/mockups/01..08). All eight exist as real routes; their paths hold ids of the
+// data made at run time, so they are described by MAIN_SCREENS below (a function of the world) and not by the static SCREENS list.
+// Anything added here must move into MAIN_SCREENS as soon as it has a route; the list must stay empty.
+const PENDING_MAIN_SCREENS: string[] = [];
+
+type Lang = 'vi' | 'en';
+const L = <T,>(vi: T, en: T): Record<Lang, T> => ({ vi, en });
+const exact = (text: string) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+
+interface MainScreen {
+  name: string;
+  who: (w: MainScreensWorld) => Person | null;
+  path: (w: MainScreensWorld) => string;
+  heading: (w: MainScreensWorld) => Record<Lang, RegExp>;
+  /** The state the screen is scanned in: what must be on the page before axe runs. */
+  ready: (page: Page, w: MainScreensWorld, lang: Lang) => Promise<void>;
+}
+
+const MAIN_SCREENS: MainScreen[] = [
+  {
+    name: '01 course catalogue',
+    who: () => null,
+    path: () => '/courses',
+    heading: () => ({ vi: exact('Khoá học'), en: exact('Courses') }),
+    ready: async (page, w) => { await expect(page.getByRole('listitem').filter({ hasText: w.course.title })).toBeVisible(); },
+  },
+  {
+    name: '02 chapter map',
+    who: (w) => w.learner,
+    path: (w) => `/learn/courses/${w.course.courseId}`,
+    heading: (w) => ({ vi: exact(w.course.title), en: exact(w.course.title) }),
+    ready: async (page, w) => { await expect(page.getByRole('link', { name: w.course.lessonTitle })).toBeVisible(); },
+  },
+  {
+    name: '03 lesson',
+    who: (w) => w.learner,
+    path: (w) => `/learn/lessons/${w.course.lessonId}`,
+    heading: (w) => ({ vi: exact(w.course.lessonTitle), en: exact(w.course.lessonTitle) }),
+    ready: async (page) => { await expect(page.locator('#main')).toContainText('SECRET-LESSON-BODY'); },
+  },
+  {
+    name: '04 exam room, Reading',
+    who: (w) => w.reading.learner,
+    path: (w) => `/exam/attempts/${w.reading.attemptId}`,
+    heading: (w) => ({ vi: exact(w.reading.title), en: exact(w.reading.title) }),
+    ready: async (page, _w, lang) => {
+      await expect(page.getByRole('region', { name: L('Câu hỏi', 'Question')[lang] })).toBeVisible();
+      await expect(page.getByText(lang === 'vi' ? /Phần 2\/4/ : /Section 2 of 4/)).toBeVisible();
+    },
+  },
+  {
+    name: '05 exam room, Speaking',
+    who: (w) => w.speaking.learner,
+    path: (w) => `/exam/attempts/${w.speaking.attemptId}`,
+    heading: (w) => ({ vi: exact(w.speaking.title), en: exact(w.speaking.title) }),
+    ready: async (page, _w, lang) => {
+      await expect(page.getByText(lang === 'vi' ? /Phần 4\/4/ : /Section 4 of 4/)).toBeVisible();
+      await expect(page.getByRole('group', { name: L('Ghi âm bài nói', 'Speaking recorder')[lang] })).toBeVisible();
+    },
+  },
+  {
+    name: '06 result',
+    who: (w) => w.result.learner,
+    path: (w) => `/results/attempts/${w.result.attemptId}`,
+    heading: () => ({ vi: exact('Kết quả của bạn'), en: exact('Your result') }),
+    ready: async (page) => {
+      await expect(page.getByTestId('skill-score').first()).toBeVisible();
+      await expect(page.getByTestId('question-result')).toHaveCount(2);
+    },
+  },
+  {
+    name: '07 CMS review queue',
+    who: (w) => w.reviewer,
+    path: () => '/cms/reviews',
+    heading: () => ({ vi: exact('Hàng chờ duyệt'), en: exact('Review queue') }),
+    ready: async (page) => { await expect(page.getByTestId('review-line').first()).toBeVisible(); },
+  },
+  {
+    name: '08 admin QR orders',
+    who: (w) => w.admin,
+    path: () => '/admin/orders',
+    heading: () => ({ vi: exact('Đơn hàng'), en: exact('Orders') }),
+    ready: async (page, w) => { await expect(page.getByTestId('order-row').filter({ hasText: w.order.code })).toBeVisible(); },
+  },
 ];
 
 const THEMES = ['light', 'dark'] as const;
@@ -74,7 +150,8 @@ async function scan(page: Page) {
 }
 
 test.beforeEach(() => {
-  test.info().annotations.push({ type: 'F58 pending main screens', description: PENDING_MAIN_SCREENS.join('; ') });
+  // empty since W10: every main screen is scanned in 'F58 main screens'. A screen put back here is reported on every run.
+  if (PENDING_MAIN_SCREENS.length > 0) test.info().annotations.push({ type: 'F58 pending main screens', description: PENDING_MAIN_SCREENS.join('; ') });
 });
 
 const GOOGLE_STEP_HEADINGS = {
@@ -179,6 +256,51 @@ for (const lang of ['vi', 'en'] as const) {
     });
   }
 }
+
+// The 8 main screens, in their real state. The world is made once for the group (a scored result alone takes minutes); each test signs in as the
+// person who sees that screen in a context of its own, stores the language and the theme after signing in (the sign-in screens are Vietnamese here), and scans.
+test.describe('F58 main screens', () => {
+  test.describe.configure({ mode: 'serial' });
+  let world: MainScreensWorld;
+
+  test.beforeAll(async ({ playwright }) => {
+    test.setTimeout(1_200_000);
+    const request = await playwright.request.newContext();
+    try {
+      world = await buildMainScreensWorld(request);
+    } finally {
+      await request.dispose();
+    }
+  });
+
+  for (const lang of ['vi', 'en'] as const) {
+    for (const theme of THEMES) {
+      for (const screen of MAIN_SCREENS) {
+        test(`F58 axe: main screen ${screen.name} in ${lang}, ${theme} mode`, async ({ browser }) => {
+          const ctx = await browser.newContext({ baseURL: env.baseURL, ignoreHTTPSErrors: true });
+          try {
+            const page = await ctx.newPage();
+            const who = screen.who(world);
+            if (who) await loginAs(page, who);
+            else await page.goto('/');
+            await page.evaluate((v) => {
+              localStorage.setItem('e9x.theme', v.theme);
+              localStorage.setItem('e9x.lang', v.lang);
+            }, { theme, lang });
+            await page.goto(screen.path(world));
+            await expect(page.getByRole('heading', { level: 1 })).toHaveText(screen.heading(world)[lang]);
+            await expect(page.locator('html')).toHaveAttribute('lang', lang);
+            await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+            await screen.ready(page, world, lang);
+            await scan(page);
+          } finally {
+            await ctx.close();
+          }
+        });
+      }
+    }
+  }
+});
 
 for (const screen of SCREENS) {
   for (const theme of THEMES) {
