@@ -5,7 +5,7 @@
 // published only by a review, a teacher of the exam reads it once published (a learner never does), and editing a published skill makes a new draft
 // version. The "chạy thử" with a sample answer calls the AI grader through the fake Gemini and shows the answer, validated against the result schema, on
 // the screen (nothing is saved); a model that breaks the schema is a 502 and a failing one a 5xx, never a made-up result. "Dùng khi chấm" (the AI grading
-// job reads the published skill of the question type) is F34.
+// job reads the published skill of the question type) is not asserted here yet: it is listed in e2e/partial-features.json.
 import { test, expect } from '../../fixtures';
 import { staffed } from '../../fixtures/content';
 

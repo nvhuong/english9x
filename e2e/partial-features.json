@@ -8,6 +8,10 @@
       "owner": "P2.7 (import: full-size tests), the override screen (an administrator's)"
     },
     {
+      "id": "F16",
+      "pending": "Done through the real stack (P2.5, W10 T6): the author writes the IELTS Writing Task 2 skill on the screen (rubric, criteria, prompt template with the four variables, scored samples, result schema that must declare every criterion), the dry run calls the AI grader through the fake Gemini and shows its schema-valid answer without saving anything, a review publishes it, a teacher of the exam reads the published one and a learner never does, an edit makes version 2. Pending: 'dùng khi chấm' asserted inside the F16 spec itself: after the skill is published, one IELTS Writing Task 2 answer is sat and graded, the evaluation must name the published skill version, and a version-2 draft must not be used until published. Missing: seed.grading.ai(attemptId) returns no skill version id per evaluation (section, model, tokens, cost, band, result only), so the version cannot be asserted without extending the seed endpoint; the F16 skill is also owned by an organisation, which needs an org-owned published IELTS test and an entitled learner, plus the two-minute late-sync wait. F34 covers the grading job with English9x's published skill but does not assert the version."
+    },
+    {
       "id": "F58",
       "pending": "The 8 main screens of the design mockups are not built yet: 01 course catalogue, 02 chapter map, 03 lesson, 04 exam room Reading, 05 exam room Speaking, 06 result, 07 CMS review queue, 08 admin QR orders. They move from PENDING_MAIN_SCREENS to SCREENS in the spec as they appear (see its header and the P1.12 note in the foundation plan).",
       "owner": "P3.1 (01, 02), P3.2 (03), P3.4 (04, 05), P4.4 (06), P2.9 (07), P5.4 (08)"
