@@ -61,7 +61,13 @@ class SkillController {
 
     @Schema(name = "GradingSkillDryRunRequest")
     record DryRunRequest(@Schema(description = "the answer as text (Writing)", nullable = true) String response,
-                         @Schema(description = "or as a recording (Speaking): a file of the exam", nullable = true) UUID mediaId) {}
+                         @Schema(description = "or as a recording (Speaking): an AUDIO file of the exam", nullable = true) UUID mediaId,
+                         @Schema(description = "the question the answer replies to (the essay prompt, the speaking topic); a generic one when empty", nullable = true) String task) {}
+
+    @Schema(name = "GradingSkillDryRunResult")
+    record DryRunDto(@Schema(implementation = Object.class, description = "the model's JSON answer; it matched the skill's result schema") JsonNode result,
+                     @Schema(description = "the mean of the criterion scores, rounded to the nearest half") double band, String model, int inputTokens, int outputTokens,
+                     @Schema(description = "the version of the skill that ran (the latest)") UUID versionId, int versionNo) {}
 
     private final SkillService service;
 
@@ -112,11 +118,15 @@ class SkillController {
     }
 
     @PostMapping("/{id}/dry-run")
-    @Operation(summary = "Run the skill on a sample answer, saving no score (needs the AI grader: 501 until it exists)",
-            description = "501 dry-run-unavailable until the AI grader (P4.2) is built; nothing is sent to any service meanwhile.")
-    ResponseEntity<Void> dryRun(@PathVariable UUID id, @RequestBody DryRunRequest body) {
-        service.dryRun(id, new SkillService.DryRun(body.response(), body.mediaId()));
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    @Operation(summary = "Run the latest version of the skill on a sample answer with the AI grader, saving nothing",
+            description = "200 with the model's answer, validated against the result schema (no score, no evaluation, no limit counted). 422 when neither or both of response "
+                    + "and mediaId are given, or mediaId is not an AUDIO file of the exam. 502 dry-run-schema when the answer broke the schema after every retry, 502 "
+                    + "ai-grader-refused when the AI grader cannot run it (no key, a refused request), 503 ai-grader-unavailable when it did not answer in time. "
+                    + "501 dry-run-unavailable when the server has no AI grader.")
+    ResponseEntity<DryRunDto> dryRun(@PathVariable UUID id, @RequestBody DryRunRequest body) {
+        SkillService.DryRunOutcome r = service.dryRun(id, new SkillService.DryRun(body.response(), body.mediaId(), body.task()));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(new DryRunDto(r.result().result(), r.result().band(), r.result().model(),
+                r.result().inputTokens(), r.result().outputTokens(), r.skill().versionId(), r.skill().versionNo()));
     }
 
     private static SkillService.Body toBody(SkillRequest r) {

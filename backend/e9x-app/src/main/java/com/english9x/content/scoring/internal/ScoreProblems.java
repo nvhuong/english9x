@@ -36,15 +36,14 @@ final class ScoreProblems {
                 "The score table does not match its form. See errors for each field.", errors, null);
     }
 
-    /** TEST-scope tables wait for P2.6 (tests do not exist yet); the database refuses them too. */
-    static ErrorResponseException testScopeUnavailable() {
-        return of(HttpStatus.CONFLICT, "test-scope-unavailable", "Per-test tables are not available yet",
-                "A conversion table for one test can be made once tests can be built. Use scope EXAM for the default of the exam.", List.of(), null);
+    /** The test of an override does not exist, or the caller cannot open it (it must be staff of the test's exam in the test's owner's context). */
+    static ErrorResponseException testNotFound() {
+        return of(HttpStatus.NOT_FOUND, "not-found", "Not found", "There is no such test, or you may not open it.", List.of(), null);
     }
 
     static ErrorResponseException exists(UUID tableId) {
         return of(HttpStatus.CONFLICT, "score-table-exists", "Score table exists",
-                "There is already a table for this exam and skill. Edit it (it gets a new version once published).", List.of(), tableId);
+                "There is already a table for this skill (of the exam, or of this test). Edit it (it gets a new version once published).", List.of(), tableId);
     }
 
     static ErrorResponseException notFound() {

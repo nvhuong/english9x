@@ -41,10 +41,25 @@ final class SkillProblems {
                 "There is already a grading skill for this question type. Edit it (it gets a new version once published).", List.of(), skillId);
     }
 
-    /** The dry run calls the AI grader of P4.2, which does not exist yet; nothing is sent anywhere meanwhile. */
+    /** The application runs without an AI grader (no {@code SkillDryRunner}); nothing is sent anywhere. */
     static ErrorResponseException dryRunUnavailable() {
-        return of(HttpStatus.NOT_IMPLEMENTED, "dry-run-unavailable", "Dry run not available yet",
-                "Running a skill on a sample answer needs the AI grader, which is not built yet. The skill is saved and reviewed as usual.", List.of(), null);
+        return of(HttpStatus.NOT_IMPLEMENTED, "dry-run-unavailable", "Dry run not available",
+                "Running a skill on a sample answer needs the AI grader, which this server does not have. The skill is saved and reviewed as usual.", List.of(), null);
+    }
+
+    /**
+     * The AI grader gave no usable answer. TRANSIENT (timeout, 429, 5xx): 503 ai-grader-unavailable, try later. SCHEMA: 502 dry-run-schema, the model's answer broke the
+     * result schema after every retry (the detail lists the reasons: check the schema and the prompt). PERMANENT: 502 ai-grader-refused (no key, a refused request).
+     */
+    static ErrorResponseException dryRunFailed(com.english9x.content.skill.api.SkillDryRunner.Failure.Kind kind, String reason) {
+        return switch (kind) {
+            case TRANSIENT -> of(HttpStatus.SERVICE_UNAVAILABLE, "ai-grader-unavailable", "AI grader unavailable",
+                    "The AI grader did not answer in time (" + reason + "). Try again in a moment.", List.of(), null);
+            case SCHEMA -> of(HttpStatus.BAD_GATEWAY, "dry-run-schema", "Answer does not match the result schema",
+                    "The model's answer did not match the result schema of the skill: " + reason, List.of(), null);
+            case PERMANENT -> of(HttpStatus.BAD_GATEWAY, "ai-grader-refused", "AI grader refused",
+                    "The AI grader could not run this skill: " + reason, List.of(), null);
+        };
     }
 
     static ErrorResponseException notFound() {
