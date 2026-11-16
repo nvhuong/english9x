@@ -72,8 +72,31 @@ $R up -d --wait postgres                                                        
 $R run --rm --no-deps -v "$PWD/restore:/restore:ro" --entrypoint /usr/local/bin/restore.sh backup /restore/pg-<stamp>.sql.gz
 $R up --build -d --wait                                                           # the app's Flyway validates what was restored and goes on from there
 ```
-This path was drilled from a fresh clone, on the real images. To keep the old project name, remove the old volume only after checking the new stack; that in-place step has not been drilled yet (W10).
-`restore.sh` takes one file, runs in one transaction and refuses a database that already has tables. `BackupRestoreIT` (in `mvn verify`, so in `verify.sh` and CI's `backend`) backs up, restores into a fresh volume and starts the application on it. The MinIO half is `infra/backup/mirror-media.sh` (tested against a real MinIO in `scripts/test-infra.sh`); restoring it is `mc mirror <backup>/minio <alias>/<bucket>` after `minio-init` has made the bucket, and has no full drill yet: owner W10, see the plan.
+This path (new project, new volumes) was drilled from a fresh clone, on the real images. The dump has a checksum beside it (`pg-<stamp>.sql.gz.sha256`) and the service `backup` is healthy only while the newest dump is younger than `E9X_BACKUP_MAX_AGE_MIN` (1560 min = 26h) and matches it (`infra/backup/healthcheck.sh`; `docker compose ps` shows it).
+`restore.sh` takes one file, runs in one transaction and refuses a database that already has tables. `BackupRestoreIT` (in `mvn verify`, so in `verify.sh` and CI's `backend`) backs up, restores into a fresh volume and starts the application on it.
+
+### Media (MinIO)
+The mirror in the `backups` volume (`minio/`, `infra/backup/mirror-media.sh`, tested against a real MinIO in `scripts/test-infra.sh`) is restored through the S3 API, never by copying files into MinIO's data directory: `infra/backup/restore-media.sh [<mirror dir>]` makes the bucket if needed (`mc mb --ignore-existing`), refuses one that already holds objects (`E9X_RESTORE_MEDIA_FORCE=1` overrides), runs `mc mirror --overwrite` and checks the object count. Run it after `minio-init` (which makes the application's key and the bucket policy):
+```bash
+$R run --rm --no-deps -v "$PWD/restore:/restore:ro" --entrypoint /usr/local/bin/restore-media.sh backup /restore/minio
+```
+(`restore/minio` is the `minio/` directory copied out with the dump, as above; with the volume itself mounted it is `restore-media.sh` without an argument.)
+
+### Restore drill, in place (staging VPS only)
+Removing the old `english9x_pgdata` volume and restoring under the same project name is a script: `infra/backup/drill-restore-inplace.sh`. It makes a fresh backup and copies the `backups` volume to `./restore-drill/`, fingerprints the database (exact row count of every table) and the bucket (object keys and size), stops the stack, removes **only** `english9x_pgdata` and `english9x_miniodata` (never `down -v`: the `backups` volume stays), starts an empty postgres and MinIO, runs `restore.sh` and `restore-media.sh`, starts the whole stack (`up --build -d --wait`, so Flyway validates what was restored) and diffs the fingerprints; exit 0 only when they are equal.
+```bash
+E9X_DRILL_DRY_RUN=1 E9X_DRILL_CONFIRM=delete-english9x-volumes infra/backup/drill-restore-inplace.sh   # prints the steps, runs nothing
+E9X_DRILL_CONFIRM=delete-english9x-volumes infra/backup/drill-restore-inplace.sh                          # STAGING ONLY: deletes the data volumes
+```
+Status: written, its refusal and dry run are tested without Docker (`scripts/test-infra.sh --no-docker`); **not yet run against a real stack**. A person runs it once on the staging VPS before the first release and keeps the output.
+
+## Load test (k6)
+`infra/k6/exam-50.js`: 50 learners at once log in (`/api/auth/login`), start an attempt on a published test version, save answers (`PUT .../responses/{questionId}`), finish a section and submit, over the real API. Thresholds: `http_req_failed` under 1%, p95 of the save endpoint under 800 ms (the script exits non-zero when one is crossed). It needs 50 existing learner accounts with an entitlement to the test (`load1@example.com` ... `load50@example.com`, one password) and a stack where the login rate limit does not stop 50 sign-ins from one address (run it from the staging network, or against the e2e stack).
+```bash
+k6 run -e BASE_URL=https://staging.example.com -e TEST_VERSION_ID=<published test version id> \
+       -e USER_EMAIL_PATTERN='load{n}@example.com' -e USER_PASSWORD=<password> infra/k6/exam-50.js
+```
+Optional: `-e USERS=50`, `-e SAVES_PER_SECTION=10`, `-e INSECURE_TLS=1` (an internal certificate). Not yet run: it needs a stack and k6 (W10 operations list).
 
 ## Threat model: what `e9x_app` can do
 Row-Level Security and the definer functions protect against a wrong query and a missing check, not against an attacker who can run arbitrary statements as the request role. By design, one compromised statement as `e9x_app` can still read bcrypt hashes (`auth_login_lookup`), issue a reset and mint a refresh token (the other `auth_*` functions, which the pre-authentication flows need), set the `app.*` session settings that RLS reads, and write rows to `event_publication` and `jobs`. So the real boundary of the model is **parameterised SQL**: no statement is ever built from input. The tenant boundary inside that is what the leak sweep (`RlsLeakSweepIT`) tests. Secrets in the app's environment (Flyway's password, `E9X_JWT_SECRET`) are out of RLS's reach too; moving Flyway out of the app process is carried in the plan (P6.5).
