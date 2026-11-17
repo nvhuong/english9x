@@ -15,7 +15,7 @@ class ExamAttemptIT extends ExamIT {
     private Begun begin() {
         Room room = room();
         UUID u = learner(room);
-        Instant t0 = Instant.now();
+        Instant t0 = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         clock.set(t0);
         Res r = startOk(room, u);
         return new Begun(room, u, attemptId(r), r, t0);

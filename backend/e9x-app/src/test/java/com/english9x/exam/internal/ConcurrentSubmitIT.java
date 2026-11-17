@@ -25,7 +25,7 @@ class ConcurrentSubmitIT extends ExamIT {
         try {
             for (int round = 0; round < 12; round++) {
                 UUID learner = learner(room);
-                Instant t0 = Instant.now();
+                Instant t0 = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
                 clock.set(t0);
                 UUID attempt = attemptId(startOk(room, learner));
                 Job job = jobOf(attempt);
@@ -65,7 +65,7 @@ class ConcurrentSubmitIT extends ExamIT {
     void jobBeforeTheDeadlineLeavesTheAttemptAlone() {
         Room room = room();
         UUID learner = learner(room);
-        Instant t0 = Instant.now();
+        Instant t0 = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         clock.set(t0);
         UUID attempt = attemptId(startOk(room, learner));
         clock.set(t0.plusSeconds(1799));
@@ -77,7 +77,7 @@ class ConcurrentSubmitIT extends ExamIT {
     void jobSubmitsAMemberWhoLeftTheOrganisation() {
         Room room = room();
         UUID learner = learner(room);
-        Instant t0 = Instant.now();
+        Instant t0 = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         clock.set(t0);
         UUID attempt = attemptId(startOk(room, learner));
         Job job = jobOf(attempt);
