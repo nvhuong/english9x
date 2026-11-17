@@ -53,6 +53,8 @@ test.describe('F41 entitlement access', () => {
     const s = await staffed(['TOEIC'], 'f41', { request, uniqueEmail, apiLogin: org.apiLogin });
     const mark = s.author.userId.slice(0, 6);
     const testVersionId = await publishedToeicTestVersion(s, `F41 exam ${mark}`);
+    // a test the learner has no attempt under way in: opening the test of an attempt under way only resumes that attempt (by design)
+    const newTestVersionId = await publishedToeicTestVersion(s, `F41 new exam ${mark}`);
     const course = await publishedCourse(s, 'FREE', {
       l1: await publishedLesson(s, 'TOEIC', `F41 lesson ${mark}`),
       test: await publishedToeicTestVersion(s, `F41 chapter test ${mark}`),
@@ -99,9 +101,9 @@ test.describe('F41 entitlement access', () => {
     await page.goto(`/learn/courses/${course.courseId}`);
     await expect(page.getByText('Bạn cần có gói học cho khoá này.')).toBeVisible();
     // a new exam is refused on the screen and by the server
-    await page.goto(`/exam/start/${testVersionId}`);
+    await page.goto(`/exam/start/${newTestVersionId}`);
     await expect(page.getByText('Bạn chưa có quyền làm đề này')).toBeVisible();
-    const refused = await api(token, 'POST', '/api/exam/attempts', { body: { testVersionId } });
+    const refused = await api(token, 'POST', '/api/exam/attempts', { body: { testVersionId: newTestVersionId } });
     expect(refused.status, refused.text).toBe(403);
 
     // the attempt that was under way when the plan ended is still finished in the exam room (first, while its section still has time) and then scored

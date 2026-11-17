@@ -175,7 +175,7 @@ test.describe('F01 register and verify', () => {
       const out: string[] = [];
       for (const m of found.messages) {
         const full = await json<{ Text: string }>(`${env.mailpitURL}/api/v1/message/${m.ID}`);
-        out.push(/https:\/\/localhost\/verify-email\?token=[\w-]+/.exec(full.Text)![0]);
+        out.push(new RegExp(`${env.baseURL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/verify-email\\?token=[\\w-]+`).exec(full.Text)![0]);
       }
       return out;
     };
