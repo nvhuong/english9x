@@ -94,6 +94,14 @@ describe('notification pages against the API', () => {
     expect(await screen.findByRole('link', { name: 'Thông báo, 3 chưa đọc' })).toHaveAttribute('href', '/notifications');
   });
 
+  it('the bell is named by its own content, not by an aria-label that the visible count would have to match (axe label-content-name-mismatch)', async () => {
+    stubApi({ 'GET /api/me/notifications/unread-count': () => json(200, { count: 3 }) });
+    renderAt('/', '/', <NotificationBell />);
+    const link = await screen.findByRole('link', { name: 'Thông báo, 3 chưa đọc' });
+    expect(link).not.toHaveAttribute('aria-label');
+    expect(link).toHaveTextContent('Thông báo, 3 chưa đọc');
+  });
+
   it('a signed-out visitor sees no bell and the page asks to sign in without calling the API', () => {
     useAuthStore.setState({ accessToken: null, status: 'anonymous', user: null });
     const calls = stubApi({});

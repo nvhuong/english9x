@@ -29,4 +29,13 @@ describe('Select', () => {
     expect(screen.getByRole('combobox')).toBeInvalid();
     expect(screen.getByRole('alert')).toHaveTextContent('Hãy chọn một kỳ thi');
   });
+
+  it('bounds the list to the room the screen has, so a long list scrolls instead of running out of the window', async () => {
+    const user = userEvent.setup();
+    render(<Select label="Kỳ thi" options={options} />);
+    screen.getByRole('combobox', { name: 'Kỳ thi' }).focus();
+    await user.keyboard('{ArrowDown}');
+    const viewport = (await screen.findByRole('listbox')).querySelector('[data-radix-select-viewport]');
+    expect(viewport?.getAttribute('class')).toContain('--radix-select-content-available-height');
+  });
 });
