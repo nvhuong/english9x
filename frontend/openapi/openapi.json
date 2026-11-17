@@ -2288,13 +2288,50 @@
       "GradingSkillDryRunRequest" : {
         "properties" : {
           "mediaId" : {
-            "description" : "or as a recording (Speaking): a file of the exam",
+            "description" : "or as a recording (Speaking): an AUDIO file of the exam",
             "format" : "uuid",
             "type" : "string"
           },
           "response" : {
             "description" : "the answer as text (Writing)",
             "type" : "string"
+          },
+          "task" : {
+            "description" : "the question the answer replies to (the essay prompt, the speaking topic); a generic one when empty",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "GradingSkillDryRunResult" : {
+        "properties" : {
+          "band" : {
+            "description" : "the mean of the criterion scores, rounded to the nearest half",
+            "format" : "double",
+            "type" : "number"
+          },
+          "inputTokens" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "model" : {
+            "type" : "string"
+          },
+          "outputTokens" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "result" : {
+            "description" : "the model's JSON answer; it matched the skill's result schema"
+          },
+          "versionId" : {
+            "description" : "the version of the skill that ran (the latest)",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
           }
         },
         "type" : "object"
@@ -4902,6 +4939,57 @@
         },
         "type" : "object"
       },
+      "ScoreTableOverride" : {
+        "properties" : {
+          "examCode" : {
+            "type" : "string"
+          },
+          "ownerOrgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "skill" : {
+            "type" : "string"
+          },
+          "status" : {
+            "enum" : [ "DRAFT", "IN_REVIEW", "CHANGES_REQUESTED", "PUBLISHED", "ARCHIVED" ],
+            "type" : "string"
+          },
+          "tableId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "testId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionId" : {
+            "description" : "the latest version; null until an author wrote the first one",
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "versionNo" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ScoreTableOverrideRequest" : {
+        "properties" : {
+          "skill" : {
+            "description" : "a score of the test's exam that a table converts (not one a function computes)",
+            "example" : "LISTENING",
+            "type" : "string"
+          },
+          "testId" : {
+            "description" : "the TEST (not a test version)",
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "ScoreTablePage" : {
         "properties" : {
           "items" : {
@@ -4940,7 +5028,7 @@
             "type" : "array"
           },
           "scope" : {
-            "description" : "EXAM, the default of the exam. TEST (the override of one test) answers 409 until tests can be built (P2.6)",
+            "description" : "EXAM, the default of the exam, or TEST, the override of one test (attached first with POST /overrides; it is then edited here). Never changes",
             "example" : "EXAM",
             "type" : "string"
           },
@@ -4950,7 +5038,7 @@
             "type" : "string"
           },
           "testId" : {
-            "description" : "the TEST (not a test version) of an override; only with scope TEST",
+            "description" : "the TEST (not a test version) of an override; only with scope TEST, and only its own",
             "format" : "uuid",
             "type" : "string"
           }
@@ -7604,7 +7692,7 @@
     },
     "/api/cms/grading-skills/{id}/dry-run" : {
       "post" : {
-        "description" : "501 dry-run-unavailable until the AI grader (P4.2) is built; nothing is sent to any service meanwhile.",
+        "description" : "200 with the model's answer, validated against the result schema (no score, no evaluation, no limit counted). 422 when neither or both of response and mediaId are given, or mediaId is not an AUDIO file of the exam. 502 dry-run-schema when the answer broke the schema after every retry, 502 ai-grader-refused when the AI grader cannot run it (no key, a refused request), 503 ai-grader-unavailable when it did not answer in time. 501 dry-run-unavailable when the server has no AI grader.",
         "operationId" : "dryRun",
         "parameters" : [ {
           "in" : "path",
@@ -7627,6 +7715,13 @@
         },
         "responses" : {
           "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingSkillDryRunResult"
+                }
+              }
+            },
             "description" : "OK"
           },
           "default" : {
@@ -7640,7 +7735,7 @@
             "description" : "Error (RFC 7807 problem details)"
           }
         },
-        "summary" : "Run the skill on a sample answer, saving no score (needs the AI grader: 501 until it exists)",
+        "summary" : "Run the latest version of the skill on a sample answer with the AI grader, saving nothing",
         "tags" : [ "skill-controller" ]
       }
     },
@@ -8967,7 +9062,7 @@
         "tags" : [ "score-table-controller" ]
       },
       "post" : {
-        "description" : "422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). 409 test-scope-unavailable for scope TEST; 409 score-table-exists (with tableId) when the exam skill already has a table.",
+        "description" : "422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). Scope TEST is 422 (field scope): an override is attached with POST /overrides. 409 score-table-exists (with tableId) when the exam skill already has a table.",
         "operationId" : "create_6",
         "requestBody" : {
           "content" : {
@@ -9002,6 +9097,85 @@
           }
         },
         "summary" : "Create the conversion table of an exam skill (version 1, a draft)",
+        "tags" : [ "score-table-controller" ]
+      }
+    },
+    "/api/cms/score-tables/overrides" : {
+      "get" : {
+        "operationId" : "overrides",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "testId",
+          "required" : false,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScoreTableOverride"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "The overrides of a test, by skill, each with its latest version (none until an author wrote one)",
+        "tags" : [ "score-table-controller" ]
+      },
+      "post" : {
+        "description" : "For the administrator of the test's owner (SYS_ADMIN for an English9x test, ORG_ADMIN of the organisation for its own), who can open the test. 404 when the test is not one the caller can open; 422 when the skill is not a table score of the exam (or the Reading of the other variant); 409 score-table-exists (with tableId) when the test has an override for the skill.",
+        "operationId" : "attach",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScoreTableOverrideRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScoreTableOverride"
+                }
+              }
+            },
+            "description" : "OK"
+          },
+          "default" : {
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description" : "Error (RFC 7807 problem details)"
+          }
+        },
+        "summary" : "Attach the override of one skill to a test (the header only; an author then writes version 1 with PUT /{tableId})",
         "tags" : [ "score-table-controller" ]
       }
     },
@@ -9051,6 +9225,7 @@
         "tags" : [ "score-table-controller" ]
       },
       "put" : {
+        "description" : "The scope is named and never changes. An override the administrator attached and nobody wrote yet gets its version 1 here (201).",
         "operationId" : "update_1",
         "parameters" : [ {
           "in" : "path",
