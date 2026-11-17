@@ -118,8 +118,17 @@ class ReviewEventsIT extends NotificationIT {
         // the English9x context: only English9x reviewers of the exam
         UUID g = review(null, "IELTS", "IN_REVIEW");
         publish(requested(null, "IELTS", g));
-        awaitCount("REVIEW_REQUESTED", g.toString(), 1);
-        assertEquals(Set.of(reviewerGlobal), notified("REVIEW_REQUESTED", g.toString()));
+        // the database is shared with the other ITs, which leave English9x IELTS reviewers of their own behind: wait for ours, then check that EVERYONE told is an
+        // English9x reviewer of IELTS (never an organisation's reviewer, the author, the submitter or an admin) and that each was told once
+        Awaitility.await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> assertTrue(notified("REVIEW_REQUESTED", g.toString()).contains(reviewerGlobal)));
+        awaitListenersCompleted(g);
+        Set<UUID> told = notified("REVIEW_REQUESTED", g.toString());
+        Set<UUID> englishReviewers = su.queryForList("select user_id::text from role_grants where org_id is null and role = 'REVIEWER' and exam_code = 'IELTS'", String.class)
+                .stream().map(UUID::fromString).collect(Collectors.toSet());
+        assertTrue(englishReviewers.containsAll(told), "only English9x reviewers of IELTS are told: " + told);
+        assertTrue(told.stream().noneMatch(u -> Set.of(reviewerA1, reviewerA2, reviewerToeic, reviewerB, author, submitter, adminA).contains(u)), told.toString());
+        assertEquals(told.size(), su.queryForObject("select count(*) from notifications where event_type = 'REVIEW_REQUESTED' and data ->> 'reviewId' = ?", Integer.class, g.toString()),
+                "one notification per person");
         // the mail reached the English-speaking reviewer in English
         assertTrue(TestAuth.SMTP.await(emailOf(reviewerA2)).subject().startsWith("Content is waiting"));
     }
