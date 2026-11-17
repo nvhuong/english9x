@@ -73,6 +73,11 @@ class ExamService {
     private final JobQueue queue;
     private final ApplicationEventPublisher events;
     private final Clock clock;
+
+    /** The clock's instant at the precision the database keeps (microseconds): what a first answer says is what every later read of it says too (idempotent submit). */
+    private Instant now() {
+        return clock.instant().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+    }
     private final ExamProperties props;
     private final ObjectMapper json;
     private final TransactionTemplate tx;
@@ -119,7 +124,7 @@ class ExamService {
     }
 
     private Started startOnce(UUID user, UUID testVersionId) {
-        Instant now = clock.instant();
+        Instant now = now();
         Optional<UUID> existing = repo.inProgress(user, testVersionId);
         if (existing.isPresent()) {
             Loaded l = repo.load(existing.get(), user).orElseThrow(ExamProblems::notFound);
@@ -173,7 +178,7 @@ class ExamService {
 
     AttemptView view(UUID attemptId, UUID user) {
         AttemptView v = readTx.execute(st -> {
-            Instant now = clock.instant();
+            Instant now = now();
             Loaded l = repo.load(attemptId, user).orElseThrow(ExamProblems::notFound);
             return build(l, now);
         });
@@ -221,7 +226,7 @@ class ExamService {
         for (int i = 0; ; i++) {
             try {
                 return tx.execute(st -> {
-                    Instant now = clock.instant();
+                    Instant now = now();
                     Loaded l = repo.load(attemptId, user).orElseThrow(ExamProblems::notFound);
                     if (l.attempt().status() == AttemptStatus.SUBMITTED) {
                         return change.apply(l, now); // nothing to save: a submitted attempt never changes again
@@ -325,16 +330,38 @@ class ExamService {
             throw ExamProblems.tooLarge("The answer");
         }
         UUID user = me();
-        tx.executeWithoutResult(st -> {
-            Instant now = clock.instant();
-            Loaded l = repo.load(attemptId, user).orElseThrow(ExamProblems::notFound);
-            requireContinue(l);
-            String section = repo.sectionOfQuestion(attemptId, questionId).orElseThrow(ExamProblems::notFound);
-            if (!l.attempt().acceptsAnswer(section, body.answeredAt(), now, props.lateSyncGrace())) {
-                throw ExamProblems.rejected("exam-response-rejected", "The time of that section is over.");
+        for (int i = 0; ; i++) {
+            try {
+                tx.executeWithoutResult(st -> {
+                    Instant now = now();
+                    Loaded l = repo.load(attemptId, user).orElseThrow(ExamProblems::notFound);
+                    requireContinue(l);
+                    String section = repo.sectionOfQuestion(attemptId, questionId).orElseThrow(ExamProblems::notFound);
+                    int indexBefore = l.attempt().sectionIndex();
+                    AttemptStatus statusBefore = l.attempt().status();
+                    Instant deadlineBefore = l.attempt().deadline();
+                    boolean accepted = l.attempt().acceptsAnswer(section, body.answeredAt(), now, props.lateSyncGrace());
+                    if (!accepted) {
+                        throw ExamProblems.rejected("exam-response-rejected", "The time of that section is over.");
+                    }
+                    if (l.attempt().sectionIndex() != indexBefore || l.attempt().status() != statusBefore) {
+                        // The clock moved the attempt on (a section's time ran out, nobody pressed "finish"): write that move first. The database's window guard
+                        // judges an answer by the persisted start of its section, which is NULL until the move is written.
+                        repo.save(l);
+                        publish(l);
+                        if (l.attempt().status() == AttemptStatus.IN_PROGRESS && !l.attempt().deadline().equals(deadlineBefore)) {
+                            schedule(l.id(), l.userId(), l.orgId(), l.attempt().deadline());
+                        }
+                    }
+                    repo.upsertResponse(attemptId, questionId, user, body.answer(), body.answeredAt(), now);
+                });
+                return;
+            } catch (Conflict c) {
+                if (i + 1 >= TRIES) {
+                    throw ExamProblems.rejected("exam-busy", "The attempt was changed at the same time; try again.");
+                }
             }
-            repo.upsertResponse(attemptId, questionId, user, body.answer(), body.answeredAt(), now);
-        });
+        }
     }
 
     // ---- audio ------------------------------------------------------------------------------------------------------------------------
@@ -342,7 +369,7 @@ class ExamService {
     AudioLink audio(UUID attemptId, UUID mediaId) {
         UUID user = me();
         AudioLink link = tx.execute(st -> {
-            Instant now = clock.instant();
+            Instant now = now();
             Loaded l = repo.load(attemptId, user).orElseThrow(ExamProblems::notFound);
             requireContinue(l);
             Optional<SectionPlan> current = l.attempt().currentSection(now);
@@ -420,7 +447,7 @@ class ExamService {
             file.transferTo(tmp);
             Path upload = tmp;
             tx.executeWithoutResult(st -> {
-                Instant now = clock.instant();
+                Instant now = now();
                 Loaded l = repo.load(attemptId, user).orElseThrow(ExamProblems::notFound);
                 requireContinue(l);
                 String section = repo.sectionOfQuestion(attemptId, questionId).orElseThrow(ExamProblems::notFound);

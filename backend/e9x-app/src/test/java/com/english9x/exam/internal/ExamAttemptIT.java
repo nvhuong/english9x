@@ -144,6 +144,20 @@ class ExamAttemptIT extends ExamIT {
     }
 
     @Test
+    void anAnswerToTheNextSectionIsAcceptedWhenTheTimeOfTheFirstRanOutAndNobodyPressedFinish() {
+        Begun b = begin();
+        clock.set(b.t0().plusSeconds(610)); // P1 (600 s) is over: the room moved on by itself, nothing wrote that move yet
+        Res room = get("/api/exam/attempts/" + b.attempt(), b.learner(), b.room().staff().org());
+        assertEquals(200, room.status(), room.raw());
+        assertEquals("P5", room.body().path("currentSection").path("sectionId").asText());
+        UUID q = firstQuestion(room);
+        // the answer is written inside the window P5 has since its start (+600 s): the database's window guard reads that start, so it must be stored by now
+        assertEquals(204, save(b.room(), b.learner(), b.attempt(), q, "B", b.t0().plusSeconds(605)).status());
+        assertEquals("\"B\"", su.queryForObject("select answer::text from responses where attempt_id = ? and question_id = ?", String.class, b.attempt(), q));
+        assertEquals(b.t0().plusSeconds(600), su.queryForObject("select starts_at from attempt_sections where attempt_id = ? and section_code = 'P5'", java.sql.Timestamp.class, b.attempt()).toInstant());
+    }
+
+    @Test
     void finishingASectionMovesOnAndMovesTheDeadlineForward() {
         Begun b = begin();
         clock.set(b.t0().plusSeconds(100));
