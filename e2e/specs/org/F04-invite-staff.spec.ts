@@ -4,6 +4,7 @@
 // in the grants the server reports for that person (exactly AUTHOR for IELTS, nothing for TOEIC).
 import { test, expect } from '../../fixtures';
 import { agreeToGoogleConsent, chooseGoogleAccount } from '../../helpers/google';
+import { env } from '../../helpers/env';
 
 async function openStaffInvitations(page: import('@playwright/test').Page) {
   await page.getByRole('navigation', { name: 'Điều hướng chính' }).getByRole('link', { name: 'Quản trị' }).click();
@@ -30,7 +31,7 @@ test.describe('F04 invite internal staff', () => {
     // the mail: Vietnamese, from the configured public URL, one-time link, no secret but the link itself
     const mail = await mailpit.lastEmailTo(invitee.email, { subjectIncludes: 'Lời mời tham gia English9x' });
     const link = mailpit.linksIn(mail).find((l) => l.includes('/accept-invitation?token='))!;
-    expect(link.startsWith('https://localhost/accept-invitation?token=')).toBe(true);
+    expect(link.startsWith(`${env.baseURL}/accept-invitation?token=`)).toBe(true);
     expect(mail.Text).toContain('Biên soạn IELTS');
 
     // before accepting, the person has no such role

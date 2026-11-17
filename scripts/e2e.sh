@@ -10,13 +10,15 @@
 #   ./scripts/e2e.sh specs/_smoke.spec.ts             one file
 #   ./scripts/e2e.sh -g "language switch" --headed    any Playwright option
 #   ./scripts/e2e.sh --keep specs/common              leave the stack up afterwards for debugging
-#       (stack: https://localhost, Mailpit http://localhost:$E9X_MAILPIT_PORT; stop it with: ./scripts/e2e.sh --down)
+#       (stack: $E2E_BASE_URL, https://localhost by default, Mailpit http://localhost:$E9X_MAILPIT_PORT; stop it with: ./scripts/e2e.sh --down)
 #   --no-build   reuse the already built app image    --rmi   also remove the images this project built at the end
 #   --down       only tear the project down (after a --keep run)
 # Environment: E2E_WORKERS (default 2; the stack uses ~2-3 GB of RAM), E2E_VIDEO (on|off|retain-on-failure, default on),
 #   E9X_MAILPIT_PORT / E9X_FAKE_TELEGRAM_PORT / E9X_FAKE_GEMINI_PORT / E9X_FAKE_OIDC_PORT (default: first free port from
 #   8025 / 8081 / 8082 / 8083). E9X_JWT_SECRET and E9X_E2E_SEED_SECRET are generated per run unless you set them.
-# Needs host ports 80 and 443 free (Caddy). Touches only the Compose project "e9x-e2e"; never prunes anything.
+#   E9X_CADDY_HTTP_PORT / E9X_CADDY_HTTPS_PORT: host ports of Caddy (default 80 / 443). CI sets free ones (the runner already uses 80); when the HTTPS
+#   port is not 443 this script exports E9X_PUBLIC_BASE_URL=https://localhost:<port> (the app's public address) and E2E_BASE_URL (the same) for Playwright.
+# Needs the host ports of Caddy free (80 and 443 unless overridden). Touches only the Compose project "e9x-e2e"; never prunes anything.
 set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -79,9 +81,13 @@ port_free() { node -e '
 # A previous run of THIS project (e.g. after --keep) holds 80/443: remove it first, then check the ports.
 say "removing any leftover $PROJECT stack"
 "${COMPOSE[@]}" down -v --remove-orphans 2>&1 | tail -n 5
-for p in 80 443; do
-  port_free "$p" || die "host port $p is in use by something else; Caddy needs 80 and 443. Stop that process and retry."
+export E9X_CADDY_HTTP_PORT="${E9X_CADDY_HTTP_PORT:-80}"
+export E9X_CADDY_HTTPS_PORT="${E9X_CADDY_HTTPS_PORT:-443}"
+for p in "$E9X_CADDY_HTTP_PORT" "$E9X_CADDY_HTTPS_PORT"; do
+  port_free "$p" || die "host port $p is in use by something else; Caddy needs it (set E9X_CADDY_HTTP_PORT / E9X_CADDY_HTTPS_PORT to free ports, or stop that process) and retry."
 done
+if [ "$E9X_CADDY_HTTPS_PORT" = "443" ]; then BASE="https://localhost"; else BASE="https://localhost:$E9X_CADDY_HTTPS_PORT"; export E9X_PUBLIC_BASE_URL="$BASE"; fi
+export E2E_BASE_URL="${E2E_BASE_URL:-$BASE}"
 
 export E9X_MAILPIT_PORT="${E9X_MAILPIT_PORT:-$(free_port 8025)}"
 export E9X_FAKE_TELEGRAM_PORT="${E9X_FAKE_TELEGRAM_PORT:-$(free_port 8081)}"
@@ -91,7 +97,7 @@ export E9X_FAKE_OIDC_PORT="${E9X_FAKE_OIDC_PORT:-$(free_port 8083)}"
 while [ "$E9X_FAKE_OIDC_PORT" = "$E9X_FAKE_TELEGRAM_PORT" ] || [ "$E9X_FAKE_OIDC_PORT" = "$E9X_FAKE_GEMINI_PORT" ] || [ "$E9X_FAKE_OIDC_PORT" = "$E9X_MAILPIT_PORT" ]; do
   export E9X_FAKE_OIDC_PORT="$(free_port $((E9X_FAKE_OIDC_PORT + 1)))"
 done
-echo "ports: https 443, mailpit $E9X_MAILPIT_PORT, fake-telegram $E9X_FAKE_TELEGRAM_PORT, fake-gemini $E9X_FAKE_GEMINI_PORT, fake-oidc $E9X_FAKE_OIDC_PORT"
+echo "ports: caddy http $E9X_CADDY_HTTP_PORT https $E9X_CADDY_HTTPS_PORT (app $E2E_BASE_URL), mailpit $E9X_MAILPIT_PORT, fake-telegram $E9X_FAKE_TELEGRAM_PORT, fake-gemini $E9X_FAKE_GEMINI_PORT, fake-oidc $E9X_FAKE_OIDC_PORT"
 
 export E9X_E2E_SEED_SECRET="${E9X_E2E_SEED_SECRET:-$(openssl rand -hex 24)}"
 export E9X_E2E_TELEGRAM_WEBHOOK_SECRET="${E9X_E2E_TELEGRAM_WEBHOOK_SECRET:-$(openssl rand -hex 16)}"   # the specs play Telegram with it
@@ -103,7 +109,7 @@ STARTED=0
 finish() {
   local code=$?
   if [ "$KEEP" = "1" ] && [ "$STARTED" = "1" ]; then
-    say "stack left running (--keep). Mailpit http://localhost:$E9X_MAILPIT_PORT, app https://localhost. Tear down: ./scripts/e2e.sh --down"
+    say "stack left running (--keep). Mailpit http://localhost:$E9X_MAILPIT_PORT, app $E2E_BASE_URL. Tear down: ./scripts/e2e.sh --down"
   else
     teardown
   fi
@@ -120,13 +126,13 @@ up=(up -d --wait --wait-timeout 900)
 "${COMPOSE[@]}" ps
 echo "database volume created $(docker volume inspect "${PROJECT}_pgdata" --format '{{.CreatedAt}}' 2>/dev/null) (fresh for this run)"
 
-say "waiting for the app through Caddy (https://localhost)"
+say "waiting for the app through Caddy ($E2E_BASE_URL)"
 ok=0
 for _ in $(seq 1 60); do
-  if curl -ksf -o /dev/null https://localhost/api/platform/ping; then ok=1; break; fi
+  if curl -ksf -o /dev/null "$E2E_BASE_URL/api/platform/ping"; then ok=1; break; fi
   sleep 2
 done
-[ "$ok" = "1" ] || { echo "app did not answer on https://localhost/api/platform/ping" >&2; "${COMPOSE[@]}" logs --tail 80 app caddy 2>&1 | tail -n 120; exit 3; }
+[ "$ok" = "1" ] || { echo "app did not answer on $E2E_BASE_URL/api/platform/ping" >&2; "${COMPOSE[@]}" logs --tail 80 app caddy 2>&1 | tail -n 120; exit 3; }
 
 say "running Playwright"
 export E2E_WORKERS="${E2E_WORKERS:-2}"

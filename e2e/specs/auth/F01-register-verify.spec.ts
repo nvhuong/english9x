@@ -27,7 +27,7 @@ test.describe('F01 register and verify', () => {
 
     // the mail is in Vietnamese, from the configured public URL, and carries no password
     const mail = await mailpit.lastEmailTo(email, { subjectIncludes: 'Xác thực' });
-    expect(verifyLink.startsWith('https://localhost/verify-email?token=')).toBe(true);
+    expect(verifyLink.startsWith(`${env.baseURL}/verify-email?token=`)).toBe(true);
     expect(mail.Text).not.toContain(PASSWORD);
 
     // the account exists but is unverified: signing in works, the banner says what is missing

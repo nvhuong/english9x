@@ -1,6 +1,7 @@
 // F54 — Telegram (spec §16.2): "Liên kết bot bằng token → fake-telegram nhận tin đúng sự kiện; token dùng lại bị từ chối".
 // Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
+import { env } from '../../helpers/env';
 import { reviewWorld } from './_world';
 import { classroomWorld, ordersWorld, planWorld, runChannels, type Fx, type World } from './_events';
 
@@ -39,7 +40,7 @@ test.describe('F54 Telegram notifications', () => {
     const messages = await telegram.waitForMessages(chat, { count: 2, timeoutMs: 40_000 });
     expect(messages[1]!.text).toContain('<b>Có nội dung chờ duyệt</b>');
     expect(messages[1]!.text).toContain('Một nội dung (question) của kỳ thi IELTS đang chờ bạn duyệt.');
-    expect(messages[1]!.text).toContain('href="https://localhost/notifications"');
+    expect(messages[1]!.text).toContain(`href="${env.baseURL}/notifications"`);
 
     // the token is single-use: replayed from another chat it links nothing and answers like any bad token
     const intruder = telegram.uniqueChatId();
