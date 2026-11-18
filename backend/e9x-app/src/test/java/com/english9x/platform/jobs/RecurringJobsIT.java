@@ -2,6 +2,8 @@ package com.english9x.platform.jobs;
 
 import static com.english9x.platform.jobs.JobTestSupport.T0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.english9x.platform.jobs.api.RecurringJob;
@@ -108,7 +110,9 @@ class RecurringJobsIT {
         su.update("insert into jobs(id,type,payload,status,run_at) values (?, 'purge_finished_jobs', '{}', 'QUEUED', ?)", purge, Timestamp.from(real.plus(Duration.ofDays(30))));
         ctx.getBean(JobWorker.class).pollOnce();
         List<UUID> left = su.queryForList("select id from jobs", UUID.class);
-        assertEquals(java.util.Set.of(recent, queued, purge), new java.util.HashSet<>(left));
+        // the shared database holds jobs of other tests too: check this test's own rows, not the whole table
+        assertFalse(left.contains(old), "the old finished job is purged");
+        assertTrue(left.containsAll(List.of(recent, queued, purge)), "the recent, queued and purge jobs stay");
     }
 
     @Test

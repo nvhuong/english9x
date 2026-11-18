@@ -140,14 +140,16 @@ export async function publishedShortToeicTest(durations: { listening: number; re
  * A PUBLISHED IELTS test of `variant` with every kind the room must draw: Listening (audio, multiple choice, typed gaps, matching), Reading (passage,
  * True/False/Not Given, Yes/No/Not Given, short answer), Writing (task 1 and task 2) and Speaking (part 2, with a short preparation).
  */
-export async function publishedIeltsTest(opts: { variant: 'AC' | 'GT' }): Promise<SeededExam> {
+export async function publishedIeltsTest(opts: { variant: 'AC' | 'GT'; durationSec?: number }): Promise<SeededExam> {
+  // each section's clock; a spec whose screens are scanned long after the setup passes a longer one so the attempt is not submitted under it
+  const d = opts.durationSec ?? 600;
   const s = await staff(`ielts-${opts.variant.toLowerCase()}`);
   const title = `IELTS ${opts.variant} ${Math.random().toString(36).slice(2, 8)}`;
   const task1 = opts.variant === 'AC' ? 'IELTS_W_AC_TASK1' : 'IELTS_W_GT_TASK1';
   return publishTest(s, 'IELTS', opts.variant, title, [
-    { sectionCode: 'LISTENING', skill: 'LISTENING', durationSec: 600, groups: [{ audio: true, content: { title: 'Listening group' }, questions: [{ typeCode: 'IELTS_L_MULTIPLE_CHOICE' }, { typeCode: 'IELTS_L_SENTENCE_COMPLETION' }, { typeCode: 'IELTS_L_MATCHING' }, { typeCode: 'IELTS_L_SHORT_ANSWER' }] }] },
-    { sectionCode: 'READING', skill: 'READING', durationSec: 600, groups: [{ content: { title: 'Reading group', passage: 'The bridge was finished in 1932.\n\nThe writer disagrees with the plan.' }, questions: [{ typeCode: 'IELTS_R_IDENTIFYING_INFORMATION' }, { typeCode: 'IELTS_R_IDENTIFYING_WRITERS_VIEWS' }, { typeCode: 'IELTS_R_SHORT_ANSWER' }] }] },
-    { sectionCode: 'WRITING', skill: 'WRITING', durationSec: 600, groups: [{ content: { title: 'Writing tasks' }, questions: [{ typeCode: task1 }, { typeCode: 'IELTS_W_TASK2' }] }] },
-    { sectionCode: 'SPEAKING', skill: 'SPEAKING', durationSec: 600, groups: [{ content: { title: 'Speaking part 2' }, questions: [{ typeCode: 'IELTS_S_PART2', content: { prepareSeconds: 1, speakSeconds: 30 } }] }] },
+    { sectionCode: 'LISTENING', skill: 'LISTENING', durationSec: d, groups: [{ audio: true, content: { title: 'Listening group' }, questions: [{ typeCode: 'IELTS_L_MULTIPLE_CHOICE' }, { typeCode: 'IELTS_L_SENTENCE_COMPLETION' }, { typeCode: 'IELTS_L_MATCHING' }, { typeCode: 'IELTS_L_SHORT_ANSWER' }] }] },
+    { sectionCode: 'READING', skill: 'READING', durationSec: d, groups: [{ content: { title: 'Reading group', passage: 'The bridge was finished in 1932.\n\nThe writer disagrees with the plan.' }, questions: [{ typeCode: 'IELTS_R_IDENTIFYING_INFORMATION' }, { typeCode: 'IELTS_R_IDENTIFYING_WRITERS_VIEWS' }, { typeCode: 'IELTS_R_SHORT_ANSWER' }] }] },
+    { sectionCode: 'WRITING', skill: 'WRITING', durationSec: d, groups: [{ content: { title: 'Writing tasks' }, questions: [{ typeCode: task1 }, { typeCode: 'IELTS_W_TASK2' }] }] },
+    { sectionCode: 'SPEAKING', skill: 'SPEAKING', durationSec: d, groups: [{ content: { title: 'Speaking part 2' }, questions: [{ typeCode: 'IELTS_S_PART2', content: { prepareSeconds: 1, speakSeconds: 30 } }] }] },
   ]);
 }

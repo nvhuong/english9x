@@ -122,7 +122,7 @@ export const seed = {
     (await import('./exam')).publishedShortToeicTest(durations),
 
   /** A published IELTS test of the given variant (Listening with audio, Reading with a passage, Writing, Speaking), same path as above. */
-  publishedIeltsTest: async (opts: { variant: 'AC' | 'GT' }): Promise<SeededTest & import('./exam').SeededExam> => (await import('./exam')).publishedIeltsTest(opts),
+  publishedIeltsTest: async (opts: { variant: 'AC' | 'GT'; durationSec?: number }): Promise<SeededTest & import('./exam').SeededExam> => (await import('./exam')).publishedIeltsTest(opts),
 
   /**
    * An organisation, created as the table owner (no SYS_ADMIN session needed to set the scene). To test the real creation

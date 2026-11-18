@@ -212,7 +212,7 @@ test.describe('F15 score tables', () => {
     const writing = page.waitForResponse((r) => r.request().method() === 'PUT' && new URL(r.url()).pathname === `/api/cms/score-tables/${tableId}` && r.status() === 201);
     await page.getByRole('button', { name: 'Lưu bản nháp' }).click();
     await writing;
-    await expect(page).toHaveURL(new RegExp(`/cms/score-tables/${tableId}$`));
+    await expect(page).toHaveURL(new RegExp(`/cms/score-tables/${tableId}(\\?test=${testId})?$`));
     await expect(page.getByText('Bản nháp', { exact: true })).toBeVisible();
     const v1 = await latest(tableId);
     expect(v1).toMatchObject({ scope: 'TEST', testId, skill: 'LISTENING', versionNo: 1, status: 'DRAFT', rows: [{ raw: 0, scaled: 0 }, { raw: 1, scaled: 6.5 }] });
