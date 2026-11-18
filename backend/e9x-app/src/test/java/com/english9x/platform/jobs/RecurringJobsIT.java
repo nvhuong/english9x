@@ -113,6 +113,7 @@ class RecurringJobsIT {
             ctx.getBean(JobWorker.class).pollOnce();
             if ("SUCCEEDED".equals(su.queryForObject("select status from jobs where id = ?", String.class, purge))) break;
         }
+        assertEquals("SUCCEEDED", su.queryForObject("select status from jobs where id = ?", String.class, purge), "the purge job itself ran");
         List<UUID> left = su.queryForList("select id from jobs", UUID.class);
         // the shared database holds jobs of other tests too: check this test's own rows, not the whole table
         assertFalse(left.contains(old), "the old finished job is purged");
