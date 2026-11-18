@@ -79,11 +79,11 @@ async function publishTest(s: SeededExam['staff'], examCode: string, variant: st
       seededParts[pi]!.questions.push(...made.map((m) => m.sq));
     }
   }
-  const created = await api(s.author.token, 'POST', '/api/cms/tests', { org: s.orgId, body: { examCode, ...(variant ? { variant } : {}), ...(maxResumes !== undefined ? { maxResumes } : {}), title } });
+  const created = await api(s.author.token, 'POST', '/api/cms/tests', { org: s.orgId, body: { examCode, ...(variant ? { variant } : {}), title } });
   expect(created.status, created.text).toBe(201);
   const saved = await api(s.author.token, 'PUT', `/api/cms/tests/${created.body.testId}/structure`, {
     org: s.orgId,
-    body: { parts: parts.map((p, i) => ({ sectionCode: p.sectionCode, durationSec: p.durationSec, groups: groupIds[i] })) },
+    body: { parts: parts.map((p, i) => ({ sectionCode: p.sectionCode, durationSec: p.durationSec, groups: groupIds[i] })), ...(maxResumes !== undefined ? { maxResumes } : {}) },
   });
   expect(saved.status, saved.text).toBe(200);
   await seed.reviewVersion({ type: 'test', versionId: saved.body.versionId, authorId: s.author.userId, reviewerId: s.reviewer.userId, orgId: s.orgId, outcome: 'approved' });

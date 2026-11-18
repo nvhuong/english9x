@@ -108,7 +108,11 @@ class RecurringJobsIT {
         su.update("delete from jobs where id not in (?,?,?,?)", old, oldFailed, recent, queued);
         UUID purge = UUID.randomUUID();
         su.update("insert into jobs(id,type,payload,status,run_at) values (?, 'purge_finished_jobs', '{}', 'QUEUED', ?)", purge, Timestamp.from(real.plus(Duration.ofDays(30))));
-        ctx.getBean(JobWorker.class).pollOnce();
+        // the worker of the context may take another due job first (jobs of the app itself are due in the shared database): poll until this purge has run
+        for (int i = 0; i < 50; i++) {
+            ctx.getBean(JobWorker.class).pollOnce();
+            if ("SUCCEEDED".equals(su.queryForObject("select status from jobs where id = ?", String.class, purge))) break;
+        }
         List<UUID> left = su.queryForList("select id from jobs", UUID.class);
         // the shared database holds jobs of other tests too: check this test's own rows, not the whole table
         assertFalse(left.contains(old), "the old finished job is purged");
