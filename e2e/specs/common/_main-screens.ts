@@ -89,7 +89,7 @@ export async function buildMainScreensWorld(request: APIRequestContext): Promise
   expect(placed.status, placed.text).toBe(201);
 
   // 04, 05: IELTS attempts, started last so that no section timer runs out during the minutes above
-  const ielts = await seed.publishedIeltsTest({ variant: 'AC', durationSec: 3600 });
+  const ielts = await seed.publishedIeltsTest({ variant: 'AC', durationSec: 3600, maxResumes: 10 });
   const sit = async (finish: string[]) => {
     const who = await seed.learnerWithPlan({ courses: 1 });
     const t = (await apiLogin(who)).token;

@@ -42,7 +42,7 @@ async function inBatches<T, R>(items: T[], size: number, fn: (x: T) => Promise<R
 }
 
 /** Builds, reviews and publishes a test of `examCode` through the REAL CMS and review (the same path as F33), with the answer key it returns. */
-async function publishTest(s: SeededExam['staff'], examCode: string, variant: string | undefined, title: string, parts: PSpec[]): Promise<SeededExam> {
+async function publishTest(s: SeededExam['staff'], examCode: string, variant: string | undefined, title: string, parts: PSpec[], maxResumes?: number): Promise<SeededExam> {
   let counter = 0;
   const seededParts: SeededPart[] = parts.map((p) => ({ sectionCode: p.sectionCode, skill: p.skill, questions: [] }));
   const groupIds: string[][] = parts.map(() => []);
@@ -79,7 +79,7 @@ async function publishTest(s: SeededExam['staff'], examCode: string, variant: st
       seededParts[pi]!.questions.push(...made.map((m) => m.sq));
     }
   }
-  const created = await api(s.author.token, 'POST', '/api/cms/tests', { org: s.orgId, body: { examCode, ...(variant ? { variant } : {}), title } });
+  const created = await api(s.author.token, 'POST', '/api/cms/tests', { org: s.orgId, body: { examCode, ...(variant ? { variant } : {}), ...(maxResumes !== undefined ? { maxResumes } : {}), title } });
   expect(created.status, created.text).toBe(201);
   const saved = await api(s.author.token, 'PUT', `/api/cms/tests/${created.body.testId}/structure`, {
     org: s.orgId,
@@ -140,7 +140,7 @@ export async function publishedShortToeicTest(durations: { listening: number; re
  * A PUBLISHED IELTS test of `variant` with every kind the room must draw: Listening (audio, multiple choice, typed gaps, matching), Reading (passage,
  * True/False/Not Given, Yes/No/Not Given, short answer), Writing (task 1 and task 2) and Speaking (part 2, with a short preparation).
  */
-export async function publishedIeltsTest(opts: { variant: 'AC' | 'GT'; durationSec?: number }): Promise<SeededExam> {
+export async function publishedIeltsTest(opts: { variant: 'AC' | 'GT'; durationSec?: number; maxResumes?: number }): Promise<SeededExam> {
   // each section's clock; a spec whose screens are scanned long after the setup passes a longer one so the attempt is not submitted under it
   const d = opts.durationSec ?? 600;
   const s = await staff(`ielts-${opts.variant.toLowerCase()}`);
@@ -151,5 +151,5 @@ export async function publishedIeltsTest(opts: { variant: 'AC' | 'GT'; durationS
     { sectionCode: 'READING', skill: 'READING', durationSec: d, groups: [{ content: { title: 'Reading group', passage: 'The bridge was finished in 1932.\n\nThe writer disagrees with the plan.' }, questions: [{ typeCode: 'IELTS_R_IDENTIFYING_INFORMATION' }, { typeCode: 'IELTS_R_IDENTIFYING_WRITERS_VIEWS' }, { typeCode: 'IELTS_R_SHORT_ANSWER' }] }] },
     { sectionCode: 'WRITING', skill: 'WRITING', durationSec: d, groups: [{ content: { title: 'Writing tasks' }, questions: [{ typeCode: task1 }, { typeCode: 'IELTS_W_TASK2' }] }] },
     { sectionCode: 'SPEAKING', skill: 'SPEAKING', durationSec: d, groups: [{ content: { title: 'Speaking part 2' }, questions: [{ typeCode: 'IELTS_S_PART2', content: { prepareSeconds: 1, speakSeconds: 30 } }] }] },
-  ]);
+  ], opts.maxResumes);
 }
