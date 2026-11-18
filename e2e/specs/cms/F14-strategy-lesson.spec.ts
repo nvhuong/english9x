@@ -245,8 +245,8 @@ test.describe('F14 strategy lesson', () => {
     const image = article.getByRole('img', { name: 'A one pixel diagram' });
     await expect(image).toBeVisible();
     await expect.poll(() => image.evaluate((el) => (el as HTMLImageElement).naturalWidth), 'the image loads from its signed link').toBeGreaterThan(0);
-    await expect(article.locator('audio[aria-label="The recording"]')).toHaveAttribute('src', /\/api\/media\//);
-    await expect(article.locator('video[aria-label="The clip"]')).toHaveAttribute('src', /\/api\/media\//);
+    await expect(article.locator('audio[aria-label="The recording"]')).toHaveAttribute('src', /\/e9x-media\/.+X-Amz-Signature=/);
+    await expect(article.locator('video[aria-label="The clip"]')).toHaveAttribute('src', /\/e9x-media\/.+X-Amz-Signature=/);
     const frame = article.locator('iframe[title="Video: The method video"]');
     await expect(frame, 'the frame is rebuilt on the provider\'s own embed address').toHaveAttribute('src', 'https://www.youtube.com/embed/dQw4w9WgXcQ');
     await expect(article.getByRole('complementary', { name: 'Mẹo' })).toContainText(texts.tip);

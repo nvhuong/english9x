@@ -49,7 +49,7 @@ export function Select({ label, options, placeholder, error, className, ...rest 
         </RadixSelect.Trigger>
         <RadixSelect.Portal>
           <RadixSelect.Content position="popper" sideOffset={4} className="z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-edge bg-surface text-ink shadow-card">
-            <RadixSelect.Viewport className="p-1">
+            <RadixSelect.Viewport className="max-h-[min(24rem,var(--radix-select-content-available-height))] p-1">
               {options.map((o) => (
                 <RadixSelect.Item
                   key={o.value}

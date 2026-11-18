@@ -578,6 +578,10 @@ public final class SweepFixtures {
         all.put("POST /api/cms/score-tables", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
         all.put("PUT /api/cms/score-tables/{id}", new ForeignIdSweep.Fixture(table, List.of(), null, englishNine));
         all.put("POST /api/cms/score-tables/{id}/submit", new ForeignIdSweep.Fixture(null, List.of(), null, englishNine));
+        // T6: the override of a test is attached by the administrator of the test's owner; the test id travels in the body, there is no path id to walk. A's ORG_ADMIN
+        // needs a test of A's with no override yet for a 2xx, which would be spent on the first call: ScoreTableServiceIT measures the attach, the 404 for a test the caller cannot open and the 409.
+        String overrideExempt = "the test id is in the body, not the path (nothing foreign to substitute); the attach is for the administrator of the test's owner and is spent once per test and skill; ScoreTableServiceIT measures the 201, the 404 for a test the caller cannot open and the 409";
+        all.put("POST /api/cms/score-tables/overrides", new ForeignIdSweep.Fixture("{\"testId\":\"" + java.util.UUID.randomUUID() + "\",\"skill\":\"LISTENING\"}", List.of(), null, overrideExempt));
         // P6.5 (F50): centre grading configuration. A's ORG_ADMIN (the sweep's caller) sets A's own organisation's; a foreign organisation id is refused.
         String gradingBody = "{\"grader\":\"ENGLISH9X\",\"mode\":\"AI\"}";
         all.put("PUT /api/orgs/{id}/grading-settings", ForeignIdSweep.Fixture.write(gradingBody, List.of(), ForeignIdSweep.Control.of(slot("id", orgA), gradingBody)));

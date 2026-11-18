@@ -32,7 +32,7 @@ class EntitlementGateIT extends BillingIT {
     void expiredDeniesNewLessonButAllowsHistory() {
         UUID u = user("exp");
         UUID c = course("PUBLISHED");
-        Instant now = Instant.now();
+        Instant now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         entitle(u, c, now.minus(Duration.ofDays(60)), now.minus(Duration.ofDays(1)));
         assertFalse(as(u, () -> gate.activeFor(u, c, now)), "no new lesson");
         assertTrue(as(u, () -> gate.activeFor(u, c, now.minus(Duration.ofDays(10)))), "it was active then");
@@ -46,7 +46,7 @@ class EntitlementGateIT extends BillingIT {
     void attemptInProgressSurvivesExpiry() {
         UUID u = user("mid");
         UUID c = course("PUBLISHED");
-        Instant now = Instant.now();
+        Instant now = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         entitle(u, c, now.minus(Duration.ofDays(30)), now.minus(Duration.ofMinutes(5)));
         Instant startedBefore = now.minus(Duration.ofMinutes(50));
         assertTrue(as(u, () -> gate.canContinueAttempt(u, c, startedBefore)), "finishes the attempt it began while entitled");
@@ -59,7 +59,7 @@ class EntitlementGateIT extends BillingIT {
         UUID u = user("b");
         UUID other = user("o");
         UUID c = course("PUBLISHED");
-        Instant from = Instant.now().minus(Duration.ofDays(1));
+        Instant from = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS).minus(Duration.ofDays(1));
         Instant until = from.plus(Duration.ofDays(30));
         entitle(u, c, from, until);
         assertTrue(as(u, () -> gate.activeFor(u, c, from)), "valid from is inclusive");

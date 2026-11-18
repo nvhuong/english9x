@@ -138,6 +138,10 @@ jobs:
       - run: pnpm -C e2e install --frozen-lockfile
       - run: pnpm -C e2e exec playwright install --with-deps chromium
       - run: ./scripts/e2e.sh
+        env:
+          # the GitHub runner already listens on 80: Caddy takes other host ports (the app's public address and Playwright's base URL follow)
+          E9X_CADDY_HTTP_PORT: "18080"
+          E9X_CADDY_HTTPS_PORT: "18443"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

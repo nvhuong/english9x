@@ -735,8 +735,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Run the skill on a sample answer, saving no score (needs the AI grader: 501 until it exists)
-         * @description 501 dry-run-unavailable until the AI grader (P4.2) is built; nothing is sent to any service meanwhile.
+         * Run the latest version of the skill on a sample answer with the AI grader, saving nothing
+         * @description 200 with the model's answer, validated against the result schema (no score, no evaluation, no limit counted). 422 when neither or both of response and mediaId are given, or mediaId is not an AUDIO file of the exam. 502 dry-run-schema when the answer broke the schema after every retry, 502 ai-grader-refused when the AI grader cannot run it (no key, a refused request), 503 ai-grader-unavailable when it did not answer in time. 501 dry-run-unavailable when the server has no AI grader.
          */
         post: operations["dryRun"];
         delete?: never;
@@ -1191,9 +1191,30 @@ export interface paths {
         put?: never;
         /**
          * Create the conversion table of an exam skill (version 1, a draft)
-         * @description 422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). 409 test-scope-unavailable for scope TEST; 409 score-table-exists (with tableId) when the exam skill already has a table.
+         * @description 422 with errors[] (JSON paths such as rows[3].raw) when the skill is not one of the exam's or the rows are not a valid table (raw contiguous from 0). Scope TEST is 422 (field scope): an override is attached with POST /overrides. 409 score-table-exists (with tableId) when the exam skill already has a table.
          */
         post: operations["create_6"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/cms/score-tables/overrides": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The overrides of a test, by skill, each with its latest version (none until an author wrote one) */
+        get: operations["overrides"];
+        put?: never;
+        /**
+         * Attach the override of one skill to a test (the header only; an author then writes version 1 with PUT /{tableId})
+         * @description For the administrator of the test's owner (SYS_ADMIN for an English9x test, ORG_ADMIN of the organisation for its own), who can open the test. 404 when the test is not one the caller can open; 422 when the skill is not a table score of the exam (or the Reading of the other variant); 409 score-table-exists (with tableId) when the test has an override for the skill.
+         */
+        post: operations["attach"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1209,7 +1230,10 @@ export interface paths {
         };
         /** One table: its latest version, or the numbered one */
         get: operations["get_2"];
-        /** Edit a table: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201) */
+        /**
+         * Edit a table: the open draft in place (200), or a new draft version when the latest is PUBLISHED (201)
+         * @description The scope is named and never changes. An override the administrator attached and nobody wrote yet gets its version 1 here (201).
+         */
         put: operations["update_1"];
         post?: never;
         delete?: never;
@@ -3609,11 +3633,34 @@ export interface components {
         GradingSkillDryRunRequest: {
             /**
              * Format: uuid
-             * @description or as a recording (Speaking): a file of the exam
+             * @description or as a recording (Speaking): an AUDIO file of the exam
              */
             mediaId?: string;
             /** @description the answer as text (Writing) */
             response?: string;
+            /** @description the question the answer replies to (the essay prompt, the speaking topic); a generic one when empty */
+            task?: string;
+        };
+        GradingSkillDryRunResult: {
+            /**
+             * Format: double
+             * @description the mean of the criterion scores, rounded to the nearest half
+             */
+            band?: number;
+            /** Format: int32 */
+            inputTokens?: number;
+            model?: string;
+            /** Format: int32 */
+            outputTokens?: number;
+            /** @description the model's JSON answer; it matched the skill's result schema */
+            result?: unknown;
+            /**
+             * Format: uuid
+             * @description the version of the skill that ran (the latest)
+             */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
         };
         GradingSkillPage: {
             items?: components["schemas"]["GradingSkillSummary"][];
@@ -4720,6 +4767,37 @@ export interface components {
             /** Format: double */
             scaled?: number;
         };
+        ScoreTableOverride: {
+            examCode?: string;
+            /** Format: uuid */
+            ownerOrgId?: string;
+            skill?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "IN_REVIEW" | "CHANGES_REQUESTED" | "PUBLISHED" | "ARCHIVED";
+            /** Format: uuid */
+            tableId?: string;
+            /** Format: uuid */
+            testId?: string;
+            /**
+             * Format: uuid
+             * @description the latest version; null until an author wrote the first one
+             */
+            versionId?: string;
+            /** Format: int32 */
+            versionNo?: number;
+        };
+        ScoreTableOverrideRequest: {
+            /**
+             * @description a score of the test's exam that a table converts (not one a function computes)
+             * @example LISTENING
+             */
+            skill?: string;
+            /**
+             * Format: uuid
+             * @description the TEST (not a test version)
+             */
+            testId?: string;
+        };
         ScoreTablePage: {
             items?: components["schemas"]["ScoreTableSummary"][];
             /** Format: int32 */
@@ -4738,7 +4816,7 @@ export interface components {
             /** @description raw correct answers to scaled score; raw contiguous from 0, scaled never decreasing */
             rows?: components["schemas"]["ScoreRow"][];
             /**
-             * @description EXAM, the default of the exam. TEST (the override of one test) answers 409 until tests can be built (P2.6)
+             * @description EXAM, the default of the exam, or TEST, the override of one test (attached first with POST /overrides; it is then edited here). Never changes
              * @example EXAM
              */
             scope?: string;
@@ -4749,7 +4827,7 @@ export interface components {
             skill?: string;
             /**
              * Format: uuid
-             * @description the TEST (not a test version) of an override; only with scope TEST
+             * @description the TEST (not a test version) of an override; only with scope TEST, and only its own
              */
             testId?: string;
         };
@@ -6694,7 +6772,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "*/*": components["schemas"]["GradingSkillDryRunResult"];
+                };
             };
             /** @description Error (RFC 7807 problem details) */
             default: {
@@ -7724,6 +7804,70 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ScoreTableVersion"];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    overrides: {
+        parameters: {
+            query?: {
+                testId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScoreTableOverride"][];
+                };
+            };
+            /** @description Error (RFC 7807 problem details) */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    attach: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScoreTableOverrideRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ScoreTableOverride"];
                 };
             };
             /** @description Error (RFC 7807 problem details) */

@@ -1,6 +1,7 @@
 // F53 — Email (spec §16.2): "Email đúng sự kiện xuất hiện trong mailpit; tắt email cho sự kiện → không gửi".
 // Since P2.9 the review events are real: a question submitted over the CMS API and decided on the real review screen (see _world.ts).
 import { test, expect } from '../../fixtures';
+import { env } from '../../helpers/env';
 import { submitQuestion } from '../../fixtures/review';
 import { reviewWorld } from './_world';
 import { classroomWorld, ordersWorld, pickOff, planWorld, runChannels, type Fx, type World } from './_events';
@@ -15,7 +16,7 @@ test.describe('F53 email notifications', () => {
     expect(mail.Text).toContain(`Xin chào Người duyệt f53,`);
     expect(mail.Text).toContain('Một nội dung (question) của kỳ thi IELTS đang chờ bạn duyệt.');
     expect(mail.HTML).toContain('<html lang="vi">');
-    expect(mailpit.linksIn(mail).some((l) => l === 'https://localhost/notifications')).toBe(true);
+    expect(mailpit.linksIn(mail).some((l) => l === `${env.baseURL}/notifications`)).toBe(true);
 
     // switch email off for THIS event in the preference screen
     await auth.loginAs(page, w.reviewer);

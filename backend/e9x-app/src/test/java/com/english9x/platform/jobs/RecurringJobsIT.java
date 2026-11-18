@@ -2,6 +2,8 @@ package com.english9x.platform.jobs;
 
 import static com.english9x.platform.jobs.JobTestSupport.T0;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.english9x.platform.jobs.api.RecurringJob;
@@ -106,9 +108,16 @@ class RecurringJobsIT {
         su.update("delete from jobs where id not in (?,?,?,?)", old, oldFailed, recent, queued);
         UUID purge = UUID.randomUUID();
         su.update("insert into jobs(id,type,payload,status,run_at) values (?, 'purge_finished_jobs', '{}', 'QUEUED', ?)", purge, Timestamp.from(real.plus(Duration.ofDays(30))));
-        ctx.getBean(JobWorker.class).pollOnce();
+        // the worker of the context may take another due job first (jobs of the app itself are due in the shared database): poll until this purge has run
+        for (int i = 0; i < 50; i++) {
+            ctx.getBean(JobWorker.class).pollOnce();
+            if ("SUCCEEDED".equals(su.queryForObject("select status from jobs where id = ?", String.class, purge))) break;
+        }
+        assertEquals("SUCCEEDED", su.queryForObject("select status from jobs where id = ?", String.class, purge), "the purge job itself ran");
         List<UUID> left = su.queryForList("select id from jobs", UUID.class);
-        assertEquals(java.util.Set.of(recent, queued, purge), new java.util.HashSet<>(left));
+        // the shared database holds jobs of other tests too: check this test's own rows, not the whole table
+        assertFalse(left.contains(old), "the old finished job is purged");
+        assertTrue(left.containsAll(List.of(recent, queued, purge)), "the recent, queued and purge jobs stay");
     }
 
     @Test

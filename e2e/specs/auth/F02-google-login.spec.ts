@@ -37,7 +37,7 @@ test.describe('F02 Google sign-in', () => {
     expect(await page.evaluate(() => localStorage.getItem('e9x.auth.refresh')), 'no token before consent').toBeNull();
     await agreeToGoogleConsent(page);
     await expect(page.getByText('Đã đăng nhập: Lê Thu Hà')).toBeVisible();
-    await expect(page).toHaveURL('https://localhost/');
+    await expect(page).toHaveURL(`${env.baseURL}/`);
     // no token, code or session id was left in the address bar or the history
     expect(page.url()).not.toMatch(/code=|token=|eyJ/);
     expect(await seed.userInfo(email)).toMatchObject({ count: 1, hasPassword: false, emailVerified: true, hasConsent: true, identities: 1 });

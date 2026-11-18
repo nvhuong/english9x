@@ -29,7 +29,7 @@ test.describe('F03 password reset', () => {
 
     const mail = await mailpit.lastEmailTo(learner.email, { subjectIncludes: 'Đặt lại mật khẩu' });
     const link = mailpit.linksIn(mail).find((l) => l.includes('/reset-password?token='))!;
-    expect(link.startsWith('https://localhost/reset-password?token=')).toBe(true);
+    expect(link.startsWith(`${env.baseURL}/reset-password?token=`)).toBe(true);
 
     // a mismatching confirmation is caught in the browser; then the real change
     await phone.goto(link);

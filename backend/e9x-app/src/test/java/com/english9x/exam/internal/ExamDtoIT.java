@@ -16,7 +16,7 @@ class ExamDtoIT extends ExamIT {
     void noAnswerKeyInAnyResponse() {
         Room room = room();
         UUID learner = learner(room);
-        Instant t0 = Instant.now();
+        Instant t0 = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         clock.set(t0);
         UUID org = room.staff().org();
         List<Res> all = new ArrayList<>();

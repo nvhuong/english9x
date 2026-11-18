@@ -3,7 +3,7 @@ import https from 'node:https';
 
 /** Where the E2E stack's services are reachable from the test runner (the host). scripts/e2e.sh exports the ports it chose. */
 export const env = {
-  baseURL: process.env.E2E_BASE_URL ?? 'https://localhost',
+  baseURL: (process.env.E2E_BASE_URL ?? 'https://localhost').replace(/\/+$/, ''), // no trailing slash; scripts/e2e.sh sets it when Caddy is not on 443
   mailpitURL: process.env.E2E_MAILPIT_URL ?? `http://localhost:${process.env.E9X_MAILPIT_PORT ?? '8025'}`,
   telegramURL: process.env.E2E_TELEGRAM_URL ?? `http://localhost:${process.env.E9X_FAKE_TELEGRAM_PORT ?? '8081'}`,
   geminiURL: process.env.E2E_GEMINI_URL ?? `http://localhost:${process.env.E9X_FAKE_GEMINI_PORT ?? '8082'}`,

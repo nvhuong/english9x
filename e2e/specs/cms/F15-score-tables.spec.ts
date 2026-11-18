@@ -154,6 +154,8 @@ test.describe('F15 score tables', () => {
     const s = await staffed(['IELTS'], 'f15-ov', { request, uniqueEmail, apiLogin: org.apiLogin });
     const { testId, versionId: testVersionId } = await publishedIeltsTestWithId(s, `F15 ${Math.random().toString(36).slice(2, 8)}`);
     const admin = await seed.sysAdmin();
+    // the administrator of an English9x test must also be able to open it (row-level security shows a test to the AUTHOR and REVIEWER of its exam): a REVIEWER of IELTS too
+    await seed.staffGrant({ userId: admin.userId, role: 'REVIEWER', examCode: 'IELTS' });
     const adminToken = (await org.apiLogin({ email: admin.email, password: admin.password })).token;
     const latest = async (tableId: string) => (await org.api(s.author.token, 'GET', `/api/cms/score-tables/${tableId}`, { org: s.orgId })).body as Version;
     const versions = async (tableId: string) => (await org.api(s.reviewer.token, 'GET', `/api/cms/score-tables/${tableId}/versions`, { org: s.orgId })).body as Version[];
@@ -210,7 +212,7 @@ test.describe('F15 score tables', () => {
     const writing = page.waitForResponse((r) => r.request().method() === 'PUT' && new URL(r.url()).pathname === `/api/cms/score-tables/${tableId}` && r.status() === 201);
     await page.getByRole('button', { name: 'Lưu bản nháp' }).click();
     await writing;
-    await expect(page).toHaveURL(new RegExp(`/cms/score-tables/${tableId}$`));
+    await expect(page).toHaveURL(new RegExp(`/cms/score-tables/${tableId}(\\?test=${testId})?$`));
     await expect(page.getByText('Bản nháp', { exact: true })).toBeVisible();
     const v1 = await latest(tableId);
     expect(v1).toMatchObject({ scope: 'TEST', testId, skill: 'LISTENING', versionNo: 1, status: 'DRAFT', rows: [{ raw: 0, scaled: 0 }, { raw: 1, scaled: 6.5 }] });

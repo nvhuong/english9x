@@ -52,7 +52,7 @@ services:
       FAKE_OIDC_ISSUER: http://localhost:${E9X_FAKE_OIDC_PORT:-8083}
       FAKE_OIDC_CLIENT_ID: fake-google-client
       FAKE_OIDC_CLIENT_SECRET: fake-google-secret-e2e-only
-      FAKE_OIDC_REDIRECT_URI: https://localhost/api/auth/oauth2/callback/google
+      FAKE_OIDC_REDIRECT_URI: ${E9X_PUBLIC_BASE_URL:-https://localhost}/api/auth/oauth2/callback/google
     volumes:
       - ./fakes/oidc:/fake:ro
     ports:

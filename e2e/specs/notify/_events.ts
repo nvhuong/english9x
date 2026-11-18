@@ -6,7 +6,7 @@ import type { loginAs as LoginAs } from '../../fixtures/auth';
 import type { mailpit as Mailpit } from '../../helpers/mailpit';
 import type { api as Api, apiLogin as ApiLogin } from '../../fixtures/org';
 import type { seed as Seed } from '../../fixtures/seed';
-import { poll } from '../../helpers/env';
+import { env, poll } from '../../helpers/env';
 import type { gemini as Gemini } from '../../helpers/gemini';
 import type { telegram as Telegram } from '../../helpers/telegram';
 
@@ -402,12 +402,12 @@ export async function runChannels(o: {
           expect(mail.Subject).toBe(EVENTS[e.event].title);
           expect(mail.Text).toContain('Xin chào');
           expect(mail.Text).toContain(EVENTS[e.event].body);
-          expect(mailpit.linksIn(mail).some((l) => l === 'https://localhost/notifications')).toBe(true);
+          expect(mailpit.linksIn(mail).some((l) => l === `${env.baseURL}/notifications`)).toBe(true);
         } else {
           const text = (await telegramFor(telegram, chatOf.get(e.who.userId)!, e.event)).map((m) => m.text).join('\n');
           expect(text).toContain(`<b>${EVENTS[e.event].title}</b>`);
           expect(text).toContain(EVENTS[e.event].body);
-          expect(text).toContain('href="https://localhost/notifications"');
+          expect(text).toContain(`href="${env.baseURL}/notifications"`);
           // nobody else's chat got it, unless they are a recipient of the same event
           for (const other of world.people) {
             if (other.userId !== e.who.userId && !world.steps.some((st) => st.expects.some((x) => x.who.userId === other.userId && x.event === e.event))) {
