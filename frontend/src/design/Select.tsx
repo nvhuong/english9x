@@ -27,12 +27,14 @@ export function Select({ label, options, placeholder, error, className, ...rest 
   const { t } = useTranslation();
   const id = useId();
   const errId = `${id}-error`;
+  const isControlled = 'value' in rest;
+  const selected = options.find((o) => o.value === (rest.value ?? rest.defaultValue));
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <span id={`${id}-label`} className="text-sm font-semibold text-ink">
         {label}
       </span>
-      <RadixSelect.Root {...rest}>
+      <RadixSelect.Root {...rest} value={isControlled ? (rest.value ?? '') : undefined}>
         <RadixSelect.Trigger
           id={id}
           aria-labelledby={`${id}-label`}
@@ -44,7 +46,9 @@ export function Select({ label, options, placeholder, error, className, ...rest 
             'data-[placeholder]:text-muted disabled:cursor-not-allowed disabled:opacity-60',
           )}
         >
-          <RadixSelect.Value placeholder={placeholder ?? t('common.selectPlaceholder')} />
+          <RadixSelect.Value placeholder={placeholder ?? t('common.selectPlaceholder')}>
+            {selected?.label}
+          </RadixSelect.Value>
           <RadixSelect.Icon aria-hidden="true">▾</RadixSelect.Icon>
         </RadixSelect.Trigger>
         <RadixSelect.Portal>

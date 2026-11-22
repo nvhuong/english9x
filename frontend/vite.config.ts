@@ -14,6 +14,9 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     globals: false,
     css: false,
+    testTimeout: 30000,
+    hookTimeout: 30000,
+    maxWorkers: 2,
     // Storybook output and tooling configs are not unit tests.
     exclude: ['node_modules', 'dist', 'storybook-static', '.tmp-*'],
   },

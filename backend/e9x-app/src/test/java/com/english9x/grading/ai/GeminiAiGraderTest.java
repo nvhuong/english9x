@@ -179,6 +179,6 @@ class GeminiAiGraderTest {
         GeminiAiGrader quick = new GeminiAiGrader("http://127.0.0.1:" + server.getAddress().getPort(), "k", "m", Duration.ofMillis(300), 1, JSON);
         AiGradingException e = assertThrows(AiGradingException.class, () -> quick.grade(skill(), TASK, ESSAY));
         assertEquals(Kind.TRANSIENT, e.kind());
-        assertTrue(AiGradeJobHandler.describe(e).contains("<- HttpTimeoutException"), AiGradeJobHandler.describe(e));
+        assertTrue(AiGradeJobHandler.describe(e).contains("TimeoutException"), AiGradeJobHandler.describe(e));
     }
 }

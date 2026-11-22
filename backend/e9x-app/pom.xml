@@ -138,6 +138,9 @@
         <version>3.5.2</version>
         <configuration>
           <argLine>-XX:+EnableDynamicAgentLoading</argLine>
+          <excludes>
+            <exclude>**/*IT.java</exclude>
+          </excludes>
           <systemPropertyVariables>
             <!-- every Spring test needs these (no production defaults exist); tests that exercise auth set their own -->
             <e9x.auth.jwt-secret>test-only-secret-test-only-secret-0123456789</e9x.auth.jwt-secret>
