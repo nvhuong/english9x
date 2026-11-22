@@ -30,25 +30,38 @@ export function AppHeader({ area, dense }: { area: Area; dense?: boolean }) {
   const { t } = useTranslation();
   const areas = useVisibleAreas();
   return (
-    <header className={cn('border-b border-line bg-surface', dense && 'bg-sunken')}>
-      <div className={cn('mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3', dense ? 'max-w-none' : 'max-w-6xl')}>
-        <Link to="/" className="font-serif text-2xl font-bold text-primary no-underline">
-          {t('app.name')}
+    <header className={cn('sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur-sm transition-colors', dense && 'bg-sunken/95')}>
+      <div className={cn('mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5', dense ? 'max-w-none' : 'max-w-6xl')}>
+        <Link to="/" className="group flex items-center gap-2.5 font-serif text-2xl font-bold text-primary no-underline">
+          <span
+            aria-hidden="true"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-black text-on-primary shadow-sm transition-transform group-hover:scale-105"
+          >
+            9x
+          </span>
+          <span className="tracking-tight">{t('app.name')}</span>
         </Link>
-        <nav aria-label={t('app.mainNav')} className="flex flex-wrap gap-1">
+        <nav aria-label={t('app.mainNav')} className="flex flex-wrap items-center gap-1.5">
           {areas.map((a) => (
             <NavLink
               key={a}
               to={AREA_PATH[a]}
               end={a === 'learner'}
-              className={({ isActive }) => cn('rounded-sm px-3 py-1 text-sm font-semibold no-underline', isActive || a === area ? 'bg-primary text-on-primary' : 'text-ink hover:bg-sunken')}
+              className={({ isActive }) =>
+                cn(
+                  'rounded-lg px-3 py-1.5 text-sm font-semibold no-underline transition-colors',
+                  isActive || a === area
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'text-ink hover:bg-sunken hover:text-primary'
+                )
+              }
               aria-current={a === area ? 'page' : undefined}
             >
               {t(`area.${a}`)}
             </NavLink>
           ))}
         </nav>
-        <div className="ml-auto flex flex-wrap items-center gap-3">
+        <div className="ml-auto flex flex-wrap items-center gap-2 sm:gap-3">
           <NotificationBell />
           <ContextSwitcher />
           <LanguageSwitch />
