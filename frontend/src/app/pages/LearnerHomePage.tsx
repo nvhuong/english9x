@@ -250,12 +250,12 @@ export function LearnerHomePage() {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link to="/courses">
-            <Button size="lg" className="border-none bg-surface text-ink hover:bg-paper px-8 font-bold shadow-md">
+            <Button variant="accent" size="lg" className="px-8 font-bold shadow-md">
               Bắt đầu luyện tập ngay
             </Button>
           </Link>
           <Link to="/register">
-            <Button variant="secondary" size="lg" className="border-on-primary text-on-primary hover:bg-primary-hover px-8 font-bold">
+            <Button variant="secondary" size="lg" className="px-8 font-bold shadow-sm">
               Đăng ký tài khoản miễn phí
             </Button>
           </Link>
