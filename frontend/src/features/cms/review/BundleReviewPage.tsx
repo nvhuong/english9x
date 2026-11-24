@@ -25,7 +25,7 @@ export default function BundleReviewPage() {
     <div className="flex flex-col gap-6">
       <Link to="/cms/reviews" className="text-sm text-primary underline">{t('detail.back')}</Link>
       <header className="flex flex-col gap-2">
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('bundle.title', { count: m.data.length })}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('bundle.title', { count: m.data.length })}</h1>
         <p className="text-muted">{t('queue.author', { name: author ?? t('unknownAuthor') })}</p>
         <p className="max-w-prose text-sm text-muted">{t('bundle.hint')}</p>
       </header>

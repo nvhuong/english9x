@@ -42,7 +42,7 @@ function Result({ view }: { view: ExamAttemptView }) {
   const r = view.result;
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4 p-6">
-      <h1 className="font-serif text-3xl font-bold text-ink">{r?.interrupted ? t('result.interruptedTitle') : t('result.title')}</h1>
+      <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{r?.interrupted ? t('result.interruptedTitle') : t('result.title')}</h1>
       <p data-testid="exam-result" data-status={view.status} data-interrupted={String(Boolean(r?.interrupted))} className="text-ink">
         {r?.interrupted ? t('result.interrupted') : t('result.submitted')}
       </p>

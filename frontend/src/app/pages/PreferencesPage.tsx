@@ -7,7 +7,7 @@ export default function PreferencesPage() {
   return (
     <div className="flex max-w-xl flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold">{t('preferences.title')}</h1>
+        <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{t('preferences.title')}</h1>
         <p className="mt-2 text-muted">{t('preferences.description')}</p>
       </header>
       <LanguageSwitch />

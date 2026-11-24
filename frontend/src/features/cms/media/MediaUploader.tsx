@@ -70,7 +70,7 @@ export function MediaUploader({ examCode, onUploaded }: MediaUploaderProps) {
 
   return (
     <section aria-labelledby={`${inputId}-title`} className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
-      <h2 id={`${inputId}-title`} className="font-serif text-xl font-semibold text-ink">
+      <h2 id={`${inputId}-title`} className="font-sans text-lg sm:text-xl font-bold text-ink">
         {t('uploader.title')}
       </h2>
       <div className="flex flex-col gap-1">

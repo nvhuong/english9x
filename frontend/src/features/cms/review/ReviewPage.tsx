@@ -27,7 +27,7 @@ export default function ReviewPage() {
         {review.bundleId ? t('detail.backBundle') : t('detail.back')}
       </Link>
       <header className="flex flex-col gap-2">
-        <h1 className="font-serif text-3xl font-bold text-ink">{t(`types.${review.type}`, { defaultValue: review.type })}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t(`types.${review.type}`, { defaultValue: review.type })}</h1>
         <p className="text-muted">
           {review.examCode} · {t('queue.author', { name: authorName ?? t('unknownAuthor') })} · {new Date(review.submittedAt).toLocaleString()}
         </p>
@@ -40,7 +40,7 @@ export default function ReviewPage() {
       </header>
       {version ? (
         <section aria-labelledby="diff-title" className="flex flex-col gap-3">
-          <h2 id="diff-title" className="font-serif text-xl font-bold text-ink">{t('detail.contentTitle')}</h2>
+          <h2 id="diff-title" className="font-sans text-lg sm:text-xl font-bold text-ink">{t('detail.contentTitle')}</h2>
           <VersionDiff before={previous?.content} after={version.content} />
         </section>
       ) : (

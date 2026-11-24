@@ -18,7 +18,7 @@ export default function MyOrdersPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-ink">{t('mine.title')}</h1>
+          <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{t('mine.title')}</h1>
           <p className="mt-2 max-w-prose text-muted">{t('mine.description')}</p>
         </div>
         <Link to="/checkout" className="text-primary underline">
@@ -57,7 +57,7 @@ export default function MyOrdersPage() {
 
       {ents.data && ents.data.length > 0 && (
         <section aria-labelledby="ents-heading" className="flex flex-col gap-2">
-          <h2 id="ents-heading" className="font-serif text-xl font-semibold">
+          <h2 id="ents-heading" className="font-sans text-lg sm:text-xl font-bold">
             {t('mine.access')}
           </h2>
           <ul className="flex flex-col gap-2">

@@ -34,7 +34,7 @@ export function SharedCatalogPanel({ version }: { version: CourseVersion }) {
 
   return (
     <section aria-labelledby="share-h" className="flex max-w-3xl flex-col gap-3 rounded-md border border-edge p-4" data-testid="shared-panel">
-      <h2 id="share-h" className="font-serif text-xl font-bold text-ink">
+      <h2 id="share-h" className="font-sans text-lg sm:text-xl font-bold text-ink">
         {t('share.heading')}
       </h2>
       <p className="text-muted">{t('share.description')}</p>

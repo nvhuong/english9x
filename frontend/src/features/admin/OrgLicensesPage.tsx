@@ -37,7 +37,7 @@ export default function OrgLicensesPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('licenses.admin.title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('licenses.admin.title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('licenses.admin.description')}</p>
       </header>
 
@@ -77,7 +77,7 @@ export default function OrgLicensesPage() {
           );
         }}
       >
-        <h2 className="font-serif text-xl font-semibold">{t('licenses.admin.formTitle')}</h2>
+        <h2 className="font-sans text-lg sm:text-xl font-bold">{t('licenses.admin.formTitle')}</h2>
         <Select label={t('licenses.admin.org')} value={orgId} onValueChange={setOrgId} options={(orgs.data ?? []).map((o) => ({ value: o.id, label: o.name }))} />
         <Input label={t('licenses.admin.seats')} inputMode="numeric" value={seats} onChange={(e) => setSeats(e.target.value)} />
         <Input label={t('licenses.admin.months')} inputMode="numeric" value={months} onChange={(e) => setMonths(e.target.value)} />
@@ -110,7 +110,7 @@ export default function OrgLicensesPage() {
         </div>
       </form>
 
-      <h2 className="font-serif text-xl font-semibold">{t('licenses.admin.listTitle')}</h2>
+      <h2 className="font-sans text-lg sm:text-xl font-bold">{t('licenses.admin.listTitle')}</h2>
       {list.isPending && <p role="status" className="text-muted">{t('licenses.admin.loading')}</p>}
       {list.isError && <FormAlert>{t('licenses.admin.loadFailed')}</FormAlert>}
       {list.data && list.data.length === 0 && <EmptyState icon="🪑" title={t('licenses.admin.empty')} />}

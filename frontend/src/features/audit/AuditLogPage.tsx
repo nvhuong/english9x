@@ -27,19 +27,19 @@ export default function AuditLogPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('description')}</p>
       </header>
 
       <section aria-labelledby="audit-filters" className="flex flex-col gap-3">
-        <h2 id="audit-filters" className="font-serif text-xl font-semibold">
+        <h2 id="audit-filters" className="font-sans text-lg sm:text-xl font-bold">
           {t('filters.title')}
         </h2>
         <AuditFilterForm value={filters} actions={actions.data ?? []} onApply={apply} />
       </section>
 
       <section aria-labelledby="audit-results" className="flex flex-col gap-3">
-        <h2 id="audit-results" className="font-serif text-xl font-semibold">
+        <h2 id="audit-results" className="font-sans text-lg sm:text-xl font-bold">
           {t('results.title')}
         </h2>
         {log.isPending && (

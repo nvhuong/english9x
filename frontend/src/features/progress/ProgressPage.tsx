@@ -11,9 +11,9 @@ export default function ProgressPage() {
   const q = useMyProgress();
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-4 sm:p-6">
-      <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('title')}</h1>
-        <p className="mt-2 max-w-prose text-muted">{t('description')}</p>
+      <header className="rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
+        <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{t('title')}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted">{t('description')}</p>
       </header>
       {q.isPending && <p role="status" className="text-muted">{t('loading')}</p>}
       {q.isError && (
@@ -35,7 +35,7 @@ function Body({ data }: { data: Progress }) {
       {none && <EmptyState icon="📚" title={t('empty')} description={t('emptyHint')} />}
       {data.plans.length > 0 && (
         <section aria-labelledby="plans-h" className="flex flex-col gap-4">
-          <h2 id="plans-h" className="text-xl font-semibold text-ink">{t('plansTitle')}</h2>
+          <h2 id="plans-h" className="font-sans text-xl font-bold tracking-tight text-ink">{t('plansTitle')}</h2>
           {data.plans.map((p) => <Plan key={`${p.source}-${p.id}`} plan={p} />)}
         </section>
       )}
@@ -45,7 +45,7 @@ function Body({ data }: { data: Progress }) {
       {data.expired.length > 0 && (
         <section aria-labelledby="expired-h" className="flex flex-col gap-4">
           <div>
-            <h2 id="expired-h" className="text-xl font-semibold text-ink">{t('expiredTitle')}</h2>
+            <h2 id="expired-h" className="font-sans text-xl font-bold tracking-tight text-ink">{t('expiredTitle')}</h2>
             <p className="text-sm text-muted">{t('expiredHint')}</p>
           </div>
           {data.expired.map((p) => <Plan key={`${p.source}-${p.id}`} plan={p} />)}

@@ -17,7 +17,7 @@ export function Table({ caption, captionHidden, dense, className, children, ...r
     // The scroll region is focusable on purpose (axe: scrollable-region-focusable).
     <div role="region" aria-label={caption} tabIndex={0} className="overflow-x-auto rounded-md border border-line bg-surface">
       <table data-dense={dense || undefined} className={cn('w-full border-collapse text-left text-ink', dense ? 'text-sm' : 'text-base', className)} {...rest}>
-        <caption className={captionHidden ? 'sr-only' : 'px-4 py-3 text-left font-serif text-lg font-semibold'}>{caption}</caption>
+        <caption className={captionHidden ? 'sr-only' : 'px-4 py-3 text-left font-sans text-lg font-bold'}>{caption}</caption>
         {children}
       </table>
     </div>

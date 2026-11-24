@@ -43,7 +43,7 @@ reset:
 	@./reset.sh
 
 build:
-	@docker compose --env-file infra/.env -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml build
+	@./build.sh
 
 test:
 	@pnpm -C frontend run test --run

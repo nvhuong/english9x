@@ -16,7 +16,7 @@ export default function GradingPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
         <Link to="/cms/grading-queue" className="text-sm text-primary underline">{t('grading.back')}</Link>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('grading.title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('grading.title')}</h1>
         <p className="max-w-prose text-muted">{t('grading.description')}</p>
       </header>
       {detail.isPending ? (
@@ -46,7 +46,7 @@ function SkillCard({ id, work }: { id: string; work: SkillWork }) {
 
   return (
     <section aria-label={t(`skills.${work.skill}`, { defaultValue: work.skill })} className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
-      <h2 className="flex items-center gap-3 font-serif text-xl font-bold text-ink">
+      <h2 className="flex items-center gap-3 font-sans text-lg sm:text-xl font-bold text-ink">
         {t(`skills.${work.skill}`, { defaultValue: work.skill })}
         {work.aiBand !== null && <Badge tone="accent">{t('grading.aiBand', { band: work.aiBand })}</Badge>}
         {reviewed && <Badge tone="success">{t('grading.graded', { band: work.review!.band })}</Badge>}

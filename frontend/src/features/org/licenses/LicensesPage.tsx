@@ -26,7 +26,7 @@ function Licenses({ orgId }: { orgId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('licenses.title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('licenses.title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('licenses.description')}</p>
       </header>
       {licenses.isPending && <p role="status" className="text-muted">{t('licenses.loading')}</p>}
@@ -66,7 +66,7 @@ function LicenseCard({ orgId, license }: { orgId: string; license: OrgLicenseVie
 
       {license.status === 'ACTIVE' && <AssignForm orgId={orgId} license={license} onDone={(msg) => { setError(null); setNotice(msg); }} onError={(msg) => { setNotice(null); setError(msg); }} />}
 
-      <h2 className="font-serif text-xl font-semibold">{t('licenses.holders')}</h2>
+      <h2 className="font-sans text-lg sm:text-xl font-bold">{t('licenses.holders')}</h2>
       {license.holders.length === 0 ? (
         <p className="text-muted">{t('licenses.noHolders')}</p>
       ) : (
@@ -159,7 +159,7 @@ function AssignForm({ orgId, license, onDone, onError }: { orgId: string; licens
         );
       }}
     >
-      <h2 className="font-serif text-xl font-semibold">{t('licenses.assign.title')}</h2>
+      <h2 className="font-sans text-lg sm:text-xl font-bold">{t('licenses.assign.title')}</h2>
       {full && <p className="text-muted">{t('licenses.assign.noSeats')}</p>}
       <Select label={t('licenses.assign.member')} value={userId} onValueChange={setUserId} options={options} error={touched && !userId ? t('licenses.assign.noMember') : undefined} disabled={full} />
       <fieldset className="flex flex-col gap-1" disabled={full}>

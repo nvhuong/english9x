@@ -25,7 +25,7 @@ export default function MediaLibraryPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('description')}</p>
       </header>
 
@@ -41,7 +41,7 @@ export default function MediaLibraryPage() {
       )}
 
       <section aria-labelledby="media-session" className="flex flex-col gap-3">
-        <h2 id="media-session" className="font-serif text-xl font-semibold text-ink">
+        <h2 id="media-session" className="font-sans text-lg sm:text-xl font-bold text-ink">
           {t('session.title')}
         </h2>
         {uploaded.length === 0 ? (

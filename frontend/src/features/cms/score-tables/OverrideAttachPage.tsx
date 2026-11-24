@@ -29,7 +29,7 @@ export default function OverrideAttachPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="font-serif text-3xl font-bold text-ink">{t('attach.title')}</h1>
+      <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('attach.title')}</h1>
       <p className="max-w-prose text-muted">{t('attach.description')}</p>
       <div className="flex max-w-xl flex-col gap-4">
         <Input label={t('attach.testId')} hint={t('attach.testIdHint')} value={testId} onChange={(e) => setTestId(e.target.value)} />
@@ -73,7 +73,7 @@ export default function OverrideAttachPage() {
       </div>
       {valid && (overrides.data ?? []).length > 0 && (
         <section aria-labelledby="attached-h" className="flex flex-col gap-2">
-          <h2 id="attached-h" className="font-serif text-xl font-bold text-ink">
+          <h2 id="attached-h" className="font-sans text-lg sm:text-xl font-bold text-ink">
             {t('overrides.heading')}
           </h2>
           <ul className="flex flex-col gap-2" aria-label={t('overrides.list')}>

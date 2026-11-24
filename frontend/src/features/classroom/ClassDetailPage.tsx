@@ -48,7 +48,7 @@ function ClassDetail({ orgId, classId }: { orgId: string; classId: string }) {
         <Link to="/org/classes" className="text-primary underline">
           {t('detail.back')}
         </Link>
-        <h1 className="mt-2 font-serif text-3xl font-bold text-ink">{cls.data.name}</h1>
+        <h1 className="mt-2 font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{cls.data.name}</h1>
         <Badge tone="neutral">{t(`kind.${cls.data.kind}`)}</Badge>
         <p className="mt-2">
           <Link to={`/org/classes/${classId}/report`} className="text-primary underline">
@@ -57,14 +57,14 @@ function ClassDetail({ orgId, classId }: { orgId: string; classId: string }) {
         </p>
       </header>
       <section aria-labelledby="roster" className="flex flex-col gap-3">
-        <h2 id="roster" className="font-serif text-xl font-semibold">
+        <h2 id="roster" className="font-sans text-lg sm:text-xl font-bold">
           {t('roster.title')}
         </h2>
         <Roster orgId={orgId} classId={classId} isAdmin={isAdmin} />
       </section>
       {isAdmin && (
         <section aria-labelledby="courses" className="flex flex-col gap-3">
-          <h2 id="courses" className="font-serif text-xl font-semibold">
+          <h2 id="courses" className="font-sans text-lg sm:text-xl font-bold">
             {t('courses.title')}
           </h2>
           <p className="max-w-prose text-muted">{t('courses.description')}</p>
@@ -72,13 +72,13 @@ function ClassDetail({ orgId, classId }: { orgId: string; classId: string }) {
         </section>
       )}
       <section aria-labelledby="assignments" className="flex flex-col gap-3">
-        <h2 id="assignments" className="font-serif text-xl font-semibold">
+        <h2 id="assignments" className="font-sans text-lg sm:text-xl font-bold">
           {t('assignments.title')}
         </h2>
         <Assignments orgId={orgId} classId={classId} />
       </section>
       <section aria-labelledby="sessions" className="flex flex-col gap-3">
-        <h2 id="sessions" className="font-serif text-xl font-semibold">
+        <h2 id="sessions" className="font-sans text-lg sm:text-xl font-bold">
           {t('sessions.title')}
         </h2>
         <SessionsPanel orgId={orgId} classId={classId} />

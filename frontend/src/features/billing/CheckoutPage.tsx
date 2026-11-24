@@ -36,7 +36,7 @@ export default function CheckoutPage() {
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('checkout.title')}</h1>
+        <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{t('checkout.title')}</h1>
         <p className="mt-2 text-muted">{t('checkout.description')}</p>
       </header>
       {(plans.isPending || catalog.isPending) && <p role="status" className="text-muted">{t('checkout.loading')}</p>}

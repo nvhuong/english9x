@@ -12,23 +12,23 @@
   --color-*: initial; /* drop Tailwind's default palette: only tokens below exist */
 
   /* surfaces */
-  --color-paper: #f8f1e3;
-  --color-surface: #fffbf2;
-  --color-sunken: #efe6d2;
+  --color-paper: #fbfaf8;
+  --color-surface: #ffffff;
+  --color-sunken: #f4f1ea;
   /* text */
-  --color-ink: #17254a;
-  --color-muted: #4b5470;
+  --color-ink: #111e38;
+  --color-muted: #4d576e;
   /* lines: line = decoration, edge = boundaries of controls (>= 3:1) */
-  --color-line: #ddd2ba;
-  --color-edge: #7a715d;
+  --color-line: #e8e2d5;
+  --color-edge: #766d5b;
   /* brand */
-  --color-primary: #1d3461;
-  --color-primary-hover: #12254a;
-  --color-on-primary: #fffbf2;
-  --color-accent: #c2412d;
-  --color-accent-hover: #a63424;
+  --color-primary: #193564;
+  --color-primary-hover: #0f2347;
+  --color-on-primary: #ffffff;
+  --color-accent: #c73824;
+  --color-accent-hover: #a82a19;
   --color-on-accent: #ffffff;
-  --color-focus: #c2412d;
+  --color-focus: #c73824;
   /* status (fg on its own subtle bg) */
   --color-success: #1b5e34;
   --color-success-bg: #dcefd6;

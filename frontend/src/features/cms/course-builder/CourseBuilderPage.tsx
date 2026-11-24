@@ -72,7 +72,7 @@ function Editor({ version }: { version: CourseVersion | undefined }) {
         <Link to="/cms/courses" className="text-sm text-primary underline">
           {t('edit.back')}
         </Link>
-        <h1 className="font-serif text-3xl font-bold text-ink">{version ? version.title : t('new.title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{version ? version.title : t('new.title')}</h1>
         {version && status && (
           <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
             <Badge tone={TONE[status]}>{t(`status.${status}`)}</Badge>
@@ -140,7 +140,7 @@ function Editor({ version }: { version: CourseVersion | undefined }) {
         </fieldset>
 
         <section aria-labelledby="chapters-h" className="flex flex-col gap-4">
-          <h2 id="chapters-h" className="font-serif text-xl font-bold text-ink">
+          <h2 id="chapters-h" className="font-sans text-lg sm:text-xl font-bold text-ink">
             {t('chapters.heading')}
           </h2>
           {draft.chapters.length === 0 && <p className="text-muted">{t('chapters.empty')}</p>}

@@ -30,12 +30,26 @@ function NavItems({ area, vertical }: { area: Area; vertical?: boolean }) {
   const items = all.filter((it) => !it.role || hasRole(grants, orgId, it.role));
   if (items.length === 0) return null;
   return (
-    <nav aria-label={t('app.areaNav')} className={cn('flex gap-1', vertical ? 'flex-col' : 'flex-wrap')}>
+    <nav
+      aria-label={t('app.areaNav')}
+      className={cn(
+        vertical
+          ? 'flex flex-col gap-1'
+          : 'flex flex-wrap items-center gap-1.5 border-b border-line pb-3'
+      )}
+    >
       {items.map((it) => (
         <NavLink
           key={it.to}
           to={it.to}
-          className={({ isActive }) => cn('rounded-sm px-3 py-1.5 text-sm font-semibold no-underline', isActive ? 'bg-primary text-on-primary' : 'text-ink hover:bg-sunken')}
+          className={({ isActive }) =>
+            cn(
+              'rounded-lg px-3 py-1.5 text-xs font-semibold no-underline transition-all duration-150',
+              isActive
+                ? 'bg-primary text-on-primary shadow-xs'
+                : 'text-muted hover:bg-sunken hover:text-ink'
+            )
+          }
         >
           {t(it.labelKey, { ns: it.ns ?? 'common' })}
         </NavLink>
@@ -51,10 +65,10 @@ export function LearnerLayout() {
       <SkipLink />
       <AppHeader area="learner" />
       <VerifyEmailBanner />
-      <div className="mx-auto w-full max-w-6xl px-4 pt-3">
+      <div className="mx-auto w-full max-w-6xl px-4 pt-4">
         <NavItems area="learner" />
       </div>
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 outline-none">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 outline-none">
         <Guarded area="learner" />
       </main>
       <AppFooter />

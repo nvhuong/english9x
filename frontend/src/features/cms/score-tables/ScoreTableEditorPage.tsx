@@ -25,7 +25,7 @@ export default function ScoreTableEditorPage() {
 }
 
 function Heading({ children }: { children: string }) {
-  return <h1 className="font-serif text-3xl font-bold text-ink">{children}</h1>;
+  return <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{children}</h1>;
 }
 
 function Create() {

@@ -29,7 +29,7 @@ export default function SkillListPage() {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-ink">{t('list.title')}</h1>
+          <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('list.title')}</h1>
           <p className="mt-2 max-w-prose text-muted">{t('list.description')}</p>
         </div>
         {canWrite && (

@@ -31,7 +31,7 @@ export default function SchedulePage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('schedule.title')}</h1>
+        <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{t('schedule.title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('schedule.description')}</p>
       </header>
       {list.isPending && <p role="status" className="text-muted">{t('schedule.loading')}</p>}
@@ -46,7 +46,7 @@ export default function SchedulePage() {
       {list.data && list.data.length === 0 && <EmptyState icon="📅" title={t('schedule.empty')} description={t('schedule.emptyHint')} />}
       {[...days.entries()].map(([day, items]) => (
         <section key={day} aria-label={day} className="flex flex-col gap-2">
-          <h2 className="font-serif text-xl font-semibold">{day}</h2>
+          <h2 className="font-sans text-lg sm:text-xl font-bold">{day}</h2>
           <ul aria-label={t('schedule.listCaption')} className="flex flex-col gap-2">
             {items.map((s) => (
               <Item key={s.id} s={s} locale={i18n.language} />

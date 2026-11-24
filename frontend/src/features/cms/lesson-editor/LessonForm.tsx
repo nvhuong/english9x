@@ -68,7 +68,7 @@ export function LessonForm({ examCode, typeOptions, model, onChange, onSave, iss
       </fieldset>
 
       <section aria-labelledby={`${summaryId}-blocks`} className="flex flex-col gap-4">
-        <h2 id={`${summaryId}-blocks`} className="font-serif text-xl font-bold text-ink">
+        <h2 id={`${summaryId}-blocks`} className="font-sans text-lg sm:text-xl font-bold text-ink">
           {t('blocks.title')}
         </h2>
         {model.items.length === 0 && <p className="text-muted">{t('blocks.empty')}</p>}

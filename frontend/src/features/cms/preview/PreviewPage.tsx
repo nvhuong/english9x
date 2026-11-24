@@ -45,7 +45,7 @@ export default function PreviewPage() {
     <div className="flex flex-col gap-5">
       <header className="flex flex-col gap-2">
         {back}
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('title')}</h1>
         <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
           <Badge>{t(`status.${q.status}`)}</Badge>
           <span>{t('meta', { n: q.versionNo })}</span>

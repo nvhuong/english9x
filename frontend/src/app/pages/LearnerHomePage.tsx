@@ -15,10 +15,10 @@ export function LearnerHomePage() {
             <span>NỀN TẢNG LUYỆN THI THẾ HỆ MỚI • AI GRADER 24/7</span>
           </div>
 
-          <h1 className="mt-6 font-serif text-4xl font-bold tracking-tight text-ink sm:text-5xl lg:text-6xl">
+          <h1 className="mt-6 font-sans text-4xl font-black tracking-tight text-ink sm:text-5xl lg:text-6xl">
             {t('app.name')}
           </h1>
-          <p className="mt-3 font-serif text-xl italic text-primary sm:text-2xl">
+          <p className="mt-3 font-sans text-lg font-medium text-primary sm:text-xl">
             {t('app.tagline')}
           </p>
 
@@ -29,12 +29,12 @@ export function LearnerHomePage() {
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link to="/courses">
-              <Button size="lg" className="px-6 py-3 text-base shadow-sm">
+              <Button size="lg" className="px-6 py-3 text-base shadow-sm font-bold">
                 Khám phá khoá học & đề thi →
               </Button>
             </Link>
             <Link to="/login">
-              <Button variant="secondary" size="lg" className="px-6 py-3 text-base">
+              <Button variant="secondary" size="lg" className="px-6 py-3 text-base font-semibold">
                 Đăng nhập tài khoản
               </Button>
             </Link>
@@ -43,33 +43,33 @@ export function LearnerHomePage() {
 
         {/* 3 Key feature highlights inside hero */}
         <div className="mt-12 grid gap-4 border-t border-line pt-8 sm:grid-cols-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-info-bg text-info font-bold">
+          <div className="flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-sunken/50">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-info-bg text-info font-bold text-lg">
               🎯
             </div>
             <div>
-              <h3 className="font-semibold text-ink">Chuẩn đề thi thật</h3>
-              <p className="mt-1 text-xs text-muted">Cấu trúc 7 Parts TOEIC & 4 kỹ năng IELTS cập nhật theo format mới nhất.</p>
+              <h3 className="font-bold text-ink">Chuẩn đề thi thật</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">Cấu trúc 7 Parts TOEIC & 4 kỹ năng IELTS cập nhật theo format mới nhất.</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-tip-bg text-tip font-bold">
+          <div className="flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-sunken/50">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-tip-bg text-tip font-bold text-lg">
               ⚡
             </div>
             <div>
-              <h3 className="font-semibold text-ink">AI Grader tức thì</h3>
-              <p className="mt-1 text-xs text-muted">Chấm điểm tự luận Writing & Speaking phân tích theo từng tiêu chí chấm.</p>
+              <h3 className="font-bold text-ink">AI Grader tức thì</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">Chấm điểm tự luận Writing & Speaking phân tích theo từng tiêu chí chấm.</p>
             </div>
           </div>
 
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success-bg text-success font-bold">
+          <div className="flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-sunken/50">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-success-bg text-success font-bold text-lg">
               📊
             </div>
             <div>
-              <h3 className="font-semibold text-ink">Radar điểm yếu</h3>
-              <p className="mt-1 text-xs text-muted">Tự động phát hiện dạng câu hỏi sai nhiều và gợi ý bài giảng khắc phục.</p>
+              <h3 className="font-bold text-ink">Radar điểm yếu</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">Tự động phát hiện dạng câu hỏi sai nhiều và gợi ý bài giảng khắc phục.</p>
             </div>
           </div>
         </div>
@@ -78,57 +78,57 @@ export function LearnerHomePage() {
       {/* 2. STATS & PROOF SECTION */}
       <section className="grid grid-cols-2 gap-4 rounded-xl border border-line bg-sunken p-6 sm:grid-cols-4 sm:p-8">
         <div className="flex flex-col items-center text-center">
-          <span className="font-serif text-3xl font-bold text-primary sm:text-4xl">100.000+</span>
-          <span className="mt-1 text-xs font-medium text-muted sm:text-sm">Lượt thi thử & luyện tập</span>
+          <span className="font-sans text-3xl font-black text-primary sm:text-4xl">100.000+</span>
+          <span className="mt-1 text-xs font-semibold text-muted sm:text-sm">Lượt thi thử & luyện tập</span>
         </div>
         <div className="flex flex-col items-center text-center">
-          <span className="font-serif text-3xl font-bold text-primary sm:text-4xl">98.5%</span>
-          <span className="mt-1 text-xs font-medium text-muted sm:text-sm">Học viên bứt phá mục tiêu</span>
+          <span className="font-sans text-3xl font-black text-primary sm:text-4xl">98.5%</span>
+          <span className="mt-1 text-xs font-semibold text-muted sm:text-sm">Học viên bứt phá mục tiêu</span>
         </div>
         <div className="flex flex-col items-center text-center">
-          <span className="font-serif text-3xl font-bold text-primary sm:text-4xl">5.000+</span>
-          <span className="mt-1 text-xs font-medium text-muted sm:text-sm">Câu hỏi có lời giải chi tiết</span>
+          <span className="font-sans text-3xl font-black text-primary sm:text-4xl">5.000+</span>
+          <span className="mt-1 text-xs font-semibold text-muted sm:text-sm">Câu hỏi có lời giải chi tiết</span>
         </div>
         <div className="flex flex-col items-center text-center">
-          <span className="font-serif text-3xl font-bold text-primary sm:text-4xl">24/7</span>
-          <span className="mt-1 text-xs font-medium text-muted sm:text-sm">AI Grader sẵn sàng chấm bài</span>
+          <span className="font-sans text-3xl font-black text-primary sm:text-4xl">24/7</span>
+          <span className="mt-1 text-xs font-semibold text-muted sm:text-sm">AI Grader sẵn sàng chấm bài</span>
         </div>
       </section>
 
       {/* 3. CORE EXAM TRACKS (TOEIC & IELTS) */}
       <section className="flex flex-col gap-6">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-ink sm:text-3xl">Lộ Trình Luyện Thi Trọng Điểm</h2>
-          <p className="mt-1 text-muted">Chọn chương trình học phù hợp với mục tiêu chứng chỉ quốc tế của bạn.</p>
+          <h2 className="font-sans text-2xl font-black text-ink sm:text-3xl tracking-tight">Lộ Trình Luyện Thi Trọng Điểm</h2>
+          <p className="mt-1 text-muted text-sm sm:text-base">Chọn chương trình học phù hợp với mục tiêu chứng chỉ quốc tế của bạn.</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* TOEIC TRACK */}
-          <div className="flex flex-col justify-between rounded-xl border border-line bg-surface p-6 shadow-card transition-all hover:border-primary">
+          <div className="group flex flex-col justify-between rounded-2xl border border-line bg-surface p-6 sm:p-8 shadow-card transition-all hover:border-primary hover:shadow-hover">
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <Badge className="bg-info-bg text-info font-bold px-3 py-1">TOEIC Listening & Reading</Badge>
                 <span className="text-xs font-semibold text-muted">Mục tiêu 450 - 900+</span>
               </div>
-              <h3 className="font-serif text-xl font-bold text-ink">Chinh Phục 7 Parts TOEIC Thực Chiến</h3>
-              <p className="text-sm text-muted">
+              <h3 className="font-sans text-xl font-bold text-ink group-hover:text-primary transition-colors">Chinh Phục 7 Parts TOEIC Thực Chiến</h3>
+              <p className="text-sm text-muted leading-relaxed">
                 Chiến thuật phân tích bẫy Listening Part 1-4, quy tắc xử lý ngữ pháp Part 5 trong 5 giây, và phương pháp
                 Skimming & Scanning đoạn kép, đoạn ba Part 7.
               </p>
-              <ul className="flex flex-col gap-2 text-xs text-ink">
+              <ul className="flex flex-col gap-2.5 text-xs text-ink pt-2">
                 <li className="flex items-center gap-2">
-                  <span className="text-success font-bold">✔</span> Ngân hàng đề ETS format mới có Audio & Transcript
+                  <span className="text-success font-bold text-sm">✔</span> Ngân hàng đề ETS format mới có Audio & Transcript
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-success font-bold">✔</span> Bảng quy đổi điểm chuẩn quốc tế và tự động chấm
+                  <span className="text-success font-bold text-sm">✔</span> Bảng quy đổi điểm chuẩn quốc tế và tự động chấm
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-success font-bold">✔</span> Luyện tập từng phần (Mini-Test) và Full Test 200 câu
+                  <span className="text-success font-bold text-sm">✔</span> Luyện tập từng phần (Mini-Test) và Full Test 200 câu
                 </li>
               </ul>
             </div>
             <div className="mt-6 border-t border-line pt-4">
-              <Link to="/courses" className="flex items-center justify-between font-semibold text-primary hover:underline">
+              <Link to="/courses" className="flex items-center justify-between font-bold text-primary hover:underline">
                 <span>Xem các khoá học TOEIC</span>
                 <span>→</span>
               </Link>
@@ -136,31 +136,31 @@ export function LearnerHomePage() {
           </div>
 
           {/* IELTS TRACK */}
-          <div className="flex flex-col justify-between rounded-xl border border-line bg-surface p-6 shadow-card transition-all hover:border-primary">
+          <div className="group flex flex-col justify-between rounded-2xl border border-line bg-surface p-6 sm:p-8 shadow-card transition-all hover:border-primary hover:shadow-hover">
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <Badge className="bg-tip-bg text-tip font-bold px-3 py-1">IELTS Academic & General</Badge>
                 <span className="text-xs font-semibold text-muted">Mục tiêu 6.5 - 8.0+</span>
               </div>
-              <h3 className="font-serif text-xl font-bold text-ink">Bứt Phá 4 Kỹ Năng IELTS Toàn Diện</h3>
-              <p className="text-sm text-muted">
+              <h3 className="font-sans text-xl font-bold text-ink group-hover:text-primary transition-colors">Bứt Phá 4 Kỹ Năng IELTS Toàn Diện</h3>
+              <p className="text-sm text-muted leading-relaxed">
                 Rèn luyện tư duy phản xạ Speaking, kỹ năng lập luận Writing Task 1 & Task 2 mạch lạc theo chuẩn PEEL,
                 và giải đề Reading & Listening chuyên sâu.
               </p>
-              <ul className="flex flex-col gap-2 text-xs text-ink">
+              <ul className="flex flex-col gap-2.5 text-xs text-ink pt-2">
                 <li className="flex items-center gap-2">
-                  <span className="text-success font-bold">✔</span> AI Grader chấm Writing Task 1 & 2 chi tiết từng tiêu chí
+                  <span className="text-success font-bold text-sm">✔</span> AI Grader chấm Writing Task 1 & 2 chi tiết từng tiêu chí
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-success font-bold">✔</span> Thu âm Speaking tương tác trực tiếp trên trình duyệt
+                  <span className="text-success font-bold text-sm">✔</span> Thu âm Speaking tương tác trực tiếp trên trình duyệt
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-success font-bold">✔</span> Đầy đủ dạng bài matching headings, diagram, essay...
+                  <span className="text-success font-bold text-sm">✔</span> Đầy đủ dạng bài matching headings, diagram, essay...
                 </li>
               </ul>
             </div>
             <div className="mt-6 border-t border-line pt-4">
-              <Link to="/courses" className="flex items-center justify-between font-semibold text-primary hover:underline">
+              <Link to="/courses" className="flex items-center justify-between font-bold text-primary hover:underline">
                 <span>Xem các khoá học IELTS</span>
                 <span>→</span>
               </Link>
@@ -174,14 +174,14 @@ export function LearnerHomePage() {
         <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
           <div>
             <Badge className="bg-success-bg text-success font-bold">PHÒNG THI CHUẨN QUỐC TẾ</Badge>
-            <h2 className="mt-3 font-serif text-2xl font-bold text-ink sm:text-3xl">
+            <h2 className="mt-3 font-sans text-2xl font-black text-ink sm:text-3xl tracking-tight">
               Mô Phỏng 100% Áp Lực Phòng Thi Thật
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-muted sm:text-base">
               Không chỉ là làm bài trắc nghiệm thông thường, phòng thi của English9x được xây dựng với đầy đủ quy chế
               và công cụ hỗ trợ như kỳ thi thật tại các trung tâm khảo thí quốc tế:
             </p>
-            <div className="mt-6 flex flex-col gap-3 text-sm text-ink">
+            <div className="mt-6 flex flex-col gap-3.5 text-sm text-ink">
               <div className="flex items-start gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-info-bg text-info font-bold text-xs">1</span>
                 <div>
@@ -213,7 +213,7 @@ export function LearnerHomePage() {
               <Badge>TOEIC FULL TEST 2026</Badge>
             </div>
             <div className="mt-4 flex flex-col gap-3">
-              <p className="font-serif text-sm font-bold text-ink">
+              <p className="font-sans text-sm font-bold text-ink">
                 Question 101. Customer satisfaction is our highest _______ this year.
               </p>
               <div className="flex flex-col gap-2 text-xs">
@@ -241,7 +241,7 @@ export function LearnerHomePage() {
 
       {/* 5. CALL TO ACTION BANNER */}
       <section className="rounded-2xl border border-primary bg-primary p-8 text-center text-on-primary shadow-lg sm:p-12">
-        <h2 className="font-serif text-3xl font-bold sm:text-4xl">
+        <h2 className="font-sans text-3xl font-black sm:text-4xl tracking-tight">
           Sẵn Sàng Bứt Phá Điểm Số Của Bạn?
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-sm opacity-90 sm:text-base">

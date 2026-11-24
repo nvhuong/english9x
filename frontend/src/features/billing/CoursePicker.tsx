@@ -14,7 +14,7 @@ export function CoursePicker({ courses, max, value, onChange }: { courses: Picka
   const toggle = (id: string) => onChange(value.includes(id) ? value.filter((x) => x !== id) : value.length >= max ? value : [...value, id]);
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="font-serif text-xl font-semibold text-ink">{t('checkout.courseLegend')}</legend>
+      <legend className="font-sans text-lg sm:text-xl font-bold text-ink">{t('checkout.courseLegend')}</legend>
       <p role="status" className="text-sm text-muted" data-testid="course-count">
         {t('checkout.courseCount', { count: value.length, max })}
       </p>

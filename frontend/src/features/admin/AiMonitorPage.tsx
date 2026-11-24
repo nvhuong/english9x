@@ -38,7 +38,7 @@ export default function AiMonitorPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 sm:p-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('description')}</p>
       </header>
       <form className="flex flex-wrap items-end gap-3" onSubmit={(e) => e.preventDefault()} aria-label={t('range')}>

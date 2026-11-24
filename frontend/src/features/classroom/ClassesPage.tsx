@@ -31,7 +31,7 @@ function Classes({ orgId }: { orgId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{group ? t('classes.titleGroups') : t('classes.title')}</h1>
+        <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{group ? t('classes.titleGroups') : t('classes.title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{group ? t('classes.descriptionGroups') : t('classes.description')}</p>
       </header>
       {isAdmin && <CreateClass orgId={orgId} group={group} />}
@@ -113,7 +113,7 @@ function CreateClass({ orgId, group }: { orgId: string; group: boolean }) {
         });
       }}
     >
-      <h2 className="font-serif text-xl font-semibold">{group ? t('create.titleGroup') : t('create.title')}</h2>
+      <h2 className="font-sans text-lg sm:text-xl font-bold">{group ? t('create.titleGroup') : t('create.title')}</h2>
       {error && <FormAlert>{error}</FormAlert>}
       {notice && <FormNotice>{notice}</FormNotice>}
       <Input label={t('create.name')} value={name} onChange={(e) => setName(e.target.value)} maxLength={100} error={nameError ?? undefined} />

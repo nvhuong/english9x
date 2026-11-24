@@ -30,12 +30,12 @@ export default function PaymentAccountPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('admin.account.title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('admin.account.title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('admin.account.description')}</p>
       </header>
 
       <section aria-labelledby="current-account" className="flex flex-col gap-1">
-        <h2 id="current-account" className="font-serif text-xl font-semibold">
+        <h2 id="current-account" className="font-sans text-lg sm:text-xl font-bold">
           {t('admin.account.current')}
         </h2>
         {current.isPending && <p role="status" className="text-muted">{t('admin.account.loading')}</p>}
@@ -73,7 +73,7 @@ export default function PaymentAccountPage() {
           );
         }}
       >
-        <h2 className="font-serif text-xl font-semibold">{t('admin.account.formTitle')}</h2>
+        <h2 className="font-sans text-lg sm:text-xl font-bold">{t('admin.account.formTitle')}</h2>
         {failed && <FormAlert>{t('admin.account.saveFailed')}</FormAlert>}
         {saved && <FormNotice>{t('admin.account.saved')}</FormNotice>}
         <Input label={t('admin.account.bin')} hint={t('admin.account.binHint')} inputMode="numeric" maxLength={6} value={bankBin} onChange={(e) => setBankBin(e.target.value)} error={binError} />

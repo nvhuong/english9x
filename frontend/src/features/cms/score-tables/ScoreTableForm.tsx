@@ -45,7 +45,7 @@ export function ScoreTableForm({ text, onChange, onSave, issues, locked = false,
         className="max-w-xl font-mono"
       />
       <section aria-labelledby={previewId} className="flex flex-col gap-2">
-        <h2 id={previewId} className="font-serif text-xl font-bold text-ink">
+        <h2 id={previewId} className="font-sans text-lg sm:text-xl font-bold text-ink">
           {t('rows.preview', { count: rows.length })}
         </h2>
         {rows.length === 0 ? (

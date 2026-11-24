@@ -178,7 +178,7 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
 
   const body = (
     <div className="flex flex-col gap-4">
-      {text(cur.g.content.title) && <h2 className="font-serif text-xl font-bold text-ink">{text(cur.g.content.title)}</h2>}
+      {text(cur.g.content.title) && <h2 className="font-sans text-lg sm:text-xl font-bold text-ink">{text(cur.g.content.title)}</h2>}
       {text(cur.g.content.instructions) && <p className="text-muted">{text(cur.g.content.instructions)}</p>}
       {audioId && !persistentAudio && <ListeningPlayer key={audioId} attemptId={view.attemptId} mediaId={audioId} />}
       {imageId && <ExamImage key={imageId} mediaId={imageId} />}
@@ -207,7 +207,7 @@ export function ExamRoom({ view, onView, onRefresh }: ExamRoomProps) {
       )}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-ink">{view.title ?? view.examCode}</h1>
+          <h1 className="font-sans text-2xl font-bold text-ink">{view.title ?? view.examCode}</h1>
           <p className="text-sm text-muted">
             {t('section.of', { n: view.sections.findIndex((s) => s.sectionId === section.sectionId) + 1, total: view.sections.length })} · {section.skill ?? section.sectionId}
           </p>

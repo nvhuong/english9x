@@ -34,7 +34,7 @@ export function RecorderShell({ phase, micLevel = 0, secondsLeft = 0, totalSecon
 
   return (
     <section role="group" aria-label={t('recorder.label')} data-phase={phase} className={cn('flex flex-col gap-4 rounded-md border border-line bg-surface p-5 text-ink', className)}>
-      <h2 className="font-serif text-xl font-semibold">{phase === 'mic-check' || phase === 'denied' ? t('recorder.micCheck') : phase === 'preparing' ? t('recorder.preparing') : phase === 'recording' ? t('recorder.recording') : t('recorder.label')}</h2>
+      <h2 className="font-sans text-xl font-bold">{phase === 'mic-check' || phase === 'denied' ? t('recorder.micCheck') : phase === 'preparing' ? t('recorder.preparing') : phase === 'recording' ? t('recorder.recording') : t('recorder.label')}</h2>
 
       {(phase === 'mic-check' || phase === 'recording') && (
         <div className="flex flex-col gap-1">

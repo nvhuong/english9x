@@ -27,10 +27,10 @@ fi
 
 COMPOSE="docker compose --env-file infra/.env -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml"
 
-# 3. Khởi động Docker containers
+# 3. Khởi động Docker containers (tự động build nếu code có thay đổi)
 echo ""
-echo "📦 Đang khởi động các dịch vụ (PostgreSQL, MinIO, App, Caddy, Mailpit, Fakes)..."
-$COMPOSE up -d "$@"
+echo "📦 Đang biên dịch và khởi động các dịch vụ (PostgreSQL, MinIO, App, Caddy, Mailpit, Fakes)..."
+$COMPOSE up --build -d "$@"
 
 # 4. Chờ dịch vụ Backend App và Database sẵn sàng (Healthy)
 echo ""

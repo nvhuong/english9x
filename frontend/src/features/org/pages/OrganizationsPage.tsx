@@ -27,10 +27,10 @@ export default function OrganizationsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-serif text-3xl font-bold text-ink">{t('orgs.title')}</h1>
+      <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('orgs.title')}</h1>
 
       <section aria-labelledby="create-org" className="flex max-w-xl flex-col gap-3">
-        <h2 id="create-org" className="font-serif text-xl font-semibold">
+        <h2 id="create-org" className="font-sans text-lg sm:text-xl font-bold">
           {t('orgs.create.title')}
         </h2>
         <form

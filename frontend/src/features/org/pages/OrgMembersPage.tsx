@@ -27,18 +27,18 @@ export default function OrgMembersPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="font-serif text-3xl font-bold text-ink">{known ? t('orgPage.title', { name: known.name }) : t('members.title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{known ? t('orgPage.title', { name: known.name }) : t('members.title')}</h1>
         {known && <p className="text-muted">{t('orgPage.type', { type: t(`types.${known.type}`) })}</p>}
       </div>
       <section aria-labelledby="members" className="flex flex-col gap-3">
-        <h2 id="members" className="font-serif text-xl font-semibold">
+        <h2 id="members" className="font-sans text-lg sm:text-xl font-bold">
           {t('members.title')}
         </h2>
         <MembersPanel orgId={orgId} type={type} />
       </section>
       {known && (
         <section aria-labelledby="invite" className="flex flex-col gap-3">
-          <h2 id="invite" className="font-serif text-xl font-semibold">
+          <h2 id="invite" className="font-sans text-lg sm:text-xl font-bold">
             {t('invite.title')}
           </h2>
           <p className="max-w-prose text-muted">{t('invite.description')}</p>
@@ -48,7 +48,7 @@ export default function OrgMembersPage() {
       )}
       {known && (
         <section aria-labelledby="bulk" className="flex flex-col gap-3">
-          <h2 id="bulk" className="font-serif text-xl font-semibold">
+          <h2 id="bulk" className="font-sans text-lg sm:text-xl font-bold">
             {t('bulk.title')}
           </h2>
           <BulkInvitePanel orgId={orgId} />
@@ -56,7 +56,7 @@ export default function OrgMembersPage() {
       )}
       {known && (
         <section aria-labelledby="join-codes" className="flex flex-col gap-3">
-          <h2 id="join-codes" className="font-serif text-xl font-semibold">
+          <h2 id="join-codes" className="font-sans text-lg sm:text-xl font-bold">
             {t('joinCodes.title')}
           </h2>
           <p className="max-w-prose text-muted">{t('joinCodes.description')}</p>

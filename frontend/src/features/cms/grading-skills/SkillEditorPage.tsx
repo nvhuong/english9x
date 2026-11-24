@@ -27,7 +27,7 @@ export default function SkillEditorPage() {
 }
 
 function Heading({ children }: { children: string }) {
-  return <h1 className="font-serif text-3xl font-bold text-ink">{children}</h1>;
+  return <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{children}</h1>;
 }
 
 /** The draft to send, or null (with the reason on the form) when the schema text is not JSON. */
@@ -213,7 +213,7 @@ function DryRun({ skillId }: { skillId: string }) {
   const [message, setMessage] = useState<string | null>(null);
   return (
     <section aria-labelledby="dry-run" className="flex max-w-3xl flex-col gap-3 border-t border-line pt-6">
-      <h2 id="dry-run" className="font-serif text-xl font-bold text-ink">
+      <h2 id="dry-run" className="font-sans text-lg sm:text-xl font-bold text-ink">
         {t('dryRun.title')}
       </h2>
       <p className="text-sm text-muted">{t('dryRun.hint')}</p>

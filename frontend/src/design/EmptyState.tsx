@@ -24,7 +24,7 @@ export function EmptyState({ title, description, icon, action, headingLevel = 2,
           {icon}
         </div>
       )}
-      <Heading className="font-serif text-2xl font-semibold text-ink">{title}</Heading>
+      <Heading className="font-sans text-2xl font-bold text-ink">{title}</Heading>
       {description && <p className="text-muted">{description}</p>}
       {action && <div className="mt-2">{action}</div>}
     </section>

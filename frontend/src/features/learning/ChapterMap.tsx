@@ -17,7 +17,7 @@ export function ChapterMap({ map }: { map: ChapterMapData }) {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <h1 className="font-serif text-3xl font-bold text-ink">{map.title}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{map.title}</h1>
         <p className="text-sm text-muted">{t(`map.rule.${map.unlockRule}`)}</p>
         <p className="flex flex-wrap gap-4 text-sm text-ink">
           <span data-testid="streak">{t('map.streak', { count: map.streakDays })}</span>

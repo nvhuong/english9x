@@ -41,7 +41,7 @@ function Report({ orgId, classId }: { orgId: string; classId: string }) {
         <Link to={`/org/classes/${classId}`} className="text-primary underline">
           {t('report.back')}
         </Link>
-        <h1 className="mt-2 font-serif text-3xl font-bold text-ink">
+        <h1 className="mt-2 font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">
           {t('report.title')}: {data.className}
         </h1>
         <p className="mt-1 max-w-prose text-muted">{t('report.description')}</p>

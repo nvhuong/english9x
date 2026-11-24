@@ -4,9 +4,15 @@ import { cn } from '../../design';
 /** Card for the sign-in family of pages: one heading, a short description, the form, links underneath. */
 export function AuthCard({ title, description, children, footer }: { title: string; description?: string; children: ReactNode; footer?: ReactNode }) {
   return (
-    <section className="mx-auto w-full max-w-md rounded-lg border border-line bg-surface p-6 shadow-sm sm:p-8">
-      <h1 className="font-serif text-3xl font-bold tracking-tight text-ink">{title}</h1>
-      {description && <p className="mt-2 text-muted">{description}</p>}
+    <section className="mx-auto w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-xs font-black text-on-primary shadow-xs">
+          9x
+        </span>
+        <span className="font-sans text-xs font-black uppercase tracking-wider text-primary">English9x</span>
+      </div>
+      <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{title}</h1>
+      {description && <p className="mt-2 text-sm text-muted">{description}</p>}
       <div className="mt-6 flex flex-col gap-4">{children}</div>
       {footer && <div className="mt-6 border-t border-line pt-4 text-sm text-muted">{footer}</div>}
     </section>

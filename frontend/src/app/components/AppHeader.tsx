@@ -32,7 +32,7 @@ export function AppHeader({ area, dense }: { area: Area; dense?: boolean }) {
   return (
     <header className={cn('sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur-sm transition-colors', dense && 'bg-sunken/95')}>
       <div className={cn('mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5', dense ? 'max-w-none' : 'max-w-6xl')}>
-        <Link to="/" className="group flex items-center gap-2.5 font-serif text-2xl font-bold text-primary no-underline">
+        <Link to="/" className="group flex items-center gap-2.5 font-sans text-2xl font-black text-primary no-underline tracking-tight">
           <span
             aria-hidden="true"
             className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-black text-on-primary shadow-sm transition-transform group-hover:scale-105"

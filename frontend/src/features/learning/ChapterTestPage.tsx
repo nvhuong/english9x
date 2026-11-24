@@ -69,7 +69,7 @@ export function ChapterTestForm({ test, onSubmit, busy, result, failed }: {
         onSubmit(all.filter((q) => answers[q.versionId]).map((q) => ({ questionVersionId: q.versionId, answer: answers[q.versionId]! })));
       }}
     >
-      <h1 className="font-serif text-3xl font-bold text-ink">{test.title}</h1>
+      <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{test.title}</h1>
       <p className="text-sm text-muted">
         {t('test.rules', { threshold: Math.round(test.passThreshold * 100) })}{' '}
         {test.maxAttempts === 0 ? t('test.unlimited') : t('test.attempts', { used: test.attemptsUsed, max: test.maxAttempts })}
@@ -83,7 +83,7 @@ export function ChapterTestForm({ test, onSubmit, busy, result, failed }: {
       {canSit &&
         test.groups.map((g, gi) => (
           <section key={gi} className="flex flex-col gap-3">
-            {g.content?.title && <h2 className="font-serif text-xl font-bold text-ink">{g.content.title}</h2>}
+            {g.content?.title && <h2 className="font-sans text-lg sm:text-xl font-bold text-ink">{g.content.title}</h2>}
             {g.content?.passage && <p className="whitespace-pre-line text-ink">{g.content.passage}</p>}
             {g.questions.map((q) => {
               n += 1;

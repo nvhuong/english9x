@@ -24,7 +24,7 @@ export function TelegramLinkView({ enabled, linked, failing, link, creating, err
   const safe = link && link.deepLink.startsWith('https://t.me/') ? link : undefined;
   return (
     <section aria-labelledby="telegram-title" className="flex flex-col gap-3 rounded-md border border-line bg-surface p-4">
-      <h2 id="telegram-title" className="font-serif text-xl font-semibold">
+      <h2 id="telegram-title" className="font-sans text-lg sm:text-xl font-bold">
         {t('telegram.title')}
       </h2>
       <p className="text-muted">{t('telegram.description')}</p>

@@ -8,7 +8,7 @@ export function PlanPicker({ plans, value, onChange }: { plans: PlanView[]; valu
   const { t, i18n } = useTranslation('billing');
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="font-serif text-xl font-semibold text-ink">{t('checkout.planLegend')}</legend>
+      <legend className="font-sans text-lg sm:text-xl font-bold text-ink">{t('checkout.planLegend')}</legend>
       {plans.map((p) => (
         <label key={p.id} className="flex cursor-pointer items-start gap-3 rounded-md border border-line px-3 py-2 has-[:checked]:border-primary">
           <input type="radio" name="plan" className="mt-1" value={p.id} checked={value === p.id} onChange={() => onChange(p.id)} />

@@ -82,7 +82,7 @@ export default function NotificationPreferencesPage() {
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('prefs.title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('prefs.title')}</h1>
         <p className="mt-2 text-muted">{t('prefs.description')}</p>
       </header>
       {locked && <FormNotice tone="info">{t('prefs.verifyFirst')}</FormNotice>}

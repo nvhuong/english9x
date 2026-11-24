@@ -24,7 +24,7 @@ export function Dialog({ trigger, title, description, children, footer, open, on
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-ink/50" />
         <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,32rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-line bg-surface p-6 text-ink shadow-card">
-          <RadixDialog.Title className="pr-10 font-serif text-xl font-semibold">{title}</RadixDialog.Title>
+          <RadixDialog.Title className="pr-10 font-sans text-xl font-bold">{title}</RadixDialog.Title>
           {description ? (
             <RadixDialog.Description className="mt-2 text-muted">{description}</RadixDialog.Description>
           ) : (

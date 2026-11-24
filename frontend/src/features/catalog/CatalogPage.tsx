@@ -34,7 +34,7 @@ export default function CatalogPage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-line bg-sunken px-3.5 py-1 text-xs font-semibold text-primary">
             <span>📚 GIÁO TRÌNH & ĐỀ THI CHÍNH THỨC</span>
           </div>
-          <h1 className="mt-4 font-serif text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          <h1 className="mt-4 font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">
             {t('list.title')}
           </h1>
           <p className="mt-2 text-base leading-relaxed text-muted sm:text-lg">
@@ -160,7 +160,7 @@ export default function CatalogPage() {
                     </div>
 
                     {/* Course Title */}
-                    <h2 className="font-serif text-2xl font-bold text-ink group-hover:text-primary transition-colors">
+                    <h2 className="font-sans text-2xl font-bold tracking-tight text-ink group-hover:text-primary transition-colors">
                       <Link to={`/courses/${c.code}`} className="hover:underline">
                         {c.title}
                       </Link>

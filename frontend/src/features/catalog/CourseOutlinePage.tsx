@@ -73,7 +73,7 @@ export default function CourseOutlinePage() {
             </Badge>
           </div>
 
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">
             {c.title}
           </h1>
 
@@ -112,7 +112,7 @@ export default function CourseOutlinePage() {
       <section aria-labelledby="outline-h" className="flex flex-col gap-6">
         <div className="flex items-center justify-between border-b border-line pb-3">
           <div>
-            <h2 id="outline-h" className="font-serif text-2xl font-bold text-ink">
+            <h2 id="outline-h" className="font-sans text-2xl font-black text-ink">
               {t('outline.heading')}
             </h2>
             <p className="mt-0.5 text-xs text-muted">Toàn bộ cấu trúc lộ trình và nội dung bài học</p>
@@ -134,7 +134,7 @@ export default function CourseOutlinePage() {
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-on-primary">
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <h3 className="font-serif text-lg font-bold text-ink sm:text-xl">
+                  <h3 className="font-sans text-lg font-bold text-ink sm:text-xl">
                     {t('outline.chapterN', { n: i + 1, title: ch.title })}
                   </h3>
                 </div>
@@ -186,7 +186,7 @@ export default function CourseOutlinePage() {
 
       {/* 3. CALL TO ACTION ENROLLMENT CARD */}
       <section className="rounded-2xl border border-line bg-sunken p-6 sm:p-8 text-center">
-        <h3 className="font-serif text-xl font-bold text-ink sm:text-2xl">
+        <h3 className="font-sans text-xl font-bold text-ink sm:text-2xl">
           Đăng ký để mở khoá toàn bộ bài học & đề thi thử
         </h3>
         <p className="mx-auto mt-2 max-w-lg text-sm text-muted">

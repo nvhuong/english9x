@@ -15,7 +15,7 @@ export default function WorkQueuePage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('description')}</p>
       </header>
       {planned === 0 ? (
@@ -50,7 +50,7 @@ function QueueSection({ section, items }: { section: Section; items: QuestionSum
   const headingId = `queue-${section}`;
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <h2 id={headingId} className="flex items-center gap-2 font-serif text-xl font-bold text-ink">
+      <h2 id={headingId} className="flex items-center gap-2 font-sans text-lg sm:text-xl font-bold text-ink">
         {t(`sections.${section}`)}
         <Badge tone={items.length > 0 ? 'info' : 'neutral'}>{items.length}</Badge>
       </h2>

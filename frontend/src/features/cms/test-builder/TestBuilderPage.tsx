@@ -25,7 +25,7 @@ export default function TestBuilderPage() {
 }
 
 function Heading({ children }: { children: string }) {
-  return <h1 className="font-serif text-3xl font-bold text-ink">{children}</h1>;
+  return <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{children}</h1>;
 }
 
 function Create() {
@@ -203,7 +203,7 @@ function EditBody({ v, exam, notice, setNotice }: { v: TestVersion; exam: ExamIn
         </div>
 
         <section aria-labelledby="parts-h" className="flex flex-col gap-4">
-          <h2 id="parts-h" className="font-serif text-xl font-bold text-ink">
+          <h2 id="parts-h" className="font-sans text-lg sm:text-xl font-bold text-ink">
             {t('parts.heading')}
           </h2>
           {draft.parts.length === 0 && <p className="text-muted">{t('parts.empty')}</p>}
@@ -314,7 +314,7 @@ function EditBody({ v, exam, notice, setNotice }: { v: TestVersion; exam: ExamIn
       </form>
 
       <section aria-labelledby="check-h" className="flex flex-col gap-3">
-        <h2 id="check-h" className="font-serif text-xl font-bold text-ink">
+        <h2 id="check-h" className="font-sans text-lg sm:text-xl font-bold text-ink">
           {t('check.heading')}
         </h2>
         <p className="max-w-prose text-sm text-muted">{t('check.note')}</p>

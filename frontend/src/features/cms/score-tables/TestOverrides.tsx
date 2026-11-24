@@ -31,7 +31,7 @@ export function TestOverrides({ testId, examCode, variant }: { testId: string; e
 
   return (
     <section aria-labelledby="overrides-h" className="flex flex-col gap-3">
-      <h2 id="overrides-h" className="font-serif text-xl font-bold text-ink">
+      <h2 id="overrides-h" className="font-sans text-lg sm:text-xl font-bold text-ink">
         {t('overrides.heading')}
       </h2>
       <p className="max-w-prose text-sm text-muted">{t('overrides.note')}</p>

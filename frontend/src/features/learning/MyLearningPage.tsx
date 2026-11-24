@@ -25,13 +25,16 @@ export default function MyLearningPage() {
   const active = (plans.data ?? []).filter((p) => p.active);
   if (active.length === 0) return <EmptyState title={t('mine.empty')} action={<Link to="/courses" className="text-primary underline">{t('mine.browse')}</Link>} />;
   return (
-    <div className="flex flex-col gap-3">
-      <h1 className="font-serif text-3xl font-bold text-ink">{t('mine.title')}</h1>
-      <ul className="flex flex-col gap-2">
+    <div className="flex flex-col gap-6">
+      <div className="rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
+        <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{t('mine.title')}</h1>
+        <p className="mt-2 text-sm text-muted">Các khoá học và chương trình luyện thi đang hoạt động của bạn.</p>
+      </div>
+      <ul className="grid gap-4 sm:grid-cols-2">
         {active.map((p) => (
-          <li key={p.id}>
-            <Link to={`/learn/courses/${p.courseId}`} className="text-primary underline">
-              {p.courseCode ?? p.courseId}
+          <li key={p.id} className="rounded-2xl border border-line bg-surface p-6 shadow-card hover:border-primary transition-all">
+            <Link to={`/learn/courses/${p.courseId}`} className="font-sans text-lg font-bold text-primary hover:underline">
+              {p.courseCode ?? p.courseId} →
             </Link>
           </li>
         ))}

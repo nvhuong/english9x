@@ -39,7 +39,7 @@ export function SkillForm({ model, onChange, onSave, issues, locked = false, sav
         error={fieldIssue(issues, 'rubric')} className="max-w-3xl" />
 
       <section aria-labelledby={`${id}-criteria`} className="flex flex-col gap-3">
-        <h2 id={`${id}-criteria`} className="font-serif text-xl font-bold text-ink">
+        <h2 id={`${id}-criteria`} className="font-sans text-lg sm:text-xl font-bold text-ink">
           {t('criteria.title')}
         </h2>
         <p className="max-w-prose text-sm text-muted">{t('criteria.hint')}</p>
@@ -81,7 +81,7 @@ export function SkillForm({ model, onChange, onSave, issues, locked = false, sav
         disabled={locked} rows={12} spellCheck={false} error={fieldIssue(issues, 'promptTemplate')} className="max-w-3xl font-mono" />
 
       <section aria-labelledby={`${id}-samples`} className="flex flex-col gap-3">
-        <h2 id={`${id}-samples`} className="font-serif text-xl font-bold text-ink">
+        <h2 id={`${id}-samples`} className="font-sans text-lg sm:text-xl font-bold text-ink">
           {t('samples.title')}
         </h2>
         <p className="max-w-prose text-sm text-muted">{t('samples.hint')}</p>

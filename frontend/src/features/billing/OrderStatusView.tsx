@@ -40,7 +40,7 @@ export function OrderStatusView({ order, qrSrc, qrFailed }: { order: OrderView; 
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('order.title', { code: order.code })}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('order.title', { code: order.code })}</h1>
         <p className="mt-2 flex flex-wrap items-center gap-2 text-muted">
           <Badge tone={TONE[order.status] ?? 'neutral'} data-testid="order-status">
             {t(`order.status.${order.status}`)}
@@ -63,7 +63,7 @@ export function OrderStatusView({ order, qrSrc, qrFailed }: { order: OrderView; 
       {pending && order.payTo && (
         <section aria-labelledby="pay-heading" className="grid gap-6 md:grid-cols-[auto_1fr]">
           <div className="flex flex-col items-center gap-2">
-            <h2 id="pay-heading" className="font-serif text-xl font-semibold">
+            <h2 id="pay-heading" className="font-sans text-lg sm:text-xl font-bold">
               {t('order.payTitle')}
             </h2>
             {qrSrc && <img src={qrSrc} width={256} height={256} alt={t('order.qrAlt', { code: order.code })} className="rounded-md border border-line" />}

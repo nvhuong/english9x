@@ -24,17 +24,17 @@ export default function OrganizationDetailPage() {
         <Link to="/admin/organizations" className="text-sm font-semibold text-primary">
           ← {t('detail.back')}
         </Link>
-        <h1 className="mt-2 font-serif text-3xl font-bold text-ink">{t('orgPage.title', { name: org.name })}</h1>
+        <h1 className="mt-2 font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('orgPage.title', { name: org.name })}</h1>
         <p className="text-muted">{t('orgPage.type', { type: t(`types.${org.type}`) })}</p>
       </div>
       <section aria-labelledby="members" className="flex flex-col gap-3">
-        <h2 id="members" className="font-serif text-xl font-semibold">
+        <h2 id="members" className="font-sans text-lg sm:text-xl font-bold">
           {t('members.title')}
         </h2>
         <MembersPanel orgId={org.id} type={org.type} />
       </section>
       <section aria-labelledby="invite" className="flex flex-col gap-3">
-        <h2 id="invite" className="font-serif text-xl font-semibold">
+        <h2 id="invite" className="font-sans text-lg sm:text-xl font-bold">
           {t('detail.invite')}
         </h2>
         <p className="max-w-prose text-muted">{t('invite.description')}</p>

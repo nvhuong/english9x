@@ -77,7 +77,7 @@ export default function ImportPage() {
   if (types.isSuccess && options.length === 0) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('title')}</h1>
         <EmptyState title={t('none.title')} description={t('none.description')} />
       </div>
     );
@@ -86,12 +86,12 @@ export default function ImportPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('title')}</h1>
+        <h1 className="font-sans text-2xl sm:text-3xl font-black tracking-tight text-ink">{t('title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('description')}</p>
       </header>
 
       <section aria-labelledby="import-step1" className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
-        <h2 id="import-step1" className="font-serif text-xl font-semibold text-ink">
+        <h2 id="import-step1" className="font-sans text-lg sm:text-xl font-bold text-ink">
           {t('step1.title')}
         </h2>
         <Select label={t('type.label')} options={options} value={typeCode} onValueChange={setChosen} className="max-w-xl" />
@@ -103,7 +103,7 @@ export default function ImportPage() {
       </section>
 
       <section aria-labelledby="import-step2" className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
-        <h2 id="import-step2" className="font-serif text-xl font-semibold text-ink">
+        <h2 id="import-step2" className="font-sans text-lg sm:text-xl font-bold text-ink">
           {t('step2.title')}
         </h2>
         <div className="flex flex-col gap-1">
@@ -169,7 +169,7 @@ export default function ImportPage() {
 
       {jobId && (
         <section aria-labelledby="import-result" className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
-          <h2 id="import-result" className="font-serif text-xl font-semibold text-ink">
+          <h2 id="import-result" className="font-sans text-lg sm:text-xl font-bold text-ink">
             {t('result.title')}
           </h2>
           {!detail || isRunning(status) ? (

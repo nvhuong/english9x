@@ -14,7 +14,7 @@ export default function MyAssignmentsPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('mine.title')}</h1>
+        <h1 className="font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{t('mine.title')}</h1>
         <p className="mt-2 max-w-prose text-muted">{t('mine.description')}</p>
       </header>
       {list.isPending && <p role="status" className="text-muted">{t('mine.loading')}</p>}

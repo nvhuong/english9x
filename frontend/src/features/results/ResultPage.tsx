@@ -32,11 +32,14 @@ function Result({ r }: { r: AttemptResult }) {
   const { t } = useTranslation('results');
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="font-serif text-3xl font-bold text-ink">{t('attempt.title')}</h1>
-        <p className="text-muted">{r.examCode}</p>
+      <header className="rounded-2xl border border-line bg-surface p-6 shadow-card sm:p-8">
+        <div className="inline-flex items-center gap-2 rounded-full border border-line bg-sunken px-3 py-0.5 text-xs font-semibold text-primary">
+          <span>🏆 BÁO CÁO KẾT QUẢ THI CHI TIẾT</span>
+        </div>
+        <h1 className="mt-3 font-sans text-3xl font-black tracking-tight text-ink sm:text-4xl">{t('attempt.title')}</h1>
+        <p className="mt-1 font-mono text-sm font-semibold text-primary">{r.examCode}</p>
         {r.interrupted && (
-          <p data-testid="interrupted-warning" role="note" className="rounded-md border border-warning bg-warning-bg px-3 py-2 text-warning">
+          <p data-testid="interrupted-warning" role="note" className="mt-3 rounded-md border border-warning bg-warning-bg px-3 py-2 text-warning text-sm font-medium">
             {t('attempt.interrupted')}
           </p>
         )}
@@ -60,18 +63,18 @@ function Scores({ skills }: { skills: SkillScore[] }) {
   if (skills.length === 0) return null;
   return (
     <section aria-labelledby="scores-h" className="flex flex-col gap-3">
-      <h2 id="scores-h" className="text-xl font-semibold text-ink">{t('attempt.scoresTitle')}</h2>
+      <h2 id="scores-h" className="font-sans text-xl font-bold tracking-tight text-ink">{t('attempt.scoresTitle')}</h2>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {skills.map((s) => (
-          <li key={s.skill} data-testid="skill-score" data-skill={s.skill} data-label={s.label} className="flex flex-col gap-1 rounded-md border border-line p-3">
+          <li key={s.skill} data-testid="skill-score" data-skill={s.skill} data-label={s.label} className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-5 shadow-card">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-ink">{s.aggregate ? t('attempt.overall') : s.skill}</span>
+              <span className="font-sans font-bold text-ink">{s.aggregate ? t('attempt.overall') : s.skill}</span>
               <Badge tone={LABEL_TONE[s.label]} title={t(`attempt.labelHelp.${s.label}`)}>{t(`attempt.label.${s.label}`)}</Badge>
             </div>
-            <p className="text-2xl font-bold text-ink">
+            <p className="font-sans text-3xl font-black text-primary">
               {s.score !== null ? s.score : s.label === 'PENDING' ? t('attempt.pending') : t('attempt.noScore')}
             </p>
-            {s.raw !== null && s.rawMax !== null && <p className="text-sm text-muted">{t('attempt.rawPoints', { raw: s.raw, max: s.rawMax })}</p>}
+            {s.raw !== null && s.rawMax !== null && <p className="text-xs text-muted">{t('attempt.rawPoints', { raw: s.raw, max: s.rawMax })}</p>}
             {s.source && <p className="text-xs text-muted">{t(`attempt.source.${s.source}`)}</p>}
           </li>
         ))}
@@ -89,10 +92,10 @@ function Questions({ questions }: { questions: QuestionResult[] }) {
     <section aria-labelledby="questions-h" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 id="questions-h" className="text-xl font-semibold text-ink">{t('attempt.questionsTitle')}</h2>
+          <h2 id="questions-h" className="font-sans text-xl font-bold tracking-tight text-ink">{t('attempt.questionsTitle')}</h2>
           <p className="text-sm text-muted">{t('attempt.questionsHint')}</p>
         </div>
-        <label className="flex items-center gap-2 text-sm text-ink">
+        <label className="flex items-center gap-2 text-sm text-ink font-medium">
           <input type="checkbox" checked={wrongOnly} onChange={(e) => setWrongOnly(e.target.checked)} />
           {t('attempt.filterWrong')}
         </label>
@@ -148,7 +151,7 @@ function Feedback({ feedback }: { feedback: ProductiveFeedback[] }) {
   if (feedback.length === 0) return null;
   return (
     <section aria-labelledby="feedback-h" className="flex flex-col gap-3">
-      <h2 id="feedback-h" className="text-xl font-semibold text-ink">{t('attempt.feedbackTitle')}</h2>
+      <h2 id="feedback-h" className="font-sans text-xl font-bold tracking-tight text-ink">{t('attempt.feedbackTitle')}</h2>
       {feedback.map((f) => (
         <div key={f.skill} data-testid="feedback" data-skill={f.skill} className="flex flex-col gap-3 rounded-md border border-line p-3">
           <h3 className="font-semibold text-ink">{t('attempt.feedbackSkill', { skill: f.skill })}</h3>
