@@ -1,33 +1,44 @@
 #!/usr/bin/env bash
-# English9x: Tạo dữ liệu mẫu (Sample Data) cho hệ thống đang chạy
-# Cách dùng: ./scripts/seed-sample-data.sh
+# ==============================================================================
+# English9x: Nạp dữ liệu mẫu (Sample Data) một chạm cho hệ thống
+# Cách dùng: ./seed.sh hoặc ./scripts/seed-sample-data.sh
+# ==============================================================================
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+
+# 1. Khởi tạo & kiểm tra môi trường
+"$ROOT/scripts/init-env.sh"
 
 if ! command -v node >/dev/null 2>&1; then
   echo "❌ Cần cài đặt Node.js để chạy script này." >&2
   exit 1
 fi
 
-node scripts/seed-sample-data.mjs "$@"
+COMPOSE="docker compose --env-file infra/.env -f infra/docker-compose.yml -f infra/docker-compose.e2e.yml"
 
-COMPOSE="docker compose --env-file infra/.env -f infra/docker-compose.yml"
+# 2. Kiểm tra container app và caddy đang chạy
 if command -v docker >/dev/null 2>&1; then
-  echo "--- [4/5] Khởi tạo Khóa học chi tiết (Chapters & Strategy Lessons) ---"
-  $COMPOSE exec -T postgres psql -q -U e9x_owner -d e9x < scripts/seed-sample-courses.sql || true
-  echo "✔ [KHÓA HỌC CHI TIẾT] Đã tạo khóa học TOEIC (TOE650) & IELTS (IEL700) với đầy đủ Chương và Bài học!"
+  if ! $COMPOSE ps app | grep -q "Up\|running"; then
+    echo "⚠️  Hệ thống chưa khởi động. Đang tự động chạy hệ thống với ./start.sh..."
+    "$ROOT/start.sh"
+    echo "⏳ Chờ hệ thống sẵn sàng..."
+    sleep 5
+  fi
+fi
 
-  echo "--- [5/5] Khởi tạo Bảng giá Gói học mẫu (B2C Plans) ---"
-  $COMPOSE exec -T postgres psql -q -U e9x_owner -d e9x << 'EOF' || true
-INSERT INTO plans (name, price_vnd, months, max_courses, active) VALUES
-  ('Gói Luyện Thi 1 Tháng (1 Khóa học)', 299000, 1, 1, true),
-  ('Gói Bứt Phá 3 Tháng (3 Khóa học)', 699000, 3, 3, true),
-  ('Gói Toàn Diện 12 Tháng (Không giới hạn)', 1999000, 12, 10, true)
-ON CONFLICT DO NOTHING;
-EOF
-  echo "✔ [BẢNG GIÁ] Đã nạp 3 gói học B2C vào hệ thống!"
+# 3. Tạo tài khoản, tổ chức, quyền học qua Seed API
+node "$ROOT/scripts/seed-sample-data.mjs" "$@"
+
+# 4. Nạp khóa học chi tiết, câu hỏi, đề thi thử và kết quả đánh giá năng lực
+if command -v docker >/dev/null 2>&1; then
+  echo "--- [4/5] Khởi tạo Khóa học, Đề thi mẫu & Đánh giá năng lực ---"
+  $COMPOSE exec -T postgres psql -q -U e9x_owner -d e9x < "$ROOT/scripts/seed-sample-full.sql" || true
+  echo "✔ [KHÓA HỌC & ĐỀ THI] Đã tạo khóa học TOEIC (TOE650), IELTS (IEL700) kèm Đề thi thử và Câu hỏi!"
+  echo "✔ [RADAR ĐIỂM YẾU] Đã tạo kết quả thi và phân tích điểm yếu mẫu cho học viên!"
 fi
 
 echo ""
-echo "✨ TẤT CẢ DỮ LIỆU MẪU ĐÃ SẴN SÀNG! Bạn có thể bắt đầu sử dụng ngay."
+echo "=============================================================================="
+echo "✨ TẤT CẢ DỮ LIỆU MẪU ĐÃ SẴN SÀNG! BẠN CÓ THỂ ĐĂNG NHẬP VÀ TRẢI NGHIỆM NGAY."
+echo "=============================================================================="

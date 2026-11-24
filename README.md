@@ -11,6 +11,48 @@ English test-prep platform (IELTS AC/GT + TOEIC L&R; B2C + B2B). Spec: `docs/sup
 | `e2e` | Playwright (specs F01-F58 arrive feature by feature) |
 | `infra` | Docker Compose, Caddy, backup, fake Gemini / fake Telegram |
 
+## Quickstart: Vận hành một chạm (One-Click Operations)
+
+Dự án cung cấp bộ công cụ script và Makefile tự động hóa toàn diện:
+
+```bash
+# 1. Khởi động toàn bộ hệ thống (tự động cấu hình .env, start containers, chờ healthy)
+./start.sh          # hoặc: make start
+
+# 2. Nạp dữ liệu mẫu toàn diện (Tài khoản, Tổ chức B2B, Khóa học, Đề thi, Đánh giá năng lực)
+./seed.sh           # hoặc: make seed
+
+# 3. Kiểm tra trạng thái và thống kê dữ liệu
+./status.sh         # hoặc: make status
+
+# 4. Xem log Backend thời gian thực
+./logs.sh           # hoặc: make logs
+
+# 5. Dừng hoặc Khởi động lại hệ thống
+./stop.sh           # hoặc: make stop
+./restart.sh        # hoặc: make restart
+
+# 6. Reset sạch sẽ hệ thống và tạo mới dữ liệu từ đầu
+./reset.sh          # hoặc: make reset
+```
+
+### Bảng tài khoản mẫu để đăng nhập (Mật khẩu chung: `Password123!`):
+
+| Vai trò (Role) | Email đăng nhập | Quyền hạn và Dữ liệu có sẵn |
+|---|---|---|
+| **Quản trị viên tối cao** | `admin@english9x.vn` | **SYS_ADMIN**: Quản trị toàn hệ thống, phê duyệt B2B, phân quyền |
+| **Tác giả soạn đề** | `author@english9x.vn` | **AUTHOR**: Soạn câu hỏi & đề thi TOEIC, IELTS trong CMS |
+| **Kiểm duyệt viên** | `reviewer@english9x.vn` | **REVIEWER**: Duyệt đề thi và phát hành phiên bản mới |
+| **Giáo viên chấm bài** | `teacher@english9x.vn` | **TEACHER**: Chấm bài tự luận Writing & Speaking |
+| **Học viên mẫu** | `hocvien@english9x.vn` | **LEARNER**: Đã mở sẵn 2 khóa học TOEIC & IELTS, có sẵn lịch sử thi và Radar phân tích điểm yếu |
+| **Admin Trung tâm B2B** | `admin@vinastar.edu.vn` | **ORG_ADMIN**: Quản trị Trung Tâm Anh Ngữ VinaStar |
+| **Giáo viên Trung tâm B2B** | `teacher@vinastar.edu.vn` | **TEACHER**: Giáo viên trực thuộc VinaStar |
+| **Học viên Trung tâm B2B** | `student@vinastar.edu.vn` | **LEARNER**: Học viên trực thuộc VinaStar |
+
+Truy cập ngay: **`https://localhost`**
+
+---
+
 ## Prerequisites
 Java 21, Maven 3.9, Node 22, pnpm 10, Docker (Testcontainers and Compose).
 
