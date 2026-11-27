@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "english9x-backend": {
+      "command": "node",
+      "args": [
+        "/workspace/english9x/mcp/dist/index.js"
+      ],
+      "env": {
+        "E9X_API_URL": "http://localhost:8080",
+        "E9X_POSTGRES_URL": "postgresql://e9x:e9x_dev_password@localhost:5432/e9x"
+      }
+    }
+  }
+}

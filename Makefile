@@ -1,4 +1,4 @@
-.PHONY: help start stop restart status ps logs seed reset build test
+.PHONY: help start stop restart status ps logs seed reset build test mcp mcp-build mcp-test
 
 help:
 	@echo "=============================================================================="
@@ -13,6 +13,8 @@ help:
 	@echo "  make reset     - Xóa sạch dữ liệu cũ và khởi tạo lại hệ thống mới"
 	@echo "  make build     - Rebuild lại các Docker images"
 	@echo "  make test      - Chạy bộ kiểm thử (Frontend & Backend unit tests)"
+	@echo "  make mcp       - Khởi chạy MCP Server kết nối AI Agents (Antigravity/Claude)"
+	@echo "  make mcp-test  - Kiểm thử bộ test suite của MCP Server"
 	@echo "=============================================================================="
 
 start:
@@ -47,3 +49,13 @@ build:
 
 test:
 	@pnpm -C frontend run test --run
+
+mcp:
+	@./scripts/mcp.sh start
+
+mcp-build:
+	@./scripts/mcp.sh build
+
+mcp-test:
+	@./scripts/mcp.sh test
+
